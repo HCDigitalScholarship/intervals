@@ -4,16 +4,7 @@ import time
 import requests
 from pathlib import Path
 
-class CorpusBase:
-    def __init__(self, urls:list, paths:list):
-        self.urls = urls
-        self.scores = []
-        for url in urls:
-            self.scores.append(m21.converter.parse(requests.get(url).text))
-        mei_conv = converter.subConverters.ConverterMEI()
-        for path in paths:
-            self.scores.append(mei_conv.parseFile(path))
-
+# An extension of the music21 note class
 class NoteListElement:
     def __init__(self, note: m21.note.Note, metadata, part, duration, piece_url):
         self.note = note
@@ -24,13 +15,54 @@ class NoteListElement:
         self.piece_url = piece_url
 
     def __str__(self):
-        return "<NoteListElement: {}>".format(self.note.nameWithOctave)
+        return "<NoteListElement: {}>".format(self.note.name)
+
+class CorpusBase:
+    def __init__(self, urls:list, paths:list):
+        self.urls = urls
+        self.scores = []
+        self.all_urls = []
+        for url in urls:
+            print("Requesting file from " + str(url) + "...")
+            self.scores.append(m21.converter.parse(requests.get(url).text))
+            self.all_urls.append(url)
+        mei_conv = converter.subConverters.ConverterMEI()
+        for path in paths:
+            self.scores.append(mei_conv.parseFile(path))
+            self.all_urls.append(path)
+        self.note_list = self.note_list_whole_piece(self.scores, self.all_urls)
+
+    def note_list_whole_piece(self, scores, all_urls):
+        pure_notes = []
+        urls_index = 0
+        for score in scores:
+            parts = score.getElementsByClass(stream.Part)
+            for part in parts:
+                noteList = part.flat.getElementsByClass(['Note', 'Rest'])
+                for note in noteList:
+                    if note.tie is not None:
+                        if note.tie.type == 'start':
+                            note_obj = NoteListElement(note, score.metadata, part.partName, note.quarterLength, all_urls[urls_index])
+                            pure_notes.append(note_obj)
+                        else:
+                            pure_notes[len(pure_notes)-1].duration += note.quarterLength
+                    else:
+                        note_obj = NoteListElement(note, score.metadata, part.partName, note.quarterLength, all_urls[urls_index])
+                        pure_notes.append(note_obj)
+                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, 4.0, all_urls[urls_index])
+                pure_notes.append(note_obj)
+            urls_index += 1
+        return pure_notes
 
 class ScoreBase:
     def __init__(self, url):
         self.url = url
-        self.score = m21.converter.parse(requests.get(self.url).text)
+        self.score = self.get_file()
         self.note_list = self.note_list_whole_piece(self.score)
+
+    def get_file(self):
+        print("Requesting file from " + str(self.url) + "...")
+        return m21.converter.parse(requests.get(self.url).text)
 
     def note_list_whole_piece(self, score):
         pure_notes = []
@@ -105,6 +137,7 @@ class ScoreBase:
             pure_notes.append(note_obj)
         return pure_notes
 
+# An individual vector, not directly used by the user
 class VectorInterval:
     def __init__(self, vector, note1: NoteListElement, note2: NoteListElement):
         self.vector = vector
@@ -142,6 +175,13 @@ class IntervalBase:
                 interval_obj = VectorInterval(interval.convertSemitoneToSpecifierGeneric(interval_semitones)[1], notes[i], notes[i+1])
                 vec.append(interval_obj)
         return vec
+
+class ExactMatch:
+    def __init__(self, pattern, first_note: NoteListElement, last_note: NoteListElement, durations):
+        self.vector = pattern
+        self.first_note = first_note
+        self.last_note = last_note
+        self.durations = durations
 
 def find_exact_matches(vectors_list, interval, min_matches):
     # A series of arrays are needed to keep track of various data associated with each pattern
@@ -231,9 +271,9 @@ def find_close_matches(vectors_list, interval, min_matches, threshold):
     print(str(m) + " melodic intervals had more than " + str(min_matches) + " exact matches.\n")
 
 # Test cases
-# corpus = CorpusBase()
-base = ScoreBase('https://crimproject.org/mei/CRIM_Model_0008.mei')
-vector = IntervalBase(base.note_list)
-find_exact_matches([vector.generic_intervals], 5, 5)
-print("----------------------------------------")
-find_close_matches([vector.generic_intervals], 5, 5, 1)
+# base = ScoreBase('https://crimproject.org/mei/CRIM_Model_0008.mei')
+# base = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0005_1.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei'],[])
+# vector = IntervalBase(base.note_list)
+# find_exact_matches([vector.generic_intervals], 5, 10)
+# print("----------------------------------------")
+# find_close_matches([vector.generic_intervals], 5, 10, 1)

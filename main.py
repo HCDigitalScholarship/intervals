@@ -17,6 +17,7 @@ class NoteListElement:
     def __str__(self):
         return "<NoteListElement: {}>".format(self.note.name)
 
+# For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
 class CorpusBase:
     def __init__(self, urls:list, paths:list):
         self.urls = urls
@@ -24,12 +25,22 @@ class CorpusBase:
         self.all_urls = []
         for url in urls:
             print("Requesting file from " + str(url) + "...")
-            self.scores.append(m21.converter.parse(requests.get(url).text))
-            self.all_urls.append(url)
+            try:
+                self.scores.append(m21.converter.parse(requests.get(url).text))
+                print("Successfully imported.")
+                self.all_urls.append(url)
+            except:
+                print("Import from " + str(url) + " failed, please check your url/file type. Continuing to next file...")
         mei_conv = converter.subConverters.ConverterMEI()
         for path in paths:
-            self.scores.append(mei_conv.parseFile(path))
-            self.all_urls.append(path)
+            try:
+                self.scores.append(mei_conv.parseFile(path))
+                print("Successfully imported.")
+                self.all_urls.append(path)
+            except:
+                print("Import of " + str(path) + " failed, please check your file path/file type. Continuing to next file...")
+        if len(self.scores) == 0:
+            raise Exception("At least one score must be succesfully imported")
         self.note_list = self.note_list_whole_piece(self.scores, self.all_urls)
 
     def note_list_whole_piece(self, scores, all_urls):
@@ -54,6 +65,7 @@ class CorpusBase:
             urls_index += 1
         return pure_notes
 
+# For single file uploads, only takes urls at the moment
 class ScoreBase:
     def __init__(self, url):
         self.url = url
@@ -147,6 +159,7 @@ class VectorInterval:
     def __str__(self):
         return "<VectorInterval: {}, First Note: {}, Second Note: {}>".format(self.vector, self.note1.note.nameWithOctave, self.note2.note.nameWithOctave)
 
+
 class IntervalBase:
     def __init__(self, notes):
         self.notes = notes
@@ -176,19 +189,41 @@ class IntervalBase:
                 vec.append(interval_obj)
         return vec
 
-class ExactMatch:
+# An individual match event- can be used for close matches as well
+class Match:
     def __init__(self, pattern, first_note: NoteListElement, last_note: NoteListElement, durations):
-        self.vector = pattern
+        self.pattern = pattern
         self.first_note = first_note
         self.last_note = last_note
         self.durations = durations
 
+# Object representing all the occurences of a pattern in a list of notes/vectors
+class PatternMatches:
+    def __init__(self, pattern, matches:list):
+        self.pattern = pattern
+        self.matches = matches
+
+    def print_exact_matches(self):
+        print("Melodic interval/pattern " + str(self.pattern) + " occurs " + str(len(self.matches)) + " times:")
+        for match in self.matches:
+            print("In " + str(match.first_note.metadata.title) + " part " + str(match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) +\
+            " and ending in measure " + str(match.last_note.note.measureNumber) + ". Notes lengths: " + str(match.durations))
+        print("\n")
+
+    def print_close_matches(self):
+        print("Occurences of " + str(self.pattern) + " or similar:")
+        for match in self.matches:
+            print("Pattern " + str(match.pattern) + " appears in " + str(match.first_note.metadata.title) + " part " + str(match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) +\
+            " and ending in measure " + str(match.last_note.note.measureNumber) + ". Notes lengths: " + str(match.durations))
+        print("Said pattern or similar appeared " + str(len(self.matches)) + " times.\n")
+
+# Standalone methods for match analysis
 def find_exact_matches(vectors_list, interval, min_matches):
     # A series of arrays are needed to keep track of various data associated with each pattern
     print("Finding exact matches...")
     pattern, patterns, patterns_data, patterns_nodup = [], [], [], []
     # Same process of each piece's notes
-    # A pattern is defined here to be a combination of semitone distances between notes
+    # A pattern is defined here to be an interval between notes
     for vectors in vectors_list:
         for i in range(len(vectors)-interval):
             pattern = []
@@ -211,24 +246,28 @@ def find_exact_matches(vectors_list, interval, min_matches):
             patterns_nodup.append(pat)
     m = 0
     # Go through each individual pattern and count up its occurences
+    all_matches_list = []
     for p in patterns_nodup:
         amt = patterns.count(p)
         # If a pattern occurs more than the designated threshold, we print out information about its occurences
         if amt > min_matches:
+            matches_list = PatternMatches(p, [])
             m += 1
-            print("Melodic interval/pattern " + str(p) + " occurs " + str(amt) + " times:")
             for a in patterns_data:
                 if p == a[0]:
-                    print("In " + str(a[1].metadata.title) + " part " + str(a[1].part) + " beginning in measure " + str(a[1].note.measureNumber) +
-                    " and ending in measure " + str(a[2].note.measureNumber) + ". Notes lengths: " + str(a[3]))
-    print(str(m) + " melodic intervals occurred more than " + str(min_matches) + " times.\n")
+                    exact_match = Match(p, a[1], a[2], a[3])
+                    matches_list.matches.append(exact_match)
+            all_matches_list.append(matches_list)
+
+    print(str(len(all_matches_list)) + " melodic intervals had more than " + str(min_matches) + " exact matches.\n")
+    return all_matches_list
 
 def find_close_matches(vectors_list, interval, min_matches, threshold):
     # A series of arrays are needed to keep track of various data associated with each pattern
     print("Finding close matches...")
-    pattern, patterns, patterns_data, patterns_nodup = [], [], [], []
+    pattern, patterns_data, patterns_nodup = [], [], []
     # Same process of each piece's notes
-    # A pattern is defined here to be a combination of semitone distances between notes
+    # A pattern is defined here to be an interval between notes
     for vectors in vectors_list:
         for i in range(len(vectors)-interval):
             pattern = []
@@ -241,7 +280,6 @@ def find_close_matches(vectors_list, interval, min_matches, threshold):
                 pattern.append(vectors[i+num_notes].vector)
                 durations.append(vectors[i+num_notes].note2.duration)
             if valid_pattern:
-                patterns.append(pattern)
             # Here, with help from vectorize() you can jam in whatever more data you would like about the note
                 patterns_data.append((pattern, vectors[i].note1, vectors[i+num_notes].note2, durations))
     # Iterate through every pattern
@@ -249,31 +287,32 @@ def find_close_matches(vectors_list, interval, min_matches, threshold):
         # Build up a list of patterns without duplicates
         if pat not in patterns_nodup:
             patterns_nodup.append(pat)
-    m = 0
-    # Go through each individual pattern and count up its occurences
-    for p in patterns_nodup:
-        amt = patterns.count(p)
-        close_matches = 0
-        # If a pattern occurs more than the designated threshold, we print out information about its occurences
-        if amt > min_matches:
-            m += 1
-            print("Occurences of " + str(p) + " or similar:")
-            for a in patterns_data:
-                match = 0
-                for v in range(interval):
-                    match += abs(p[v] - a[0][v])
-                if match <= threshold:
-                    close_matches += 1
-                    print("Pattern " + str(a[0]) + " appears in " + str(a[1].metadata.title) + " part " + str(a[1].part) + " beginning in measure " + str(a[1].note.measureNumber) +\
-                    " and ending in measure " + str(a[2].note.measureNumber) + ". Notes lengths: " + str(a[3]))
-            print("Said pattern or similar appeared " + str(close_matches) + " times.\n")
-    #print(str(close_matches) + " melodic intervals occurred more than " + str(min_matches) + " times.\n")
-    print(str(m) + " melodic intervals had more than " + str(min_matches) + " exact matches.\n")
 
-# Test cases
-# base = ScoreBase('https://crimproject.org/mei/CRIM_Model_0008.mei')
-# base = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0005_1.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei'],[])
-# vector = IntervalBase(base.note_list)
-# find_exact_matches([vector.generic_intervals], 5, 10)
-# print("----------------------------------------")
-# find_close_matches([vector.generic_intervals], 5, 10, 1)
+    # Go through each individual pattern and count up its occurences
+    all_matches_list = []
+    for p in patterns_nodup:
+        matches_list = PatternMatches(p, [])
+        # If a pattern occurs more than the designated threshold, we print out information about its occurences
+        for a in patterns_data:
+            match = 0
+            for v in range(interval):
+                match += abs(p[v] - a[0][v])
+            if match <= threshold:
+                close_match = Match(a[0], a[1], a[2], a[3])
+                matches_list.matches.append(close_match)
+        if len(matches_list.matches) > min_matches:
+            all_matches_list.append(matches_list)
+    print(str(len(all_matches_list)) + " melodic intervals had more than " + str(min_matches) + " exact or close matches.\n")
+    return all_matches_list
+
+
+# Example usage
+single_base = ScoreBase('https://crimproject.org/mei/CRIM_Model_0008.mei')
+base = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0005_1.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei'],[])
+vector = IntervalBase(base.note_list)
+matches_list1 = find_exact_matches([vector.generic_intervals], 5, 10)
+for item in matches_list1:
+    item.print_exact_matches()
+matches_list2 = find_close_matches([vector.generic_intervals], 5, 10, 1)
+for item in matches_list2:
+    item.print_close_matches()

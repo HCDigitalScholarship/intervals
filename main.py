@@ -8,7 +8,7 @@ from pathlib import Path
 class NoteListElement:
     def __init__(self, note: m21.note.Note, metadata, part, duration, piece_url):
         self.note = note
-        #self.id = self.note.id
+        self.id = self.note.id
         self.metadata = metadata
         self.part = part
         self.duration = duration
@@ -265,7 +265,7 @@ def find_exact_matches(vectors_list, interval, min_matches):
 def find_close_matches(vectors_list, interval, min_matches, threshold):
     # A series of arrays are needed to keep track of various data associated with each pattern
     print("Finding close matches...")
-    pattern, patterns_data, patterns_nodup = [], [], []
+    pattern, patterns_data, patterns_nodup, patterns = [], [], [], []
     # Same process of each piece's notes
     # A pattern is defined here to be an interval between notes
     for vectors in vectors_list:
@@ -282,6 +282,7 @@ def find_close_matches(vectors_list, interval, min_matches, threshold):
             if valid_pattern:
             # Here, with help from vectorize() you can jam in whatever more data you would like about the note
                 patterns_data.append((pattern, vectors[i].note1, vectors[i+num_notes].note2, durations))
+                patterns.append(pattern)
     # Iterate through every pattern
     for pat in patterns:
         # Build up a list of patterns without duplicates
@@ -305,14 +306,23 @@ def find_close_matches(vectors_list, interval, min_matches, threshold):
     print(str(len(all_matches_list)) + " melodic intervals had more than " + str(min_matches) + " exact or close matches.\n")
     return all_matches_list
 
+def sortFunc(pattern):
+    return len(pattern.matches)
 
-# Example usage
-single_base = ScoreBase('https://crimproject.org/mei/CRIM_Model_0008.mei')
-base = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0005_1.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei'],[])
-vector = IntervalBase(base.note_list)
-matches_list1 = find_exact_matches([vector.generic_intervals], 5, 10)
-for item in matches_list1:
-    item.print_exact_matches()
-matches_list2 = find_close_matches([vector.generic_intervals], 5, 10, 1)
-for item in matches_list2:
-    item.print_close_matches()
+def sort_matches(matches_list):
+    matches_list.sort(reverse=True, key=sortFunc)
+    return matches_list
+
+#Example usage
+#single_base = ScoreBase('https://crimproject.org/mei/CRIM_Model_0008.mei')
+# base = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0005_1.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei'],[])
+# larger_base = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei', 'https://crimproject.org/mei/CRIM_Mass_0003_4.mei', 'https://crimproject.org/mei/CRIM_Model_0006.mei', 'https://crimproject.org/mei/CRIM_Mass_0008_3.mei', 'https://crimproject.org/mei/CRIM_Mass_0018_4.mei', 'https://crimproject.org/mei/CRIM_Mass_0017_1.mei', 'https://crimproject.org/mei/CRIM_Mass_0013_5.mei', 'https://crimproject.org/mei/CRIM_Mass_0012_2.mei', 'https://crimproject.org/mei/CRIM_Mass_0006_3.mei'],[])
+# vector = IntervalBase(base.note_list)
+# matches_list1 = find_exact_matches([vector.generic_intervals], 5, 10)
+# sort_matches(matches_list1)
+# for item in matches_list1:
+#     item.print_exact_matches()
+# matches_list2 = find_close_matches([vector.generic_intervals], 5, 10, 1)
+# sort_matches(matches_list2)
+# for item in matches_list2:
+#     item.print_close_matches()

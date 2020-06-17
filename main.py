@@ -69,12 +69,13 @@ class CorpusBase:
 class ScoreBase:
     def __init__(self, url):
         self.url = url
-        self.score = self.get_file()
-        self.note_list = self.note_list_whole_piece(self.score)
-
-    def get_file(self):
         print("Requesting file from " + str(self.url) + "...")
-        return m21.converter.parse(requests.get(self.url).text)
+        try:
+            self.score = m21.converter.parse(requests.get(self.url).text)
+            print("Successfully imported.")
+        except:
+            raise Exception("Import from " + str(self.url) + " failed, please check your url/file type")
+        self.note_list = self.note_list_whole_piece(self.score)
 
     def note_list_whole_piece(self, score):
         pure_notes = []
@@ -195,7 +196,11 @@ class Match:
         self.pattern = pattern
         self.first_note = first_note
         self.last_note = last_note
+        self.ema = ema
         self.durations = durations
+
+    def generate_ema(self):
+
 
 # Object representing all the occurences of a pattern in a list of notes/vectors
 class PatternMatches:
@@ -313,16 +318,92 @@ def sort_matches(matches_list):
     matches_list.sort(reverse=True, key=sortFunc)
     return matches_list
 
+def similarity_score(notes1, notes2, pattern_size):
+    # A series of arrays are needed to keep track of various data associated with each pattern
+    interval = pattern_size
+    min_matches = 1
+    threshold = 1
+    vectors1 = IntervalBase(notes1).generic_intervals
+    vectors2 = IntervalBase(notes2).generic_intervals
+
+    pattern, patterns1, patterns_nodup1, patterns2, patterns_nodup2 = [], [], [], [], []
+
+    for i in range(len(vectors1)-interval):
+        pattern = []
+        durations = []
+        valid_pattern = True
+        for num_notes in range(interval):
+            if vectors1[i+num_notes].vector == 'Rest':
+                valid_pattern = False
+            pattern.append(vectors1[i+num_notes].vector)
+        if valid_pattern:
+            patterns1.append(pattern)
+
+    for i in range(len(vectors2)-interval):
+        pattern = []
+        durations = []
+        valid_pattern = True
+        for num_notes in range(interval):
+            if vectors2[i+num_notes].vector == 'Rest':
+                valid_pattern = False
+            pattern.append(vectors2[i+num_notes].vector)
+        if valid_pattern:
+            patterns2.append(pattern)
+
+    for pat in patterns1:
+        if pat not in patterns_nodup1:
+            patterns_nodup1.append(pat)
+    for pat2 in patterns2:
+        if pat2 not in patterns_nodup2:
+            patterns_nodup2.append(pat2)
+
+    score = 0
+    for a in patterns_nodup1:
+        if patterns2.count(a) > 0:
+            score += 1
+    for b in patterns_nodup2:
+        if patterns2.count(b) > 0:
+            score += 1
+    return score / (len(patterns_nodup2) + len(patterns_nodup1))
+
+def similarity_score2(notes1, notes2, pattern_size):
+    notes1_title = notes1[0].metadata.title
+    vectors1 = IntervalBase(notes1)
+    vectors2 = IntervalBase(notes2)
+    exact_matches = find_exact_matches([vectors1.generic_intervals, vectors2.generic_intervals], pattern_size, 3)
+    close_matches = find_close_matches([vectors1.generic_intervals, vectors2.generic_intervals], pattern_size, 3, 1)
+    score = 0
+    for matches in exact_matches:
+        from1, from2 = 0, 0
+        for match in matches.matches:
+            if match.first_note.metadata.title == notes1_title:
+                from1 += 1
+            else:
+                from2 += 1
+        if from1 == 0 or from2 == 0:
+            pass
+        elif from2 / from1 > 4 or from1 / from2 > 4:
+            score += (len(matches.matches) / 2)
+        else:
+            score += len(matches.matches)
+    #print(score, len(notes1), len(notes2))
+    #return score / (len(notes1) + len(notes2))
+    return ((len(exact_matches) / (len(notes1) + len(notes2))) + (len(close_matches) / (len(notes1) + len(notes2)))) / 2
+
 #Example usage
-#single_base = ScoreBase('https://crimproject.org/mei/CRIM_Model_0008.mei')
-# base = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0005_1.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei'],[])
-# larger_base = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei', 'https://crimproject.org/mei/CRIM_Mass_0003_4.mei', 'https://crimproject.org/mei/CRIM_Model_0006.mei', 'https://crimproject.org/mei/CRIM_Mass_0008_3.mei', 'https://crimproject.org/mei/CRIM_Mass_0018_4.mei', 'https://crimproject.org/mei/CRIM_Mass_0017_1.mei', 'https://crimproject.org/mei/CRIM_Mass_0013_5.mei', 'https://crimproject.org/mei/CRIM_Mass_0012_2.mei', 'https://crimproject.org/mei/CRIM_Mass_0006_3.mei'],[])
-# vector = IntervalBase(base.note_list)
-# matches_list1 = find_exact_matches([vector.generic_intervals], 5, 10)
-# sort_matches(matches_list1)
-# for item in matches_list1:
-#     item.print_exact_matches()
-# matches_list2 = find_close_matches([vector.generic_intervals], 5, 10, 1)
-# sort_matches(matches_list2)
-# for item in matches_list2:
-#     item.print_close_matches()
+piece1 = ScoreBase('https://crimproject.org/mei/CRIM_Model_0008.mei')
+piece2 = ScoreBase('https://crimproject.org/mei/CRIM_Mass_0005_1.mei')
+larger_base = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei', 'https://crimproject.org/mei/CRIM_Mass_0003_4.mei', 'https://crimproject.org/mei/CRIM_Model_0006.mei', 'https://crimproject.org/mei/CRIM_Mass_0008_3.mei', 'https://crimproject.org/mei/CRIM_Mass_0018_4.mei', 'https://crimproject.org/mei/CRIM_Mass_0017_1.mei', 'https://crimproject.org/mei/CRIM_Mass_0013_5.mei', 'https://crimproject.org/mei/CRIM_Mass_0012_2.mei', 'https://crimproject.org/mei/CRIM_Mass_0006_3.mei'],[])
+base = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0005_1.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei'],[])
+vector = IntervalBase(base.note_list)
+matches_list1 = find_exact_matches([vector.generic_intervals], 5, 10)
+sort_matches(matches_list1)
+for item in matches_list1:
+    item.print_exact_matches()
+matches_list2 = find_close_matches([vector.generic_intervals], 5, 10, 1)
+sort_matches(matches_list2)
+for item in matches_list2:
+    item.print_close_matches()
+piece1.score.metadata.title = 'Test'
+print(similarity_score(piece1.note_list, piece2.note_list, 5))
+print(similarity_score2(piece1.note_list, piece2.note_list, 5))

@@ -11,6 +11,7 @@ class NoteListElement:
         self.id = self.note.id
         self.metadata = metadata
         self.part = part
+        self.partNumber = partNumber
         self.duration = duration
         self.piece_url = piece_url
 
@@ -53,14 +54,14 @@ class CorpusBase:
                 for note in noteList:
                     if note.tie is not None:
                         if note.tie.type == 'start':
-                            note_obj = NoteListElement(note, score.metadata, part.partName, note.quarterLength, all_urls[urls_index])
+                            note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, all_urls[urls_index])
                             pure_notes.append(note_obj)
                         else:
                             pure_notes[len(pure_notes)-1].duration += note.quarterLength
                     else:
-                        note_obj = NoteListElement(note, score.metadata, part.partName, note.quarterLength, all_urls[urls_index])
+                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, all_urls[urls_index])
                         pure_notes.append(note_obj)
-                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, 4.0, all_urls[urls_index])
+                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, all_urls[urls_index])
                 pure_notes.append(note_obj)
             urls_index += 1
         return pure_notes
@@ -85,14 +86,14 @@ class ScoreBase:
             for note in noteList:
                 if note.tie is not None:
                     if note.tie.type == 'start':
-                        note_obj = NoteListElement(note, score.metadata, part.partName, note.quarterLength, self.url)
+                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.url)
                         pure_notes.append(note_obj)
                     else:
                         pure_notes[len(pure_notes)-1].duration += note.quarterLength
                 else:
-                    note_obj = NoteListElement(note, score.metadata, part.partName, note.quarterLength, self.url)
+                    note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.url)
                     pure_notes.append(note_obj)
-            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, 4.0, self.url)
+            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.url)
             pure_notes.append(note_obj)
         return pure_notes
 
@@ -110,14 +111,14 @@ class ScoreBase:
                 for note in voice:
                     if note.tie is not None:
                         if add_tied_note == True:
-                            note_obj = NoteListElement(note, score.metadata, part_selected.partName, note.measureNumber, note.quarterLength, self.url)
+                            note_obj = NoteListElement(note, score.metadata, part_selected.partName, score.index(part), note.quarterLength, self.url)
                             pure_notes.append(note_obj)
                             add_tied_note = False
                         else:
                             add_tied_note = True
                             pure_notes[len(pure_notes)-1].duration += note.quarterLength
                     else:
-                        note_obj = NoteListElement(note, score.metadata, part_selected.partName, note.measureNumber, note.quarterLength, self.url)
+                        note_obj = NoteListElement(note, score.metadata, part_selected.partName, score.index(part), note.quarterLength, self.url)
                         pure_notes.append(note_obj)
         return pure_notes
 
@@ -136,17 +137,17 @@ class ScoreBase:
                     for note in voice:
                         if note.tie is not None:
                             if add_tied_note == True:
-                                note_obj = NoteListElement(note, score.metadata, part.partName, note.measureNumber, note.quarterLength, self.url)
+                                note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.url)
                                 pure_notes.append(note_obj)
                                 add_tied_note = False
                             else:
                                 add_tied_note = True
                                 pure_notes[len(pure_notes)-1].duration += note.quarterLength
                         else:
-                            note_obj = NoteListElement(note, score.metadata, part.partName, note.measureNumber, note.quarterLength, self.url)
+                            note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.url)
                             pure_notes.append(note_obj)
             # Added rest to ensure parts don't overlap
-            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, measure_start + num_measures, 4.0, self.url)
+            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.url)
             pure_notes.append(note_obj)
         return pure_notes
 
@@ -196,11 +197,8 @@ class Match:
         self.pattern = pattern
         self.first_note = first_note
         self.last_note = last_note
-        self.ema = ema
+        self.ema = str(self.first_note.note.measureNumber) + "-" + str(self.last_note.note.measureNumber) + "/" + str(self.first_note.partNumber) + "/all/raw"
         self.durations = durations
-
-    def generate_ema(self):
-
 
 # Object representing all the occurences of a pattern in a list of notes/vectors
 class PatternMatches:
@@ -393,7 +391,7 @@ def similarity_score2(notes1, notes2, pattern_size):
 #Example usage
 piece1 = ScoreBase('https://crimproject.org/mei/CRIM_Model_0008.mei')
 piece2 = ScoreBase('https://crimproject.org/mei/CRIM_Mass_0005_1.mei')
-larger_base = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei', 'https://crimproject.org/mei/CRIM_Mass_0003_4.mei', 'https://crimproject.org/mei/CRIM_Model_0006.mei', 'https://crimproject.org/mei/CRIM_Mass_0008_3.mei', 'https://crimproject.org/mei/CRIM_Mass_0018_4.mei', 'https://crimproject.org/mei/CRIM_Mass_0017_1.mei', 'https://crimproject.org/mei/CRIM_Mass_0013_5.mei', 'https://crimproject.org/mei/CRIM_Mass_0012_2.mei', 'https://crimproject.org/mei/CRIM_Mass_0006_3.mei'],[])
+# larger_base = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei', 'https://crimproject.org/mei/CRIM_Mass_0003_4.mei', 'https://crimproject.org/mei/CRIM_Model_0006.mei', 'https://crimproject.org/mei/CRIM_Mass_0008_3.mei', 'https://crimproject.org/mei/CRIM_Mass_0018_4.mei', 'https://crimproject.org/mei/CRIM_Mass_0017_1.mei', 'https://crimproject.org/mei/CRIM_Mass_0013_5.mei', 'https://crimproject.org/mei/CRIM_Mass_0012_2.mei', 'https://crimproject.org/mei/CRIM_Mass_0006_3.mei'],[])
 base = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0005_1.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei'],[])
 vector = IntervalBase(base.note_list)
 matches_list1 = find_exact_matches([vector.generic_intervals], 5, 10)
@@ -404,6 +402,6 @@ matches_list2 = find_close_matches([vector.generic_intervals], 5, 10, 1)
 sort_matches(matches_list2)
 for item in matches_list2:
     item.print_close_matches()
-piece1.score.metadata.title = 'Test'
+# piece1.score.metadata.title = 'Test'
 print(similarity_score(piece1.note_list, piece2.note_list, 5))
 print(similarity_score2(piece1.note_list, piece2.note_list, 5))

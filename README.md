@@ -61,6 +61,7 @@ close_matches = find_close_matches(patterns, 10, 1)
     piece.note_list_selected_beats([beats])
     piece.note_list_all_parts(starting_measure, number_of_measures_after)
     piece.note_list_single_part(part_number, starting_measure, number_of_measures_after)
+    piece.note_list_by_offset([offsets]) 
     ```
 - At this point similarity scores can be shown
   - size of pattern indicates how many notes in a row need to follow the same rhythmic pattern to be considered a match

@@ -112,6 +112,26 @@ class ScoreBase:
             pure_notes.append(note_obj)
         return pure_notes
 
+    # Better tuned for different time signatures
+    def note_list_by_offset(self, offsets:list):
+        pure_notes = []
+        part_number = 0
+        parts = self.score.getElementsByClass(stream.Part)
+        for part in parts:
+            part_number += 1
+            measures = part.getElementsByClass(stream.Measure)
+            for measure in measures:
+                voices = measure.getElementsByClass(stream.Voice)
+                for voice in voices:
+                    for note in voice:
+                        for point in offsets:
+                            print(note.offset, point)
+                            if point >= note.offset and point < (note.offset + note.quarterLength):
+                                note_obj = NoteListElement(note, self.score.metadata, part.partName, part_number, note.quarterLength, self.url)
+                                pure_notes.append(note_obj)
+                                break
+        return pure_notes
+
     # Allows for very specific note selection
     def note_list_single_part(self, part, measure_start, num_measures):
         pure_notes = []
@@ -125,6 +145,7 @@ class ScoreBase:
             voices = measure.getElementsByClass(stream.Voice)
             for voice in voices:
                 for note in voice:
+                    print(note.offset)
                     if note.tie is not None:
                         if add_tied_note == True:
                             note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part, note.quarterLength, self.url)

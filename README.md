@@ -8,6 +8,13 @@ Project Goals:
 - export ema
 - similarity of two objects
 
+## Assisted Usage
+For a guided way to get results for the basic intended usages of the project, simply enter: 
+```
+assisted_interface()
+```
+wherever you are writing your code.
+
 ## Sample Usage
 - One piece at a time
 ```

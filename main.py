@@ -125,7 +125,7 @@ class ScoreBase:
                 for voice in voices:
                     for note in voice:
                         for point in offsets:
-                            print(note.offset, point)
+                            #print(note.offset, point)
                             if point >= note.offset and point < (note.offset + note.quarterLength):
                                 note_obj = NoteListElement(note, self.score.metadata, part.partName, part_number, note.quarterLength, self.url)
                                 pure_notes.append(note_obj)
@@ -213,12 +213,13 @@ class IntervalBase:
     def vectorize_semitone(self, notes):
         vec = []
         for i in range(len(notes)-1):
-            try:
-                interval = VectorInterval(interval.Interval(notes[i].note, notes[i+1].note).semitones, notes[i], notes[i+1])
-                vec.append(interval)
-            except:
-                interval = VectorInterval("Rest", notes[i], notes[i+1])
-                vec.append(interval)
+            if notes[i].note.isRest or notes[i+1].note.isRest:
+                interval_obj = VectorInterval("Rest", notes[i], notes[i+1])
+                vec.append(interval_obj)
+            else:
+                interval_semitones = interval.Interval(notes[i].note, notes[i+1].note).semitones
+                interval_obj = VectorInterval(interval_semitones, notes[i], notes[i+1])
+                vec.append(interval_obj)
         return vec
 
     # Construct intervals in terms of generic distance between notes
@@ -245,7 +246,7 @@ class Match:
         ema += (str(self.first_note.note.beat) + "-end")
         for i in range(self.last_note.note.measureNumber - self.first_note.note.measureNumber - 1):
             ema += ",all"
-        ema += (",start-" + str(self.last_note.note.beat))
+        ema += (",start-" + str(self.last_note.note.beat + self.last_note.note.quarterLength))
         self.ema = ema
         self.durations = durations
 
@@ -427,3 +428,41 @@ def similarity_score2(notes1, notes2, pattern_size):
         else:
             score += len(matches.matches)
     return ((len(exact_matches) / (len(notes1) + len(notes2))) + (len(close_matches) / (len(notes1) + len(notes2)))) / 2
+
+def assisted_interface():
+    print("You can use ctrl-c to quit exit at any time.")
+    urls = []
+    url = input("Enter a url, or 'done' when finished: ")
+    while url != 'done':
+        urls.append(url)
+        url = input("Enter a url, or 'done' when finished: ")
+    corpus = CorpusBase(urls, [])
+    # Add in logic for non-whole piece selection
+    vectors = IntervalBase(corpus.note_list)
+    pattern_size = int(input("Enter the size of pattern you would like to analyze: "))
+    interval_type = input("Enter 1 to match using generic intervals or enter 2 to match using semitone intervals: ")
+    while interval_type != '1' and interval_type != '2':
+        interval_type = input("Invalid input, enter 1 for generic intervals or 2 for semitone intervals: ")
+    if interval_type == '1':
+        patterns = into_patterns([vectors.generic_intervals], pattern_size)
+    if interval_type == '2':
+        patterns = into_patterns([vectors.semitone_intervals], pattern_size)
+    min_matches = int(input("Enter the minimum number of matches needed to be displayed: "))
+    close_or_exact = input("Enter 1 to include close matches or enter 2 for only exact matches: ")
+    while close_or_exact != '1' and close_or_exact != '2':
+        close_or_exact = input("Invalid input, enter 1 for close matches or 2 for only exact matches: ")
+    if close_or_exact == '1':
+        max_dif = int(input("Enter the maximum total distance threshold for a close match: "))
+        matches = find_close_matches(patterns, min_matches, max_dif)
+    if close_or_exact == '2':
+        matches = find_exact_matches(patterns, min_matches)
+    print_results = input("Print results? (y/n): ").lower()
+    if print_results == 'y' or print_results == 'yes':
+        if close_or_exact == '1':
+            for item in matches:
+                item.print_close_matches()
+        if close_or_exact == '2':
+            for item in matches:
+                item.print_exact_matches()
+    else:
+        print("We'll let you take it from here: your results array is stored in the variable named 'matches' ")

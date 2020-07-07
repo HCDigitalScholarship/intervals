@@ -22,7 +22,7 @@ exact_matches = find_exact_matches(patterns, 10)
 ```
 corpus = CorpusBase(['https://sameplemeifile1.mei', 'https://sameplemeifile.mei'],[/sample/path/to/mei/file, /sameple/path/two])
 vectors = IntervalBase(corpus.note_list)
-patterns = into_patterns([vector1.semitone_intervals], 5)
+patterns = into_patterns([vectors.semitone_intervals], 5)
 close_matches = find_close_matches(patterns, 10, 1)
 ```
 - Outputting relevant information

@@ -135,7 +135,6 @@ class ScoreBase:
     # Allows for very specific note selection
     def note_list_single_part(self, part, measure_start, num_measures):
         pure_notes = []
-        add_tied_note = True
         part_selected = self.score.getElementsByClass(stream.Part)[part]
         measures = part_selected.getElementsByClass(stream.Measure)
         measures_selected = []
@@ -147,12 +146,10 @@ class ScoreBase:
                 for note in voice:
                     print(note.offset)
                     if note.tie is not None:
-                        if add_tied_note == True:
+                        if note.tie.type == 'start':
                             note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part, note.quarterLength, self.url)
                             pure_notes.append(note_obj)
-                            add_tied_note = False
                         else:
-                            add_tied_note = True
                             pure_notes[len(pure_notes)-1].duration += note.quarterLength
                     else:
                         note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part, note.quarterLength, self.url)
@@ -162,7 +159,6 @@ class ScoreBase:
     # Allows for specific selection in terms of measures, but gets all parts/instruments
     def note_list_all_parts(self, measure_start, num_measures):
         pure_notes = []
-        add_tied_note = True
         parts = self.score.getElementsByClass(stream.Part)
         for part in parts:
             measures = part.getElementsByClass(stream.Measure)
@@ -174,12 +170,10 @@ class ScoreBase:
                 for voice in voices:
                     for note in voice:
                         if note.tie is not None:
-                            if add_tied_note == True:
+                            if note.tie.type == 'start':
                                 note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url)
                                 pure_notes.append(note_obj)
-                                add_tied_note = False
                             else:
-                                add_tied_note = True
                                 pure_notes[len(pure_notes)-1].duration += note.quarterLength
                         else:
                             note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url)
@@ -257,7 +251,6 @@ class PatternMatches:
         self.pattern = pattern
         # matches is a list of Match objects with the same pattern
         self.matches = matches
-
 
     def print_exact_matches(self):
         print("Melodic interval/pattern " + str(self.pattern) + " occurs " + str(len(self.matches)) + " times:")
@@ -429,6 +422,24 @@ def similarity_score2(notes1, notes2, pattern_size):
             score += len(matches.matches)
     return ((len(exact_matches) / (len(notes1) + len(notes2))) + (len(close_matches) / (len(notes1) + len(notes2)))) / 2
 
+# Find all occurences of a specified pattern within a corpus
+def find_motif(pieces: CorpusBase, motif: list, generic: bool):
+    # Assemble into patterns
+    vectors = IntervalBase(pieces.note_list)
+    if generic:
+        patterns = into_patterns([vectors.generic_intervals], len(motif))
+    else:
+        patterns = into_patterns([vectors.semitone_intervals], len(motif))
+    print("Finding instances of pattern " + str(motif) + ": ")
+    # Find all occurences of given motif, print out information associated
+    occurences = 0
+    for pat in patterns:
+        print(pat)
+        if motif == pat[0]:
+            print("Selected pattern occurs in " + str(pat[1].metadata.title) + " part " + str(pat[1].part) + " beginning in measure " + str(pat[1].note.measureNumber) + " and ending in measure " + str(pat[2].note.measureNumber) + ". Note durations: " + str(pat[3]))
+            occurences += 1
+    print("Selected pattern occurs " + str(occurences) + " times.")
+
 def assisted_interface():
     print("You can use ctrl-c to quit exit at any time.")
     urls = []
@@ -464,5 +475,4 @@ def assisted_interface():
         if close_or_exact == '2':
             for item in matches:
                 item.print_exact_matches()
-    else:
-        print("We'll let you take it from here: your results array is stored in the variable named 'matches' ")
+    return matches

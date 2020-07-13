@@ -34,6 +34,7 @@ class CorpusBase:
                 print("Import from " + str(url) + " failed, please check your url/file type. Continuing to next file...")
         mei_conv = converter.subConverters.ConverterMEI()
         for path in paths:
+            print("Requesting file from " + str(path) + "...")
             try:
                 self.scores.append(mei_conv.parseFile(path))
                 print("Successfully imported.")
@@ -236,12 +237,14 @@ class Match:
         self.first_note = first_note
         self.last_note = last_note
         # Construct an ema address for the entire pattern to pass on
-        ema = str(self.first_note.note.measureNumber) + "-" + str(self.last_note.note.measureNumber) + "/" + str(self.first_note.partNumber) + "/"
-        ema += (str(self.first_note.note.beat) + "-end")
+        ema =  str(self.first_note.note.measureNumber) + "-" + str(self.last_note.note.measureNumber) + "/" + str(self.first_note.partNumber) + "/"
+        ema += ("@" + str(self.first_note.note.beat) + "-end")
         for i in range(self.last_note.note.measureNumber - self.first_note.note.measureNumber - 1):
-            ema += ",all"
-        ema += (",start-" + str(self.last_note.note.beat + self.last_note.note.quarterLength))
+            ema += ",@start-end"
+        ema += (",@start-" + str(self.last_note.note.beat))
         self.ema = ema
+        splice = self.first_note.piece_url.index('mei/')
+        self.ema_url = "https://ema.crimproject.org/https%3A%2F%2Fcrimproject.org%2Fmei%2F" + str(self.first_note.piece_url[splice + 4:]) + "/" + str(self.ema)
         self.durations = durations
 
 # Object representing all the occurences of a pattern in a list of notes/vectors
@@ -399,29 +402,6 @@ def similarity_score(notes1, notes2, pattern_size):
             score += 1
     return score / (len(patterns_nodup2) + len(patterns_nodup1))
 
-# A potentially better but less intuitive and clean way to judge similarity
-def similarity_score2(notes1, notes2, pattern_size):
-    notes1_title = notes1[0].metadata.title
-    vectors1 = IntervalBase(notes1)
-    vectors2 = IntervalBase(notes2)
-    exact_matches = find_exact_matches([vectors1.generic_intervals, vectors2.generic_intervals], pattern_size, 3)
-    close_matches = find_close_matches([vectors1.generic_intervals, vectors2.generic_intervals], pattern_size, 3, 1)
-    score = 0
-    for matches in exact_matches:
-        from1, from2 = 0, 0
-        for match in matches.matches:
-            if match.first_note.metadata.title == notes1_title:
-                from1 += 1
-            else:
-                from2 += 1
-        if from1 == 0 or from2 == 0:
-            pass
-        elif from2 / from1 > 4 or from1 / from2 > 4:
-            score += (len(matches.matches) / 2)
-        else:
-            score += len(matches.matches)
-    return ((len(exact_matches) / (len(notes1) + len(notes2))) + (len(close_matches) / (len(notes1) + len(notes2)))) / 2
-
 # Find all occurences of a specified pattern within a corpus
 def find_motif(pieces: CorpusBase, motif: list, generic: bool):
     # Assemble into patterns
@@ -434,21 +414,38 @@ def find_motif(pieces: CorpusBase, motif: list, generic: bool):
     # Find all occurences of given motif, print out information associated
     occurences = 0
     for pat in patterns:
-        print(pat)
         if motif == pat[0]:
             print("Selected pattern occurs in " + str(pat[1].metadata.title) + " part " + str(pat[1].part) + " beginning in measure " + str(pat[1].note.measureNumber) + " and ending in measure " + str(pat[2].note.measureNumber) + ". Note durations: " + str(pat[3]))
             occurences += 1
     print("Selected pattern occurs " + str(occurences) + " times.")
 
+# Given list of matches, write to csv in current working directory
+def export_to_csv(matches: list):
+    proceed = input("This method will create a csv file in your current working directory. Continue? (y/n): ").lower()
+    csv_name = input("Enter a name for your csv file (.csv will be appended): ")
+    csv_name += '.csv'
+    if proceed != 'y' and proceed != 'yes':
+        print("Exiting...")
+        return
+    import csv
+    with open(csv_name, mode='w') as matches_file:
+        matches_writer = csv.writer(matches_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        matches_writer.writerow(['Pattern Generating Match', 'Pattern matched', 'Piece Title', 'Part', 'First Note Measure Number', 'Last Note Measure Number', 'Note Durations', 'EMA', 'EMA url'])
+        for match_series in matches:
+            for match in match_series.matches:
+                matches_writer.writerow([match_series.pattern, match.pattern, match.first_note.metadata.title, match.first_note.part, match.first_note.note.measureNumber, match.last_note.note.measureNumber, match.durations, match.ema, match.ema_url])
+    print("CSV created in your current working directory.")
+
+# For more naive usage- allows for user interaction, has return value of list of matches
+# All features incorporated except non-whole piece selection
 def assisted_interface():
-    print("You can use ctrl-c to quit exit at any time.")
+    print("You can use ctrl-c to quit exit at any time. If you proceed through the entire process, the matches array will be returned from this function")
     urls = []
     url = input("Enter a url, or 'done' when finished: ")
     while url != 'done':
         urls.append(url)
         url = input("Enter a url, or 'done' when finished: ")
     corpus = CorpusBase(urls, [])
-    # Add in logic for non-whole piece selection
     vectors = IntervalBase(corpus.note_list)
     pattern_size = int(input("Enter the size of pattern you would like to analyze: "))
     interval_type = input("Enter 1 to match using generic intervals or enter 2 to match using semitone intervals: ")
@@ -467,6 +464,9 @@ def assisted_interface():
         matches = find_close_matches(patterns, min_matches, max_dif)
     if close_or_exact == '2':
         matches = find_exact_matches(patterns, min_matches)
+    csv_results = input("Export results to CSV? (y/n): ").lower()
+    if csv_results == 'y' or csv_results == 'yes':
+        export_to_csv(matches)
     print_results = input("Print results? (y/n): ").lower()
     if print_results == 'y' or print_results == 'yes':
         if close_or_exact == '1':

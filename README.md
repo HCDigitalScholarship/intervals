@@ -1,7 +1,10 @@
 # Building a music similarity engine based on intervals
 
+Current build is still being tested (i.e. not up to date with PyPI), to use this version, download files and use ```from main import *``` in a python shell.
+
 ## Find the project on Github and PyPI
 [Github](https://github.com/HCDigitalScholarship/intervals)
+
 [PyPI](https://pypi.org/project/crim-intervals/)
 
 ## Project Goals:

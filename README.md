@@ -1,18 +1,15 @@
-# Building a music similarity engine based on intervals
-
-Current build is still being tested (i.e. not up to date with PyPI), to use this version, download files and use ```from main import *``` in a python shell.
+# An interval-analysis based music similarity engine
 
 ## Find the project on Github and PyPI
-[Github](https://github.com/HCDigitalScholarship/intervals)
-
-[PyPI](https://pypi.org/project/crim-intervals/)
+- [Github](https://github.com/HCDigitalScholarship/intervals)
+- [PyPI](https://pypi.org/project/crim-intervals/)
 
 ## Project Goals:
 - Load mei file(s) from url or path
 - Carve out desired portion of piece/corpus
 - Create a sequence of interval objects from the score
 - Set filters on parts, measures, ids
-- Export ema
+- Export EMA
 - Analyze similarity of two objects
 
 ## Assisted Usage
@@ -113,5 +110,11 @@ find_close_matches(return value from into_patterns, minimum matches needed to be
 - Export to csv in current working directory:
 ```
 export_to_csv(exact_matches)
+```
+- Classify matches into periodic entries, imitative duos, or fuga in an attempt to highlight similarity
+  - durations_threshold is the cumulative rhythmic difference acceptable for patterns to be classified
+```
+similarity_score(exact_matches, durations_threshold)
+similarity_score(close_matches, durations_threshold)
 ```
 - Run desired analysis with your own python code, print out results, etc.

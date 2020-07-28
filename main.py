@@ -231,7 +231,19 @@ def assisted_interface():
 def sortMatches(match):
     return match.first_note.offset
 
-def classify_matches(exact_matches: list):
+def compare_durations(durations1, durations2, threshold):
+    total = 0
+    durations1_sum, durations2_sum = 0, 0
+    for i in range(len(durations1)):
+        total += abs(durations1[i]-durations2[i])
+        durations1_sum += durations1[i]
+        durations2_sum += durations2[i]
+    if total <= threshold or durations1_sum == durations2_sum:
+        return True
+    else:
+        return False
+
+def classify_matches(exact_matches: list, duration_threshold):
     # TO-DO: add in factoring for durations, narrow 80 beats window
     periodic_entries, im_duos, fuga = [], [], []
     for list_matches in exact_matches:
@@ -239,11 +251,12 @@ def classify_matches(exact_matches: list):
         match_instance = list_matches.matches
         match_instance.sort(key = sortMatches)
         for index in range(len(match_instance) - 1):
-            offset_difs.append(match_instance[index + 1].first_note.offset -  match_instance[index].first_note.offset)
-            offset_difs_info.append((match_instance[index], match_instance[index + 1]))
-            i = 0
+            if compare_durations(match_instance[index + 1].durations, match_instance[index].durations, durations_threshold):
+                offset_difs.append(match_instance[index + 1].first_note.offset -  match_instance[index].first_note.offset)
+                offset_difs_info.append((match_instance[index], match_instance[index + 1]))
+        i = 0
         while i < len(offset_difs) - 2:
-            if offset_difs[i] > 80 or offset_difs[i + 1] > 80:
+            if offset_difs[i] > 64 or offset_difs[i + 1] > 64:
                 pass
             elif offset_difs[i] == offset_difs[i + 1] and offset_difs[i] == offset_difs[i + 2]:
                 periodic_entries.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1]))

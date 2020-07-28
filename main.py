@@ -243,7 +243,7 @@ def compare_durations(durations1, durations2, threshold):
     else:
         return False
 
-def classify_matches(exact_matches: list, duration_threshold):
+def classify_matches(exact_matches: list, durations_threshold):
     # TO-DO: add in factoring for durations, narrow 80 beats window
     periodic_entries, im_duos, fuga = [], [], []
     for list_matches in exact_matches:

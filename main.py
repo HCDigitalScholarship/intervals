@@ -232,68 +232,6 @@ def sortMatches(match):
     return match.first_note.offset
 
 def classify_matches(exact_matches: list):
-    periodic_entries = []
-    for pattern in exact_matches:
-        list_matches = pattern.matches
-        list_matches.sort(key = sortMatches)
-        index = 0
-        offset_difs = []
-        while index < len(list_matches) - 2:
-            offset_difs.append((list_matches[index + 1].first_note.offset - list_matches[index].first_note.offset, list_matches[index ].first_note.partNumber, list_matches[index + 1].first_note.partNumber))
-            index += 1
-        i = 0
-        while i < len(offset_difs) - 3:
-            if offset_difs[i][1] + 1 == offset_difs[i][2]:
-                if (offset_difs[i][0] == offset_difs[i + 1][0] == offset_difs[i + 2][0]) and (offset_difs[i][1] + 2 == offset_difs[i + 1][1] + 1 == offset_difs[i + 2][1]):
-                    periodic_entries.append([list_matches[i], list_matches[i + 1], list_matches[i + 2], list_matches[i + 3]])
-            i += 1
-    for b in periodic_entries:
-        print("Periodic Entry: ")
-        for c in b:
-            print(c.first_note.note.measureNumber)
-    return periodic_entries
-
-def classify_matches2(exact_matches: list):
-    confirmed_pens = []
-    im_duos = []
-    for pattern in exact_matches:
-        list_matches = pattern.matches
-        list_matches.sort(key = sortMatches)
-        match_groups = []
-        for index, match_instance in enumerate(list_matches):
-             i = 1
-             while i + index < len(list_matches):
-                 if match_instance.last_note.offset >= list_matches[i+index].first_note.offset:
-                     match_groups.append([match_instance, list_matches[i+index], list_matches[i+index].first_note.offset-match_instance.first_note.offset])
-                     #print(match_instance.first_note.offset, list_matches[i+index].first_note.offset)
-                 i += 1
-
-        index1 = 0
-        while index1 < len(match_groups) - 2:
-            possible_pen = [match_groups[index1]]
-            if match_groups[index1][1].last_note.offset >= match_groups[index1 + 1][0].first_note.offset:
-                possible_pen.append(match_groups[index1 + 1])
-                index1 += 1
-                if match_groups[index1][1].last_note.offset >= match_groups[index1 + 1][0].first_note.offset:
-                    possible_pen.append(match_groups[index1 + 1])
-                    confirmed_pens.append(possible_pen)
-                    index1 += 1
-            elif match_groups[index1 + 1][0].first_note.offset - match_groups[index1][1].last_note.offset > 8:
-                im_duos.append([match_groups[index1], match_groups[index1 + 1]])
-                index1 += 1
-            else:
-                index1 += 1
-    for a in confirmed_pens:
-        print("Periodic Entry: ")
-        for b in a:
-                print(b[0].first_note.note.measureNumber, b[1].first_note.note.measureNumber)
-    for a in im_duos:
-        print("Imitative Duo: ")
-        for b in a:
-                print(b[0].first_note.note.measureNumber, b[1].first_note.note.measureNumber)
-    return (confirmed_pens, im_duos)
-
-def classify_matches3(exact_matches: list):
     # TO-DO: add in factoring for durations, narrow 80 beats window
     periodic_entries, im_duos, fuga = [], [], []
     for list_matches in exact_matches:
@@ -308,35 +246,30 @@ def classify_matches3(exact_matches: list):
             if offset_difs[i] > 80 or offset_difs[i + 1] > 80:
                 pass
             elif offset_difs[i] == offset_difs[i + 1] and offset_difs[i] == offset_difs[i + 2]:
-                print("PEN2")
                 periodic_entries.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1]))
             elif offset_difs[i] == offset_difs[i + 1]:
-                print("PEN")
                 periodic_entries.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1]))
             elif offset_difs[i] == offset_difs[i + 2]:
-                print("IM")
                 im_duos.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1]))
             else:
-                print("fuga")
                 fuga.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1]))
             i += 1
-                # There are more intelligent ways to do this
-                # if offset_difs[i] == offset_difs[i + 1]:
-                #     periodic_entries.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1]))
-                # else:
-                #     j = i + 2
-                #     while j < len(offset_difs) - 1:
-                #         if offset_difs[j] == offset_difs[i]:
-                #             im_duos.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[j][0], offset_difs_info[j][1]))
-                #         j += 1
-                # i += 1
     for entry in periodic_entries:
         print("Periodic Entry:")
-        print("Pattern: " + str(entry[0].pattern) + ", Offset start: " + str(entry[0].first_note.offset) + " in voice " + str(entry[0].first_note.partNumber) + ", Offset end: " + str(entry[1].last_note.offset))
+        a = "Pattern: " + str(entry[0].pattern) + ", Locations in entry: "
+        for b in entry:
+            a += "\n- Measure " + str(b.first_note.note.measureNumber) + " in voice " + str(b.first_note.partNumber)
+        print(a)
     for duo in im_duos:
         print("Imitative Duo:")
-        print("Pattern: " + str(duo[0].pattern) + ", Offset first pair: " + str(duo[0].first_note.offset) + ", Offset second pair: " + str(duo[1].first_note.offset))
+        a = "Pattern: " + str(entry[0].pattern) + ", Locations in entry: "
+        for c in duo:
+            a += "\n- Measure " + str(c.first_note.note.measureNumber) + " in voice " + str(c.first_note.partNumber)
+        print(a)
     for f in fuga:
         print("Fuga:")
-        print("Pattern: " + str(f[0].pattern) + ", Offset start: " + str(f[0].first_note.offset) + " in voice " + str(f[0].first_note.partNumber) + ", Offset second pair: " + str(f[1].last_note.offset))
+        a = "Pattern: " + str(entry[0].pattern) + ", Locations in entry: "
+        for d in f:
+            a += "\n- Measure " + str(d.first_note.note.measureNumber) + " in voice " + str(d.first_note.partNumber)
+        print(a)
     return ((periodic_entries, im_duos, fuga))

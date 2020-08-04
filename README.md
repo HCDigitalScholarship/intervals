@@ -114,7 +114,7 @@ export_to_csv(exact_matches)
 - Classify matches into periodic entries, imitative duos, or fuga in an attempt to highlight similarity
   - durations_threshold is the cumulative rhythmic difference acceptable for patterns to be classified
 ```
-similarity_score(exact_matches, durations_threshold)
-similarity_score(close_matches, durations_threshold)
+classify_matches(exact_matches, durations_threshold)
+classify_matches(close_matches, durations_threshold)
 ```
 - Run desired analysis with your own python code, print out results, etc.

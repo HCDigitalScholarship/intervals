@@ -19,7 +19,10 @@ assisted_interface()
 ```
 wherever you are writing your code.
 
-## Sample Usage
+## Method, Class help
+The project is now documented with docstrings, for help using/understanding methods or classes use ```help(method_or_class_name)```
+
+## Example Usage
 - One piece at a time
 ```
 piece1 = ScoreBase('https://crimproject.org/mei/CRIM_Model_0008.mei')
@@ -59,7 +62,7 @@ close_matches = find_close_matches(patterns, 10, 1)
   ```
   - Find occurences of a motif
   ```
-  find_motif(CorpusBase object, [motif], generic intervals boolean)
+  find_motif(CorpusBase object, [motif], generic intervals boolean-optional)
   ```
 
 ## Usage Flow ~~~
@@ -89,7 +92,7 @@ close_matches = find_close_matches(patterns, 10, 1)
 - At this point similarity scores can be shown
   - size of pattern indicates how many notes in a row need to follow the same rhythmic pattern to be considered a match
 ```
-similarity_score(first piece note list, second piece note list, size of pattern)
+similarity_score(first piece note list, second piece note list)
 ```
 - Decide between semitone intervals and generic intervals
 ```
@@ -114,7 +117,7 @@ export_to_csv(exact_matches)
 - Classify matches into periodic entries, imitative duos, or fuga in an attempt to highlight similarity
   - durations_threshold is the cumulative rhythmic difference acceptable for patterns to be classified
 ```
-classify_matches(exact_matches, durations_threshold)
-classify_matches(close_matches, durations_threshold)
+classify_matches(exact_matches, durations_threshold-optional)
+classify_matches(close_matches, durations_threshold-optional)
 ```
 - Run desired analysis with your own python code, print out results, etc.

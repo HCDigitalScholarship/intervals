@@ -6,6 +6,28 @@ from pathlib import Path
 
 # An extension of the music21 note class with more information easily accessible
 class NoteListElement:
+    """
+    An extension of the music21 note class
+
+    Attributes
+    ----------
+    note : m21.note.Note
+        music21 note class
+    offset : int
+        cumulative offset of note
+    id : int
+        unique music21 id
+    metadata : music21.metadata
+        piece metadata- not normally attached to a music21 note
+    part : str
+        voice name
+    partNumber : int
+        voice number, not 0 indexed
+    duration : int
+        note duration
+    piece_url : str
+        piece url for note
+    """
     def __init__(self, note: m21.note.Note, metadata, part, partNumber, duration, piece_url):
         self.note = note
         self.offset = self.note.offset
@@ -22,8 +44,40 @@ class NoteListElement:
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
 class CorpusBase:
     # Need to consider whether users can input certain scores (which means needing urls selected too), or just to do all in the corpus automatically
+    """
+    A class for importing multiple scores at once
+
+    Attributes
+    ----------
+    urls : list
+        list of urls of scores to be imported
+    paths : list
+        list of file paths of scores to be imported
+    scores : list of music21.Score
+        list of music21.Score objects- imported from urls and paths
+    all_urls : list
+        stores both paths and urls- not for user usage
+    note_list : list of NoteListElement
+        list of notes constructed from scores
+    note_list_no_unisons : list of NoteListElement
+        list of notes constructed from scores, combining unisons
+    """
     def __init__(self, urls:list, paths:list):
+        """
+        Parameters
+        ----------
+        urls : list
+            list urls to mei files
+        paths : list
+            list paths to mei files
+
+        Raises
+        ----------
+        Exception
+            If at least one score isn't succesfully imported, raises error
+        """
         self.urls = urls
+        self.paths = paths
         self.scores = []
         self.all_urls = []
         for url in urls:
@@ -49,6 +103,8 @@ class CorpusBase:
         self.no_unisons = self.note_list_no_unisons()
 
     def note_list_whole_piece(self):
+        """ Creates a note list from the whole piece for all scores- default note_list
+        """
         pure_notes = []
         urls_index = 0
         for score in self.scores:
@@ -71,6 +127,11 @@ class CorpusBase:
         return pure_notes
 
     def note_list_no_unisons(self):
+        """ Creates a note list from the whole piece for all scores combining unisons
+
+        Combines consecutive notes at the same pitch into one note, adding in the duration
+        of the next note into the previous one.
+        """
         pure_notes = []
         urls_index = 0
         for score in self.scores:
@@ -94,6 +155,14 @@ class CorpusBase:
         return pure_notes
 
     def note_list_selected_offset(self, offsets: list):
+        """
+        Creates a note list from the whole piece for all scores, going by provided offsets
+
+        Parameters
+        ----------
+        offsets : list
+            offsets within measures to collect notes at (notes collected will be those that are sounding at that offset- not just starting)
+        """
         pure_notes = []
         urls_index = 0
         for score in self.scores:
@@ -115,7 +184,29 @@ class CorpusBase:
 
 # For single file uploads
 class ScoreBase:
+    """
+    A class for importing a single score- offers more precise construction options
+
+    Attributes
+    ----------
+    url : str
+        url or path of mei file
+    score : music21.Score
+        music21.Score object gathered from mei file import
+    note_list : list of NoteListElement
+        list of notes constructed from score
+    """
     def __init__(self, url):
+        """
+        Parameters
+        ----------
+        url:
+            url or path of mei file
+        Raises
+        ----------
+        Exception
+            If score isn't succesfully imported, raises error
+        """
         self.url = url
         print("Requesting file from " + str(self.url) + "...")
         # Detect if local file of url based on leading /
@@ -132,9 +223,10 @@ class ScoreBase:
             except:
                 raise Exception("Import from " + str(self.url) + " failed, please check your url/file type")
         self.note_list = self.note_list_whole_piece()
-        self.note_list_down_beats = self.note_list_selected_beats([1,3])
 
     def note_list_whole_piece(self):
+        """ Creates a note list from the whole piece- default note_list
+        """
         pure_notes = []
         parts = self.score.getElementsByClass(stream.Part)
         for part in parts:
@@ -155,6 +247,11 @@ class ScoreBase:
 
     # Combines unison intervals into one note- generally for increased pattern finding
     def note_list_no_unisons(self):
+        """ Creates a note list from the whole piece for all scores combining unisons
+
+        Combines consecutive notes at the same pitch into one note, adding in the duration
+        of the next note into the previous one.
+        """
         pure_notes = []
         urls_index = 0
         parts = self.score.getElementsByClass(stream.Part)
@@ -178,6 +275,14 @@ class ScoreBase:
 
     # Gets only notes that start on the specified beats- allows for user specification in case of weird time signatures
     def note_list_selected_beats(self, beats: list):
+        """
+        Creates a note list from the whole piece, going by provided beats
+
+        Parameters
+        ----------
+        beats : list
+            collects all notes which begin on specified beat
+        """
         pure_notes = []
         parts = self.score.getElementsByClass(stream.Part)
         for part in parts:
@@ -190,8 +295,15 @@ class ScoreBase:
             pure_notes.append(note_obj)
         return pure_notes
 
-    # Better tuned for different time signatures
     def note_list_by_offset(self, offsets:list):
+        """
+        Creates a note list from the whole piece, going by provided offsets
+
+        Parameters
+        ----------
+        offsets : list
+            offsets within measures to collect notes at (notes collected will be those that are sounding at that offset- not just starting)
+        """
         pure_notes = []
         part_number = 0
         parts = self.score.getElementsByClass(stream.Part)
@@ -203,7 +315,6 @@ class ScoreBase:
                 for voice in voices:
                     for note in voice:
                         for point in offsets:
-                            #print(note.offset, point)
                             if point >= note.offset and point < (note.offset + note.quarterLength):
                                 note_obj = NoteListElement(note, self.score.metadata, part.partName, part_number, note.quarterLength, self.url)
                                 pure_notes.append(note_obj)
@@ -212,6 +323,18 @@ class ScoreBase:
 
     # Allows for very specific note selection
     def note_list_single_part(self, part, measure_start, num_measures):
+        """
+        Creates a note list from a selected measure range within a single voice
+
+        Parameters
+        ----------
+        part : int
+            part number
+        measure_start : int
+            starting measure
+        num_measures : int
+            measures until end measure
+        """
         pure_notes = []
         part_selected = self.score.getElementsByClass(stream.Part)[part]
         measures = part_selected.getElementsByClass(stream.Measure)
@@ -236,6 +359,16 @@ class ScoreBase:
 
     # Allows for specific selection in terms of measures, but gets all parts/instruments
     def note_list_all_parts(self, measure_start, num_measures):
+        """
+        Creates a note list from a selected measure range over all voices
+
+        Parameters
+        ----------
+        measure_start : int
+            starting measure
+        num_measures : int
+            measures until end measure
+        """
         pure_notes = []
         parts = self.score.getElementsByClass(stream.Part)
         for part in parts:
@@ -261,8 +394,20 @@ class ScoreBase:
             pure_notes.append(note_obj)
         return pure_notes
 
-# An individual vector, not directly used by the user
+
 class VectorInterval:
+    """
+    An individual vector with information about the notes creating it
+
+    Attributes
+    ----------
+    vector : int or str
+        vector- in generic or semitones: is "Rest" if done between a note and a rest
+    note1 : NoteListElement
+        first note of interval pair
+    note2 : NoteListElement
+        list of notes constructed from score
+    """
     def __init__(self, vector, note1: NoteListElement, note2: NoteListElement):
         self.vector = vector
         self.note1 = note1
@@ -275,14 +420,40 @@ class VectorInterval:
             return "<VectorInterval: {}, First Note: {}, Second Note: {}>".format(self.vector, self.note1.note.nameWithOctave, self.note2.note.nameWithOctave)
 
 # Allows for selected "vectorizations" given a note list created from either ScoreBase or CorpusBase
+# Consider making this a Standalone method- an object seems slightly redundant/hard to justify
 class IntervalBase:
+    """
+    A list of VectorInterval objects created from a note list
+
+    Attributes
+    ----------
+    notes : list
+        note list gathered from either CorpusBase or ScoreBase's methods/attributes
+    generic_intervals : list
+        creates list of VectorInterval objects in terms of generic intervals
+    semitone_intervals : list
+        creates list of VectorInterval objects in terms of semitone intervals
+    """
     def __init__(self, notes):
+        """
+        Parameters
+        ----------
+        notes:
+            note list gathered from either CorpusBase or ScoreBase's methods/attributes
+        """
         self.notes = notes
         self.generic_intervals = self.vectorize_generic(self.notes)
         self.semitone_intervals = self.vectorize_semitone(self.notes)
 
     # Construct intervals in terms of semitone distances between notes
     def vectorize_semitone(self, notes):
+        """Creates list of VectorInterval objects in terms of semitone intervals
+
+        Parameters
+        ----------
+        notes:
+            (frequently self.notes): note list gathered from either CorpusBase or ScoreBase's methods/attributes
+        """
         vec = []
         for i in range(len(notes)-1):
             if notes[i].note.isRest or notes[i+1].note.isRest:
@@ -296,6 +467,13 @@ class IntervalBase:
 
     # Construct intervals in terms of generic distance between notes
     def vectorize_generic(self, notes):
+        """Creates list of VectorInterval objects in terms of generic intervals
+
+        Parameters
+        ----------
+        notes:
+            (frequently self.notes): note list gathered from either CorpusBase or ScoreBase's methods/attributes
+        """
         vec = []
         for i in range(len(notes)-1):
             if notes[i].note.isRest or notes[i+1].note.isRest:
@@ -309,6 +487,24 @@ class IntervalBase:
 
 # An individual match event- can be used for close matches as well
 class Match:
+    """
+    A pattern that has been deemed part of a match
+
+    Attributes
+    ----------
+    pattern : list
+        list of vectors in pattern
+    first_note : NoteListElement
+        first note in the soggetti creating the vector pattern
+    last_note : NoteListElement
+        last note in the soggetti creating the vector pattern
+    durations : list
+        list of durations of notes in soggetti creating the vector pattern
+    ema : str
+        standalone ema snippet for the pattern
+    ema_url : str
+        url to get mei for the pattern
+    """
     def __init__(self, pattern, first_note: NoteListElement, last_note: NoteListElement, durations):
         self.pattern = pattern
         self.first_note = first_note
@@ -330,12 +526,23 @@ class Match:
 # Object representing all the occurences of a pattern in a list of notes/vectors
 # User generally doesn't create this- it is done in the finding matches methods
 class PatternMatches:
+    """
+    A group of Match objects generated from a pattern
+
+    Attributes
+    ----------
+    pattern : list
+        pattern generating matches
+    matches : list
+        list of Match objects found to be matching the pattern
+    """
     def __init__(self, pattern, matches:list):
         self.pattern = pattern
-        # matches is a list of Match objects with the same pattern
         self.matches = matches
 
     def print_exact_matches(self):
+        """A facilitated way to display all the matches gathered by a find_exact_matches search
+        """
         print("Melodic interval/pattern " + str(self.pattern) + " occurs " + str(len(self.matches)) + " times:")
         for match in self.matches:
             print("In " + str(match.first_note.metadata.title) + " part " + str(match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) +\
@@ -343,6 +550,8 @@ class PatternMatches:
         print("\n")
 
     def print_close_matches(self):
+        """A facilitated way to display all the matches gathered by a find_close_matches search
+        """
         print("Occurences of " + str(self.pattern) + " or similar:")
         for match in self.matches:
             print("Pattern " + str(match.pattern) + " appears in " + str(match.first_note.metadata.title) + " part " + str(match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) +\

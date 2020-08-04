@@ -1,7 +1,22 @@
 from main_objs import *
 
-# Standalone methods for match analysis
-def find_exact_matches(patterns_data, min_matches):
+# Potential redesign needed due to unstable nature of having user give over patterns_data
+# Potential fix is reincorporating into_patterns back into this method
+def find_exact_matches(patterns_data, min_matches=5):
+    """Takes in a series of vector patterns with data attached and finds exact matches
+
+    Parameters
+    ----------
+    patterns_data : return value from into_patterns
+        MUST be return value from into_patterns
+    min_matches : int, optional
+        Minimum number of matches needed to be deemed relevant, defaults to 5
+
+    Returns
+    -------
+    all_matches_list : list
+        A list of PatternMatches objects
+    """
     # A series of arrays are needed to keep track of various data associated with each pattern
     print("Finding exact matches...")
     patterns_nodup, patterns = [], []
@@ -30,6 +45,22 @@ def find_exact_matches(patterns_data, min_matches):
 
 # Finds matches based on a cumulative distance difference between two patterns
 def find_close_matches(patterns_data, min_matches, threshold):
+    """Takes in a series of vector patterns with data attached and finds close matches
+
+    Parameters
+    ----------
+    patterns_data : return value from into_patterns
+        MUST be return value from into_patterns
+    min_matches : int, optional
+        Minimum number of matches needed to be deemed relevant, defaults to 5
+    threshold : int
+        Cumulative variance allowed between vector patterns before they are deemed not similar
+
+    Returns
+    -------
+    all_matches_list : list
+        A list of PatternMatches objects
+    """
     # A series of arrays are needed to keep track of various data associated with each pattern
     print("Finding close matches...")
     patterns_nodup = []
@@ -58,6 +89,20 @@ def find_close_matches(patterns_data, min_matches, threshold):
 # Allows for the addition of non-moving-window pattern searching approaches
 # Needs to be called before any matches can be made
 def into_patterns(vectors_list, interval):
+    """Takes in a series of vector patterns with data attached and finds close matches
+
+    Parameters
+    ----------
+    vectors_list : list of vectorized lists
+        MUST be a list from calling generic_intervals or semitone_intervals on a VectorInterval object
+    interval : int
+        size of interval to be analyzed
+
+    Returns
+    -------
+    patterns_data : list of tuples
+        A list of vector patterns with additional information about notes attached
+    """
     pattern, patterns_data = [], []
     for vectors in vectors_list:
         for i in range(len(vectors)-interval):
@@ -77,15 +122,33 @@ def into_patterns(vectors_list, interval):
 
 # Helper for sort_matches
 def sortFunc(pattern):
+    """Helper function for sort_matches
+    """
     return len(pattern.matches)
 
 # Sorting based on the amount of matches each pattern has
 def sort_matches(matches_list):
+    """Sorts and returns a list of PatternMatch objects, ordering by size
+    """
     matches_list.sort(reverse=True, key=sortFunc)
     return matches_list
 
 # Generates a score from 0-1 based on how many patterns within a piece can be found in the other
 def similarity_score(notes1, notes2):
+    """Returns a score from 0-1 of the similarity between two note lists
+
+    Parameters
+    ----------
+    notes1 : list of NoteListElement objects
+        a note list from the CorpusBase or ScoreBase methods
+    notes2 : list of NoteListElement objects
+        a note list from the CorpusBase or ScoreBase methods
+
+    Returns
+    -------
+    final_score : int
+        a score of similarity from 0-1
+    """
     vectors1 = IntervalBase(notes1).generic_intervals
     vectors2 = IntervalBase(notes2).generic_intervals
     interval = 3
@@ -151,10 +214,22 @@ def similarity_score(notes1, notes2):
                         break
         interval += 1
         scores.append(score / (len(patterns_nodup2) + len(patterns_nodup1)))
-    return (scores[0] + scores[1] + scores[2] + scores[3]) / 4
+    final_score = (scores[0] + scores[1] + scores[2] + scores[3]) / 4
+    return final_score
 
 # Find all occurences of a specified pattern within a corpus
-def find_motif(pieces: CorpusBase, motif: list, generic: bool):
+def find_motif(pieces: CorpusBase, motif: list, generic: bool = True):
+    """Prints out all occurences of a specified motif
+
+    Parameters
+    ----------
+    pieces : CorpusBase
+        a CorpusBase object with all scores to be searched
+    motif : list
+        the motif in vectors (e.g. [-2,-2,2,-2,2])
+    generic : bool, optional
+        True to use generic vectors, False for semitone vectors- default is generic
+    """
     # Assemble into patterns
     vectors = IntervalBase(pieces.note_list)
     if generic:
@@ -172,6 +247,13 @@ def find_motif(pieces: CorpusBase, motif: list, generic: bool):
 
 # Given list of matches, write to csv in current working directory
 def export_to_csv(matches: list):
+    """Exports matches data to a csv in the current working directory
+
+    Parameters
+    ----------
+    matches : list
+        return value from either find_exact_matches or find_close_matches
+    """
     proceed = input("This method will create a csv file in your current working directory. Continue? (y/n): ").lower()
     csv_name = input("Enter a name for your csv file (.csv will be appended): ")
     csv_name += '.csv'
@@ -190,6 +272,13 @@ def export_to_csv(matches: list):
 # For more naive usage- allows for user interaction, has return value of list of matches
 # All features incorporated except non-whole piece selection
 def assisted_interface():
+    """Activates the assisted interface for more naive use
+
+    Returns
+    ----------
+    matches : list
+        list of PatternMatches based on the users various inputs
+    """
     print("You can use ctrl-c to quit exit at any time. If you proceed through the entire process, the matches array will be returned from this function")
     urls = []
     url = input("Enter a url, or 'done' when finished: ")
@@ -228,10 +317,11 @@ def assisted_interface():
                 item.print_exact_matches()
     return matches
 
-def sortMatches(match):
-    return match.first_note.offset
-
 def compare_durations(durations1, durations2, threshold):
+    """Used in classify_matches
+
+    works similarly to find_close_matches in terms of its comparison technique
+    """
     total = 0
     durations1_sum, durations2_sum = 0, 0
     for i in range(len(durations1)):
@@ -243,7 +333,35 @@ def compare_durations(durations1, durations2, threshold):
     else:
         return False
 
-def classify_matches(exact_matches: list, durations_threshold):
+def sortMatches(match):
+    """ Helper function for classify_matches
+    """
+    return match.first_note.offset
+
+
+def classify_matches(exact_matches: list, durations_threshold = 2):
+    """Classifies groups of matches into periodic entries, imitative duos, and fuga
+
+    Classifies through offset comparison of matching melodic patterns, prints out information gathered.
+    Reliably accurate results only guaranteed if exact_matches is generated from ONE piece.
+
+    Parameters
+    ----------
+    exact_matches : list
+        return value from find_exact_matches
+    durations_threshold : int, optional
+        maximum cumulative difference between two duration lists before they are deemed not similar, defaults to 2
+
+    Returns
+    -------
+    classified_tuple : tuple
+        classified_tuple[0] : list of lists of Match objects
+            list of periodic entries, which are lists of Match objects
+        classified_tuple[1] : list of lists of Match objects
+            list of imitative_duos, which are lists of Match objects
+        classified_tuple[0] : list of lists of Match objects
+            list of fuga, which are lists of Match objects
+    """
     # TO-DO: add in factoring for durations, narrow 80 beats window
     periodic_entries, im_duos, fuga = [], [], []
     for list_matches in exact_matches:
@@ -259,14 +377,23 @@ def classify_matches(exact_matches: list, durations_threshold):
             if offset_difs[i] > 64 or offset_difs[i + 1] > 64:
                 pass
             elif offset_difs[i] == offset_difs[i + 1] and offset_difs[i] == offset_difs[i + 2]:
-                periodic_entries.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1]))
+                grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
+                grouping = list(dict.fromkeys(grouping))
+                periodic_entries.append(grouping)
             elif offset_difs[i] == offset_difs[i + 1]:
-                periodic_entries.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1]))
+                grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1])
+                grouping = list(dict.fromkeys(grouping))
+                periodic_entries.append(grouping)
             elif offset_difs[i] == offset_difs[i + 2]:
-                im_duos.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1]))
+                grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
+                grouping = list(dict.fromkeys(grouping))
+                im_duos.append(grouping)
             else:
-                fuga.append((offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1]))
+                grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1])
+                grouping = list(dict.fromkeys(grouping))
+                fuga.append(grouping)
             i += 1
+
     for entry in periodic_entries:
         print("Periodic Entry:")
         a = "Pattern: " + str(entry[0].pattern) + ", Locations in entry: "
@@ -275,14 +402,15 @@ def classify_matches(exact_matches: list, durations_threshold):
         print(a)
     for duo in im_duos:
         print("Imitative Duo:")
-        a = "Pattern: " + str(entry[0].pattern) + ", Locations in entry: "
+        a = "Pattern: " + str(duo[0].pattern) + ", Locations in entry: "
         for c in duo:
             a += "\n- Measure " + str(c.first_note.note.measureNumber) + " in voice " + str(c.first_note.partNumber)
         print(a)
     for f in fuga:
         print("Fuga:")
-        a = "Pattern: " + str(entry[0].pattern) + ", Locations in entry: "
+        a = "Pattern: " + str(f[0].pattern) + ", Locations in entry: "
         for d in f:
             a += "\n- Measure " + str(d.first_note.note.measureNumber) + " in voice " + str(d.first_note.partNumber)
         print(a)
-    return ((periodic_entries, im_duos, fuga))
+    classified_tuple = (periodic_entries, im_duos, fuga)
+    return classified_tuple

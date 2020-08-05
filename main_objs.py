@@ -182,6 +182,41 @@ class CorpusBase:
             urls_index += 1
         return pure_notes
 
+    def note_list_incremental_offset(self, min_offset):
+        """
+        Creates a note list from the whole piece for all scores, sampling at a regular interval- not within a measure
+
+        Parameters
+        ----------
+        min_offset : int
+            sample every x offset- 2 will sample every half note, 1 every quarter note, etc.
+        """
+        pure_notes = []
+        urls_index = 0
+        for score in self.scores:
+            min_offset = 2
+            for part in score.getElementsByClass(stream.Part):
+                counter = 0
+                while counter < score.highestTime - min_offset:
+                    stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False, includeEndBoundary=True, includeElementsThatEndAtStart=False)
+                    note_at_offset = None
+                    for item in stuff_at_offset:
+                        if type(item) == m21.note.Note or type(item) == m21.note.Rest:
+                            note_at_offset = item
+                            break
+                    if note_at_offset:
+                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part), min_offset, self.all_urls[urls_index])
+                        note_obj.offset = counter
+                        pure_notes.append(note_obj)
+                    else:
+                        note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), min_offset, self.all_urls[urls_index])
+                        note_obj.offset = counter
+                        pure_notes.append(note_obj)
+                    counter += min_offset
+            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.all_urls[urls_index])
+        urls_index += 1
+        return pure_notes
+
 # For single file uploads
 class ScoreBase:
     """
@@ -394,6 +429,37 @@ class ScoreBase:
             pure_notes.append(note_obj)
         return pure_notes
 
+    def note_list_incremental_offset(self, min_offset):
+        """
+        Creates a note list from the whole piece, sampling at a regular interval- not within a measure
+
+        Parameters
+        ----------
+        min_offset : int
+            sample every x offset- 2 will sample every half note, 1 every quarter note, etc.
+        """
+        pure_notes = []
+        min_offset = 2
+        for part in self.score.getElementsByClass(stream.Part):
+            counter = 0
+            while counter < self.score.highestTime - min_offset:
+                stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False, includeEndBoundary=True, includeElementsThatEndAtStart=False)
+                note_at_offset = None
+                for item in stuff_at_offset:
+                    if type(item) == m21.note.Note or type(item) == m21.note.Rest:
+                        note_at_offset = item
+                        break
+                if note_at_offset:
+                    note_obj = NoteListElement(note_at_offset, self.score.metadata, part.partName, self.score.index(part), min_offset, self.url)
+                    note_obj.offset = counter
+                    pure_notes.append(note_obj)
+                else:
+                    note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), min_offset, self.url)
+                    note_obj.offset = counter
+                    pure_notes.append(note_obj)
+                counter += min_offset
+        note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url)
+        return pure_notes
 
 class VectorInterval:
     """

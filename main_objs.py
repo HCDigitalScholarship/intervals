@@ -62,7 +62,7 @@ class CorpusBase:
     note_list_no_unisons : list of NoteListElement
         list of notes constructed from scores, combining unisons
     """
-    def __init__(self, urls:list, paths:list):
+    def __init__(self, urls:list, paths:list = []):
         """
         Parameters
         ----------

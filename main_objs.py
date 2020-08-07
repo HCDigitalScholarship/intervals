@@ -194,7 +194,6 @@ class CorpusBase:
         pure_notes = []
         urls_index = 0
         for score in self.scores:
-            min_offset = 2
             for part in score.getElementsByClass(stream.Part):
                 counter = 0
                 while counter < score.highestTime - min_offset:
@@ -439,7 +438,6 @@ class ScoreBase:
             sample every x offset- 2 will sample every half note, 1 every quarter note, etc.
         """
         pure_notes = []
-        min_offset = 2
         for part in self.score.getElementsByClass(stream.Part):
             counter = 0
             while counter < self.score.highestTime - min_offset:

@@ -1,7 +1,7 @@
 # An interval-analysis based music similarity engine
 
-## Find the project on Github and PyPI
-### Current Version: 0.3.1
+### Find the project on Github and PyPI
+#### Current Version: 0.3.1
 - [Github](https://github.com/HCDigitalScholarship/intervals)
 - [PyPI](https://pypi.org/project/crim-intervals/)
 
@@ -30,8 +30,8 @@ wherever you are writing your code. The assisted interface will return an array 
 ## User-inputted parameters
 Each parameter listed has its own section below detailing configuration.
 - Whether to input one score at a time, or a entire corpus at once with more limited selection ability, as well as what notes are to be analyzed, and the variety of ways in which they can be grouped (Detailed under "Note List Selection- Corpus" and "Note List Selection- Single Score")
-- Whether to create generic or semitone intervals (Detailed under "Creating vectorized patterns and selecting interval types") 
-- The size of pattern to be analyzed (Detailed under "Creating the vector patterns")
+- Whether to create generic or semitone intervals (Detailed under "Creating vectorized representations and selecting their types") 
+- The size of pattern to be analyzed (Detailed under "Grouping the vectors into patterns")
 - The minimum number of matches needed to be displayed, and optionally, the cumulative difference threshold for a two patterns to be considered closely matched (Detailed under "Finding close and exact matches")
 
 ### Note List Selection- Corpus
@@ -60,7 +60,7 @@ After, decide on how you want to analyze or deconstruct your imported piece:
 - Get a note list from the whole piece, going by provided beats ```score1.note_list_selected_beat([beat1, beat2, etc.])```
 *For more information on each method, use help(method name), for example: help(note_list_incremental_offset)
 
-### Creating vectorized patterns and selecting interval types
+### Creating vectorized representations and selecting their types
 At this point you should have constructed a note list from the methods of a CorpusBase or ScoreBase object. The next step is to group those notes into intervals using the IntervalBase object, which accepts note lists as a list, in case you want to analyze multiple ScoreBase note lists. 
 - Multiple note lists: ```vectors = IntervalBase([score1.note_list_whole_piece(), score2.note_list_incremental_offset(2), corpus.note_list_whole_piece()]```
 - Just one: ```vectors = IntervalBase([corpus.note_list_whole_piece()]```
@@ -68,9 +68,9 @@ The IntervalBase object's methods turn the note list given into the vectors with
 - Semitone intervals: ```vectors.semitone_intervals()```
 - Generic intervals: ```vectors.generic_intervals()```
 
-### Creating the vector patterns
+### Grouping the vectors into patterns
 Now that we have a list of vectors (or intervals between notes), we can begin to place them into patterns to be analyzed for similarity. To do so we must select the size of pattern to be used for our analysis:
-```patterns = into_patterns([vectors.generic_intervals], pattern_size)```
+```patterns = into_patterns(vectors.generic_intervals, pattern_size)```
 *As always, for information on methods and their parameters, use the help() function- help(into_patterns)*
 
 ### Finding close and exact matches

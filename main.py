@@ -414,3 +414,23 @@ def classify_matches(exact_matches: list, durations_threshold = 2):
         print(a)
     classified_tuple = (periodic_entries, im_duos, fuga)
     return classified_tuple
+
+
+def export_pandas(exact_matches):
+    import pandas as pd
+    match_data = []
+    for match_series in exact_matches:
+        for match in match_series.matches:
+            match_dict = {
+              "pattern_generating_match": match_series.pattern,
+              "pattern_matched": match.pattern,
+              "piece_title": match.first_note.metadata.title,
+              "part": match.first_note.part,
+              "start_measure": match.first_note.note.measureNumber,
+              "end_measure": match.last_note.note.measureNumber,
+              "note_durations": match.durations,
+              "ema": match.ema,
+              "ema_url": match.ema_url
+            }
+            match_data.append(match_dict)
+    return pd.DataFrame(match_data)

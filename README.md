@@ -1,7 +1,7 @@
 # An interval-analysis based music similarity engine
 
 ### Find the project on Github and PyPI
-#### Current Version: 0.3.1
+#### Current Version: 0.3.2
 - [Github](https://github.com/HCDigitalScholarship/intervals)
 - [PyPI](https://pypi.org/project/crim-intervals/)
 
@@ -10,7 +10,7 @@
 - Find occurences of matching soggetto given a "vectorized" pattern
 - Output a 0-1 similarity score between two musical works
 - Classify melodic matches into periodic entries, imitative duos, fuga
-- Output match data in a variety of ways: command line output, csv, python data types
+- Output match data in a variety of ways: command line output, csv, pandas, python data types
 
 ## Getting Started
 To download the project via the Python Packagae Index, use ```pip install crim-intervals``` and in a python shell enter ```from crim_intervals import *```
@@ -30,14 +30,14 @@ wherever you are writing your code. The assisted interface will return an array 
 ## User-inputted parameters
 Each parameter listed has its own section below detailing configuration.
 - Whether to input one score at a time, or a entire corpus at once with more limited selection ability, as well as what notes are to be analyzed, and the variety of ways in which they can be grouped (Detailed under "Note List Selection- Corpus" and "Note List Selection- Single Score")
-- Whether to create generic or semitone intervals (Detailed under "Creating vectorized representations and selecting their types") 
+- Whether to create generic or semitone intervals (Detailed under "Creating vectorized representations and selecting their types")
 - The size of pattern to be analyzed (Detailed under "Grouping the vectors into patterns")
 - The minimum number of matches needed to be displayed, and optionally, the cumulative difference threshold for a two patterns to be considered closely matched (Detailed under "Finding close and exact matches")
 
 ### Note List Selection- Corpus
-This section covers the capabilities falling under the CorpusBase object, which has the capability to import multiple pieces at once. To begin, import your scores using either a url or a file path. If you only have urls, input them as formatted below leave the second parameter blank, or make it an empty array. If you only have file paths, give the first parameter as an empty array.
+This section covers the capabilities falling under the CorpusBase object, which has the capability to import multiple pieces at once. To begin, import your scores using either as a list of urls and/or file paths. File paths must begin with a '/', otherwise they will be processed as urls.
 ```
-corpus = CorpusBase(['url_to_mei_file1.mei', url_to_mei_file2.mei'], ['path/to/mei/file1.mei', 'path/to/mei/file2.mei'])
+corpus = CorpusBase(['url_to_mei_file1.mei', url_to_mei_file2.mei', 'path/to/mei/file1.mei', 'path/to/mei/file2.mei'])
 ```
 After, the first decision to be made is how you want to analyze the imported pieces:
 - Get the whole piece ```corpus.note_list_whole_piece()```
@@ -61,7 +61,7 @@ After, decide on how you want to analyze or deconstruct your imported piece:
 *For more information on each method, use help(method name), for example: help(note_list_incremental_offset)
 
 ### Creating vectorized representations and selecting their types
-At this point you should have constructed a note list from the methods of a CorpusBase or ScoreBase object. The next step is to group those notes into intervals using the IntervalBase object, which accepts note lists as a list, in case you want to analyze multiple ScoreBase note lists. 
+At this point you should have constructed a note list from the methods of a CorpusBase or ScoreBase object. The next step is to group those notes into intervals using the IntervalBase object, which accepts note lists as a list, in case you want to analyze multiple ScoreBase note lists.
 - Multiple note lists: ```vectors = IntervalBase([score1.note_list_whole_piece(), score2.note_list_incremental_offset(2), corpus.note_list_whole_piece()]```
 - Just one: ```vectors = IntervalBase([corpus.note_list_whole_piece()]```
 The IntervalBase object's methods turn the note list given into the vectors with which we do pattern comparisons. To get those vectors, we must decide whether to use generic or semitone intervals:
@@ -92,6 +92,7 @@ for item in close_matches:
  There are a few ways information about matches can be accessed.
 - To get information on the command line, use the for loop specified above, using the ```print_exact_matches``` or ```print_close_matches``` methods
 - To export the matches information to a csv file use: ```export_to_csv(exact_matches)``` or ```export_to_csv(close_matches)``` where the parameter for the method is the return value from the match finding functions detailed above.
+- To export the matches information to a pandas dataframe use: ```export_pandas(exact_matches)``` or ```export_pandas(close_matches)``` where the parameter for the method is the return value from the match finding functions detailed above.
 - For more programming-oriented users: The methods ```find_exact_matches``` and ```find_close_matches``` return an array of PatternMatches objects, each of which contain a list of Match object under the parameter ```pattern_match_obj.matches```. Each match object has information about its pattern and the notes which make it up, which can be useful for data analysis. Using the help function is always recommended if parameters/attributes are unclear.
 
 

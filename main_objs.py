@@ -49,54 +49,47 @@ class CorpusBase:
 
     Attributes
     ----------
-    urls : list
-        list of urls of scores to be imported
     paths : list
-        list of file paths of scores to be imported
+        list of file paths and urls of scores to be imported
+        file paths MUST begin with a '/', otherwise they will be categoried as urls
     scores : list of music21.Score
         list of music21.Score objects- imported from urls and paths
-    all_urls : list
-        stores both paths and urls- not for user usage
     note_list : list of NoteListElement
         list of notes constructed from scores
     note_list_no_unisons : list of NoteListElement
         list of notes constructed from scores, combining unisons
     """
-    def __init__(self, urls:list, paths:list = []):
+    def __init__(self, paths:list):
         """
         Parameters
         ----------
-        urls : list
-            list urls to mei files
         paths : list
-            list paths to mei files
+            list file paths/urls to mei files
+            file paths MUST begin with a '/', otherwise they will be categoried as urls
 
         Raises
         ----------
         Exception
             If at least one score isn't succesfully imported, raises error
         """
-        self.urls = urls
         self.paths = paths
         self.scores = []
-        self.all_urls = []
-        for url in urls:
-            print("Requesting file from " + str(url) + "...")
-            try:
-                self.scores.append(m21.converter.parse(requests.get(url).text))
-                print("Successfully imported.")
-                self.all_urls.append(url)
-            except:
-                print("Import from " + str(url) + " failed, please check your url/file type. Continuing to next file...")
         mei_conv = converter.subConverters.ConverterMEI()
         for path in paths:
-            print("Requesting file from " + str(path) + "...")
-            try:
-                self.scores.append(mei_conv.parseFile(path))
-                print("Successfully imported.")
-                self.all_urls.append(path)
-            except:
-                print("Import of " + str(path) + " failed, please check your file path/file type. Continuing to next file...")
+            if path[0] == '/':
+                print("Requesting file from " + str(path) + "...")
+                try:
+                    self.scores.append(mei_conv.parseFile(path))
+                    print("Successfully imported.")
+                except:
+                    print("Import of " + str(path) + " failed, please check your file path/file type. Continuing to next file...")
+            else:
+                print("Requesting file from " + str(path) + "...")
+                try:
+                    self.scores.append(m21.converter.parse(requests.get(path).text))
+                    print("Successfully imported.")
+                except:
+                    print("Import from " + str(path) + " failed, please check your url. File paths must begin with a '/'. Continuing to next file...")
         if len(self.scores) == 0:
             raise Exception("At least one score must be succesfully imported")
         self.note_list = self.note_list_whole_piece()
@@ -114,14 +107,14 @@ class CorpusBase:
                 for note in noteList:
                     if note.tie is not None:
                         if note.tie.type == 'start':
-                            note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.all_urls[urls_index])
+                            note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index])
                             pure_notes.append(note_obj)
                         else:
                             pure_notes[len(pure_notes)-1].duration += note.quarterLength
                     else:
-                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.all_urls[urls_index])
+                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index])
                         pure_notes.append(note_obj)
-                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.all_urls[urls_index])
+                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index])
                 pure_notes.append(note_obj)
             urls_index += 1
         return pure_notes
@@ -143,13 +136,13 @@ class CorpusBase:
                     if not note.isRest and note.nameWithOctave == prev_pitch:
                         pure_notes[len(pure_notes)-1].duration += note.quarterLength
                     else:
-                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.all_urls[urls_index])
+                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index])
                         pure_notes.append(note_obj)
                     if not note.isRest:
                         prev_pitch = note.nameWithOctave
                     else:
                         prev_pitch == 'Rest'
-                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.all_urls[urls_index])
+                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index])
                 pure_notes.append(note_obj)
             urls_index += 1
         return pure_notes
@@ -176,7 +169,7 @@ class CorpusBase:
                             for point in offsets:
                                 #print(note.offset, point)
                                 if point >= note.offset and point < (note.offset + note.quarterLength):
-                                    note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.all_urls[urls_index])
+                                    note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index])
                                     pure_notes.append(note_obj)
                                     break
             urls_index += 1
@@ -204,15 +197,15 @@ class CorpusBase:
                             note_at_offset = item
                             break
                     if note_at_offset:
-                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part), min_offset, self.all_urls[urls_index])
+                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index])
                         note_obj.offset = counter
                         pure_notes.append(note_obj)
                     else:
-                        note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), min_offset, self.all_urls[urls_index])
+                        note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index])
                         note_obj.offset = counter
                         pure_notes.append(note_obj)
                     counter += min_offset
-            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.all_urls[urls_index])
+            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index])
         urls_index += 1
         return pure_notes
 
@@ -296,13 +289,13 @@ class ScoreBase:
                 if not note.isRest and note.nameWithOctave == prev_pitch:
                     pure_notes[len(pure_notes)-1].duration += note.quarterLength
                 else:
-                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, all_urls[urls_index])
+                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url)
                     pure_notes.append(note_obj)
                 if not note.isRest:
                     prev_pitch = note.nameWithOctave
                 else:
                     prev_pitch == 'Rest'
-            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, all_urls[urls_index])
+            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url)
             pure_notes.append(note_obj)
         urls_index += 1
         return pure_notes

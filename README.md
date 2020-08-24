@@ -1,7 +1,7 @@
 # An interval-analysis based music similarity engine
 
 ### Find the project on Github and PyPI
-#### Current Version: 0.3.2
+#### Current Version: 0.3.3
 - [Github](https://github.com/HCDigitalScholarship/intervals)
 - [PyPI](https://pypi.org/project/crim-intervals/)
 
@@ -99,3 +99,9 @@ for item in close_matches:
 ### Additional Features
 - Get a similarity "score" between 0 to 1, comparing the motifs shared between two pieces: ```similarity_score(first piece note list, second piece note list)```. The note lists are gathered from the methods of either a ScoreBase or CorpusBase object.
 - Find a desired motif/soggetto within a corpus. Your soggetto must be specified as a list of intervals between notes. For example, the soggetto C-D-E-D-C would be vectorized in generic intervals as [2,2,-2,-2].```find_motif(corpus, soggetto_vector_list)```. If instead you wish to search in terms of semitone intervals, you have to specify an additional parameter as False: ```find_motif(corpus, soggetto_vector_list, False)```
+- Classify Matches into periodic entries, imitative duos, and fuga. Using the return value from ```find_exact_matches``` or ```find_close_matches```, you can classify matches using ```classify_matches(exact_matches)``` or ```classify_matches(exact_matches, 2)``` where the second parameter is an optional cumulative duration difference threshold. The return value of this function is a list of ClassifiedMatch objects, with Match object data inside the parameter matches. Use ```help(ClassifiedMatch)``` for more information.
+  - Additionally, in addition to the printed terminal output, this information can be exported to a csv file using the return value of the function:
+  ```
+  classified_matches = classify_matches(exact_matches)
+  export_to_csv(classified_matches)
+  ```

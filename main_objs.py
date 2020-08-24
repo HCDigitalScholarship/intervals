@@ -614,3 +614,19 @@ class PatternMatches:
             print("Pattern " + str(match.pattern) + " appears in " + str(match.first_note.metadata.title) + " part " + str(match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) +\
             " and ending in measure " + str(match.last_note.note.measureNumber) + ". Notes lengths: " + str(match.durations))
         print("Said pattern or similar appeared " + str(len(self.matches)) + " times.\n")
+
+class ClassifiedMatch:
+    """
+    Group of matches classified to be a periodic entry, imitative duo, or fuga
+
+    Attributes
+    ----------
+    matches : list
+        list of Match objects found to be matching the pattern
+    type : str
+        either "periodic entry", "imitative duo", or "fuga" depending on match classification
+    """
+    def __init__(self, matches: list, type):
+        self.matches = matches
+        self.type = type
+        self.pattern = self.matches[0].pattern

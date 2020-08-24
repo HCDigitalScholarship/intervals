@@ -263,10 +263,20 @@ def export_to_csv(matches: list):
     import csv
     with open(csv_name, mode='w') as matches_file:
         matches_writer = csv.writer(matches_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        matches_writer.writerow(['Pattern Generating Match', 'Pattern matched', 'Piece Title', 'Part', 'First Note Measure Number', 'Last Note Measure Number', 'Note Durations', 'EMA', 'EMA url'])
-        for match_series in matches:
-            for match in match_series.matches:
-                matches_writer.writerow([match_series.pattern, match.pattern, match.first_note.metadata.title, match.first_note.part, match.first_note.note.measureNumber, match.last_note.note.measureNumber, match.durations, match.ema, match.ema_url])
+        if type(matches[0]) == PatternMatches:
+            matches_writer.writerow(['Pattern Generating Match', 'Pattern matched', 'Piece Title', 'Part', 'First Note Measure Number', 'Last Note Measure Number', 'Note Durations', 'EMA', 'EMA url'])
+            for match_series in matches:
+                for match in match_series.matches:
+                    matches_writer.writerow([match_series.pattern, match.pattern, match.first_note.metadata.title, match.first_note.part, match.first_note.note.measureNumber, match.last_note.note.measureNumber, match.durations, match.ema, match.ema_url])
+        else:
+            matches_writer.writerow(['Pattern Generating Match', 'Classification Type', 'Soggetti 1 Part', 'Soggetti 1 Measure', 'Soggetti 2 Part', 'Soggetti 2 Measure', 'Soggetti 3 Part', 'Soggetti 3 Measure', 'Soggetti 4 Part', 'Soggetti 4 Measure'])
+            for classified_matches in matches:
+                row_array = [classified_matches.pattern, classified_matches.type]
+                for soggetti in classified_matches.matches:
+                    row_array.append(soggetti.first_note.part)
+                    row_array.append(soggetti.first_note.note.measureNumber)
+                matches_writer.writerow(row_array)
+
     print("CSV created in your current working directory.")
 
 # For more naive usage- allows for user interaction, has return value of list of matches
@@ -363,7 +373,7 @@ def classify_matches(exact_matches: list, durations_threshold = 2):
             list of fuga, which are lists of Match objects
     """
     # TO-DO: add in factoring for durations, narrow 80 beats window
-    periodic_entries, im_duos, fuga = [], [], []
+    classified_matches = []
     for list_matches in exact_matches:
         offset_difs, offset_difs_info = [], []
         match_instance = list_matches.matches
@@ -379,47 +389,39 @@ def classify_matches(exact_matches: list, durations_threshold = 2):
             elif offset_difs[i] == offset_difs[i + 1] and offset_difs[i] == offset_difs[i + 2]:
                 grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
                 grouping = list(dict.fromkeys(grouping))
-                periodic_entries.append(grouping)
+                classified_obj = ClassifiedMatch(grouping, "periodic_entry")
+                classified_matches.append(classified_obj)
             elif offset_difs[i] == offset_difs[i + 1]:
                 grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1])
                 grouping = list(dict.fromkeys(grouping))
-                periodic_entries.append(grouping)
+                classified_obj = ClassifiedMatch(grouping, "periodic entry")
+                classified_matches.append(classified_obj)
             elif offset_difs[i] == offset_difs[i + 2]:
                 grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
                 grouping = list(dict.fromkeys(grouping))
-                im_duos.append(grouping)
+                classified_obj = ClassifiedMatch(grouping, "imitative duo")
+                classified_matches.append(classified_obj)
             else:
                 grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1])
                 grouping = list(dict.fromkeys(grouping))
-                fuga.append(grouping)
+                classified_obj = ClassifiedMatch(grouping, "fuga")
+                classified_matches.append(classified_obj)
             i += 1
 
-    for entry in periodic_entries:
-        print("Periodic Entry:")
-        a = "Pattern: " + str(entry[0].pattern) + ", Locations in entry: "
-        for b in entry:
-            a += "\n- Measure " + str(b.first_note.note.measureNumber) + " in voice " + str(b.first_note.partNumber)
-        print(a)
-    for duo in im_duos:
-        print("Imitative Duo:")
-        a = "Pattern: " + str(duo[0].pattern) + ", Locations in entry: "
-        for c in duo:
-            a += "\n- Measure " + str(c.first_note.note.measureNumber) + " in voice " + str(c.first_note.partNumber)
-        print(a)
-    for f in fuga:
-        print("Fuga:")
-        a = "Pattern: " + str(f[0].pattern) + ", Locations in entry: "
-        for d in f:
-            a += "\n- Measure " + str(d.first_note.note.measureNumber) + " in voice " + str(d.first_note.partNumber)
-        print(a)
-    classified_tuple = (periodic_entries, im_duos, fuga)
-    return classified_tuple
+    for entry in classified_matches:
+        print(str(entry.type) + ":")
+        desc_str = "Pattern: " + str(entry.pattern) + ", Locations in entry: "
+        for soggetti in entry.matches:
+            desc_str += "\n- Measure " + str(soggetti.first_note.note.measureNumber) + " in voice " + str(soggetti.first_note.partNumber)
+        print(desc_str)
+
+    return classified_matches
 
 
-def export_pandas(exact_matches):
+def export_pandas(matches):
     import pandas as pd
     match_data = []
-    for match_series in exact_matches:
+    for match_series in matches:
         for match in match_series.matches:
             match_dict = {
               "pattern_generating_match": match_series.pattern,

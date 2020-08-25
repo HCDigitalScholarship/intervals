@@ -37,7 +37,7 @@ Each parameter listed has its own section below detailing configuration.
 ### Note List Selection- Corpus
 This section covers the capabilities falling under the CorpusBase object, which has the capability to import multiple pieces at once. To begin, import your scores using either as a list of urls and/or file paths. File paths must begin with a '/', otherwise they will be processed as urls.
 ```
-corpus = CorpusBase(['url_to_mei_file1.mei', url_to_mei_file2.mei', 'path/to/mei/file1.mei', 'path/to/mei/file2.mei'])
+corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', 'path/to/mei/file1.mei', 'path/to/mei/file2.mei'])
 ```
 After, the first decision to be made is how you want to analyze the imported pieces:
 - Get the whole piece ```corpus.note_list_whole_piece()```

@@ -625,8 +625,41 @@ class ClassifiedMatch:
         list of Match objects found to be matching the pattern
     type : str
         either "periodic entry", "imitative duo", or "fuga" depending on match classification
+    pattern : list
+        interval pattern that the matches have in common
+    ema : str
+        ema address for the series of patterns
+    ema_url : str
+        url to download mei slice for the series of patterns
     """
     def __init__(self, matches: list, type):
+        """
+        Parameters
+        ----------
+        matches : list
+            list of Match objects found to be matching the pattern
+        type : str
+            either "periodic entry", "imitative duo", or "fuga" depending on match classification
+        """
         self.matches = matches
         self.type = type
         self.pattern = self.matches[0].pattern
+
+        ema_measures = ""
+        ema_parts = ""
+        ema_beats = ""
+        for match in self.matches:
+            ema_measures += str(match.first_note.note.measureNumber) + "-" + str(match.last_note.note.measureNumber) + ","
+            for i in range(match.last_note.note.measureNumber - match.first_note.note.measureNumber + 1):
+                ema_parts += str(match.first_note.partNumber) + ","
+            ema_beats += "@" + str(match.first_note.note.beat) + "-end,"
+            for j in range(match.last_note.note.measureNumber - match.first_note.note.measureNumber - 1):
+                ema_beats += "@start-end,"
+            ema_beats += "@start-" + str(match.last_note.note.beat) + ","
+        self.ema = ema_measures[0:len(ema_measures)-1] + "/" + ema_parts[0:len(ema_parts)-1] + "/" + ema_beats[0:len(ema_beats)-1]
+
+        try:
+            splice = self.matches[0].first_note.piece_url.index('mei/')
+            self.ema_url = "https://ema.crimproject.org/https%3A%2F%2Fcrimproject.org%2Fmei%2F" + str(self.matches[0].first_note.piece_url[splice + 4:]) + "/" + str(self.ema)
+        except:
+            self.ema_url = "File must be a crim url (not a file path) to have a valid EMA url"

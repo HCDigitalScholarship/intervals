@@ -269,9 +269,9 @@ def export_to_csv(matches: list):
                 for match in match_series.matches:
                     matches_writer.writerow([match_series.pattern, match.pattern, match.first_note.metadata.title, match.first_note.part, match.first_note.note.measureNumber, match.last_note.note.measureNumber, match.durations, match.ema, match.ema_url])
         else:
-            matches_writer.writerow(['Pattern Generating Match', 'Classification Type', 'Soggetti 1 Part', 'Soggetti 1 Measure', 'Soggetti 2 Part', 'Soggetti 2 Measure', 'Soggetti 3 Part', 'Soggetti 3 Measure', 'Soggetti 4 Part', 'Soggetti 4 Measure'])
+            matches_writer.writerow(['Pattern Generating Match', 'Classification Type', 'EMA', 'EMA url', 'Soggetti 1 Part', 'Soggetti 1 Measure', 'Soggetti 2 Part', 'Soggetti 2 Measure', 'Soggetti 3 Part', 'Soggetti 3 Measure', 'Soggetti 4 Part', 'Soggetti 4 Measure'])
             for classified_matches in matches:
-                row_array = [classified_matches.pattern, classified_matches.type]
+                row_array = [classified_matches.pattern, classified_matches.type, classified_matches.ema, classified_matches.ema_url]
                 for soggetti in classified_matches.matches:
                     row_array.append(soggetti.first_note.part)
                     row_array.append(soggetti.first_note.note.measureNumber)

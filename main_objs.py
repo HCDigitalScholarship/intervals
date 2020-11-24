@@ -3,6 +3,18 @@ import music21 as m21
 import time
 import requests
 from pathlib import Path
+import xml.etree.ElementTree as ET
+
+# MEINSURI = 'http://www.music-encoding.org/ns/mei'
+# MEINS = '{%s}' % MEINSURI
+# mei_doc = ET.fromstring(requests.get(path).text)
+#   # Find the title from the MEI file and update the Music21 Score metadata
+# title = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}title').text
+# score.metadata.title = title
+# mei_doc = ET.fromstring(requests.get(path).text)
+#   # Find the composer from the MEI file and update the Music21 Score metadata
+# composer = mei_doc.find(f'{MEINS}meiHead//{MEINS}respStmt/{MEINS}persName').text
+# score.metadata.composer = composer
 
 # An extension of the music21 note class with more information easily accessible
 class NoteListElement:
@@ -28,8 +40,9 @@ class NoteListElement:
     piece_url : str
         piece url for note
     """
-    def __init__(self, note: m21.note.Note, metadata, part, partNumber, duration, piece_url):
+    def __init__(self, note: m21.note.Note, metadata, part, partNumber, duration, piece_url, prev_note=None):
         self.note = note
+        self.prev_note = prev_note
         self.offset = self.note.offset
         self.id = self.note.id
         self.metadata = metadata
@@ -100,6 +113,7 @@ class CorpusBase:
         """
         pure_notes = []
         urls_index = 0
+        prev_note = None
         for score in self.scores:
             parts = score.getElementsByClass(stream.Part)
             for part in parts:
@@ -107,14 +121,17 @@ class CorpusBase:
                 for note in noteList:
                     if note.tie is not None:
                         if note.tie.type == 'start':
-                            note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index])
+                            note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index], prev_note)
                             pure_notes.append(note_obj)
                         else:
                             pure_notes[len(pure_notes)-1].duration += note.quarterLength
                     else:
-                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index])
+                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index], prev_note)
                         pure_notes.append(note_obj)
-                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index])
+                    # Rests carry the last non-rest note as their prev_note
+                    if not pure_notes[-1].note.isRest:
+                        prev_note = pure_notes[-1]
+                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index], prev_note)
                 pure_notes.append(note_obj)
             urls_index += 1
         return pure_notes
@@ -127,6 +144,7 @@ class CorpusBase:
         """
         pure_notes = []
         urls_index = 0
+        prev_note = None
         for score in self.scores:
             parts = score.getElementsByClass(stream.Part)
             for part in parts:
@@ -136,13 +154,15 @@ class CorpusBase:
                     if not note.isRest and note.nameWithOctave == prev_pitch:
                         pure_notes[len(pure_notes)-1].duration += note.quarterLength
                     else:
-                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index])
+                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index], prev_note)
                         pure_notes.append(note_obj)
                     if not note.isRest:
                         prev_pitch = note.nameWithOctave
                     else:
                         prev_pitch == 'Rest'
-                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index])
+                    if not pure_notes[-1].note.isRest:
+                        prev_note = pure_notes[-1]
+                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index], prev_note)
                 pure_notes.append(note_obj)
             urls_index += 1
         return pure_notes
@@ -158,6 +178,7 @@ class CorpusBase:
         """
         pure_notes = []
         urls_index = 0
+        prev_note = None
         for score in self.scores:
             parts = score.getElementsByClass(stream.Part)
             for part in parts:
@@ -169,8 +190,10 @@ class CorpusBase:
                             for point in offsets:
                                 #print(note.offset, point)
                                 if point >= note.offset and point < (note.offset + note.quarterLength):
-                                    note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index])
+                                    note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index], prev_note)
                                     pure_notes.append(note_obj)
+                                    if not pure_notes[-1].note.isRest:
+                                        prev_note = pure_notes[-1]
                                     break
             urls_index += 1
         return pure_notes
@@ -186,6 +209,7 @@ class CorpusBase:
         """
         pure_notes = []
         urls_index = 0
+        prev_note = None
         for score in self.scores:
             for part in score.getElementsByClass(stream.Part):
                 counter = 0
@@ -197,15 +221,17 @@ class CorpusBase:
                             note_at_offset = item
                             break
                     if note_at_offset:
-                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index])
+                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index], prev_note)
                         note_obj.offset = counter
                         pure_notes.append(note_obj)
                     else:
-                        note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index])
+                        note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index], prev_note)
                         note_obj.offset = counter
                         pure_notes.append(note_obj)
                     counter += min_offset
-            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index])
+                    if not pure_notes[-1].note.isRest:
+                        prev_note = pure_notes[-1]
+            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index], prev_note)
         urls_index += 1
         return pure_notes
 
@@ -256,19 +282,22 @@ class ScoreBase:
         """
         pure_notes = []
         parts = self.score.getElementsByClass(stream.Part)
+        prev_note = None
         for part in parts:
             noteList = part.flat.getElementsByClass(['Note', 'Rest'])
             for note in noteList:
                 if note.tie is not None:
                     if note.tie.type == 'start':
-                        note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url)
+                        note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
                         pure_notes.append(note_obj)
                     else:
                         pure_notes[len(pure_notes)-1].duration += note.quarterLength
                 else:
-                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url)
+                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
                     pure_notes.append(note_obj)
-            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url)
+                if not pure_notes[-1].note.isRest:
+                    prev_note = pure_notes[-1]
+            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
             pure_notes.append(note_obj)
         return pure_notes
 
@@ -281,6 +310,7 @@ class ScoreBase:
         """
         pure_notes = []
         urls_index = 0
+        prev_note = None
         parts = self.score.getElementsByClass(stream.Part)
         for part in parts:
             noteList = part.flat.getElementsByClass(['Note', 'Rest'])
@@ -289,13 +319,15 @@ class ScoreBase:
                 if not note.isRest and note.nameWithOctave == prev_pitch:
                     pure_notes[len(pure_notes)-1].duration += note.quarterLength
                 else:
-                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url)
+                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
                     pure_notes.append(note_obj)
                 if not note.isRest:
                     prev_pitch = note.nameWithOctave
                 else:
                     prev_pitch == 'Rest'
-            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url)
+                if not pure_notes[-1].note.isRest:
+                    prev_note = pure_notes[-1]
+            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
             pure_notes.append(note_obj)
         urls_index += 1
         return pure_notes
@@ -312,13 +344,16 @@ class ScoreBase:
         """
         pure_notes = []
         parts = self.score.getElementsByClass(stream.Part)
+        prev_note = None
         for part in parts:
             noteList = part.flat.getElementsByClass(['Note', 'Rest'])
             for note in noteList:
                 if note.beat in beats:
-                        note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url)
+                        note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
                         pure_notes.append(note_obj)
-            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url)
+                        if not pure_notes[-1].note.isRest:
+                            prev_note = pure_notes[-1]
+            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
             pure_notes.append(note_obj)
         return pure_notes
 
@@ -333,6 +368,7 @@ class ScoreBase:
         """
         pure_notes = []
         part_number = 0
+        prev_note = None
         parts = self.score.getElementsByClass(stream.Part)
         for part in parts:
             part_number += 1
@@ -343,8 +379,10 @@ class ScoreBase:
                     for note in voice:
                         for point in offsets:
                             if point >= note.offset and point < (note.offset + note.quarterLength):
-                                note_obj = NoteListElement(note, self.score.metadata, part.partName, part_number, note.quarterLength, self.url)
+                                note_obj = NoteListElement(note, self.score.metadata, part.partName, part_number, note.quarterLength, self.url, prev_note)
                                 pure_notes.append(note_obj)
+                                if not pure_notes[-1].note.isRest:
+                                    prev_note = pure_notes[-1]
                                 break
         return pure_notes
 
@@ -366,6 +404,7 @@ class ScoreBase:
         part_selected = self.score.getElementsByClass(stream.Part)[part]
         measures = part_selected.getElementsByClass(stream.Measure)
         measures_selected = []
+        prev_note = None
         for i in range(num_measures):
             measures_selected.append(measures[i+measure_start])
         for measure in measures_selected:
@@ -375,13 +414,15 @@ class ScoreBase:
                     print(note.offset)
                     if note.tie is not None:
                         if note.tie.type == 'start':
-                            note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part, note.quarterLength, self.url)
+                            note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part, note.quarterLength, self.url, prev_note)
                             pure_notes.append(note_obj)
                         else:
                             pure_notes[len(pure_notes)-1].duration += note.quarterLength
                     else:
-                        note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part, note.quarterLength, self.url)
+                        note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part, note.quarterLength, self.url, prev_note)
                         pure_notes.append(note_obj)
+                    if not pure_notes[-1].note.isRest:
+                        prev_note = pure_notes[-1]
         return pure_notes
 
     # Allows for specific selection in terms of measures, but gets all parts/instruments
@@ -397,6 +438,7 @@ class ScoreBase:
             measures until end measure
         """
         pure_notes = []
+        prev_note = None
         parts = self.score.getElementsByClass(stream.Part)
         for part in parts:
             measures = part.getElementsByClass(stream.Measure)
@@ -409,15 +451,17 @@ class ScoreBase:
                     for note in voice:
                         if note.tie is not None:
                             if note.tie.type == 'start':
-                                note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url)
+                                note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
                                 pure_notes.append(note_obj)
                             else:
                                 pure_notes[len(pure_notes)-1].duration += note.quarterLength
                         else:
-                            note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url)
+                            note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
                             pure_notes.append(note_obj)
+                        if not pure_notes[-1].note.isRest:
+                            prev_note = pure_notes[-1]
             # Added rest to ensure parts don't overlap
-            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url)
+            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
             pure_notes.append(note_obj)
         return pure_notes
 
@@ -431,6 +475,7 @@ class ScoreBase:
             sample every x offset- 2 will sample every half note, 1 every quarter note, etc.
         """
         pure_notes = []
+        prev_note = None
         for part in self.score.getElementsByClass(stream.Part):
             counter = 0
             while counter < self.score.highestTime - min_offset:
@@ -441,15 +486,17 @@ class ScoreBase:
                         note_at_offset = item
                         break
                 if note_at_offset:
-                    note_obj = NoteListElement(note_at_offset, self.score.metadata, part.partName, self.score.index(part), min_offset, self.url)
+                    note_obj = NoteListElement(note_at_offset, self.score.metadata, part.partName, self.score.index(part), min_offset, self.url, prev_note)
                     note_obj.offset = counter
                     pure_notes.append(note_obj)
                 else:
-                    note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), min_offset, self.url)
+                    note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), min_offset, self.url, prev_note)
                     note_obj.offset = counter
                     pure_notes.append(note_obj)
+                if not pure_notes[-1].note.isRest:
+                    prev_note = pure_notes[-1]
                 counter += min_offset
-        note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url)
+        note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
         return pure_notes
 
 class VectorInterval:

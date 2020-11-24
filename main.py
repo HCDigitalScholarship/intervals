@@ -328,7 +328,7 @@ def assisted_interface():
     return matches
 
 def compare_durations(durations1, durations2, threshold):
-    """Used in classify_matches
+    """Helper for classify_matches
 
     works similarly to find_close_matches in terms of its comparison technique
     """

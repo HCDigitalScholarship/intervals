@@ -74,11 +74,11 @@ def find_close_matches(patterns_data, min_matches, threshold):
         matches_list = PatternMatches(p, [])
         # If a pattern occurs more than the designated threshold
         for a in patterns_data:
-            match = 0
-            # Calculate the "difference" by comparing each vector with the matching on in the other pattern
+            rhytmic_match = 0
+            # Calculate the "difference" by comparing each vector with the matching one in the other pattern
             for v in range(len(a[0])):
-                match += abs(p[v] - a[0][v])
-            if match <= threshold:
+                rhytmic_match += abs(p[v] - a[0][v])
+            if rhytmic_match <= threshold:
                 close_match = Match(a[0], a[1], a[2], a[3])
                 matches_list.matches.append(close_match)
         if len(matches_list.matches) > min_matches:
@@ -338,7 +338,8 @@ def compare_durations(durations1, durations2, threshold):
         total += abs(durations1[i]-durations2[i])
         durations1_sum += durations1[i]
         durations2_sum += durations2[i]
-    if total <= threshold or durations1_sum == durations2_sum:
+    # if total <= threshold or durations1_sum == durations2_sum:
+    if total <= threshold:
         return True
     else:
         return False
@@ -372,7 +373,6 @@ def classify_matches(exact_matches: list, durations_threshold = 2):
         classified_tuple[0] : list of lists of Match objects
             list of fuga, which are lists of Match objects
     """
-    # TO-DO: add in factoring for durations, narrow 80 beats window
     classified_matches = []
     for list_matches in exact_matches:
         offset_difs, offset_difs_info = [], []
@@ -384,7 +384,7 @@ def classify_matches(exact_matches: list, durations_threshold = 2):
                 offset_difs_info.append((match_instance[index], match_instance[index + 1]))
         i = 0
         while i < len(offset_difs) - 2:
-            if offset_difs[i] > 64 or offset_difs[i + 1] > 64:
+            if offset_difs[i] > 64 or offset_difs[i + 1] > 64 or abs(offset_difs_info[i][1].last_note.note.measureNumber - offset_difs_info[i + 1][0].first_note.note.measureNumber) > 8:
                 pass
             elif offset_difs[i] == offset_difs[i + 1] and offset_difs[i] == offset_difs[i + 2]:
                 grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
@@ -417,7 +417,6 @@ def classify_matches(exact_matches: list, durations_threshold = 2):
 
     return classified_matches
 
-
 def export_pandas(matches):
     import pandas as pd
     match_data = []
@@ -429,7 +428,11 @@ def export_pandas(matches):
               "piece_title": match.first_note.metadata.title,
               "part": match.first_note.part,
               "start_measure": match.first_note.note.measureNumber,
+              "start_beat": match.first_note.note.beat,
               "end_measure": match.last_note.note.measureNumber,
+              "end_beat": match.last_note.note.beat,
+              "start_offset": match.first_note.offset,
+              "end_offset": match.last_note.offset,
               "note_durations": match.durations,
               "ema": match.ema,
               "ema_url": match.ema_url

@@ -39,6 +39,8 @@ class NoteListElement:
         note duration
     piece_url : str
         piece url for note
+    prev_note : NoteListElement
+        prior non-rest note element
     """
     def __init__(self, note: m21.note.Note, metadata, part, partNumber, duration, piece_url, prev_note=None):
         self.note = note

@@ -4,6 +4,7 @@
 #### Current Version: 0.3.3
 - [Github](https://github.com/HCDigitalScholarship/intervals)
 - [PyPI](https://pypi.org/project/crim-intervals/)
+- [Streamlet](https://crim-intervals-search.herokuapp.com/)
 
 ## Project Capabilities
 - Find exact and close melodic matches given an mei file

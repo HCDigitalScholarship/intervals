@@ -418,7 +418,6 @@ def classify_matches(exact_matches: list, durations_threshold = 2):
     return classified_matches
 
 def export_pandas(matches):
-    import pandas as pd
     match_data = []
     for match_series in matches:
         for match in match_series.matches:

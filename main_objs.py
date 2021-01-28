@@ -1,8 +1,11 @@
 from music21 import *
 import music21 as m21
 import time
-import requests
+# import requests
+# httpx appears to be faster than requests, will fit better with an async version
+import httpx
 from pathlib import Path
+import pandas as pd
 import xml.etree.ElementTree as ET
 
 # MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -101,7 +104,8 @@ class CorpusBase:
             else:
                 print("Requesting file from " + str(path) + "...")
                 try:
-                    self.scores.append(m21.converter.parse(requests.get(path).text))
+                    # self.scores.append(m21.converter.parse(requests.get(path).text))
+                    self.scores.append(m21.converter.parse(httpx.get(path).text))
                     print("Successfully imported.")
                 except:
                     print("Import from " + str(path) + " failed, please check your url. File paths must begin with a '/'. Continuing to next file...")
@@ -237,6 +241,49 @@ class CorpusBase:
         urls_index += 1
         return pure_notes
 
+
+    def vis_pandas_setup(self, min_offset):
+        urls_index = 0
+        prev_note = None
+        dataframes = []
+        for score in self.scores:
+            part_rows = []
+            pure_notes = []
+            row_names = []
+            for part in score.getElementsByClass(stream.Part):
+                counter = 0
+                row_names.append(part.partName)
+                while counter < score.highestTime - min_offset:
+                    stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False, includeEndBoundary=True, includeElementsThatEndAtStart=False)
+                    note_at_offset = None
+                    for item in stuff_at_offset:
+                        if type(item) == m21.note.Note or type(item) == m21.note.Rest:
+                            note_at_offset = item
+                            break
+                    if note_at_offset:
+                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index], prev_note)
+                        note_obj.offset = counter
+                        pure_notes.append(note_obj)
+                    else:
+                        note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index], prev_note)
+                        note_obj.offset = counter
+                        pure_notes.append(note_obj)
+                    counter += min_offset
+                    if not pure_notes[-1].note.isRest:
+                        prev_note = pure_notes[-1]
+                part_rows.append(pure_notes)
+                pure_notes = []
+
+            column_names = []
+            i = 0
+            while i < score.highestTime - min_offset:
+                column_names.append(i)
+                i += min_offset
+
+            df = pd.DataFrame(part_rows, index = row_names, columns = column_names)
+            dataframes.append(df)
+        return dataframes
+
 # For single file uploads
 class ScoreBase:
     """
@@ -273,7 +320,8 @@ class ScoreBase:
                 raise Exception("Import from " + str(self.url) + " failed, please check your ath/file type")
         else:
             try:
-                self.score = m21.converter.parse(requests.get(self.url).text)
+                # self.score = m21.converter.parse(requests.get(self.url).text)
+                self.score = m21.converter.parse(httpx.get(self.url).text)
                 print("Successfully imported.")
             except:
                 raise Exception("Import from " + str(self.url) + " failed, please check your url/file type")
@@ -500,6 +548,45 @@ class ScoreBase:
                 counter += min_offset
         note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
         return pure_notes
+
+
+    def vis_pandas_setup(self, min_offset):
+        part_rows = []
+        prev_note = None
+        pure_notes = []
+        row_names = []
+        for part in self.score.getElementsByClass(stream.Part):
+            counter = 0
+            row_names.append(part.partName)
+            while counter < self.score.highestTime - min_offset:
+                stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False, includeEndBoundary=True, includeElementsThatEndAtStart=False)
+                note_at_offset = None
+                for item in stuff_at_offset:
+                    if type(item) == m21.note.Note or type(item) == m21.note.Rest:
+                        note_at_offset = item
+                        break
+                if note_at_offset:
+                    note_obj = NoteListElement(note_at_offset, self.score.metadata, part.partName, self.score.index(part), min_offset, self.url, prev_note)
+                    note_obj.offset = counter
+                    pure_notes.append(note_obj)
+                else:
+                    note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), min_offset, self.url, prev_note)
+                    note_obj.offset = counter
+                    pure_notes.append(note_obj)
+                counter += min_offset
+                if not pure_notes[-1].note.isRest:
+                    prev_note = pure_notes[-1]
+            part_rows.append(pure_notes)
+            pure_notes = []
+
+        column_names = []
+        i = 0
+        while i < self.score.highestTime - min_offset:
+            column_names.append(i)
+            i += min_offset
+
+        df = pd.DataFrame(part_rows, index = row_names, columns = column_names)
+        return df
 
 class VectorInterval:
     """

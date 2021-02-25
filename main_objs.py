@@ -20,6 +20,9 @@ import xml.etree.ElementTree as ET
 # score.metadata.composer = composer
 
 # An extension of the music21 note class with more information easily accessible
+
+pathDict = {}
+
 class NoteListElement:
     """
     An extension of the music21 note class
@@ -59,6 +62,13 @@ class NoteListElement:
     def __str__(self):
         return "<NoteListElement: {}>".format(self.note.name)
 
+
+class ImportedPiece:
+    def __init__(self, score):
+        self.analyses = {'score':score, 'note_list':None}
+
+
+
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
 class CorpusBase:
     # Need to consider whether users can input certain scores (which means needing urls selected too), or just to do all in the corpus automatically
@@ -94,10 +104,17 @@ class CorpusBase:
         self.scores = []
         mei_conv = converter.subConverters.ConverterMEI()
         for path in paths:
+            if path in pathDict:
+                pathScore = ImportedPiece(pathDict[path])
+                self.scores.append(pathDict[path])
+                print("Memoized piece detected...")
+                continue
             if path[0] == '/':
                 print("Requesting file from " + str(path) + "...")
                 try:
-                    self.scores.append(mei_conv.parseFile(path))
+                    score = mei_conv.parseFile(path)
+                    pathDict[path] = ImportedPiece(score)
+                    self.scores.append(pathDict[path])
                     print("Successfully imported.")
                 except:
                     print("Import of " + str(path) + " failed, please check your file path/file type. Continuing to next file...")
@@ -105,10 +122,13 @@ class CorpusBase:
                 print("Requesting file from " + str(path) + "...")
                 try:
                     # self.scores.append(m21.converter.parse(requests.get(path).text))
-                    self.scores.append(m21.converter.parse(httpx.get(path).text))
+                    score = m21.converter.parse(httpx.get(path).text)
+                    pathDict[path] = ImportedPiece(score)
+                    self.scores.append(pathDict[path])
                     print("Successfully imported.")
                 except:
                     print("Import from " + str(path) + " failed, please check your url. File paths must begin with a '/'. Continuing to next file...")
+
         if len(self.scores) == 0:
             raise Exception("At least one score must be succesfully imported")
         self.note_list = self.note_list_whole_piece()
@@ -120,7 +140,9 @@ class CorpusBase:
         pure_notes = []
         urls_index = 0
         prev_note = None
-        for score in self.scores:
+        for imported in self.scores:
+            # if statement to check if analyses already done else do it
+            score = imported.analyses['score']
             parts = score.getElementsByClass(stream.Part)
             for part in parts:
                 noteList = part.flat.getElementsByClass(['Note', 'Rest'])
@@ -140,6 +162,7 @@ class CorpusBase:
                 note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index], prev_note)
                 pure_notes.append(note_obj)
             urls_index += 1
+            # add to dictionary
         return pure_notes
 
     def note_list_no_unisons(self):
@@ -151,7 +174,8 @@ class CorpusBase:
         pure_notes = []
         urls_index = 0
         prev_note = None
-        for score in self.scores:
+        for imported in self.scores:
+            score = imported.analyses['score']
             parts = score.getElementsByClass(stream.Part)
             for part in parts:
                 noteList = part.flat.getElementsByClass(['Note', 'Rest'])
@@ -185,7 +209,8 @@ class CorpusBase:
         pure_notes = []
         urls_index = 0
         prev_note = None
-        for score in self.scores:
+        for imported in self.scores:
+            score = imported.analyses['score']
             parts = score.getElementsByClass(stream.Part)
             for part in parts:
                 measures = part.getElementsByClass(stream.Measure)
@@ -216,7 +241,8 @@ class CorpusBase:
         pure_notes = []
         urls_index = 0
         prev_note = None
-        for score in self.scores:
+        for imported in self.scores:
+            score = imported.analyses['score']
             for part in score.getElementsByClass(stream.Part):
                 counter = 0
                 while counter < score.highestTime - min_offset:
@@ -246,7 +272,8 @@ class CorpusBase:
         urls_index = 0
         prev_note = None
         dataframes = []
-        for score in self.scores:
+        for imported in self.scores:
+            score = imported.analyses['score']
             part_rows = []
             pure_notes = []
             row_names = []
@@ -312,19 +339,24 @@ class ScoreBase:
         self.url = url
         print("Requesting file from " + str(self.url) + "...")
         # Detect if local file of url based on leading /
-        if url[0] == '/':
-            try:
-                self.score = converter.subConverters.ConverterMEI().parseFile(url)
-                print("Successfully imported.")
-            except:
-                raise Exception("Import from " + str(self.url) + " failed, please check your ath/file type")
+        if url in pathDict:
+            pathScore = ImportedPiece(pathDict[url])
+            self.score = pathDict[url].analyses['scores']
+            print("Memoized piece detected...")
         else:
-            try:
-                # self.score = m21.converter.parse(requests.get(self.url).text)
-                self.score = m21.converter.parse(httpx.get(self.url).text)
-                print("Successfully imported.")
-            except:
-                raise Exception("Import from " + str(self.url) + " failed, please check your url/file type")
+            if url[0] == '/':
+                try:
+                    self.score = converter.subConverters.ConverterMEI().parseFile(url)
+                    print("Successfully imported.")
+                except:
+                    raise Exception("Import from " + str(self.url) + " failed, please check your ath/file type")
+            else:
+                try:
+                    # self.score = m21.converter.parse(requests.get(self.url).text)
+                    self.score = m21.converter.parse(httpx.get(self.url).text)
+                    print("Successfully imported.")
+                except:
+                    raise Exception("Import from " + str(self.url) + " failed, please check your url/file type")
         self.note_list = self.note_list_whole_piece()
 
     def note_list_whole_piece(self):

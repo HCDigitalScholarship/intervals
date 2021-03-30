@@ -1,4 +1,5 @@
 from music21 import *
+from pandas_extension import *
 import music21 as m21
 import time
 # import requests
@@ -8,6 +9,8 @@ from pathlib import Path
 import pandas as pd
 import xml.etree.ElementTree as ET
 
+
+# Unncessary at the moment
 # MEINSURI = 'http://www.music-encoding.org/ns/mei'
 # MEINS = '{%s}' % MEINSURI
 # mei_doc = ET.fromstring(requests.get(path).text)
@@ -143,26 +146,33 @@ class CorpusBase:
         for imported in self.scores:
             # if statement to check if analyses already done else do it
             score = imported.analyses['score']
+            if imported.analyses['note_list']:
+                pure_notes += imported.analyses['note_list']
+                urls_index += 1
+                continue
             parts = score.getElementsByClass(stream.Part)
+            score_notes = []
             for part in parts:
                 noteList = part.flat.getElementsByClass(['Note', 'Rest'])
                 for note in noteList:
                     if note.tie is not None:
                         if note.tie.type == 'start':
                             note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index], prev_note)
-                            pure_notes.append(note_obj)
+                            score_notes.append(note_obj)
                         else:
-                            pure_notes[len(pure_notes)-1].duration += note.quarterLength
+                            score_notes[-1].duration += note.quarterLength
                     else:
                         note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index], prev_note)
-                        pure_notes.append(note_obj)
+                        score_notes.append(note_obj)
                     # Rests carry the last non-rest note as their prev_note
-                    if not pure_notes[-1].note.isRest:
-                        prev_note = pure_notes[-1]
+                    if not score_notes[-1].note.isRest:
+                        prev_note = score_notes[-1]
                 note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index], prev_note)
-                pure_notes.append(note_obj)
+                score_notes.append(note_obj)
             urls_index += 1
             # add to dictionary
+            imported.analyses['note_list'] = score_notes
+            pure_notes += score_notes
         return pure_notes
 
     def note_list_no_unisons(self):

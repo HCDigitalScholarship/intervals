@@ -120,6 +120,44 @@ def into_patterns(vectors_list, interval):
                 patterns_data.append((pattern, vectors[i].note1, vectors[i+num_notes].note2, durations))
     return patterns_data
 
+def into_patterns_pd(df:list, interval_size):
+    """Takes in a series of vector patterns with data attached and finds close matches
+
+    Parameters
+    ----------
+    vectors_list : list of vectorized lists
+        MUST be a list from calling generic_intervals or semitone_intervals on a VectorInterval object
+    interval : int
+        size of interval to be analyzed
+
+    Returns
+    -------
+    patterns_data : list of tuples
+        A list of vector patterns with additional information about notes attached
+    """
+    dflist = df.values.tolist()
+    vectors_list = []
+    for i in range(len(dflist[0])):
+        for j in range(len(dflist)):
+            vectors_list.append(dflist[j][i])
+        vectors_list.append(float('nan'));
+    pattern, patterns_data = [], []
+    for h in range(len(vectors_list)-interval_size):
+        pattern = []
+        valid_pattern = True
+        for num_notes in range(interval_size):
+            if pd.isna(vectors_list[h+num_notes]):
+                valid_pattern = False
+            pattern.append(vectors_list[h+num_notes])
+        if valid_pattern:
+        # Here, with help from vectorize() you can jam in whatever more data you would like about the note
+            patterns_data.append((pattern, vectors_list[i], vectors_list[i+num_notes]))
+    return patterns_data
+
+# sample usage
+# a = into_patterns_pd(melodic, 5)
+# a.sort()
+
 # Helper for sort_matches
 def sortFunc(pattern):
     """Helper function for sort_matches

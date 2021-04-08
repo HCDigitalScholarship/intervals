@@ -1,5 +1,5 @@
 from music21 import *
-from .pandas_extension import *
+from pandas_extension import *
 import music21 as m21
 import time
 # import requests
@@ -66,7 +66,7 @@ class NoteListElement:
         return "<NoteListElement: {}>".format(self.note.name)
 
 
-class ImportedPiece2:
+class ImportedPiece:
     def __init__(self, score):
         self.score = score
         self.analyses = {'note_list': None}
@@ -120,7 +120,7 @@ class ImportedPiece2:
         return self.analyses['M21ObjsNoTies']
 
     def getDuration(self):
-        '''Return a `pandas.DataFrame` of floats giving the duration of notes 
+        '''Return a `pandas.DataFrame` of floats giving the duration of notes
         and rests in each part where 1 = quarternote, 1.5 = a dotted quarter,
         4 = a whole note, etc.'''
         if 'Duration' not in self.analyses:
@@ -144,7 +144,7 @@ class ImportedPiece2:
         if noteOrRest.isRest:
             return 'Rest'
         return noteOrRest.nameWithOctave
-        
+
     def getNoteRest(self):
         '''Return a table of the notes and rests in the piece. Rests are
         designated with the string "Rest". Notes are shown such that middle C
@@ -160,16 +160,16 @@ class ImportedPiece2:
         return noteOrRest
 
     def getBeatStrength(self):
-        ''' Returns a table of the beat strengths of all the notes and rests in 
-        the piece. This follows the music21 conventions where the downbeat is 
-        equal to 1, and all other metric positions in a measure are given 
+        ''' Returns a table of the beat strengths of all the notes and rests in
+        the piece. This follows the music21 conventions where the downbeat is
+        equal to 1, and all other metric positions in a measure are given
         smaller numbers approaching zero as their metric weight decreases.
         '''
         if 'BeatStrength' not in self.analyses:
             df = self._getM21ObjsNoTies().applymap(self._beatStrengthHelper)
             self.analyses['BeatStrength'] = df
         return self.analyses['BeatStrength']
-    
+
     def _harmonicIntervalHelper(row):
         if hasattr(row[1], 'isRest'):
             if row[1].isRest:
@@ -177,7 +177,7 @@ class ImportedPiece2:
             elif row[1].isNote and hasattr(row[0], 'isNote') and row[0].isNote:
                 return Interval(row[0], row[1])
         return None
-    
+
     def _melodicIntervalHelper(row):
         if hasattr(row[0], 'isRest'):
             if row[0].isRest:
@@ -185,7 +185,7 @@ class ImportedPiece2:
             elif row[0].isNote and hasattr(row[1], 'isNote') and row[1].isNote:
                 return Interval(row[1], row[0])
         return None
-    
+
     def _melodifyPart(ser):
         ser.dropna(inplace=True)
         shifted = ser.shift(1)
@@ -199,7 +199,7 @@ class ImportedPiece2:
             df = m21Objs.apply(ImportedPiece._melodifyPart)
             self.analyses['M21MelodicIntervals'] = df
         return self.analyses['M21MelodicIntervals']
-    
+
     def _qualityUndirectedCompound(cell):
         if hasattr(cell, 'direction'):
             if cell.direction.value >= 0:
@@ -207,7 +207,7 @@ class ImportedPiece2:
             else:
                 return '-' + cell.name
         return cell
-    
+
     def _qualityDirectedSimple(cell):
         if hasattr(cell, 'semiSimpleName'):
             if cell.direction.value > 0:
@@ -219,7 +219,7 @@ class ImportedPiece2:
     def getMelodic(self, kind='q', directed=True, compound=True):
         '''Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
-        interval. 
+        interval.
 
         :param str kind: use "d" for diatonic intervals without quality, "q"
             (default) for diatonic intervals with quality, or "s" for semitonal
@@ -259,7 +259,7 @@ class ImportedPiece2:
             ret = pd.concat(pairs, axis=1)
             self.analyses['M21HarmonicIntervals'] = ret
         return self.analyses['M21HarmonicIntervals']
-                    
+
     def getHarmonic(self, kind='q', directed=True, compound=True):
         '''Return harmonic intervals for all voice pairs. The voice pairs are
         named with the voice that's lower on the staff given first, and the two
@@ -300,13 +300,13 @@ class ImportedPiece2:
                   cell_type=tuple):
         ''' Group sequences of observations in a sliding window "n" events long.
         These cells of the resulting DataFrame can be grouped as desired by
-        setting `cell_type` to `tuple` (default), `list`, or `str`. If the 
-        `exclude` parameter is passed, if any item in that list is found in an 
-        ngram, that ngram will be removed from the resulting DataFrame. Since 
+        setting `cell_type` to `tuple` (default), `list`, or `str`. If the
+        `exclude` parameter is passed, if any item in that list is found in an
+        ngram, that ngram will be removed from the resulting DataFrame. Since
         `exclude` defaults to `['Rest']`, pass an empty list if you want to
         allow rests in your ngrams.
 
-        There are two primary modes for the `how` parameter. When set to 
+        There are two primary modes for the `how` parameter. When set to
         "columnwise" (default), this is the simple case where the events in each
         column of the `df` DataFrame has its events grouped at the offset of the
         first event in the window. For example, to get 4-grams of melodic
@@ -322,16 +322,16 @@ class ImportedPiece2:
         interval_settings argument, which gets passed to the getMelodic and
         getHarmonic methods (see those methods for an explanation of those
         settings). This makes it easy to make contrapuntal-module ngrams, e.g.:
-        
+
         ip = ImportedPiece('path_to_piece')
         ngrams = ip.getNgrams(how='modules')
-        
+
         Otherwise, you can give specific `df` and/or `other` DataFrames in which
         case the `interval_settings` parameter will be ignored. Also, you can
         use the `held` parameter to be used for when the lower voice sustains a
         note while the upper voice moves. This defaults to 'Held' to distinguish
         between held notes and reiterated notes in the lower voice, but if this
-        distinction is not wanted for your query, you may want to pass way a 
+        distinction is not wanted for your query, you may want to pass way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
         '''
         if isinstance(cell_type, str) and len(cell_type) > 0:
@@ -414,7 +414,7 @@ class CorpusBase:
         mei_conv = converter.subConverters.ConverterMEI()
         for path in paths:
             if path in pathDict:
-                pathScore = ImportedPiece2(pathDict[path])
+                pathScore = ImportedPiece(pathDict[path])
                 self.scores.append(pathDict[path])
                 print("Memoized piece detected...")
                 continue
@@ -422,7 +422,7 @@ class CorpusBase:
                 print("Requesting file from " + str(path) + "...")
                 try:
                     score = mei_conv.parseFile(path)
-                    pathDict[path] = ImportedPiece2(score)
+                    pathDict[path] = ImportedPiece(score)
                     self.scores.append(pathDict[path])
                     print("Successfully imported.")
                 except:
@@ -432,7 +432,7 @@ class CorpusBase:
                 try:
                     # self.scores.append(m21.converter.parse(requests.get(path).text))
                     score = m21.converter.parse(httpx.get(path).text)
-                    pathDict[path] = ImportedPiece2(score)
+                    pathDict[path] = ImportedPiece(score)
                     self.scores.append(pathDict[path])
                     print("Successfully imported.")
                 except:
@@ -656,7 +656,7 @@ class ScoreBase:
         print("Requesting file from " + str(self.url) + "...")
         # Detect if local file of url based on leading /
         if url in pathDict:
-            pathScore = ImportedPiece2(pathDict[url])
+            pathScore = ImportedPiece(pathDict[url])
             self.score = pathDict[url].analyses['scores']
             print("Memoized piece detected...")
         else:

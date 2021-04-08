@@ -1,5 +1,5 @@
 from music21 import *
-from pandas_extension import *
+from .pandas_extension import *
 import music21 as m21
 import time
 # import requests
@@ -68,8 +68,314 @@ class NoteListElement:
 
 class ImportedPiece2:
     def __init__(self, score):
-        self.analyses = {'score':score, 'note_list':None}
+        self.score = score
+        self.analyses = {'note_list': None}
+        self._intervalMethods = {
+            # (quality, directed, compound):   function returning the specified type of interval
+            # diatonic with quality
+            ('q', True, True): ImportedPiece._qualityUndirectedCompound,
+            ('q', True, False): ImportedPiece._qualityDirectedSimple,
+            ('q', False, True): lambda cell: cell.name if hasattr(cell, 'name') else cell,
+            ('q', False, False): lambda cell: cell.semiSimpleName if hasattr(cell, 'semiSimpleName') else cell,
+            # diatonic without quality
+            ('d', True, True): lambda cell: cell.directedName[1:] if hasattr(cell, 'directedName') else cell,
+            ('d', True, False): lambda cell: cell.directedSimpleName[1:] if hasattr(cell, 'directedSimpleName') else cell,
+            ('d', False, True): lambda cell: cell.name[1:] if hasattr(cell, 'name') else cell,
+            ('d', False, False): lambda cell: cell.semiSimpleName[1:] if hasattr(cell, 'semiSimpleName') else cell,
+            # semitones
+            ('s', True, True): lambda cell: cell.semitones if hasattr(cell, 'semitones') else cell,
+            ('s', True, False): lambda cell: cell.semitones % 12 if hasattr(cell, 'semitones') else cell,
+            ('s', False, True): lambda cell: abs(cell.semitones) if hasattr(cell, 'semitones') else cell,
+            ('s', False, False): lambda cell: abs(cell.semitones) % 12 if hasattr(cell, 'semitones') else cell
+        }
 
+    def _getPartSeries(self):
+        if 'PartSeries' not in self.analyses:
+            parts = self.score.getElementsByClass(stream.Part)
+            part_series = []
+            for i, part in enumerate(parts):
+                notesAndRests = part.flat.getElementsByClass(['Note', 'Rest'])
+                part_name = part.partName or 'Part_' + str(i + 1)
+                ser = pd.Series(notesAndRests, name=part_name)
+                ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
+                ser = ser[~ser.index.duplicated()] # remove multiple events at the same offset in a given part
+                part_series.append(ser)
+            self.analyses['PartSeries'] = part_series
+        return self.analyses['PartSeries']
+
+    def _getM21Objs(self):
+        if 'M21Objs' not in self.analyses:
+            self.analyses['M21Objs'] = pd.concat(self._getPartSeries(), axis=1)
+        return self.analyses['M21Objs']
+
+    def _remove_tied(self, noteOrRest):
+        if hasattr(noteOrRest, 'tie') and noteOrRest.tie is not None and noteOrRest.tie.type != 'start':
+            return None
+        return noteOrRest
+
+    def _getM21ObjsNoTies(self):
+        if 'M21ObjsNoTies' not in self.analyses:
+            df = self._getM21Objs().applymap(self._remove_tied).dropna(how='all')
+            self.analyses['M21ObjsNoTies'] = df
+        return self.analyses['M21ObjsNoTies']
+
+    def getDuration(self):
+        '''Return a `pandas.DataFrame` of floats giving the duration of notes 
+        and rests in each part where 1 = quarternote, 1.5 = a dotted quarter,
+        4 = a whole note, etc.'''
+        if 'Duration' not in self.analyses:
+            df = self._getM21ObjsNoTies()
+            highestTimes = [part.highestTime for part in self.score.getElementsByClass(stream.Part)]
+            newCols = []
+            for i, x in enumerate(highestTimes):
+                ser = df.iloc[:, i]
+                ser.dropna(inplace=True)
+                ser.at[x] = 0  # placeholder value
+                vals = ser.index[1:] - ser.index[:-1]
+                ser.drop(x, inplace=True)
+                ser[:] = vals
+                newCols.append(ser)
+            self.analyses['Duration'] = pd.concat(newCols, axis=1)
+        return self.analyses['Duration']
+
+    def _noteRestHelper(self, noteOrRest):
+        if not hasattr(noteOrRest, 'isRest'):
+            return noteOrRest
+        if noteOrRest.isRest:
+            return 'Rest'
+        return noteOrRest.nameWithOctave
+        
+    def getNoteRest(self):
+        '''Return a table of the notes and rests in the piece. Rests are
+        designated with the string "Rest". Notes are shown such that middle C
+        is "C4".'''
+        if 'NoteRest' not in self.analyses:
+            df = self._getM21ObjsNoTies().applymap(self._noteRestHelper)
+            self.analyses['NoteRest'] = df
+        return self.analyses['NoteRest']
+
+    def _beatStrengthHelper(self, noteOrRest):
+        if hasattr(noteOrRest, 'beatStrength'):
+            return noteOrRest.beatStrength
+        return noteOrRest
+
+    def getBeatStrength(self):
+        ''' Returns a table of the beat strengths of all the notes and rests in 
+        the piece. This follows the music21 conventions where the downbeat is 
+        equal to 1, and all other metric positions in a measure are given 
+        smaller numbers approaching zero as their metric weight decreases.
+        '''
+        if 'BeatStrength' not in self.analyses:
+            df = self._getM21ObjsNoTies().applymap(self._beatStrengthHelper)
+            self.analyses['BeatStrength'] = df
+        return self.analyses['BeatStrength']
+    
+    def _harmonicIntervalHelper(row):
+        if hasattr(row[1], 'isRest'):
+            if row[1].isRest:
+                return 'Rest'
+            elif row[1].isNote and hasattr(row[0], 'isNote') and row[0].isNote:
+                return Interval(row[0], row[1])
+        return None
+    
+    def _melodicIntervalHelper(row):
+        if hasattr(row[0], 'isRest'):
+            if row[0].isRest:
+                return 'Rest'
+            elif row[0].isNote and hasattr(row[1], 'isNote') and row[1].isNote:
+                return Interval(row[1], row[0])
+        return None
+    
+    def _melodifyPart(ser):
+        ser.dropna(inplace=True)
+        shifted = ser.shift(1)
+        partDF = pd.concat([ser, shifted], axis=1)
+        res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
+        return res
+
+    def _getM21MelodicIntervals(self):
+        if 'M21MelodicIntervals' not in self.analyses:
+            m21Objs = self._getM21ObjsNoTies()
+            df = m21Objs.apply(ImportedPiece._melodifyPart)
+            self.analyses['M21MelodicIntervals'] = df
+        return self.analyses['M21MelodicIntervals']
+    
+    def _qualityUndirectedCompound(cell):
+        if hasattr(cell, 'direction'):
+            if cell.direction.value >= 0:
+                return cell.name
+            else:
+                return '-' + cell.name
+        return cell
+    
+    def _qualityDirectedSimple(cell):
+        if hasattr(cell, 'semiSimpleName'):
+            if cell.direction.value > 0:
+                return cell.semiSimpleName
+            else:
+                return '-' + cell.semiSimpleName
+        return cell
+
+    def getMelodic(self, kind='q', directed=True, compound=True):
+        '''Return melodic intervals for all voice pairs. Each melodic interval
+        is associated with the starting offset of the second note in the
+        interval. 
+
+        :param str kind: use "d" for diatonic intervals without quality, "q"
+            (default) for diatonic intervals with quality, or "s" for semitonal
+            intervals. Only the first character is used, and it's case
+            insensitive.
+        :param bool directed: defaults to True which shows that the voice that
+            is lower on the staff is a higher pitch than the voice that is
+            higher on the staff. This is desginated with a "-" prefix.
+        :param bool compound: whether to use compound (True, default) or simple
+            (False) intervals. In the case of simple diatonic intervals, it
+            simplifies to within the octave, so octaves don't get simplified to
+            unisons. But for semitonal intervals, an interval of an octave
+            (12 semitones) would does get simplified to a unison (0).
+        :returns: `pandas.DataFrame` of melodic intervals in each part
+        '''
+        settings = (kind[0].lower(), directed, compound)
+        key = ('MelodicIntervals', *settings)
+        if key not in self.analyses:
+            df = self._getM21MelodicIntervals()
+            df = df.applymap(self._intervalMethods[settings])
+            self.analyses[key] = df
+        return self.analyses[key]
+
+    def _getM21HarmonicIntervals(self):
+        if 'M21HarmonicIntervals' not in self.analyses:
+            m21Objs = self._getM21ObjsNoTies()
+            pairs = []
+            combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
+            for combo in combos:
+                df = m21Objs.iloc[:, list(combo)].ffill()
+                mask = df.applymap(lambda cell: (hasattr(cell, 'isNote') and cell.isNote))
+                df = df[mask].dropna()
+                ser = df.apply(ImportedPiece._harmonicIntervalHelper, axis=1)
+                # name each column according to the voice names that make up the intervals, e.g. 'Bassus_Altus'
+                ser.name = '_'.join((m21Objs.columns[combo[0]], m21Objs.columns[combo[1]]))
+                pairs.append(ser)
+            ret = pd.concat(pairs, axis=1)
+            self.analyses['M21HarmonicIntervals'] = ret
+        return self.analyses['M21HarmonicIntervals']
+                    
+    def getHarmonic(self, kind='q', directed=True, compound=True):
+        '''Return harmonic intervals for all voice pairs. The voice pairs are
+        named with the voice that's lower on the staff given first, and the two
+        voices separated with an underscore, e.g. "Bassus_Tenor".
+
+        :param str kind: use "d" for diatonic intervals without quality, "q"
+            (default) for diatonic intervals with quality, or "s" for semitonal
+            intervals. Only the first character is used, and it's case
+            insensitive.
+        :param bool directed: defaults to True which shows that the voice that
+            is lower on the staff is a higher pitch than the voice that is
+            higher on the staff. This is desginated with a "-" prefix.
+        :param bool compound: whether to use compound (True, default) or simple
+            (False) intervals. In the case of simple diatonic intervals, it
+            simplifies to within the octave, so octaves don't get simplified to
+            unisons. But for semitonal intervals, an interval of an octave
+            (12 semitones) would does get simplified to a unison (0 semitones).
+        '''
+        settings = (kind[0].lower(), directed, compound)
+        key = ('HarmonicIntervals', *settings)
+        if key not in self.analyses:
+            df = self._getM21HarmonicIntervals()
+            df = df.applymap(self._intervalMethods[settings])
+            self.analyses[key] = df
+        return self.analyses[key]
+
+    def _ngramHelper(col, n, exclude=[]):
+        col.dropna(inplace=True)
+        chunks = [col.shift(-i) for i in range(n)]
+        chains = pd.concat(chunks, axis=1)
+        for excl in exclude:
+            chains = chains[(chains != excl).all(1)]
+        chains.dropna(inplace=True)
+        return chains.apply(lambda row: ', '.join(row), axis=1)
+
+    def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
+                  exclude=['Rest'], interval_settings=('d', True, True),
+                  cell_type=tuple):
+        ''' Group sequences of observations in a sliding window "n" events long.
+        These cells of the resulting DataFrame can be grouped as desired by
+        setting `cell_type` to `tuple` (default), `list`, or `str`. If the 
+        `exclude` parameter is passed, if any item in that list is found in an 
+        ngram, that ngram will be removed from the resulting DataFrame. Since 
+        `exclude` defaults to `['Rest']`, pass an empty list if you want to
+        allow rests in your ngrams.
+
+        There are two primary modes for the `how` parameter. When set to 
+        "columnwise" (default), this is the simple case where the events in each
+        column of the `df` DataFrame has its events grouped at the offset of the
+        first event in the window. For example, to get 4-grams of melodic
+        intervals:
+
+        ip = ImportedPiece('path_to_piece')
+        ngrams = ip.getNgrams(df=ip.getMelodic(), n=4)
+
+        If `how` is set to 'modules' this will return contrapuntal modules. In
+        this case, if the `df` or `other` parameters are left as None, they will
+        be replaced with the current piece's harmonic and melodic intervals
+        respectfully. These intervals will be formed according to the
+        interval_settings argument, which gets passed to the getMelodic and
+        getHarmonic methods (see those methods for an explanation of those
+        settings). This makes it easy to make contrapuntal-module ngrams, e.g.:
+        
+        ip = ImportedPiece('path_to_piece')
+        ngrams = ip.getNgrams(how='modules')
+        
+        Otherwise, you can give specific `df` and/or `other` DataFrames in which
+        case the `interval_settings` parameter will be ignored. Also, you can
+        use the `held` parameter to be used for when the lower voice sustains a
+        note while the upper voice moves. This defaults to 'Held' to distinguish
+        between held notes and reiterated notes in the lower voice, but if this
+        distinction is not wanted for your query, you may want to pass way a 
+        unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
+        '''
+        if isinstance(cell_type, str) and len(cell_type) > 0:
+            cell_type = cell_type[0].lower()
+        structors = {'t': tuple, tuple: tuple,
+            'l': list, list: list,
+            's': str, str: str}
+        cell_type = structors.get(cell_type, tuple)
+
+        if how == 'columnwise':
+            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude))
+        if how == 'modules':
+            if df is None:
+                df = self.getHarmonic(*interval_settings)
+            if other is None:
+                other = self.getMelodic(*interval_settings)
+            cols = []
+            for lowerVoice in other.columns:
+                for pair in df.columns:
+                    if not pair.startswith(lowerVoice + '_') and pair.index('_') == len(lowerVoice):
+                        continue
+                    combo = pd.concat([other[lowerVoice], df[pair]], axis=1)
+                    # the lower voice likely just got filled with a bunch of NaNs,
+                    # so fill those values unless they were a 'Rest'
+                    # filled = combo[lowerVoice].fillna(value='P1')
+                    # combo[lowerVoice] = filled.loc[(~pd.isna(combo[lowerVoice])) | (filled != 'Rest')]
+                    combo.fillna({lowerVoice: held}, inplace=True)
+                    if cell_type == str:
+                        combo.insert(loc=1, column='Joiner', value=', ')
+                        combo['_'] = '_'
+                        combo = [combo.shift(-i) for i in range(n)]
+                        combo = pd.concat(combo, axis=1)
+                        col = combo.iloc[:, 2:-1].dropna().apply(lambda row: ''.join(row), axis=1)
+                    elif cell_type == list:
+                        combo = [combo.shift(-i) for i in range(n)]
+                        combo = pd.concat(combo, axis=1)
+                        col = combo.iloc[:, 1:].dropna().apply(lambda row: list(row), axis=1)
+                    else:  # tuple is the default
+                        combo = [combo.shift(-i) for i in range(n)]
+                        combo = pd.concat(combo, axis=1)
+                        col = combo.iloc[:, 1:].dropna().apply(lambda row: tuple(row), axis=1)
+                    col.name = pair
+                    cols.append(col)
+            return pd.concat(cols, axis=1)
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
@@ -112,7 +418,7 @@ class CorpusBase:
                 self.scores.append(pathDict[path])
                 print("Memoized piece detected...")
                 continue
-            if path[0] == '/':
+            elif path[0] == '/':
                 print("Requesting file from " + str(path) + "...")
                 try:
                     score = mei_conv.parseFile(path)
@@ -145,7 +451,7 @@ class CorpusBase:
         prev_note = None
         for imported in self.scores:
             # if statement to check if analyses already done else do it
-            score = imported.analyses['score']
+            score = imported.score
             if imported.analyses['note_list']:
                 pure_notes += imported.analyses['note_list']
                 urls_index += 1
@@ -185,7 +491,7 @@ class CorpusBase:
         urls_index = 0
         prev_note = None
         for imported in self.scores:
-            score = imported.analyses['score']
+            score = imported.score
             parts = score.getElementsByClass(stream.Part)
             for part in parts:
                 noteList = part.flat.getElementsByClass(['Note', 'Rest'])
@@ -220,7 +526,7 @@ class CorpusBase:
         urls_index = 0
         prev_note = None
         for imported in self.scores:
-            score = imported.analyses['score']
+            score = imported.score
             parts = score.getElementsByClass(stream.Part)
             for part in parts:
                 measures = part.getElementsByClass(stream.Measure)
@@ -252,7 +558,7 @@ class CorpusBase:
         urls_index = 0
         prev_note = None
         for imported in self.scores:
-            score = imported.analyses['score']
+            score = imported.score
             for part in score.getElementsByClass(stream.Part):
                 counter = 0
                 while counter < score.highestTime - min_offset:
@@ -283,7 +589,7 @@ class CorpusBase:
         prev_note = None
         dataframes = []
         for imported in self.scores:
-            score = imported.analyses['score']
+            score = imported.score
             part_rows = []
             pure_notes = []
             row_names = []

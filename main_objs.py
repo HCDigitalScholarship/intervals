@@ -66,7 +66,7 @@ class NoteListElement:
         return "<NoteListElement: {}>".format(self.note.name)
 
 
-class ImportedPiece:
+class ImportedPiece2:
     def __init__(self, score):
         self.analyses = {'score':score, 'note_list':None}
 
@@ -108,7 +108,7 @@ class CorpusBase:
         mei_conv = converter.subConverters.ConverterMEI()
         for path in paths:
             if path in pathDict:
-                pathScore = ImportedPiece(pathDict[path])
+                pathScore = ImportedPiece2(pathDict[path])
                 self.scores.append(pathDict[path])
                 print("Memoized piece detected...")
                 continue
@@ -116,7 +116,7 @@ class CorpusBase:
                 print("Requesting file from " + str(path) + "...")
                 try:
                     score = mei_conv.parseFile(path)
-                    pathDict[path] = ImportedPiece(score)
+                    pathDict[path] = ImportedPiece2(score)
                     self.scores.append(pathDict[path])
                     print("Successfully imported.")
                 except:
@@ -126,7 +126,7 @@ class CorpusBase:
                 try:
                     # self.scores.append(m21.converter.parse(requests.get(path).text))
                     score = m21.converter.parse(httpx.get(path).text)
-                    pathDict[path] = ImportedPiece(score)
+                    pathDict[path] = ImportedPiece2(score)
                     self.scores.append(pathDict[path])
                     print("Successfully imported.")
                 except:
@@ -350,7 +350,7 @@ class ScoreBase:
         print("Requesting file from " + str(self.url) + "...")
         # Detect if local file of url based on leading /
         if url in pathDict:
-            pathScore = ImportedPiece(pathDict[url])
+            pathScore = ImportedPiece2(pathDict[url])
             self.score = pathDict[url].analyses['scores']
             print("Memoized piece detected...")
         else:

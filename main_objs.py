@@ -1,5 +1,5 @@
 from music21 import *
-from .pandas_extension import *
+from pandas_extension import *
 import music21 as m21
 import time
 # import requests

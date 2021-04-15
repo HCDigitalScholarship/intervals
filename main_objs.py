@@ -7,6 +7,7 @@ import httpx
 from pathlib import Path
 import pandas as pd
 import xml.etree.ElementTree as ET
+from itertools import combinations
 
 
 # Unncessary at the moment
@@ -174,7 +175,7 @@ class ImportedPiece:
             if row[1].isRest:
                 return 'Rest'
             elif row[1].isNote and hasattr(row[0], 'isNote') and row[0].isNote:
-                return Interval(row[0], row[1])
+                return interval.Interval(row[0], row[1])
         return None
 
     def _melodicIntervalHelper(row):
@@ -182,7 +183,7 @@ class ImportedPiece:
             if row[0].isRest:
                 return 'Rest'
             elif row[0].isNote and hasattr(row[1], 'isNote') and row[1].isNote:
-                return Interval(row[1], row[0])
+                return interval.Interval(row[1], row[0])
         return None
 
     def _melodifyPart(ser):

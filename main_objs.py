@@ -7,7 +7,7 @@ import httpx
 from pathlib import Path
 import pandas as pd
 import xml.etree.ElementTree as ET
-from itertools import combinations as _combinations
+from itertools import combinations
 
 
 # Unncessary at the moment
@@ -299,7 +299,7 @@ class ImportedPiece:
         if 'M21HarmonicIntervals' not in self.analyses:
             m21Objs = self._getM21ObjsNoTies()
             pairs = []
-            combos = _combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
+            combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
             for combo in combos:
                 df = m21Objs.iloc[:, list(combo)].ffill()
                 mask = df.applymap(lambda cell: (hasattr(cell, 'isNote') and cell.isNote))
@@ -403,7 +403,7 @@ class ImportedPiece:
             cols = []
             for lowerVoice in other.columns:
                 for pair in df.columns:
-                    if not pair.startswith(lowerVoice + '_') and pair.index('_') == len(lowerVoice):
+                    if not pair.startswith(lowerVoice + '_'):
                         continue
                     combo = pd.concat([other[lowerVoice], df[pair]], axis=1)
                     # the lower voice likely just got filled with a bunch of NaNs,

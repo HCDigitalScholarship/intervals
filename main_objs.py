@@ -349,7 +349,7 @@ class ImportedPiece:
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
-                  cell_type=tuple):
+                  cell_type=tuple, unit=0):
         ''' Group sequences of observations in a sliding window "n" events long.
         These cells of the resulting DataFrame can be grouped as desired by
         setting `cell_type` to `tuple` (default), `list`, or `str`. If the
@@ -378,6 +378,16 @@ class ImportedPiece:
         ip = ImportedPiece('path_to_piece')
         ngrams = ip.getNgrams(how='modules')
 
+        If you want want "module" ngrams taken at a regular durational interval,
+        you can omit passing `df` and `other` dataframes and instead pass the 
+        desired `interval_settings` and an integer or float for the `unit` 
+        parameter. See the `.regularize` documentation for how to use this 
+        parameter. Here's an example that will generate contrapuntal-module 
+        ngrams at regular minim (half-note) intervals.
+
+        ip = ImportedPiece('path_to_piece')
+        ngrams = ip.getNgrams(how='modules', unit=2)
+
         Otherwise, you can give specific `df` and/or `other` DataFrames in which
         case the `interval_settings` parameter will be ignored. Also, you can
         use the `held` parameter to be used for when the lower voice sustains a
@@ -398,18 +408,16 @@ class ImportedPiece:
         if how == 'modules':
             if df is None:
                 df = self.getHarmonic(*interval_settings)
+                if unit:
+                  df = self.regularize(df, unit)
             if other is None:
-                other = self.getMelodic(*interval_settings)
+                other = self.getMelodic(*interval_settings, unit=unit)
             cols = []
             for lowerVoice in other.columns:
                 for pair in df.columns:
                     if not pair.startswith(lowerVoice + '_'):
                         continue
                     combo = pd.concat([other[lowerVoice], df[pair]], axis=1)
-                    # the lower voice likely just got filled with a bunch of NaNs,
-                    # so fill those values unless they were a 'Rest'
-                    # filled = combo[lowerVoice].fillna(value='P1')
-                    # combo[lowerVoice] = filled.loc[(~pd.isna(combo[lowerVoice])) | (filled != 'Rest')]
                     combo.fillna({lowerVoice: held}, inplace=True)
                     if cell_type == str:
                         combo.insert(loc=1, column='Joiner', value=', ')

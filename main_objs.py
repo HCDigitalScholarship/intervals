@@ -77,16 +77,16 @@ class ImportedPiece:
             ('q', True, False): ImportedPiece._qualityDirectedSimple,
             ('q', False, True): lambda cell: cell.name if hasattr(cell, 'name') else cell,
             ('q', False, False): lambda cell: cell.semiSimpleName if hasattr(cell, 'semiSimpleName') else cell,
-            # diatonic without quality
+            # diatonic interals without quality
             ('d', True, True): lambda cell: cell.directedName[1:] if hasattr(cell, 'directedName') else cell,
             ('d', True, False): lambda cell: cell.directedSimpleName[1:] if hasattr(cell, 'directedSimpleName') else cell,
             ('d', False, True): lambda cell: cell.name[1:] if hasattr(cell, 'name') else cell,
             ('d', False, False): lambda cell: cell.semiSimpleName[1:] if hasattr(cell, 'semiSimpleName') else cell,
-            # semitones
-            ('s', True, True): lambda cell: cell.semitones if hasattr(cell, 'semitones') else cell,
-            ('s', True, False): lambda cell: cell.semitones % 12 if hasattr(cell, 'semitones') else cell,
-            ('s', False, True): lambda cell: abs(cell.semitones) if hasattr(cell, 'semitones') else cell,
-            ('s', False, False): lambda cell: abs(cell.semitones) % 12 if hasattr(cell, 'semitones') else cell
+            # chromatic intervals
+            ('c', True, True): lambda cell: cell.semitones if hasattr(cell, 'semitones') else cell,
+            ('c', True, False): lambda cell: cell.semitones % 12 if hasattr(cell, 'semitones') else cell,
+            ('c', False, True): lambda cell: abs(cell.semitones) if hasattr(cell, 'semitones') else cell,
+            ('c', False, False): lambda cell: abs(cell.semitones) % 12 if hasattr(cell, 'semitones') else cell
         }
 
     def _getPartSeries(self):
@@ -208,6 +208,18 @@ class ImportedPiece:
             self.analyses['BeatStrength'] = df
         return self.analyses['BeatStrength']
 
+    def _zeroIndexIntervals(ntrvl):
+        '''
+        Change diatonic intervals so that they count the number of steps, i.e. 
+        unison = 0, second = 1, etc.
+        '''
+        if ntrvl == 'Rest':
+            return ntrvl
+        val = int(ntrvl)
+        if val > 0:
+            return str(val - 1)
+        return str(val + 1)
+
     def _harmonicIntervalHelper(row):
         if hasattr(row[1], 'isRest'):
             if row[1].isRest:
@@ -260,17 +272,19 @@ class ImportedPiece:
         return cell
 
     def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
-        '''Return melodic intervals for all voice pairs. Each melodic interval
+        '''
+        Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
         interval. If you want melodic intervals measured at a regular duration,
         do not pipe this methods result to the `unit` method. Instead, 
         pass the desired regular durational interval as an integer or float as 
         the `unit` parameter.
 
-        :param str kind: use "d" for diatonic intervals without quality, "q"
-            (default) for diatonic intervals with quality, or "s" for semitonal
-            intervals. Only the first character is used, and it's case
-            insensitive.
+        :param str kind: use "q" (default) for diatonic intervals with quality, 
+            "d" for diatonic intervals without quality, "z" for zero-indexed 
+            diatonic intervals without quality (i.e. unison = 0, second = 1, 
+            etc.), or "c" for chromatic intervals. Only the first character is 
+            used, and it's case insensitive.
         :param bool directed: defaults to True which shows that the voice that
             is lower on the staff is a higher pitch than the voice that is
             higher on the staff. This is desginated with a "-" prefix.
@@ -284,11 +298,16 @@ class ImportedPiece:
             more about this.
         :returns: `pandas.DataFrame` of melodic intervals in each part
         '''
-        settings = (kind[0].lower(), directed, compound)
-        key = ('MelodicIntervals', *settings)
+        kind = kind[0].lower()
+        kind = {'s': 'c'}.get(kind, kind)
+        _kind = {'z': 'd'}.get(kind, kind)
+        settings = (_kind, directed, compound)
+        key = ('MelodicIntervals', kind, directed, compound)
         if key not in self.analyses or unit:
             df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals()
             df = df.applymap(self._intervalMethods[settings])
+            if kind == 'z':
+                df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
             if unit:
                 return df
             else:
@@ -313,14 +332,16 @@ class ImportedPiece:
         return self.analyses['M21HarmonicIntervals']
 
     def getHarmonic(self, kind='q', directed=True, compound=True):
-        '''Return harmonic intervals for all voice pairs. The voice pairs are
+        '''
+        Return harmonic intervals for all voice pairs. The voice pairs are
         named with the voice that's lower on the staff given first, and the two
         voices separated with an underscore, e.g. "Bassus_Tenor".
 
-        :param str kind: use "d" for diatonic intervals without quality, "q"
-            (default) for diatonic intervals with quality, or "s" for semitonal
-            intervals. Only the first character is used, and it's case
-            insensitive.
+        :param str kind: use "q" (default) for diatonic intervals with quality, 
+            "d" for diatonic intervals without quality, "z" for zero-indexed 
+            diatonic intervals without quality (i.e. unison = 0, second = 1, 
+            etc.), or "c" for chromatic intervals. Only the first character is 
+            used, and it's case insensitive.
         :param bool directed: defaults to True which shows that the voice that
             is lower on the staff is a higher pitch than the voice that is
             higher on the staff. This is desginated with a "-" prefix.
@@ -330,11 +351,16 @@ class ImportedPiece:
             unisons. But for semitonal intervals, an interval of an octave
             (12 semitones) would does get simplified to a unison (0 semitones).
         '''
-        settings = (kind[0].lower(), directed, compound)
-        key = ('HarmonicIntervals', *settings)
+        kind = kind[0].lower()
+        kind = {'s': 'c'}.get(kind, kind)
+        _kind = {'z': 'd'}.get(kind, kind)
+        settings = (_kind, directed, compound)
+        key = ('HarmonicIntervals', kind, directed, compound)
         if key not in self.analyses:
             df = self._getM21HarmonicIntervals()
             df = df.applymap(self._intervalMethods[settings])
+            if kind == 'z':
+                df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
             self.analyses[key] = df
         return self.analyses[key]
 

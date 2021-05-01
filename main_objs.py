@@ -121,9 +121,9 @@ class ImportedPiece:
 
     def regularize(self, df, unit=2):
         '''
-        Return the passed `pandas.DataFrame` (df) with its observations 
-        regularized rhythmically. Pass a duration as the `unit` parameter to 
-        control at what regular distance observations will be made. Durations 
+        Return the passed `pandas.DataFrame` (df) with its observations
+        regularized rhythmically. Pass a duration as the `unit` parameter to
+        control at what regular distance observations will be made. Durations
         are measured according to the music21 convention where:
 
         eighth note = .5
@@ -131,10 +131,10 @@ class ImportedPiece:
         half note = 2
         etc.
 
-        For example, if you pass a dataframe of the notes and rests of a piece, 
-        and set `unit` to 4, a new whatever is "sounding" (whether a note or a 
-        rest) at every regular whole note will be kept, and any intervening 
-        notes or rests will be removed. A breve would get renotated as two 
+        For example, if you pass a dataframe of the notes and rests of a piece,
+        and set `unit` to 4, a new whatever is "sounding" (whether a note or a
+        rest) at every regular whole note will be kept, and any intervening
+        notes or rests will be removed. A breve would get renotated as two
         whole notes.
         Regularization also works with non-integer values. So if you wanted to
         regularize at the swung eigth note, for example, you could set:
@@ -216,7 +216,7 @@ class ImportedPiece:
 
     def _zeroIndexIntervals(ntrvl):
         '''
-        Change diatonic intervals so that they count the number of steps, i.e. 
+        Change diatonic intervals so that they count the number of steps, i.e.
         unison = 0, second = 1, etc.
         '''
         if ntrvl == 'Rest':
@@ -255,7 +255,7 @@ class ImportedPiece:
             df = m21Objs.apply(ImportedPiece._melodifyPart)
             self.analyses['M21MelodicIntervals'] = df
         return self.analyses['M21MelodicIntervals']
-    
+
     def _getRegularM21MelodicIntervals(self, unit):
         m21Objs = self._getM21ObjsNoTies()
         m21Objs = self.regularize(m21Objs, unit=unit)
@@ -282,14 +282,14 @@ class ImportedPiece:
         Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
         interval. If you want melodic intervals measured at a regular duration,
-        do not pipe this methods result to the `unit` method. Instead, 
-        pass the desired regular durational interval as an integer or float as 
+        do not pipe this methods result to the `unit` method. Instead,
+        pass the desired regular durational interval as an integer or float as
         the `unit` parameter.
 
-        :param str kind: use "q" (default) for diatonic intervals with quality, 
-            "d" for diatonic intervals without quality, "z" for zero-indexed 
-            diatonic intervals without quality (i.e. unison = 0, second = 1, 
-            etc.), or "c" for chromatic intervals. Only the first character is 
+        :param str kind: use "q" (default) for diatonic intervals with quality,
+            "d" for diatonic intervals without quality, "z" for zero-indexed
+            diatonic intervals without quality (i.e. unison = 0, second = 1,
+            etc.), or "c" for chromatic intervals. Only the first character is
             used, and it's case insensitive.
         :param bool directed: defaults to True which shows that the voice that
             is lower on the staff is a higher pitch than the voice that is
@@ -300,7 +300,7 @@ class ImportedPiece:
             unisons. But for semitonal intervals, an interval of an octave
             (12 semitones) would does get simplified to a unison (0).
         :param int/float unit: regular durational interval at which to measure
-            melodic intervals. See the documentation of the `unit` method for 
+            melodic intervals. See the documentation of the `unit` method for
             more about this.
         :returns: `pandas.DataFrame` of melodic intervals in each part
         '''
@@ -341,10 +341,10 @@ class ImportedPiece:
         named with the voice that's lower on the staff given first, and the two
         voices separated with an underscore, e.g. "Bassus_Tenor".
 
-        :param str kind: use "q" (default) for diatonic intervals with quality, 
-            "d" for diatonic intervals without quality, "z" for zero-indexed 
-            diatonic intervals without quality (i.e. unison = 0, second = 1, 
-            etc.), or "c" for chromatic intervals. Only the first character is 
+        :param str kind: use "q" (default) for diatonic intervals with quality,
+            "d" for diatonic intervals without quality, "z" for zero-indexed
+            diatonic intervals without quality (i.e. unison = 0, second = 1,
+            etc.), or "c" for chromatic intervals. Only the first character is
             used, and it's case insensitive.
         :param bool directed: defaults to True which shows that the voice that
             is lower on the staff is a higher pitch than the voice that is
@@ -409,10 +409,10 @@ class ImportedPiece:
         ngrams = ip.getNgrams(how='modules')
 
         If you want want "module" ngrams taken at a regular durational interval,
-        you can omit passing `df` and `other` dataframes and instead pass the 
-        desired `interval_settings` and an integer or float for the `unit` 
-        parameter. See the `.regularize` documentation for how to use this 
-        parameter. Here's an example that will generate contrapuntal-module 
+        you can omit passing `df` and `other` dataframes and instead pass the
+        desired `interval_settings` and an integer or float for the `unit`
+        parameter. See the `.regularize` documentation for how to use this
+        parameter. Here's an example that will generate contrapuntal-module
         ngrams at regular minim (half-note) intervals.
 
         ip = ImportedPiece('path_to_piece')

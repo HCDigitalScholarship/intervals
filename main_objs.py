@@ -153,26 +153,32 @@ class ImportedPiece:
         return res
 
     def getDuration(self, df=None):
-        '''Return a `pandas.DataFrame` of floats giving the duration of notes
-        and rests in each part where 1 = quarternote, 1.5 = a dotted quarter,
-        4 = a whole note, etc.'''
+        '''
+        If no dataframe is passed as the df parameter (the default), return a
+        `pandas.DataFrame` of floats giving the duration of notes and rests in 
+        each part where 1 = quarternote, 1.5 = a dotted quarter, 4 = a whole 
+        note, etc. If a df is passed, then return a df of the same shape giving 
+        the duration of each of the slices of this df. This is useful if you 
+        want to know what the durations of something other than single notes 
+        and rests, such as the durations of intervals.'''
+
         if 'Duration' not in self.analyses or df is not None:
-            _df = self._getM21ObjsNoTies() if df is None else df
-            highestTimes = [part.highestTime for part in self.score.getElementsByClass(stream.Part)]
+            _df = self._getM21ObjsNoTies() if df is None else df.copy()
+            highestTime = self.score.highestTime
+            _df.loc[highestTime, :] = 0  # zeroes are just placeholders
             newCols = []
-            for i, x in enumerate(highestTimes):
+            for i in range(len(_df.columns)):
                 ser = _df.iloc[:, i]
                 ser.dropna(inplace=True)
-                ser.at[x] = 0  # placeholder value
                 vals = ser.index[1:] - ser.index[:-1]
-                ser.drop(x, inplace=True)
+                ser.drop(highestTime, inplace=True)
                 ser[:] = vals
                 newCols.append(ser)
             result = pd.concat(newCols, axis=1)
             if df is None:
                 self.analyses['Duration'] = result
             else:
-              result
+                return result
         return self.analyses['Duration']
 
     def _noteRestHelper(self, noteOrRest):
@@ -221,10 +227,10 @@ class ImportedPiece:
         return str(val + 1)
 
     def _harmonicIntervalHelper(row):
-        if hasattr(row[1], 'isRest'):
-            if row[1].isRest:
+        if hasattr(row[1], 'isRest') and hasattr(row[0], 'isRest'):
+            if row[1].isRest or row[0].isRest:
                 return 'Rest'
-            elif row[1].isNote and hasattr(row[0], 'isNote') and row[0].isNote:
+            elif row[1].isNote and row[0].isNote:
                 return interval.Interval(row[0], row[1])
         return None
 
@@ -320,9 +326,7 @@ class ImportedPiece:
             pairs = []
             combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
             for combo in combos:
-                df = m21Objs.iloc[:, list(combo)].ffill()
-                mask = df.applymap(lambda cell: (hasattr(cell, 'isNote') and cell.isNote))
-                df = df[mask].dropna()
+                df = m21Objs.iloc[:, list(combo)].dropna(how='all').ffill()
                 ser = df.apply(ImportedPiece._harmonicIntervalHelper, axis=1)
                 # name each column according to the voice names that make up the intervals, e.g. 'Bassus_Altus'
                 ser.name = '_'.join((m21Objs.columns[combo[0]], m21Objs.columns[combo[1]]))

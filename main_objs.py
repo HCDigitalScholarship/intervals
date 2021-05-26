@@ -464,6 +464,9 @@ class ImportedPiece:
                         combo = pd.concat(combo, axis=1)
                         col = combo.iloc[:, 1:].dropna().apply(lambda row: tuple(row), axis=1)
                     col.name = pair
+                    if exclude:
+                        mask = col.apply(lambda cell: all([excl not in cell for excl in exclude]))
+                        col = col[mask]
                     cols.append(col)
             return pd.concat(cols, axis=1)
 

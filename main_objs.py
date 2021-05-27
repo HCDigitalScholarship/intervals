@@ -152,7 +152,7 @@ class ImportedPiece:
         res = df.ffill().reindex(new_index, method='pad')
         return res
 
-    def getDuration(self, df=None):
+    def getDuration(self, df=None, n=1):
         '''
         If no dataframe is passed as the df parameter (the default), return a
         `pandas.DataFrame` of floats giving the duration of notes and rests in 
@@ -160,9 +160,15 @@ class ImportedPiece:
         note, etc. If a df is passed, then return a df of the same shape giving 
         the duration of each of the slices of this df. This is useful if you 
         want to know what the durations of something other than single notes 
-        and rests, such as the durations of intervals.'''
+        and rests, such as the durations of intervals.
+        
+        If n is set, it must be an integer >= 1 and less than the number of 
+        rows in df. It determines how many adjacent items have their durations 
+        grouped together. To get the duration of single events, n should be 1 
+        (default). You could set n=3 if you wanted to get the duration of all 
+        consecutive 3-note groups, for example.'''
 
-        if 'Duration' not in self.analyses or df is not None:
+        if 'Duration' not in self.analyses or df is not None or n != 1:
             _df = self._getM21ObjsNoTies() if df is None else df.copy()
             highestTime = self.score.highestTime
             _df.loc[highestTime, :] = 0  # zeroes are just placeholders
@@ -170,12 +176,12 @@ class ImportedPiece:
             for i in range(len(_df.columns)):
                 ser = _df.iloc[:, i]
                 ser.dropna(inplace=True)
-                vals = ser.index[1:] - ser.index[:-1]
-                ser.drop(highestTime, inplace=True)
+                vals = ser.index[n:] - ser.index[:-n]
+                ser.drop(labels=ser.index[-n:], inplace=True)
                 ser[:] = vals
                 newCols.append(ser)
             result = pd.concat(newCols, axis=1)
-            if df is None:
+            if df is None and n == 1:
                 self.analyses['Duration'] = result
             else:
                 return result

@@ -386,13 +386,13 @@ class ImportedPiece:
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
                   cell_type=tuple, unit=0):
-        ''' Group sequences of observations in a sliding window "n" events long.
-        These cells of the resulting DataFrame can be grouped as desired by
-        setting `cell_type` to `tuple` (default), `list`, or `str`. If the
-        `exclude` parameter is passed, if any item in that list is found in an
-        ngram, that ngram will be removed from the resulting DataFrame. Since
-        `exclude` defaults to `['Rest']`, pass an empty list if you want to
-        allow rests in your ngrams.
+        ''' Group sequences of observations in a sliding window "n" events long
+        (default n=3). These cells of the resulting DataFrame can be grouped as 
+        desired by setting `cell_type` to `tuple` (default), `list`, or `str`. 
+        If the `exclude` parameter is passed, if any item in that list is found 
+        in an ngram, that ngram will be removed from the resulting DataFrame. 
+        Since `exclude` defaults to `['Rest']`, pass an empty list if you want 
+        to allow rests in your ngrams.
 
         There are two primary modes for the `how` parameter. When set to
         "columnwise" (default), this is the simple case where the events in each
@@ -414,6 +414,12 @@ class ImportedPiece:
         ip = ImportedPiece('path_to_piece')
         ngrams = ip.getNgrams(how='modules')
 
+        There is a special case for "open-ended" module ngrams. Set n=1 and the 
+        module ngrams will show the vertical interval between two voices, 
+        followed by the connecting melodic interal in the lower voice, but not 
+        the next harmonic interval. Open-ended module ngrams can be useful if 
+        you want to see how long the imitation in two voice parts goes on for.
+
         If you want want "module" ngrams taken at a regular durational interval,
         you can omit passing `df` and `other` dataframes and instead pass the
         desired `interval_settings` and an integer or float for the `unit`
@@ -434,10 +440,8 @@ class ImportedPiece:
         '''
         if isinstance(cell_type, str) and len(cell_type) > 0:
             cell_type = cell_type[0].lower()
-        structors = {'t': tuple, tuple: tuple,
-            'l': list, list: list,
-            's': str, str: str}
-        cell_type = structors.get(cell_type, tuple)
+        structors = {'l': list, list: list, 's': str, str: str}
+        cell_type = structors.get(cell_type, tuple)  # tuple is the default
 
         if how == 'columnwise':
             return df.apply(ImportedPiece._ngramHelper, args=(n, exclude))
@@ -448,6 +452,10 @@ class ImportedPiece:
                   df = self.regularize(df, unit)
             if other is None:
                 other = self.getMelodic(*interval_settings, unit=unit)
+            was1 = False
+            if n == 1:
+                was1 = True
+                n = 2
             cols = []
             for lowerVoice in other.columns:
                 for pair in df.columns:
@@ -460,15 +468,17 @@ class ImportedPiece:
                         combo['_'] = '_'
                         combo = [combo.shift(-i) for i in range(n)]
                         combo = pd.concat(combo, axis=1)
-                        col = combo.iloc[:, 2:-1].dropna().apply(lambda row: ''.join(row), axis=1)
-                    elif cell_type == list:
+                        if was1:
+                            col = combo.iloc[:, 2:-3].dropna().apply(lambda row: ''.join(row), axis=1)
+                        else:
+                            col = combo.iloc[:, 2:-1].dropna().apply(lambda row: ''.join(row), axis=1)
+                    else:
                         combo = [combo.shift(-i) for i in range(n)]
                         combo = pd.concat(combo, axis=1)
-                        col = combo.iloc[:, 1:].dropna().apply(lambda row: list(row), axis=1)
-                    else:  # tuple is the default
-                        combo = [combo.shift(-i) for i in range(n)]
-                        combo = pd.concat(combo, axis=1)
-                        col = combo.iloc[:, 1:].dropna().apply(lambda row: tuple(row), axis=1)
+                        if was1:
+                            col = combo.iloc[:, 1:-1].dropna().apply(lambda row: cell_type(row), axis=1)
+                        else:
+                            col = combo.iloc[:, 1:].dropna().apply(lambda row: cell_type(row), axis=1)
                     col.name = pair
                     if exclude:
                         mask = col.apply(lambda cell: all([excl not in cell for excl in exclude]))

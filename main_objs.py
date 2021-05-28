@@ -83,10 +83,10 @@ class ImportedPiece:
             ('d', False, True): lambda cell: cell.name[1:] if hasattr(cell, 'name') else cell,
             ('d', False, False): lambda cell: cell.semiSimpleName[1:] if hasattr(cell, 'semiSimpleName') else cell,
             # chromatic intervals
-            ('c', True, True): lambda cell: cell.semitones if hasattr(cell, 'semitones') else cell,
-            ('c', True, False): lambda cell: cell.semitones % 12 if hasattr(cell, 'semitones') else cell,
-            ('c', False, True): lambda cell: abs(cell.semitones) if hasattr(cell, 'semitones') else cell,
-            ('c', False, False): lambda cell: abs(cell.semitones) % 12 if hasattr(cell, 'semitones') else cell
+            ('c', True, True): lambda cell: str(cell.semitones) if hasattr(cell, 'semitones') else cell,
+            ('c', True, False): lambda cell: str(cell.semitones % 12) if hasattr(cell, 'semitones') else cell,
+            ('c', False, True): lambda cell: str(abs(cell.semitones)) if hasattr(cell, 'semitones') else cell,
+            ('c', False, False): lambda cell: str(abs(cell.semitones)) % 12 if hasattr(cell, 'semitones') else cell
         }
 
     def _getPartSeries(self):

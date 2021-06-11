@@ -519,10 +519,11 @@ class CorpusBase:
             If at least one score isn't succesfully imported, raises error
         """
         self.paths = paths
-        self.scores = []
+        self.scores = [] # store lists of ImportedPieces generated from the path above
         mei_conv = converter.subConverters.ConverterMEI()
         for path in paths:
             if path in pathDict:
+                # if the path has already been "memorized"
                 pathScore = ImportedPiece(pathDict[path])
                 self.scores.append(pathDict[path])
                 print("Memoized piece detected...")
@@ -549,6 +550,7 @@ class CorpusBase:
 
         if len(self.scores) == 0:
             raise Exception("At least one score must be succesfully imported")
+
         self.note_list = self.note_list_whole_piece()
         self.no_unisons = self.note_list_no_unisons()
 

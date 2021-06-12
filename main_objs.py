@@ -225,6 +225,7 @@ class ImportedPiece:
     def _timeSignatureHelper(self, cell):
 
         if isinstance(cell, m21.note.Note) and 'TimeSignature' in cell.classes:
+            print("bingo")
             return '*M' + cell.ratioString
         else:
             return str(cell)

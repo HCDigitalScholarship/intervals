@@ -93,6 +93,8 @@ class ImportedPiece:
         if 'PartSeries' not in self.analyses:
             parts = self.score.getElementsByClass(stream.Part)
             part_series = []
+
+            # TODO add TimeSignature
             for i, part in enumerate(parts):
                 notesAndRests = part.flat.getElementsByClass(['Note', 'Rest'])
                 part_name = part.partName or 'Part_' + str(i + 1)
@@ -219,6 +221,21 @@ class ImportedPiece:
             df = self._getM21ObjsNoTies().applymap(self._beatStrengthHelper)
             self.analyses['BeatStrength'] = df
         return self.analyses['BeatStrength']
+
+    def _timeSignatureHelper(self, cell):
+
+        if isinstance(cell, m21.note.Note) and 'TimeSignature' in cell.classes:
+            return '*M' + cell.ratioString
+        else:
+            return str(cell)
+
+    # new method
+    def getTimeSignature(self):
+        """
+        Get the piece's time signature
+        """
+        result = self._getM21ObjsNoTies().applymap(self._timeSignatureHelper)
+        return result
 
     def _zeroIndexIntervals(ntrvl):
         '''

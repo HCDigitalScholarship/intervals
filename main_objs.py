@@ -86,7 +86,7 @@ class ImportedPiece:
             ('c', True, True): lambda cell: str(cell.semitones) if hasattr(cell, 'semitones') else cell,
             ('c', True, False): lambda cell: str(cell.semitones % 12) if hasattr(cell, 'semitones') else cell,
             ('c', False, True): lambda cell: str(abs(cell.semitones)) if hasattr(cell, 'semitones') else cell,
-            ('c', False, False): lambda cell: str(abs(cell.semitones)) % 12 if hasattr(cell, 'semitones') else cell
+            ('c', False, False): lambda cell: str(abs(cell.semitones) % 12) if hasattr(cell, 'semitones') else cell
         }
 
     def _getPartSeries(self):

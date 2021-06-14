@@ -224,7 +224,7 @@ class ImportedPiece:
 
     def getTimeSignature(self):
         """
-        Get the piece's time signature
+        Return a dataframe containing the time signatures and their offsets
         """
         post = []
         parts = self.score.getElementsByClass(stream.Part)

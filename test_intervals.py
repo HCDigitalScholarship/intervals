@@ -40,9 +40,11 @@ def simple_test_time_signature():
     test.getTimeSignature()
 
 root = "https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_4.0/"
-prefix = "CRIM_Model_0003" 
+prefix = "CRIM_Model_00"
+files = ["01", "03", "04"] 
 postfix = ".mei"
-print(root + prefix + postfix)
-test_time_signature(root + prefix + postfix)
+for file in files:
+    print(root + prefix + file + postfix)
+    test_time_signature(root + prefix + file + postfix)
 
 

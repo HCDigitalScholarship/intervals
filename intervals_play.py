@@ -39,8 +39,10 @@ def simple_test_time_signature():
     test = ImportedPiece(stream1)
     test.getTimeSignature()
 
-test_time_signature('https://crimproject.org/mei/CRIM_Model_0008.mei')
-
-# simple_test_time_signature()
+root = "https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_4.0/"
+prefix = "CRIM_Model_0003" 
+postfix = ".mei"
+print(root + prefix + postfix)
+test_time_signature(root + prefix + postfix)
 
 

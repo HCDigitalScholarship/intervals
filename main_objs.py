@@ -222,21 +222,19 @@ class ImportedPiece:
             self.analyses['BeatStrength'] = df
         return self.analyses['BeatStrength']
 
-    def _timeSignatureHelper(self, cell):
-
-        if isinstance(cell, m21.note.Note) and 'TimeSignature' in cell.classes:
-            print("bingo")
-            return '*M' + cell.ratioString
-        else:
-            return str(cell)
-
-    # new method
     def getTimeSignature(self):
         """
         Get the piece's time signature
         """
-        result = self._getM21ObjsNoTies().applymap(self._timeSignatureHelper)
-        return result
+        post = []
+        parts = self.score.getElementsByClass(stream.Part)
+        partNames = []
+        for i, part in enumerate(parts):
+            post.append(pd.Series({ts.offset: ts for ts in part.flat.getTimeSignatures()}))
+            partNames.append(part.partName or 'Part_' + str(i + 1))
+        df = pd.concat(post, axis=1)
+        df.columns = partNames
+        return df
 
     def _zeroIndexIntervals(ntrvl):
         '''

@@ -21,6 +21,8 @@ def test_time_signature(mei_file):
 
     time_signature = model.getTimeSignature()
     print(time_signature)
+    # print("test series")
+    # print(model._getPartSeries())
 
 def simple_test_time_signature():
 

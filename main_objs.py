@@ -102,6 +102,26 @@ class ImportedPiece:
             self.analyses['PartSeries'] = part_series
         return self.analyses['PartSeries']
 
+    def _getFlatParts(self):
+        """
+        Return and store flat parts inside a piece using the score attribute.
+        """
+        if 'FlatParts' not in self.analyses:
+            parts = self.score.getElementsByClass(stream.Part)
+            self.analyses['FlatParts'] = pd.Series([part.flat for part in parts])
+        return self.analyses['FlatParts']
+
+    def _getPartNames(self):
+        """
+        Return flat names inside a piece using the score attribute.
+        """
+        if 'PartNames' not in self.analyses:
+            part_names = []
+            for i, part in enumerate(self._getFlatParts()):
+                part_names.append(part.partName or 'Part_' + str(i + 1))
+            self.analyses['PartNames'] = part_names
+        return self.analyses['PartNames']
+
     def _getM21Objs(self):
         if 'M21Objs' not in self.analyses:
             part_names = self._getPartNames()
@@ -224,15 +244,17 @@ class ImportedPiece:
         """
         Return a data frame containing the time signatures and their offsets
         """
-        post = []
-        parts = self.score.getElementsByClass(stream.Part)
-        partNames = []
-        for i, part in enumerate(parts):
-            post.append(pd.Series({ts.offset: ts for ts in part.flat.getTimeSignatures()}))
-            partNames.append(part.partName or 'Part_' + str(i + 1))
-        df = pd.concat(post, axis=1)
-        df.columns = partNames
-        return df
+
+        if 'TimeSignature' not in self.analyses:
+            time_signatures = []
+            for part in self._getFlatParts():
+                time_signatures.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
+            # immediate = self._getFlatParts().apply(lambda part:part.getTimeSignatures)
+            # ans = immediate.apply(lambda ts: ts.offset)
+            df = pd.concat(time_signatures, axis=1)
+            df.columns = self._getPartNames()
+            self.analyses['TimeSignature'] = df
+        return self.analyses['TimeSignature']
 
     def _zeroIndexIntervals(ntrvl):
         '''

@@ -94,7 +94,6 @@ class ImportedPiece:
             parts = self.score.getElementsByClass(stream.Part)
             part_series = []
 
-            # TODO add TimeSignature
             for i, part in enumerate(parts):
                 notesAndRests = part.flat.getElementsByClass(['Note', 'Rest'])
                 part_name = part.partName or 'Part_' + str(i + 1)
@@ -224,7 +223,7 @@ class ImportedPiece:
 
     def getTimeSignature(self):
         """
-        Return a dataframe containing the time signatures and their offsets
+        Return a data frame containing the time signatures and their offsets
         """
         post = []
         parts = self.score.getElementsByClass(stream.Part)

@@ -91,13 +91,11 @@ class ImportedPiece:
 
     def _getPartSeries(self):
         if 'PartSeries' not in self.analyses:
-            parts = self.score.getElementsByClass(stream.Part)
             part_series = []
 
-            for i, part in enumerate(parts):
-                notesAndRests = part.flat.getElementsByClass(['Note', 'Rest'])
-                part_name = part.partName or 'Part_' + str(i + 1)
-                ser = pd.Series(notesAndRests, name=part_name)
+            for i, flat_part in enumerate(self._getFlatParts()):
+                notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
+                ser = pd.Series(notesAndRests)
                 ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
                 ser = ser[~ser.index.duplicated()] # remove multiple events at the same offset in a given part
                 part_series.append(ser)
@@ -106,7 +104,8 @@ class ImportedPiece:
 
     def _getM21Objs(self):
         if 'M21Objs' not in self.analyses:
-            self.analyses['M21Objs'] = pd.concat(self._getPartSeries(), axis=1)
+            part_names = self._getPartNames()
+            self.analyses['M21Objs'] = pd.concat(self._getPartSeries(), names=part_names, axis=1)
         return self.analyses['M21Objs']
 
     def _remove_tied(self, noteOrRest):

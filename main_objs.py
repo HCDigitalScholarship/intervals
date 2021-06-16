@@ -108,7 +108,7 @@ class ImportedPiece:
         """
         if 'FlatParts' not in self.analyses:
             parts = self.score.getElementsByClass(stream.Part)
-            self.analyses['FlatParts'] = pd.Series([part.flat for part in parts])
+            self.analyses['FlatParts'] = [part.flat for part in parts]
         return self.analyses['FlatParts']
 
     def _getPartNames(self):
@@ -249,9 +249,8 @@ class ImportedPiece:
             time_signatures = []
             for part in self._getFlatParts():
                 time_signatures.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
-            # immediate = self._getFlatParts().apply(lambda part:part.getTimeSignatures)
-            # ans = immediate.apply(lambda ts: ts.offset)
             df = pd.concat(time_signatures, axis=1)
+            df = df.applymap(lambda ts: ts.ratioString, na_action='ignore')
             df.columns = self._getPartNames()
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']

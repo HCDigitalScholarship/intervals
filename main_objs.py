@@ -86,26 +86,46 @@ class ImportedPiece:
             ('c', True, True): lambda cell: str(cell.semitones) if hasattr(cell, 'semitones') else cell,
             ('c', True, False): lambda cell: str(cell.semitones % 12) if hasattr(cell, 'semitones') else cell,
             ('c', False, True): lambda cell: str(abs(cell.semitones)) if hasattr(cell, 'semitones') else cell,
-            ('c', False, False): lambda cell: str(abs(cell.semitones)) % 12 if hasattr(cell, 'semitones') else cell
+            ('c', False, False): lambda cell: str(abs(cell.semitones) % 12) if hasattr(cell, 'semitones') else cell
         }
 
     def _getPartSeries(self):
         if 'PartSeries' not in self.analyses:
-            parts = self.score.getElementsByClass(stream.Part)
             part_series = []
-            for i, part in enumerate(parts):
-                notesAndRests = part.flat.getElementsByClass(['Note', 'Rest'])
-                part_name = part.partName or 'Part_' + str(i + 1)
-                ser = pd.Series(notesAndRests, name=part_name)
+
+            for i, flat_part in enumerate(self._getFlatParts()):
+                notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
+                ser = pd.Series(notesAndRests)
                 ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
                 ser = ser[~ser.index.duplicated()] # remove multiple events at the same offset in a given part
                 part_series.append(ser)
             self.analyses['PartSeries'] = part_series
         return self.analyses['PartSeries']
 
+    def _getFlatParts(self):
+        """
+        Return and store flat parts inside a piece using the score attribute.
+        """
+        if 'FlatParts' not in self.analyses:
+            parts = self.score.getElementsByClass(stream.Part)
+            self.analyses['FlatParts'] = [part.flat for part in parts]
+        return self.analyses['FlatParts']
+
+    def _getPartNames(self):
+        """
+        Return flat names inside a piece using the score attribute.
+        """
+        if 'PartNames' not in self.analyses:
+            part_names = []
+            for i, part in enumerate(self._getFlatParts()):
+                part_names.append(part.partName or 'Part_' + str(i + 1))
+            self.analyses['PartNames'] = part_names
+        return self.analyses['PartNames']
+
     def _getM21Objs(self):
         if 'M21Objs' not in self.analyses:
-            self.analyses['M21Objs'] = pd.concat(self._getPartSeries(), axis=1)
+            part_names = self._getPartNames()
+            self.analyses['M21Objs'] = pd.concat(self._getPartSeries(), names=part_names, axis=1)
         return self.analyses['M21Objs']
 
     def _remove_tied(self, noteOrRest):
@@ -219,6 +239,21 @@ class ImportedPiece:
             df = self._getM21ObjsNoTies().applymap(self._beatStrengthHelper)
             self.analyses['BeatStrength'] = df
         return self.analyses['BeatStrength']
+
+    def getTimeSignature(self):
+        """
+        Return a data frame containing the time signatures and their offsets
+        """
+
+        if 'TimeSignature' not in self.analyses:
+            time_signatures = []
+            for part in self._getFlatParts():
+                time_signatures.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
+            df = pd.concat(time_signatures, axis=1)
+            df = df.applymap(lambda ts: ts.ratioString, na_action='ignore')
+            df.columns = self._getPartNames()
+            self.analyses['TimeSignature'] = df
+        return self.analyses['TimeSignature']
 
     def _zeroIndexIntervals(ntrvl):
         '''
@@ -519,10 +554,11 @@ class CorpusBase:
             If at least one score isn't succesfully imported, raises error
         """
         self.paths = paths
-        self.scores = []
+        self.scores = [] # store lists of ImportedPieces generated from the path above
         mei_conv = converter.subConverters.ConverterMEI()
         for path in paths:
             if path in pathDict:
+                # if the path has already been "memorized"
                 pathScore = ImportedPiece(pathDict[path])
                 self.scores.append(pathDict[path])
                 print("Memoized piece detected...")
@@ -549,6 +585,7 @@ class CorpusBase:
 
         if len(self.scores) == 0:
             raise Exception("At least one score must be succesfully imported")
+
         self.note_list = self.note_list_whole_piece()
         self.no_unisons = self.note_list_no_unisons()
 

@@ -372,7 +372,10 @@ class ImportedPiece:
                 # name each column according to the voice names that make up the intervals, e.g. 'Bassus_Altus'
                 ser.name = '_'.join((m21Objs.columns[combo[0]], m21Objs.columns[combo[1]]))
                 pairs.append(ser)
-            ret = pd.concat(pairs, axis=1)
+            if pairs:
+                ret = pd.concat(pairs, axis=1)
+            else:
+                ret = pd.DataFrame()
             self.analyses['M21HarmonicIntervals'] = ret
         return self.analyses['M21HarmonicIntervals']
 

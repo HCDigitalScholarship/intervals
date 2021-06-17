@@ -92,10 +92,10 @@ class ImportedPiece:
     def _getPartSeries(self):
         if 'PartSeries' not in self.analyses:
             part_series = []
-
+            part_names = self._getPartNames()
             for i, flat_part in enumerate(self._getFlatParts()):
                 notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
-                ser = pd.Series(notesAndRests)
+                ser = pd.Series(notesAndRests, name = part_names[i])
                 ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
                 ser = ser[~ser.index.duplicated()] # remove multiple events at the same offset in a given part
                 part_series.append(ser)
@@ -276,7 +276,6 @@ class ImportedPiece:
         return None
 
     def _melodicIntervalHelper(row):
-        # TODO not working as intended
         if hasattr(row[0], 'isRest'):
             if row[0].isRest:
                 return 'Rest'

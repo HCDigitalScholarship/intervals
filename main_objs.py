@@ -424,7 +424,7 @@ class ImportedPiece:
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
-                  cell_type=tuple, unit=0, max=0):
+                  cell_type=tuple, unit=0, _max=0):
         ''' Group sequences of observations in a sliding window "n" events long
         (default n=3). These cells of the resulting DataFrame can be grouped as 
         desired by setting `cell_type` to `tuple` (default), `list`, or `str`. 
@@ -476,33 +476,38 @@ class ImportedPiece:
         between held notes and reiterated notes in the lower voice, but if this
         distinction is not wanted for your query, you may want to pass way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
+
+        The `_max` integer setting aloows searching for the longest ngrams at  
+        all time points. The returned dataframe will have ngrams of length 
+        varying between n and _max. If you want to get the longest possible 
+        ngrams, you can set _max to -1. The _max setting is ignored when its 
+        value is 0 (the default).
         '''
         if isinstance(cell_type, str) and len(cell_type) > 0:
             cell_type = cell_type[0].lower()
         structors = {'l': list, list: list, 's': str, str: str}
         cell_type = structors.get(cell_type, tuple)  # tuple is the default
 
-        if max:
-            if max == -1:
-                max = 99999
-            if df:
-                post = df.copy()
-            elif n == 1:
-                post = self.getHarmonic(*interval_settings)
-                n += 1
+        if _max:
+            if _max == -1:
+                _max = 99999
+            if n == 1:
+                if df is not None:
+                    post = df.copy()
+                else:
+                    post = self.getHarmonic(*interval_settings).copy()
             else:
                 post = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
                     exclude=exclude, interval_settings=interval_settings,
                     cell_type=cell_type, unit=unit)
-            n += 1
-            while n <= max:
+            while n <= _max:
+                n += 1
                 temp = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
                     exclude=exclude, interval_settings=interval_settings,
                     cell_type=cell_type, unit=unit)
                 if temp.empty:
                     break
                 post.update(temp)
-                n += 1
             return post
 
         if how == 'columnwise':

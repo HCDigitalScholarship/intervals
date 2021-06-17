@@ -424,7 +424,7 @@ class ImportedPiece:
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
-                  cell_type=tuple, unit=0):
+                  cell_type=tuple, unit=0, max=0):
         ''' Group sequences of observations in a sliding window "n" events long
         (default n=3). These cells of the resulting DataFrame can be grouped as 
         desired by setting `cell_type` to `tuple` (default), `list`, or `str`. 
@@ -481,6 +481,29 @@ class ImportedPiece:
             cell_type = cell_type[0].lower()
         structors = {'l': list, list: list, 's': str, str: str}
         cell_type = structors.get(cell_type, tuple)  # tuple is the default
+
+        if max:
+            if max == -1:
+                max = 99999
+            if df:
+                post = df.copy()
+            elif n == 1:
+                post = self.getHarmonic(*interval_settings)
+                n += 1
+            else:
+                post = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
+                    exclude=exclude, interval_settings=interval_settings,
+                    cell_type=cell_type, unit=unit)
+            n += 1
+            while n <= max:
+                temp = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
+                    exclude=exclude, interval_settings=interval_settings,
+                    cell_type=cell_type, unit=unit)
+                if temp.empty:
+                    break
+                post.update(temp)
+                n += 1
+            return post
 
         if how == 'columnwise':
             return df.apply(ImportedPiece._ngramHelper, args=(n, exclude))

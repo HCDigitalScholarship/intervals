@@ -246,14 +246,30 @@ class ImportedPiece:
         """
 
         if 'TimeSignature' not in self.analyses:
-            time_signatures = []
+            timeSignatures = []
             for part in self._getFlatParts():
-                time_signatures.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
-            df = pd.concat(time_signatures, axis=1)
+                timeSignatures.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
+            df = pd.concat(timeSignatures, axis=1)
             df = df.applymap(lambda ts: ts.ratioString, na_action='ignore')
             df.columns = self._getPartNames()
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
+
+    def _measureNumberHelper(self, noteOrRest):
+        if hasattr(noteOrRest, 'measureNumber'):
+            return noteOrRest.measureNumber
+        return noteOrRest
+
+    def getMeasure(self):
+        ''' 
+        Returns a table of the measures of all the notes and rests in
+        the piece. 
+        '''
+        if 'Measure' not in self.analyses:
+            df = self._getM21ObjsNoTies().applymap(self._measureNumberHelper)
+            self.analyses['Measure'] = df
+        return self.analyses['Measure']
+
 
     def _zeroIndexIntervals(ntrvl):
         '''

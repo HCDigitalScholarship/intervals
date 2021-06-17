@@ -276,6 +276,7 @@ class ImportedPiece:
         return None
 
     def _melodicIntervalHelper(row):
+        # TODO not working as intended
         if hasattr(row[0], 'isRest'):
             if row[0].isRest:
                 return 'Rest'

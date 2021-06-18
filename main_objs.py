@@ -495,7 +495,12 @@ class ImportedPiece:
                 if df is not None:
                     post = df.copy()
                 else:
-                    post = self.getHarmonic(*interval_settings).copy()
+                    if cell_type == str:
+                        post = self.getHarmonic(*interval_settings).copy()
+                    elif cell_type == tuple:
+                        post = self.getHarmonic(*interval_settings).applymap(lambda x: (x,), na_action='ignore')
+                    else:
+                        post = self.getHarmonic(*interval_settings).applymap(lambda x: [x], na_action='ignore')
             else:
                 post = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
                     exclude=exclude, interval_settings=interval_settings,

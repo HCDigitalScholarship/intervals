@@ -424,7 +424,7 @@ class ImportedPiece:
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
-                  cell_type=tuple, unit=0, _max=0):
+                  cell_type=tuple, unit=0, max_n=0):
         ''' Group sequences of observations in a sliding window "n" events long
         (default n=3). These cells of the resulting DataFrame can be grouped as 
         desired by setting `cell_type` to `tuple` (default), `list`, or `str`. 
@@ -477,10 +477,10 @@ class ImportedPiece:
         distinction is not wanted for your query, you may want to pass way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
 
-        The `_max` integer setting aloows searching for the longest ngrams at  
+        The `max_n` integer setting aloows searching for the longest ngrams at  
         all time points. The returned dataframe will have ngrams of length 
-        varying between n and _max. If you want to get the longest possible 
-        ngrams, you can set _max to -1. The _max setting is ignored when its 
+        varying between n and max_n. If you want to get the longest possible 
+        ngrams, you can set max_n to -1. The max_n setting is ignored when its 
         value is 0 (the default).
         '''
         if isinstance(cell_type, str) and len(cell_type) > 0:
@@ -488,9 +488,9 @@ class ImportedPiece:
         structors = {'l': list, list: list, 's': str, str: str}
         cell_type = structors.get(cell_type, tuple)  # tuple is the default
 
-        if _max:
-            if _max == -1:
-                _max = 99999
+        if max_n:
+            if max_n == -1:
+                max_n = 99999
             if n == 1:
                 if df is not None:
                     post = df.copy()
@@ -500,7 +500,7 @@ class ImportedPiece:
                 post = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
                     exclude=exclude, interval_settings=interval_settings,
                     cell_type=cell_type, unit=unit)
-            while n <= _max:
+            while n <= max_n:
                 n += 1
                 temp = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
                     exclude=exclude, interval_settings=interval_settings,

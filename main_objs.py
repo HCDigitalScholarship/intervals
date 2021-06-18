@@ -93,7 +93,7 @@ class ImportedPiece:
         if 'PartSeries' not in self.analyses:
             part_series = []
 
-            for i, flat_part in enumerate(self._getFlatParts()):
+            for i, flat_part in enumerate(self._getSemiFlatParts()):
                 notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
                 part_name = flat_part.partName or 'Part_' + str(i + 1)
                 ser = pd.Series(notesAndRests, name=part_name)
@@ -103,14 +103,14 @@ class ImportedPiece:
             self.analyses['PartSeries'] = part_series
         return self.analyses['PartSeries']
 
-    def _getFlatParts(self):
+    def _getSemiFlatParts(self):
         """
         Return and store flat parts inside a piece using the score attribute.
         """
-        if 'FlatParts' not in self.analyses:
+        if 'SemiFlatParts' not in self.analyses:
             parts = self.score.getElementsByClass(stream.Part)
-            self.analyses['FlatParts'] = [part.flat for part in parts]
-        return self.analyses['FlatParts']
+            self.analyses['SemiFlatParts'] = [part.semiFlat for part in parts]
+        return self.analyses['SemiFlatParts']
 
     def _getPartNames(self):
         """
@@ -118,7 +118,7 @@ class ImportedPiece:
         """
         if 'PartNames' not in self.analyses:
             part_names = []
-            for i, part in enumerate(self._getFlatParts()):
+            for i, part in enumerate(self._getSemiFlatParts()):
                 part_names.append(part.partName or 'Part_' + str(i + 1))
             self.analyses['PartNames'] = part_names
         return self.analyses['PartNames']
@@ -248,13 +248,36 @@ class ImportedPiece:
 
         if 'TimeSignature' not in self.analyses:
             time_signatures = []
-            for part in self._getFlatParts():
+            for part in self._getSemiFlatParts():
                 time_signatures.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
             df = pd.concat(time_signatures, axis=1)
             df = df.applymap(lambda ts: ts.ratioString, na_action='ignore')
             df.columns = self._getPartNames()
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
+
+        
+    def getMeasure(self):
+        """
+
+        parts = list(self.score.getElementsByClass(stream.Part))
+        partMeasures = [pd.Series({m.offset: m.measureNumber}) for part in parts for m in part.makeMeasures()]
+        df = pd.concat(partMeasures, axis=1)
+
+        If you use part.semiFlat instead of part.flat, semiFlat 
+        still has the measure objects in it. Then you can getElementsByClass(['Measure'])
+        and then use their .measureNumber and .offset values to build the series and dataframe. 
+        If you go this route, you could maybe just change ._getSemiFlatParts to ._getSemiFlatParts so 
+        that we don't have both flat and semiflat.
+        """
+        if "Measure" not in self.analyses:
+            parts = self._getSemiFlatParts()
+            partMeasures = [pd.Series({m.offset: m.measureNumber}) \
+                            for part in parts for m in part.makeMeasures()]
+            df = pd.concat(partMeasures, axis=1)
+            self.analyses["Measure"] = df
+        
+        return self.analyses["Measure"]
 
     def _zeroIndexIntervals(ntrvl):
         '''
@@ -412,7 +435,7 @@ class ImportedPiece:
                 df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
             self.analyses[key] = df
         return self.analyses[key]
-
+    
     def _ngramHelper(col, n, exclude=[]):
         col.dropna(inplace=True)
         chunks = [col.shift(-i) for i in range(n)]

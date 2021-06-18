@@ -95,7 +95,8 @@ class ImportedPiece:
 
             for i, flat_part in enumerate(self._getFlatParts()):
                 notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
-                ser = pd.Series(notesAndRests)
+                part_name = flat_part.partName or 'Part_' + str(i + 1)
+                ser = pd.Series(notesAndRests, name=part_name)
                 ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
                 ser = ser[~ser.index.duplicated()] # remove multiple events at the same offset in a given part
                 part_series.append(ser)

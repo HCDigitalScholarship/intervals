@@ -598,6 +598,8 @@ class CorpusBase:
         pure_notes = []
         urls_index = 0
         prev_note = None
+
+        # TODO got bug about at least one piece have to be successfully imported
         for imported in self.scores:
             # if statement to check if analyses already done else do it
             score = imported.score

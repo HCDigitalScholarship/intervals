@@ -279,6 +279,30 @@ class ImportedPiece:
         
         return self.analyses["Measure"]
 
+    def getSoundingCount(self):
+        '''
+        This would be a single-column dataframe with just the number of 
+        parts that currently have a note sounding.
+        '''
+
+        if not 'SoundingCount' in self.analyses:
+            # get where notes and rests are
+            df = self.getNoteRest()
+            num_voices = len(df.columns)
+            # fill in the blank offsets with last sounding notes
+            df = df.ffill(axis=0) 
+
+            # count the number of times rest notes occurs per row 
+            df = df.apply(pd.Series.value_counts, axis=1)
+            # this number is always > 1 and nan means no rest
+            assert not (0 in df['Rest'].values)
+            df = num_voices - df['Rest'].fillna(0)
+
+            self.analyses['SoundingCount'] = df
+
+        return self.analyses['SoundingCount']
+        
+
     def _zeroIndexIntervals(ntrvl):
         '''
         Change diatonic intervals so that they count the number of steps, i.e.
@@ -623,7 +647,6 @@ class CorpusBase:
         urls_index = 0
         prev_note = None
 
-        # TODO got bug about at least one piece have to be successfully imported
         for imported in self.scores:
             # if statement to check if analyses already done else do it
             score = imported.score

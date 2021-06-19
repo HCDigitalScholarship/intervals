@@ -136,3 +136,6 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+test_get_measure.py
+.gitignore
+plot.ipynb

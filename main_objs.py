@@ -259,22 +259,16 @@ class ImportedPiece:
         
     def getMeasure(self):
         """
-
-        parts = list(self.score.getElementsByClass(stream.Part))
-        partMeasures = [pd.Series({m.offset: m.measureNumber}) for part in parts for m in part.makeMeasures()]
-        df = pd.concat(partMeasures, axis=1)
-
-        If you use part.semiFlat instead of part.flat, semiFlat 
-        still has the measure objects in it. Then you can getElementsByClass(['Measure'])
-        and then use their .measureNumber and .offset values to build the series and dataframe. 
-        If you go this route, you could maybe just change ._getSemiFlatParts to ._getSemiFlatParts so 
-        that we don't have both flat and semiflat.
+        This method retrieve
         """
         if "Measure" not in self.analyses:
             parts = self._getSemiFlatParts()
-            partMeasures = [pd.Series({m.offset: m.measureNumber}) \
-                            for part in parts for m in part.makeMeasures()]
+            partMeasures = []
+            for part in parts:
+                partMeasures.append(pd.Series({m.offset: m.measureNumber \
+                                for m in part.getElementsByClass(['Measure'])}))
             df = pd.concat(partMeasures, axis=1)
+            df.columns = self._getPartNames()
             self.analyses["Measure"] = df
         
         return self.analyses["Measure"]

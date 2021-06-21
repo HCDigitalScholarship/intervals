@@ -422,9 +422,22 @@ class ImportedPiece:
         chains.dropna(inplace=True)
         return chains.apply(lambda row: ', '.join(row), axis=1)
 
+    def _ngram_report_helper(self, n, df):
+        stacked = df.stack()
+        return (n, len(stacked.index), len(stacked.unique()))
+
+    def _make_ngram_report(self, data, post, count_func):
+        df = pd.DataFrame(data, columns=['N', 'Total', 'Unique'])
+        df.set_index('N', inplace=True)
+        expression = post.stack().apply(count_func).value_counts()
+        expression = expression.reindex_like(df)
+        expression.fillna(0, inplace=True)
+        df['Expression'] = expression.astype(int)
+        return df
+
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
-                  cell_type=tuple, unit=0, max_n=0):
+                  cell_type=tuple, unit=0, max_n=0, report=False):
         ''' Group sequences of observations in a sliding window "n" events long
         (default n=3). These cells of the resulting DataFrame can be grouped as 
         desired by setting `cell_type` to `tuple` (default), `list`, or `str`. 
@@ -482,6 +495,10 @@ class ImportedPiece:
         varying between n and max_n. If you want to get the longest possible 
         ngrams, you can set max_n to -1. The max_n setting is ignored when its 
         value is 0 (the default).
+
+        If the `report` setting is set to True, the return will be a 2-tuple of 
+        the ngrams of the piece, and a table of the basic stats about the ngrams
+        at every n. This setting only takes effect if max_n is also set.
         '''
         if isinstance(cell_type, str) and len(cell_type) > 0:
             cell_type = cell_type[0].lower()
@@ -494,20 +511,43 @@ class ImportedPiece:
             if n == 1:
                 if df is not None:
                     post = df.copy()
+                    post = post[post != 'Rest']
                 else:
                     post = self.getHarmonic(*interval_settings).copy()
+                    post = post[post != 'Rest']
+                    if cell_type == tuple:
+                        post = post.applymap(lambda x: (x,), na_action='ignore')
+                    elif cell_type == list:
+                        post = post.applymap(lambda x: [x], na_action='ignore')
             else:
                 post = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
                     exclude=exclude, interval_settings=interval_settings,
                     cell_type=cell_type, unit=unit)
-            while n <= max_n:
+            if report:
+                data = [self._ngram_report_helper(n, post)]
+
+            while n < max_n:
                 n += 1
                 temp = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
                     exclude=exclude, interval_settings=interval_settings,
                     cell_type=cell_type, unit=unit)
                 if temp.empty:
                     break
+                if report:
+                    data.append(self._ngram_report_helper(n, temp))
                 post.update(temp)
+
+            # cull nested smaller ngrams appearing immediately after a 1-larger ngram
+            if cell_type == str:
+                count_func = lambda val: val.count('_') + 1
+            else:
+                count_func = lambda val: (len(val) + 1) // 2
+            sizes = post.applymap(count_func, na_action='ignore')
+            mask = sizes.apply(lambda ser: ser[ser + 1 != ser.shift(1)]) > 0
+            post = post[mask]
+
+            if report:
+                return (post, self._make_ngram_report(data, post, count_func))
             return post
 
         if how == 'columnwise':

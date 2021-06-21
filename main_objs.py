@@ -413,14 +413,18 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
-    def _ngramHelper(col, n, exclude=[]):
+    def _ngramHelper(col, n, exclude, cell_type):
         col.dropna(inplace=True)
         chunks = [col.shift(-i) for i in range(n)]
         chains = pd.concat(chunks, axis=1)
         for excl in exclude:
             chains = chains[(chains != excl).all(1)]
         chains.dropna(inplace=True)
-        return chains.apply(lambda row: ', '.join(row), axis=1)
+        if cell_type == str:
+            chains = chains.apply(lambda row: ', '.join(row), axis=1)
+        else:  # cell_type is tuple or list
+            chains = chains.apply(cell_type, axis=1)
+        return chains
 
     def _ngram_report_helper(self, n, df):
         stacked = df.stack()
@@ -434,6 +438,10 @@ class ImportedPiece:
         expression.fillna(0, inplace=True)
         df['Expression'] = expression.astype(int)
         return df
+
+    def _cull_ngram_helper(self, ser):
+        ser = ser.dropna()
+        return ser[ser + 1 != ser.shift(1)]
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
@@ -539,11 +547,14 @@ class ImportedPiece:
 
             # cull nested smaller ngrams appearing immediately after a 1-larger ngram
             if cell_type == str:
-                count_func = lambda val: val.count('_') + 1
-            else:
-                count_func = lambda val: (len(val) + 1) // 2
+                count_func = lambda val: val.count(',') + 1
+            else:  # cell_type is tuple or list
+                if how == 'modules':
+                    count_func = lambda val: val.count(',') + 1
+                else:  # how == 'columnwise'
+                    count_func = len
             sizes = post.applymap(count_func, na_action='ignore')
-            mask = sizes.apply(lambda ser: ser[ser + 1 != ser.shift(1)]) > 0
+            mask = sizes.apply(self._cull_ngram_helper) > 0
             post = post[mask]
 
             if report:
@@ -551,7 +562,7 @@ class ImportedPiece:
             return post
 
         if how == 'columnwise':
-            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude))
+            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, cell_type))
         if how == 'modules':
             if df is None:
                 df = self.getHarmonic(*interval_settings)

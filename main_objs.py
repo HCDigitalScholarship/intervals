@@ -280,19 +280,13 @@ class ImportedPiece:
         '''
 
         if not 'SoundingCount' in self.analyses:
-            # get where notes and rests are
-            df = self.getNoteRest()
-            num_voices = len(df.columns)
-            # fill in the blank offsets with last sounding notes
-            df = df.ffill(axis=0) 
 
-            # count the number of times rest notes occurs per row 
-            df = df.apply(pd.Series.value_counts, axis=1)
-            # this number is always > 1 and nan means no rest
-            assert not (0 in df['Rest'].values)
-            df = num_voices - df['Rest'].fillna(0)
+            nr = self.getNoteRest().ffill()
+            df = nr[nr != 'Rest']
+            ser = df.count(axis=1)
+            ser.name = 'Sounding'
 
-            self.analyses['SoundingCount'] = df
+            self.analyses['SoundingCount'] = ser
 
         return self.analyses['SoundingCount']
         

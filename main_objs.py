@@ -259,7 +259,7 @@ class ImportedPiece:
         
     def getMeasure(self):
         """
-        This method retrieve
+        This method retrieves the offsets of each measure in each voices.
         """
         if "Measure" not in self.analyses:
             parts = self._getSemiFlatParts()

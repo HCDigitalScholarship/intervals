@@ -93,7 +93,7 @@ class ImportedPiece:
         if 'PartSeries' not in self.analyses:
             part_series = []
 
-            for i, flat_part in enumerate(self._getFlatParts()):
+            for i, flat_part in enumerate(self._getSemiFlatParts()):
                 notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
                 part_name = flat_part.partName or 'Part_' + str(i + 1)
                 ser = pd.Series(notesAndRests, name=part_name)
@@ -103,14 +103,14 @@ class ImportedPiece:
             self.analyses['PartSeries'] = part_series
         return self.analyses['PartSeries']
 
-    def _getFlatParts(self):
+    def _getSemiFlatParts(self):
         """
         Return and store flat parts inside a piece using the score attribute.
         """
-        if 'FlatParts' not in self.analyses:
+        if 'SemiFlatParts' not in self.analyses:
             parts = self.score.getElementsByClass(stream.Part)
-            self.analyses['FlatParts'] = [part.flat for part in parts]
-        return self.analyses['FlatParts']
+            self.analyses['SemiFlatParts'] = [part.semiFlat for part in parts]
+        return self.analyses['SemiFlatParts']
 
     def _getPartNames(self):
         """
@@ -118,7 +118,7 @@ class ImportedPiece:
         """
         if 'PartNames' not in self.analyses:
             part_names = []
-            for i, part in enumerate(self._getFlatParts()):
+            for i, part in enumerate(self._getSemiFlatParts()):
                 part_names.append(part.partName or 'Part_' + str(i + 1))
             self.analyses['PartNames'] = part_names
         return self.analyses['PartNames']
@@ -248,13 +248,48 @@ class ImportedPiece:
 
         if 'TimeSignature' not in self.analyses:
             time_signatures = []
-            for part in self._getFlatParts():
+            for part in self._getSemiFlatParts():
                 time_signatures.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
             df = pd.concat(time_signatures, axis=1)
             df = df.applymap(lambda ts: ts.ratioString, na_action='ignore')
             df.columns = self._getPartNames()
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
+
+        
+    def getMeasure(self):
+        """
+        This method retrieves the offsets of each measure in each voices.
+        """
+        if "Measure" not in self.analyses:
+            parts = self._getSemiFlatParts()
+            partMeasures = []
+            for part in parts:
+                partMeasures.append(pd.Series({m.offset: m.measureNumber \
+                                for m in part.getElementsByClass(['Measure'])}))
+            df = pd.concat(partMeasures, axis=1)
+            df.columns = self._getPartNames()
+            self.analyses["Measure"] = df
+        
+        return self.analyses["Measure"]
+
+    def getSoundingCount(self):
+        '''
+        This would be a single-column dataframe with just the number of 
+        parts that currently have a note sounding.
+        '''
+
+        if not 'SoundingCount' in self.analyses:
+
+            nr = self.getNoteRest().ffill()
+            df = nr[nr != 'Rest']
+            ser = df.count(axis=1)
+            ser.name = 'Sounding'
+
+            self.analyses['SoundingCount'] = ser
+
+        return self.analyses['SoundingCount']
+        
 
     def _zeroIndexIntervals(ntrvl):
         '''
@@ -678,6 +713,7 @@ class CorpusBase:
         pure_notes = []
         urls_index = 0
         prev_note = None
+
         for imported in self.scores:
             # if statement to check if analyses already done else do it
             score = imported.score

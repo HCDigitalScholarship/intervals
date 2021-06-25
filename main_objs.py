@@ -195,9 +195,9 @@ class ImportedPiece:
             _df.loc[highestTime, :] = 0  # zeroes are just placeholders
             newCols = []
             for i in range(len(_df.columns)):
-                ser = _df.iloc[:, i]
-                ser.dropna(inplace=True)
-                vals = ser.index[n:] - ser.index[:-n]
+                ser = _df.iloc[:, i] # take entire column i
+                ser.dropna(inplace=True) 
+                vals = ser.index[n:] - ser.index[:-n] # values being 
                 ser.drop(labels=ser.index[-n:], inplace=True)
                 ser[:] = vals
                 newCols.append(ser)
@@ -274,10 +274,10 @@ class ImportedPiece:
         return self.analyses["Measure"]
 
     def getSoundingCount(self):
-        '''
-        This would be a single-column dataframe with just the number of 
-        parts that currently have a note sounding.
-        '''
+        """
+        This would return a series with the number of parts that currently have
+        a note sounding.
+        """
 
         if not 'SoundingCount' in self.analyses:
 
@@ -448,9 +448,17 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
-    def _ngramHelper(col, n, exclude, cell_type):
+    def _ngramHelper(col, n, exclude, cell_type, offsets):
+
         col.dropna(inplace=True)
-        chunks = [col.shift(-i) for i in range(n)]
+
+        if offsets=='start':
+            chunks = [col.shift(-i) for i in range(n)]
+        elif offsets=='end':
+            chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
+        else:
+            raise Exception("Please specify offsets options!")
+
         chains = pd.concat(chunks, axis=1)
         for excl in exclude:
             chains = chains[(chains != excl).all(1)]
@@ -480,7 +488,7 @@ class ImportedPiece:
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
-                  cell_type=tuple, unit=0, max_n=0, report=False):
+                  cell_type=tuple, unit=0, max_n=0, offsets='start', report=False):
         ''' Group sequences of observations in a sliding window "n" events long
         (default n=3). These cells of the resulting DataFrame can be grouped as 
         desired by setting `cell_type` to `tuple` (default), `list`, or `str`. 
@@ -597,7 +605,7 @@ class ImportedPiece:
             return post
 
         if how == 'columnwise':
-            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, cell_type))
+            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, cell_type, offsets))
         if how == 'modules':
             if df is None:
                 df = self.getHarmonic(*interval_settings)

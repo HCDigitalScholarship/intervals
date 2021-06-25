@@ -448,16 +448,29 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
+    def _ngrams_offsets_helper(col, n, offsets):
+        if offsets == 'start':
+            chunks = [col.shift(-i) for i in range(n)]
+        elif offsets == 'end':
+            chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
+        else:
+            raise Exception("Please specify offsets options!")
+
+        return chunks
+
     def _ngramHelper(col, n, exclude, cell_type, offsets):
 
         col.dropna(inplace=True)
 
-        if offsets=='start':
-            chunks = [col.shift(-i) for i in range(n)]
-        elif offsets=='end':
-            chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
-        else:
-            raise Exception("Please specify offsets options!")
+        # if offsets=='start':
+        #     chunks = [col.shift(-i) for i in range(n)]
+        # elif offsets=='end':
+        #     chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
+        # else:
+        #     raise Exception("Please specify offsets options!")
+
+        # TODO add shift option
+        chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
 
         chains = pd.concat(chunks, axis=1)
         for excl in exclude:
@@ -627,14 +640,16 @@ class ImportedPiece:
                     if cell_type == str:
                         combo.insert(loc=1, column='Joiner', value=', ')
                         combo['_'] = '_'
-                        combo = [combo.shift(-i) for i in range(n)]
+                        # TODO add shift option
+                        combo = ImportedPiece._ngrams_offsets_helper(combo, n, offsets)
                         combo = pd.concat(combo, axis=1)
                         if was1:
                             col = combo.iloc[:, 2:-3].dropna().apply(lambda row: ''.join(row), axis=1)
                         else:
                             col = combo.iloc[:, 2:-1].dropna().apply(lambda row: ''.join(row), axis=1)
                     else:
-                        combo = [combo.shift(-i) for i in range(n)]
+                        # TODO add shift option
+                        combo = ImportedPiece._ngrams_offsets_helper(combo, n, offsets)
                         combo = pd.concat(combo, axis=1)
                         if was1:
                             col = combo.iloc[:, 1:-1].dropna().apply(lambda row: cell_type(row), axis=1)
@@ -645,7 +660,12 @@ class ImportedPiece:
                         mask = col.apply(lambda cell: all([excl not in cell for excl in exclude]))
                         col = col[mask]
                     cols.append(col)
-            return pd.concat(cols, axis=1)
+
+            # TODO in case piece has no harmony and cols stays empty
+            if cols:
+                return pd.concat(cols, axis=1)
+            else:
+                return pd.DataFrame()
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come

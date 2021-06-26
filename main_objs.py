@@ -209,8 +209,6 @@ class ImportedPiece:
         return self.analyses['Duration']
 
     def _noteRestHelper(self, noteOrRest):
-        if not hasattr(noteOrRest, 'isRest'):
-            return noteOrRest
         if noteOrRest.isRest:
             return 'Rest'
         return noteOrRest.nameWithOctave
@@ -220,9 +218,44 @@ class ImportedPiece:
         designated with the string "Rest". Notes are shown such that middle C
         is "C4".'''
         if 'NoteRest' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(self._noteRestHelper)
+            df = self._getM21ObjsNoTies().applymap(self._noteRestHelper, na_action='ignore')
             self.analyses['NoteRest'] = df
         return self.analyses['NoteRest']
+
+    def getBeat(self):
+        '''
+        Return a table of the beat positions of all the notes and rests.
+        '''
+        if 'Beat' not in self.analyses:
+            df = self._getM21ObjsNoTies().applymap(lambda note: note.beat, na_action='ignore')
+            self.analyses['Beat'] = df
+        return self.analyses['Beat']
+
+    def _getBeatIndex(self):
+        '''
+        Return a series of the first valid value in each row of .getBeat().
+        '''
+        if 'BeatIndex' not in self.analyses:
+            ser = self.getBeat().apply(lambda row: row.dropna()[0], axis=1)
+            self.analyses['BeatIndex'] = ser
+        return self.analyses['BeatIndex']
+
+    def detailIndex(self, df, offset=True, measure=True, beat=True):
+        '''
+        Return the passed dataframe with a multi-index of the measure and beat
+        position.
+        '''
+        cols = [df, self.analyses['Measure'].iloc[:, 0], self.analyses['BeatIndex']]
+        names = ['Measure', 'Beat']
+        temp = pd.concat(cols, axis=1)
+        temp2 = temp.iloc[:, len(df.columns):].ffill()
+        temp2.iloc[:, 0] = temp2.iloc[:, 0].astype(int)
+        mi = pd.MultiIndex.from_frame(temp2, names=names)
+        ret = temp.iloc[:, :len(df.columns)]
+        ret.index = mi
+        ret.dropna(inplace=True, how='all')
+        ret.sort_index(inplace=True)
+        return ret
 
     def _beatStrengthHelper(self, noteOrRest):
         if hasattr(noteOrRest, 'beatStrength'):
@@ -681,7 +714,7 @@ class CorpusBase:
                 self.scores.append(pathDict[path])
                 print("Memoized piece detected...")
                 continue
-            elif path[0] == '/':
+            elif not path.startswith('http'):
                 print("Requesting file from " + str(path) + "...")
                 try:
                     score = mei_conv.parseFile(path)

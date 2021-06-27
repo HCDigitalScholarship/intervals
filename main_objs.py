@@ -6,6 +6,7 @@ import time
 import httpx
 from pathlib import Path
 import pandas as pd
+import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
 
@@ -481,8 +482,19 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
-    def _ngramHelper(col, n, exclude, cell_type):
+    def _ngramHelper(col, n, max_n, exclude, cell_type):
         col.dropna(inplace=True)
+        if max_n == -1:
+            # get the starting and ending elements of ngrams
+            starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', np.nan)))]
+            ends = col[(col != 'Rest') & (col.shift(-1).isin(('Rest', np.nan)))]
+            df = pd.concat([pd.Series(starts.index), pd.Series(ends.index)], axis=1)  # starting/ending offsets
+            # make ngrams by joining from start to end offsets
+            ret = df.apply(lambda row: ', '.join(col.loc[row[0]:row[1]]), axis=1)
+            ret.name = col.name
+            ret.index = starts.index
+            return ret
+
         chunks = [col.shift(-i) for i in range(n)]
         chains = pd.concat(chunks, axis=1)
         for excl in exclude:
@@ -581,6 +593,8 @@ class ImportedPiece:
         structors = {'l': list, list: list, 's': str, str: str}
         cell_type = structors.get(cell_type, tuple)  # tuple is the default
 
+        if max_n == -1 and how == 'columnwise':
+            return df.apply(ImportedPiece._ngramHelper, args=(n, max_n, exclude, cell_type))
         if max_n:
             if max_n == -1:
                 max_n = 99999
@@ -630,7 +644,7 @@ class ImportedPiece:
             return post
 
         if how == 'columnwise':
-            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, cell_type))
+            return df.apply(ImportedPiece._ngramHelper, args=(n, max_n, exclude, cell_type))
         if how == 'modules':
             if df is None:
                 df = self.getHarmonic(*interval_settings)

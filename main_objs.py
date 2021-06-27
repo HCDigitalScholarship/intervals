@@ -246,7 +246,7 @@ class ImportedPiece:
         Return the passed dataframe with a multi-index of the measure and beat
         position.
         '''
-        cols = [df, self.analyses['Measure'].iloc[:, 0], self.analyses['BeatIndex']]
+        cols = [df, self.getMeasure().iloc[:, 0], self._getBeatIndex()]
         names = ['Measure', 'Beat']
         temp = pd.concat(cols, axis=1)
         temp2 = temp.iloc[:, len(df.columns):].ffill()

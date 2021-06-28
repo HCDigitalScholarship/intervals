@@ -192,12 +192,12 @@ class ImportedPiece:
         if 'Duration' not in self.analyses or df is not None or n != 1:
             _df = self._getM21ObjsNoTies() if df is None else df.copy()
             highestTime = self.score.highestTime
-            _df.loc[highestTime, :] = 0  # zeroes are just placeholders
+            _df.loc[highestTime, :] = 0
             newCols = []
             for i in range(len(_df.columns)):
-                ser = _df.iloc[:, i] # take entire column i
+                ser = _df.iloc[:, i]
                 ser.dropna(inplace=True) 
-                vals = ser.index[n:] - ser.index[:-n] # values being 
+                vals = ser.index[n:] - ser.index[:-n]
                 ser.drop(labels=ser.index[-n:], inplace=True)
                 ser[:] = vals
                 newCols.append(ser)
@@ -449,27 +449,28 @@ class ImportedPiece:
         return self.analyses[key]
 
     def _ngrams_offsets_helper(col, n, offsets):
-        if offsets == 'start':
+        """
+        Generate a list of series that align the notes from one ngrams according
+        to the first or the last note's offset.
+         :param pandas.Series col: A column that originally contains
+         notes and rests.
+         :param int n: The size of the ngram.
+         :param str offsets: We could input 'first' if we want to group
+         the ngrams by their first note's offset, or 'last' if we
+         want to group the ngram by the last note's offset.
+        :return pandas.Series: a list of shifted series that could be grouped by
+        first or the last note's offset.
+        """
+        if offsets == 'first':
             chunks = [col.shift(-i) for i in range(n)]
-        elif offsets == 'end':
+        else: # offsets == 'last':
             chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
-        else:
-            raise Exception("Please specify offsets options!")
-
         return chunks
 
     def _ngramHelper(col, n, exclude, cell_type, offsets):
 
         col.dropna(inplace=True)
 
-        # if offsets=='start':
-        #     chunks = [col.shift(-i) for i in range(n)]
-        # elif offsets=='end':
-        #     chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
-        # else:
-        #     raise Exception("Please specify offsets options!")
-
-        # TODO add shift option
         chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
 
         chains = pd.concat(chunks, axis=1)
@@ -501,7 +502,7 @@ class ImportedPiece:
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
-                  cell_type=tuple, unit=0, max_n=0, offsets='start', report=False):
+                  cell_type=tuple, unit=0, offsets='first', max_n=0, report=False):
         ''' Group sequences of observations in a sliding window "n" events long
         (default n=3). These cells of the resulting DataFrame can be grouped as 
         desired by setting `cell_type` to `tuple` (default), `list`, or `str`. 
@@ -554,7 +555,12 @@ class ImportedPiece:
         distinction is not wanted for your query, you may want to pass way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
 
-        The `max_n` integer setting aloows searching for the longest ngrams at  
+        The `offset` setting can have two modes. If "first" is selected, the
+        returned ngrams will be grouped according to their first notes' offsets,
+        while if "last" is selected, the returned ngrams will be grouped according
+        to the last notes' offsets.
+
+        The `max_n` integer setting allows searching for the longest ngrams at
         all time points. The returned dataframe will have ngrams of length 
         varying between n and max_n. If you want to get the longest possible 
         ngrams, you can set max_n to -1. The max_n setting is ignored when its 
@@ -640,7 +646,6 @@ class ImportedPiece:
                     if cell_type == str:
                         combo.insert(loc=1, column='Joiner', value=', ')
                         combo['_'] = '_'
-                        # TODO add shift option
                         combo = ImportedPiece._ngrams_offsets_helper(combo, n, offsets)
                         combo = pd.concat(combo, axis=1)
                         if was1:
@@ -648,7 +653,6 @@ class ImportedPiece:
                         else:
                             col = combo.iloc[:, 2:-1].dropna().apply(lambda row: ''.join(row), axis=1)
                     else:
-                        # TODO add shift option
                         combo = ImportedPiece._ngrams_offsets_helper(combo, n, offsets)
                         combo = pd.concat(combo, axis=1)
                         if was1:
@@ -661,7 +665,7 @@ class ImportedPiece:
                         col = col[mask]
                     cols.append(col)
 
-            # TODO in case piece has no harmony and cols stays empty
+            # in case piece has no harmony and cols stays empty
             if cols:
                 return pd.concat(cols, axis=1)
             else:
@@ -719,7 +723,6 @@ class CorpusBase:
                 except:
                     print("Import of " + str(path) + " failed, please check your file path/file type. Continuing to next file...")
             else:
-                print("Requesting file from " + str(path) + "...")
                 try:
                     # self.scores.append(m21.converter.parse(requests.get(path).text))
                     score = m21.converter.parse(httpx.get(path).text)

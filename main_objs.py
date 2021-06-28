@@ -505,6 +505,11 @@ class ImportedPiece:
         else:  # cell_type is tuple or list
             chains = chains.apply(cell_type, axis=1)
         return chains
+    
+    def _modules_max_n_helper(self, row, df):
+        temp = df.loc[row[0]:row[1]]
+        temp.reset_index(inplace=True, drop=True)
+        return ', '.join(temp.stack().iloc[1:])
 
     def _ngram_report_helper(self, n, df):
         stacked = df.stack()
@@ -663,15 +668,22 @@ class ImportedPiece:
                         continue
                     combo = pd.concat([other[lowerVoice], df[pair]], axis=1)
                     combo.fillna({lowerVoice: held}, inplace=True)
-                    if cell_type == str:
+                    if n == -1:
+                        har = df[pair]
+                        starts = har[(har != 'Rest') & (har.shift(1).isin(('Rest', np.nan)))]
+                        ends = har[(har != 'Rest') & (har.shift(-1).isin(('Rest', np.nan)))]
+                        starts.dropna(inplace=True)
+                        ends.dropna(inplace=True)
+                        offsets = pd.concat([pd.Series(starts.index), pd.Series(ends.index)], axis=1)
+                        col = offsets.apply(self._modules_max_n_helper, args=(combo,), axis=1)
+                        col.index = starts.index
+                    elif cell_type == str:
                         combo.insert(loc=1, column='Joiner', value=', ')
                         combo['_'] = '_'
                         combo = [combo.shift(-i) for i in range(n)]
                         combo = pd.concat(combo, axis=1)
-                        if was1:
-                            col = combo.iloc[:, 2:-3].dropna().apply(lambda row: ''.join(row), axis=1)
-                        else:
-                            col = combo.iloc[:, 2:-1].dropna().apply(lambda row: ''.join(row), axis=1)
+                        lastIndex = -3 if was1 else -1
+                        col = combo.iloc[:, 2:lastIndex].dropna().apply(lambda row: ''.join(row), axis=1)
                     else:
                         combo = [combo.shift(-i) for i in range(n)]
                         combo = pd.concat(combo, axis=1)
@@ -680,7 +692,7 @@ class ImportedPiece:
                         else:
                             col = combo.iloc[:, 1:].dropna().apply(lambda row: cell_type(row), axis=1)
                     col.name = pair
-                    if exclude:
+                    if exclude and n != -1:
                         mask = col.apply(lambda cell: all([excl not in cell for excl in exclude]))
                         col = col[mask]
                     cols.append(col)

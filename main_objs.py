@@ -555,8 +555,8 @@ class ImportedPiece:
         distinction is not wanted for your query, you may want to pass way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
 
-        The `offset` setting can have two modes. If "first" is selected, the
-        returned ngrams will be grouped according to their first notes' offsets,
+        The `offset` setting can have two modes. If "first" is selected (default option),
+        the returned ngrams will be grouped according to their first notes' offsets,
         while if "last" is selected, the returned ngrams will be grouped according
         to the last notes' offsets.
 

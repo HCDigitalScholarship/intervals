@@ -174,6 +174,8 @@ class ImportedPiece:
         return res
 
     def getDuration(self, df=None, n=1):
+        # TODO edit the documentation so that the users can only use this on output
+        # TODO get note rest or get melodic
         '''
         If no dataframe is passed as the df parameter (the default), return a
         `pandas.DataFrame` of floats giving the duration of notes and rests in 

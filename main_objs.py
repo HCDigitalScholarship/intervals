@@ -6,6 +6,7 @@ import time
 import httpx
 from pathlib import Path
 import pandas as pd
+import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
 
@@ -93,7 +94,7 @@ class ImportedPiece:
         if 'PartSeries' not in self.analyses:
             part_series = []
 
-            for i, flat_part in enumerate(self._getFlatParts()):
+            for i, flat_part in enumerate(self._getSemiFlatParts()):
                 notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
                 part_name = flat_part.partName or 'Part_' + str(i + 1)
                 ser = pd.Series(notesAndRests, name=part_name)
@@ -103,14 +104,14 @@ class ImportedPiece:
             self.analyses['PartSeries'] = part_series
         return self.analyses['PartSeries']
 
-    def _getFlatParts(self):
+    def _getSemiFlatParts(self):
         """
         Return and store flat parts inside a piece using the score attribute.
         """
-        if 'FlatParts' not in self.analyses:
+        if 'SemiFlatParts' not in self.analyses:
             parts = self.score.getElementsByClass(stream.Part)
-            self.analyses['FlatParts'] = [part.flat for part in parts]
-        return self.analyses['FlatParts']
+            self.analyses['SemiFlatParts'] = [part.semiFlat for part in parts]
+        return self.analyses['SemiFlatParts']
 
     def _getPartNames(self):
         """
@@ -118,7 +119,7 @@ class ImportedPiece:
         """
         if 'PartNames' not in self.analyses:
             part_names = []
-            for i, part in enumerate(self._getFlatParts()):
+            for i, part in enumerate(self._getSemiFlatParts()):
                 part_names.append(part.partName or 'Part_' + str(i + 1))
             self.analyses['PartNames'] = part_names
         return self.analyses['PartNames']
@@ -209,8 +210,6 @@ class ImportedPiece:
         return self.analyses['Duration']
 
     def _noteRestHelper(self, noteOrRest):
-        if not hasattr(noteOrRest, 'isRest'):
-            return noteOrRest
         if noteOrRest.isRest:
             return 'Rest'
         return noteOrRest.nameWithOctave
@@ -220,9 +219,44 @@ class ImportedPiece:
         designated with the string "Rest". Notes are shown such that middle C
         is "C4".'''
         if 'NoteRest' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(self._noteRestHelper)
+            df = self._getM21ObjsNoTies().applymap(self._noteRestHelper, na_action='ignore')
             self.analyses['NoteRest'] = df
         return self.analyses['NoteRest']
+
+    def getBeat(self):
+        '''
+        Return a table of the beat positions of all the notes and rests.
+        '''
+        if 'Beat' not in self.analyses:
+            df = self._getM21ObjsNoTies().applymap(lambda note: note.beat, na_action='ignore')
+            self.analyses['Beat'] = df
+        return self.analyses['Beat']
+
+    def _getBeatIndex(self):
+        '''
+        Return a series of the first valid value in each row of .getBeat().
+        '''
+        if 'BeatIndex' not in self.analyses:
+            ser = self.getBeat().apply(lambda row: row.dropna()[0], axis=1)
+            self.analyses['BeatIndex'] = ser
+        return self.analyses['BeatIndex']
+
+    def detailIndex(self, df, offset=True, measure=True, beat=True):
+        '''
+        Return the passed dataframe with a multi-index of the measure and beat
+        position.
+        '''
+        cols = [df, self.getMeasure().iloc[:, 0], self._getBeatIndex()]
+        names = ['Measure', 'Beat']
+        temp = pd.concat(cols, axis=1)
+        temp2 = temp.iloc[:, len(df.columns):].ffill()
+        temp2.iloc[:, 0] = temp2.iloc[:, 0].astype(int)
+        mi = pd.MultiIndex.from_frame(temp2, names=names)
+        ret = temp.iloc[:, :len(df.columns)]
+        ret.index = mi
+        ret.dropna(inplace=True, how='all')
+        ret.sort_index(inplace=True)
+        return ret
 
     def _beatStrengthHelper(self, noteOrRest):
         if hasattr(noteOrRest, 'beatStrength'):
@@ -248,13 +282,48 @@ class ImportedPiece:
 
         if 'TimeSignature' not in self.analyses:
             time_signatures = []
-            for part in self._getFlatParts():
+            for part in self._getSemiFlatParts():
                 time_signatures.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
             df = pd.concat(time_signatures, axis=1)
             df = df.applymap(lambda ts: ts.ratioString, na_action='ignore')
             df.columns = self._getPartNames()
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
+
+        
+    def getMeasure(self):
+        """
+        This method retrieves the offsets of each measure in each voices.
+        """
+        if "Measure" not in self.analyses:
+            parts = self._getSemiFlatParts()
+            partMeasures = []
+            for part in parts:
+                partMeasures.append(pd.Series({m.offset: m.measureNumber \
+                                for m in part.getElementsByClass(['Measure'])}))
+            df = pd.concat(partMeasures, axis=1)
+            df.columns = self._getPartNames()
+            self.analyses["Measure"] = df
+        
+        return self.analyses["Measure"]
+
+    def getSoundingCount(self):
+        '''
+        This would be a single-column dataframe with just the number of 
+        parts that currently have a note sounding.
+        '''
+
+        if not 'SoundingCount' in self.analyses:
+
+            nr = self.getNoteRest().ffill()
+            df = nr[nr != 'Rest']
+            ser = df.count(axis=1)
+            ser.name = 'Sounding'
+
+            self.analyses['SoundingCount'] = ser
+
+        return self.analyses['SoundingCount']
+        
 
     def _zeroIndexIntervals(ntrvl):
         '''
@@ -413,14 +482,29 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
-    def _ngramHelper(col, n, exclude=[]):
+    def _ngramHelper(col, n, max_n, exclude, cell_type):
         col.dropna(inplace=True)
+        if max_n == -1:
+            # get the starting and ending elements of ngrams
+            starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', np.nan)))]
+            ends = col[(col != 'Rest') & (col.shift(-1).isin(('Rest', np.nan)))]
+            df = pd.concat([pd.Series(starts.index), pd.Series(ends.index)], axis=1)  # starting/ending offsets
+            # make ngrams by joining from start to end offsets
+            ret = df.apply(lambda row: ', '.join(col.loc[row[0]:row[1]]), axis=1)
+            ret.name = col.name
+            ret.index = starts.index
+            return ret
+
         chunks = [col.shift(-i) for i in range(n)]
         chains = pd.concat(chunks, axis=1)
         for excl in exclude:
             chains = chains[(chains != excl).all(1)]
         chains.dropna(inplace=True)
-        return chains.apply(lambda row: ', '.join(row), axis=1)
+        if cell_type == str:
+            chains = chains.apply(lambda row: ', '.join(row), axis=1)
+        else:  # cell_type is tuple or list
+            chains = chains.apply(cell_type, axis=1)
+        return chains
 
     def _ngram_report_helper(self, n, df):
         stacked = df.stack()
@@ -434,6 +518,10 @@ class ImportedPiece:
         expression.fillna(0, inplace=True)
         df['Expression'] = expression.astype(int)
         return df
+
+    def _cull_ngram_helper(self, ser):
+        ser = ser.dropna()
+        return ser[ser + 1 != ser.shift(1)]
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
@@ -505,6 +593,8 @@ class ImportedPiece:
         structors = {'l': list, list: list, 's': str, str: str}
         cell_type = structors.get(cell_type, tuple)  # tuple is the default
 
+        if max_n == -1 and how == 'columnwise':
+            return df.apply(ImportedPiece._ngramHelper, args=(n, max_n, exclude, cell_type))
         if max_n:
             if max_n == -1:
                 max_n = 99999
@@ -539,11 +629,14 @@ class ImportedPiece:
 
             # cull nested smaller ngrams appearing immediately after a 1-larger ngram
             if cell_type == str:
-                count_func = lambda val: val.count('_') + 1
-            else:
-                count_func = lambda val: (len(val) + 1) // 2
+                count_func = lambda val: val.count(',') + 1
+            else:  # cell_type is tuple or list
+                if how == 'modules':
+                    count_func = lambda val: val.count(',') + 1
+                else:  # how == 'columnwise'
+                    count_func = len
             sizes = post.applymap(count_func, na_action='ignore')
-            mask = sizes.apply(lambda ser: ser[ser + 1 != ser.shift(1)]) > 0
+            mask = sizes.apply(self._cull_ngram_helper) > 0
             post = post[mask]
 
             if report:
@@ -551,7 +644,7 @@ class ImportedPiece:
             return post
 
         if how == 'columnwise':
-            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude))
+            return df.apply(ImportedPiece._ngramHelper, args=(n, max_n, exclude, cell_type))
         if how == 'modules':
             if df is None:
                 df = self.getHarmonic(*interval_settings)
@@ -635,7 +728,7 @@ class CorpusBase:
                 self.scores.append(pathDict[path])
                 print("Memoized piece detected...")
                 continue
-            elif path[0] == '/':
+            elif not path.startswith('http'):
                 print("Requesting file from " + str(path) + "...")
                 try:
                     score = mei_conv.parseFile(path)
@@ -667,6 +760,7 @@ class CorpusBase:
         pure_notes = []
         urls_index = 0
         prev_note = None
+
         for imported in self.scores:
             # if statement to check if analyses already done else do it
             score = imported.score

@@ -193,11 +193,11 @@ class ImportedPiece:
         if 'Duration' not in self.analyses or df is not None or n != 1:
             _df = self._getM21ObjsNoTies() if df is None else df.copy()
             highestTime = self.score.highestTime
-            _df.loc[highestTime, :] = 0  # zeroes are just placeholders
+            _df.loc[highestTime, :] = 0
             newCols = []
             for i in range(len(_df.columns)):
                 ser = _df.iloc[:, i]
-                ser.dropna(inplace=True)
+                ser.dropna(inplace=True) 
                 vals = ser.index[n:] - ser.index[:-n]
                 ser.drop(labels=ser.index[-n:], inplace=True)
                 ser[:] = vals
@@ -308,10 +308,10 @@ class ImportedPiece:
         return self.analyses["Measure"]
 
     def getSoundingCount(self):
-        '''
-        This would be a single-column dataframe with just the number of 
-        parts that currently have a note sounding.
-        '''
+        """
+        This would return a series with the number of parts that currently have
+        a note sounding.
+        """
 
         if not 'SoundingCount' in self.analyses:
 
@@ -491,7 +491,26 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
-    def _ngramHelper(col, n, exclude):
+    def _ngrams_offsets_helper(col, n, offsets):
+        """
+        Generate a list of series that align the notes from one ngrams according
+        to the first or the last note's offset.
+         :param pandas.Series col: A column that originally contains
+         notes and rests.
+         :param int n: The size of the ngram.
+         :param str offsets: We could input 'first' if we want to group
+         the ngrams by their first note's offset, or 'last' if we
+         want to group the ngram by the last note's offset.
+        :return pandas.Series: a list of shifted series that could be grouped by
+        first or the last note's offset.
+        """
+        if offsets == 'first':
+            chunks = [col.shift(-i) for i in range(n)]
+        else: # offsets == 'last':
+            chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
+        return chunks
+
+    def _ngramHelper(col, n, exclude, offsets):
         col.dropna(inplace=True)
         if n == -1:
             # get the starting and ending elements of ngrams
@@ -504,7 +523,7 @@ class ImportedPiece:
             ret.index = starts.index
             return ret
 
-        chunks = [col.shift(-i) for i in range(n)]
+        chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
         chains = pd.concat(chunks, axis=1)
         for excl in exclude:
             chains = chains[(chains != excl).all(1)]
@@ -518,10 +537,11 @@ class ImportedPiece:
         return ''.join(temp.stack().iloc[2:-1])
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
-                exclude=['Rest'], interval_settings=('d', True, True), unit=0):
+                  exclude=['Rest'], interval_settings=('d', True, True), unit=0,
+                  offsets='first'):
         '''
         Group sequences of observations in a sliding window "n" events long
-        (default n=3). If the `exclude` parameter is passed, if any item in that
+        (default n=3). If the `exclude` parameter is passed and any item in that
         list is found in an ngram, that ngram will be removed from the resulting
         DataFrame. Since `exclude` defaults to `['Rest']`, pass an empty list if
         you want to allow rests in your ngrams.
@@ -557,6 +577,11 @@ class ImportedPiece:
         dataframe will have ngrams of length varying between 1 and the longest 
         ngram in the piece.
 
+        The `offset` setting can have two modes. If "first" is selected (default option),
+        the returned ngrams will be grouped according to their first notes' offsets,
+        while if "last" is selected, the returned ngrams will be grouped according
+        to the last notes' offsets.
+
         If you want want "module" ngrams taken at a regular durational interval,
         you can omit passing `df` and `other` dataframes and instead pass the
         desired `interval_settings` and an integer or float for the `unit`
@@ -576,7 +601,7 @@ class ImportedPiece:
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
         '''
         if how == 'columnwise':
-            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude))
+            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, offsets))
         if df is None:
             df = self.getHarmonic(*interval_settings)
             if unit:
@@ -607,12 +632,16 @@ class ImportedPiece:
                 combo = [combo.shift(-i) for i in range(n)]
                 combo = pd.concat(combo, axis=1)
                 col = combo.iloc[:, 2:lastIndex].dropna().apply(lambda row: ''.join(row), axis=1)
+                if exclude:
+                    mask = col.apply(lambda cell: all([excl not in cell for excl in exclude]))
+                    col = col[mask]
             col.name = pair
-            if exclude and n != -1:
-                mask = col.apply(lambda cell: all([excl not in cell for excl in exclude]))
-                col = col[mask]
             cols.append(col)
-        return pd.concat(cols, axis=1)
+        # in case piece has no harmony and cols stays empty
+        if cols:
+            return pd.concat(cols, axis=1)
+        else:
+            return pd.DataFrame()
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
@@ -666,7 +695,6 @@ class CorpusBase:
                 except:
                     print("Import of " + str(path) + " failed, please check your file path/file type. Continuing to next file...")
             else:
-                print("Requesting file from " + str(path) + "...")
                 try:
                     # self.scores.append(m21.converter.parse(requests.get(path).text))
                     score = m21.converter.parse(httpx.get(path).text)

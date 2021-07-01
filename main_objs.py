@@ -518,10 +518,13 @@ class ImportedPiece:
             ends = col[(col != 'Rest') & (col.shift(-1).isin(('Rest', np.nan)))]
             df = pd.concat([pd.Series(starts.index), pd.Series(ends.index)], axis=1)  # starting/ending offsets
             # make ngrams by joining from start to end offsets
-            ret = df.apply(lambda row: ', '.join(col.loc[row[0]:row[1]]), axis=1)
-            ret.name = col.name
-            ret.index = starts.index
-            return ret
+            ser = df.apply(lambda row: ', '.join(col.loc[row[0]:row[1]]), axis=1)
+            ser.name = col.name
+            if offsets == 'first':
+                ser.index = starts.index
+            else:
+                ser.index = ends.index
+            return ser
 
         chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
         chains = pd.concat(chunks, axis=1)
@@ -621,9 +624,12 @@ class ImportedPiece:
                 ends = har[(har != 'Rest') & (har.shift(-1).isin(('Rest', np.nan)))]
                 starts.dropna(inplace=True)
                 ends.dropna(inplace=True)
-                offsets = pd.concat([pd.Series(starts.index), pd.Series(ends.index)], axis=1)
-                col = offsets.apply(self._modules_max_n_helper, args=(combo,), axis=1)
-                col.index = starts.index
+                bookends = pd.concat([pd.Series(starts.index), pd.Series(ends.index)], axis=1)
+                col = bookends.apply(self._modules_max_n_helper, args=(combo,), axis=1)
+                if offsets == 'first':
+                    col.index = starts.index
+                else:
+                    col.index = ends.index
             else: # n >= 1
                 lastIndex = -1
                 if n == 1:

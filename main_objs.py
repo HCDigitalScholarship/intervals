@@ -192,11 +192,11 @@ class ImportedPiece:
         if 'Duration' not in self.analyses or df is not None or n != 1:
             _df = self._getM21ObjsNoTies() if df is None else df.copy()
             highestTime = self.score.highestTime
-            _df.loc[highestTime, :] = 0  # zeroes are just placeholders
+            _df.loc[highestTime, :] = 0
             newCols = []
             for i in range(len(_df.columns)):
                 ser = _df.iloc[:, i]
-                ser.dropna(inplace=True)
+                ser.dropna(inplace=True) 
                 vals = ser.index[n:] - ser.index[:-n]
                 ser.drop(labels=ser.index[-n:], inplace=True)
                 ser[:] = vals
@@ -274,10 +274,10 @@ class ImportedPiece:
         return self.analyses["Measure"]
 
     def getSoundingCount(self):
-        '''
-        This would be a single-column dataframe with just the number of 
-        parts that currently have a note sounding.
-        '''
+        """
+        This would return a series with the number of parts that currently have
+        a note sounding.
+        """
 
         if not 'SoundingCount' in self.analyses:
 
@@ -448,9 +448,31 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
-    def _ngramHelper(col, n, exclude, cell_type):
+    def _ngrams_offsets_helper(col, n, offsets):
+        """
+        Generate a list of series that align the notes from one ngrams according
+        to the first or the last note's offset.
+         :param pandas.Series col: A column that originally contains
+         notes and rests.
+         :param int n: The size of the ngram.
+         :param str offsets: We could input 'first' if we want to group
+         the ngrams by their first note's offset, or 'last' if we
+         want to group the ngram by the last note's offset.
+        :return pandas.Series: a list of shifted series that could be grouped by
+        first or the last note's offset.
+        """
+        if offsets == 'first':
+            chunks = [col.shift(-i) for i in range(n)]
+        else: # offsets == 'last':
+            chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
+        return chunks
+
+    def _ngramHelper(col, n, exclude, cell_type, offsets):
+
         col.dropna(inplace=True)
-        chunks = [col.shift(-i) for i in range(n)]
+
+        chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
+
         chains = pd.concat(chunks, axis=1)
         for excl in exclude:
             chains = chains[(chains != excl).all(1)]
@@ -480,7 +502,7 @@ class ImportedPiece:
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True),
-                  cell_type=tuple, unit=0, max_n=0, report=False):
+                  cell_type=tuple, unit=0, offsets='first', max_n=0, report=False):
         ''' Group sequences of observations in a sliding window "n" events long
         (default n=3). These cells of the resulting DataFrame can be grouped as 
         desired by setting `cell_type` to `tuple` (default), `list`, or `str`. 
@@ -533,7 +555,12 @@ class ImportedPiece:
         distinction is not wanted for your query, you may want to pass way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
 
-        The `max_n` integer setting aloows searching for the longest ngrams at  
+        The `offset` setting can have two modes. If "first" is selected (default option),
+        the returned ngrams will be grouped according to their first notes' offsets,
+        while if "last" is selected, the returned ngrams will be grouped according
+        to the last notes' offsets.
+
+        The `max_n` integer setting allows searching for the longest ngrams at
         all time points. The returned dataframe will have ngrams of length 
         varying between n and max_n. If you want to get the longest possible 
         ngrams, you can set max_n to -1. The max_n setting is ignored when its 
@@ -597,7 +624,7 @@ class ImportedPiece:
             return post
 
         if how == 'columnwise':
-            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, cell_type))
+            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, cell_type, offsets))
         if how == 'modules':
             if df is None:
                 df = self.getHarmonic(*interval_settings)
@@ -619,14 +646,14 @@ class ImportedPiece:
                     if cell_type == str:
                         combo.insert(loc=1, column='Joiner', value=', ')
                         combo['_'] = '_'
-                        combo = [combo.shift(-i) for i in range(n)]
+                        combo = ImportedPiece._ngrams_offsets_helper(combo, n, offsets)
                         combo = pd.concat(combo, axis=1)
                         if was1:
                             col = combo.iloc[:, 2:-3].dropna().apply(lambda row: ''.join(row), axis=1)
                         else:
                             col = combo.iloc[:, 2:-1].dropna().apply(lambda row: ''.join(row), axis=1)
                     else:
-                        combo = [combo.shift(-i) for i in range(n)]
+                        combo = ImportedPiece._ngrams_offsets_helper(combo, n, offsets)
                         combo = pd.concat(combo, axis=1)
                         if was1:
                             col = combo.iloc[:, 1:-1].dropna().apply(lambda row: cell_type(row), axis=1)
@@ -637,7 +664,12 @@ class ImportedPiece:
                         mask = col.apply(lambda cell: all([excl not in cell for excl in exclude]))
                         col = col[mask]
                     cols.append(col)
-            return pd.concat(cols, axis=1)
+
+            # in case piece has no harmony and cols stays empty
+            if cols:
+                return pd.concat(cols, axis=1)
+            else:
+                return pd.DataFrame()
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
@@ -691,7 +723,6 @@ class CorpusBase:
                 except:
                     print("Import of " + str(path) + " failed, please check your file path/file type. Continuing to next file...")
             else:
-                print("Requesting file from " + str(path) + "...")
                 try:
                     # self.scores.append(m21.converter.parse(requests.get(path).text))
                     score = m21.converter.parse(httpx.get(path).text)

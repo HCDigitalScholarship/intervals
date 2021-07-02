@@ -516,14 +516,11 @@ class ImportedPiece:
             # get the starting and ending elements of ngrams
             starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', np.nan)))]
             ends = col[(col != 'Rest') & (col.shift(-1).isin(('Rest', np.nan)))]
-            df = pd.concat([pd.Series(starts.index), pd.Series(ends.index)], axis=1)  # starting/ending offsets
-            # make ngrams by joining from start to end offsets
-            ser = df.apply(lambda row: ', '.join(col.loc[row[0]:row[1]]), axis=1)
-            ser.name = col.name
-            if offsets == 'first':
-                ser.index = starts.index
-            else:
-                ser.index = ends.index
+            si = tuple(col.index.get_loc(i) for i in starts.index)
+            ei = tuple(col.index.get_loc(i) + 1 for i in ends.index)
+            ind = starts.index if offsets == 'first' else ends.index
+            vals = [', '.join(col.iloc[si[i] : ei[i]]) for i in range(len(si))]
+            ser = pd.Series(vals, name=col.name, index=ind)
             return ser
 
         chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
@@ -534,11 +531,6 @@ class ImportedPiece:
         chains = chains.apply(lambda row: ', '.join(row), axis=1)
         return chains
     
-    def _modules_max_n_helper(self, row, df):
-        temp = df.loc[row[0]:row[1]]
-        temp.reset_index(inplace=True, drop=True)
-        return ''.join(temp.stack().iloc[2:-1])
-
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True), unit=0,
                   offsets='first'):
@@ -624,8 +616,13 @@ class ImportedPiece:
                 ends = har[(har != 'Rest') & (har.shift(-1).isin(('Rest', np.nan)))]
                 starts.dropna(inplace=True)
                 ends.dropna(inplace=True)
-                bookends = pd.concat([pd.Series(starts.index), pd.Series(ends.index)], axis=1)
-                col = bookends.apply(self._modules_max_n_helper, args=(combo,), axis=1)
+                si = tuple(har.index.get_loc(i) for i in starts.index)
+                ei = tuple(har.index.get_loc(i) + 1 for i in ends.index)
+                col = [''.join([cell
+                                for row in combo.iloc[si[i] : ei[i]].values   # center loop
+                                for cell in row][2:-1])                       # innermost loop
+                       for i in range(len(si))]                               # outermost loop
+                col = pd.Series(col)
                 if offsets == 'first':
                     col.index = starts.index
                 else:
@@ -635,7 +632,7 @@ class ImportedPiece:
                 if n == 1:
                     lastIndex = -3
                     n = 2
-                combo = [combo.shift(-i) for i in range(n)]
+                combo = ImportedPiece._ngrams_offsets_helper(combo, n, offsets)
                 combo = pd.concat(combo, axis=1)
                 col = combo.iloc[:, 2:lastIndex].dropna().apply(lambda row: ''.join(row), axis=1)
                 if exclude:

@@ -619,7 +619,7 @@ class ImportedPiece:
                 si = tuple(har.index.get_loc(i) for i in starts.index)
                 ei = tuple(har.index.get_loc(i) + 1 for i in ends.index)
                 col = [''.join([cell
-                                for row in combo.iloc[si[i] : ei[i]].values   # center loop
+                                for row in combo.iloc[si[i] : ei[i]].values   # second loop
                                 for cell in row][2:-1])                       # innermost loop
                        for i in range(len(si))]                               # outermost loop
                 col = pd.Series(col)

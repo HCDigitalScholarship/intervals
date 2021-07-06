@@ -174,6 +174,11 @@ class ImportedPiece:
         res = df.ffill().reindex(new_index, method='pad')
         return res
 
+    def _durationHelper(self, col, n):
+        col = col.dropna()
+        vals = col.index[n:] - col.index[:-n]
+        return pd.Series(vals, col.index[:-n])
+
     def getDuration(self, df=None, n=1):
         '''
         If no dataframe is passed as the df parameter (the default), return a
@@ -191,18 +196,10 @@ class ImportedPiece:
         consecutive 3-note groups, for example.'''
 
         if 'Duration' not in self.analyses or df is not None or n != 1:
-            _df = self._getM21ObjsNoTies() if df is None else df.copy()
+            _df = self.getNoteRest().copy() if df is None else df.copy()
             highestTime = self.score.highestTime
             _df.loc[highestTime, :] = 0
-            newCols = []
-            for i in range(len(_df.columns)):
-                ser = _df.iloc[:, i]
-                ser.dropna(inplace=True) 
-                vals = ser.index[n:] - ser.index[:-n]
-                ser.drop(labels=ser.index[-n:], inplace=True)
-                ser[:] = vals
-                newCols.append(ser)
-            result = pd.concat(newCols, axis=1)
+            result = _df.apply(self._durationHelper, args=(n,))
             if df is None and n == 1:
                 self.analyses['Duration'] = result
             else:

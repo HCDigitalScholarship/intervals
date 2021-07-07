@@ -64,3 +64,6 @@ def test_plot_close_match_heatmap():
 
     mel_diatonic_str = mel_diatonic.applymap(str, na_action='ignore')
     helper_test_close_match_(model, mel_diatonic_str)
+
+# test_plot_ngrams_heatmap()
+# test_plot_close_match_heatmap()

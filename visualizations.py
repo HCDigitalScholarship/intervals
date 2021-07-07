@@ -10,8 +10,9 @@ import re
 import textdistance
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
-    if type(data.iloc[0, :][variable]) != str:
-        raise Exception("Label difficult to see!")
+    # if type(data.iloc[0, :][variable]) != str:
+    #     raise Exception("Label difficult to see!")
+
     observer_chart = alt.Chart(data).mark_bar().encode(
         y=variable,
         x=count,
@@ -24,7 +25,9 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
 
 def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip):
 
-    # TODO make sure that y are in str
+    # if type(data.iloc[0, :][y]) != str:
+    #     raise Exception("Label difficult to see!")
+
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,
         x2=x2,
@@ -79,9 +82,8 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
     combined into one column with start and end points
     """
 
-    # copy to avoid changing original ngrams df
     ngrams_df = _process_ngrams_df_helper(ngrams_df, 'pattern')
-
+    ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: ", ".join(item for item in cell), na_action='ignore')
     if ngrams_duration is not None:
         ngrams_duration = _process_ngrams_df_helper(ngrams_duration, 'duration')
         ngrams_df['end'] = ngrams_df['start'] + ngrams_duration['duration']
@@ -95,6 +97,9 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
         ngrams_df = ngrams_df[voice_condition].dropna(how='all')
     
     if selected_pattern:
+        # make sure that they are in the same format
+        if type(selected_pattern[0]) != type(ngrams_df.iloc[0, :]['pattern']):
+            selected_pattern = [", ".join(item for item in cell) for cell in selected_pattern]
         pattern_condition = ngrams_df['pattern'].isin(selected_pattern)
         ngrams_df = ngrams_df[pattern_condition].dropna(how='all')
 
@@ -115,6 +120,10 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
     
     selector = alt.selection_multi(fields=['pattern'])
+
+    # # turns patterns into string to make it easier to see
+    # processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore').copy()
+
     patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', processed_ngrams_df, selector, selector)
     heatmap = create_heatmap('start', 'end', 'voice', 'pattern', processed_ngrams_df, heatmap_width, heatmap_height,
                              selector, selector, tooltip=['start', 'end', 'pattern'])
@@ -261,8 +270,9 @@ def _close_match_helper(cell):
 def _close_match(ngrams_df, key_pattern):
     ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: _close_match_helper(cell), na_action='ignore')
     # making sure that key pattern and other patterns are tuple of string or ints
-    if type(ngrams_df.iloc[0, :]['pattern']) == type(key_pattern) == tuple or type(ngrams_df.iloc[0, :]['pattern'][0]) == type(key_pattern[0]):
-        raise Exception("Mismatch datatype between input pattern and patterns inside df.")
+    if not (type(ngrams_df.iloc[0, :]['pattern']) == type(key_pattern) == tuple
+            or type(ngrams_df.iloc[0, :]['pattern'][0]) == type(key_pattern[0])):
+        raise Exception("Input patterns and patterns inside dataframe aren't tuple of strings/ints")
 
     ngrams_df['score'] = ngrams_df['pattern'].map(lambda cell: 100*textdistance.levenshtein.normalized_similarity(key_pattern, cell), na_action='ignore')
     return ngrams_df
@@ -297,7 +307,7 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
                                     bind=slider, init={'cutoff': 50})
     return create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
-                          alt.datum.score > selector.cutoff, selector, tooltip=[])
+                          alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
 
 # Network visualizations
 def process_network_df(df, interval_column_name, ema_column_name):

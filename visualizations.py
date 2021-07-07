@@ -3,6 +3,7 @@ This script contains the method
 """
 
 import altair as alt
+from fractions import Fraction
 from pyvis.network import Network
 from ipywidgets import interact, fixed
 import pandas as pd
@@ -83,7 +84,6 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
     """
 
     ngrams_df = _process_ngrams_df_helper(ngrams_df, 'pattern')
-    ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: ", ".join(item for item in cell), na_action='ignore')
     if ngrams_duration is not None:
         ngrams_duration = _process_ngrams_df_helper(ngrams_duration, 'duration')
         ngrams_df['end'] = ngrams_df['start'] + ngrams_duration['duration']
@@ -97,9 +97,6 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
         ngrams_df = ngrams_df[voice_condition].dropna(how='all')
     
     if selected_pattern:
-        # make sure that they are in the same format
-        if type(selected_pattern[0]) != type(ngrams_df.iloc[0, :]['pattern']):
-            selected_pattern = [", ".join(item for item in cell) for cell in selected_pattern]
         pattern_condition = ngrams_df['pattern'].isin(selected_pattern)
         ngrams_df = ngrams_df[pattern_condition].dropna(how='all')
 
@@ -308,6 +305,34 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
                                     bind=slider, init={'cutoff': 50})
     return create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
+
+def generate_ngrams_and_dur(model, df, n=3, exclude=['Rest'],
+                            interval_settings=('d', True, True),offsets='first'):
+    """
+    This method accept a model and a dataframe with the melody or notes
+    and rests and generate an ngram (in columnwise and unit=0 setting)
+    and a corresponding duration ngram
+    :param model: an Imported Piece object.
+    :param df: dataframe containing consecutive notes.
+    :param n: (refer to getNgrams documentation)
+    :param exclude: (refer to getNgrams documentation)
+    :param interval_settings: (refer to getNgrams documentation)
+    :param offsets: (refer to getNgrams documentation)
+    :return: ngram and corresponding duration dataframe!
+    """
+    # compute dur for the ngrams
+    dur = model.getDuration(df)
+    dur = dur.reindex_like(df).applymap(str, na_action='ignore')
+    ngrams = model.getNgrams(df=df, n=n, exclude=exclude,
+                             interval_settings=interval_settings, unit=0, offsets=offsets)
+    dur_ngrams = model.getNgrams(df=dur, n=n, exclude=exclude,
+                                 interval_settings=interval_settings, unit=0, offsets=offsets)
+    dur_ngrams = dur_ngrams.reindex_like(ngrams)
+
+    # sum up durations!
+    dur_ngrams = dur_ngrams.applymap(lambda cell: sum(float(Fraction(item)) for item in cell.split(", ")),
+                                     na_action='ignore')
+    return ngrams, dur_ngrams
 
 # Network visualizations
 def process_network_df(df, interval_column_name, ema_column_name):

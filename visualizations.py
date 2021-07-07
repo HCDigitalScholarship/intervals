@@ -10,9 +10,8 @@ import re
 import textdistance
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
-    data = data.copy()
-    data[variable] = data[variable].astype(str)
-    # TODO make sure that y represented are in str
+    if type(data.iloc[0, :][variable]) != str:
+        raise Exception("Label difficult to see!")
     observer_chart = alt.Chart(data).mark_bar().encode(
         y=variable,
         x=count,

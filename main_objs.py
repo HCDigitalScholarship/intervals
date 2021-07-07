@@ -80,7 +80,7 @@ class ImportedPiece:
             ('q', False, False): lambda cell: cell.semiSimpleName if hasattr(cell, 'semiSimpleName') else cell,
             # diatonic interals without quality
             ('d', True, True): lambda cell: cell.directedName[1:] if hasattr(cell, 'directedName') else cell,
-            ('d', True, False): lambda cell: cell.directedSimpleName[1:] if hasattr(cell, 'directedSimpleName') else cell,
+            ('d', True, False): ImportedPiece._noQualityDirectedSimple,
             ('d', False, True): lambda cell: cell.name[1:] if hasattr(cell, 'name') else cell,
             ('d', False, False): lambda cell: cell.semiSimpleName[1:] if hasattr(cell, 'semiSimpleName') else cell,
             # chromatic intervals
@@ -174,6 +174,11 @@ class ImportedPiece:
         res = df.ffill().reindex(new_index, method='pad')
         return res
 
+    def _durationHelper(self, col, n):
+        col = col.dropna()
+        vals = col.index[n:] - col.index[:-n]
+        return pd.Series(vals, col.index[:-n])
+
     def getDuration(self, df=None, n=1):
         '''
         If no dataframe is passed as the df parameter (the default), return a
@@ -191,18 +196,10 @@ class ImportedPiece:
         consecutive 3-note groups, for example.'''
 
         if 'Duration' not in self.analyses or df is not None or n != 1:
-            _df = self._getM21ObjsNoTies() if df is None else df.copy()
+            _df = self.getNoteRest().copy() if df is None else df.copy()
             highestTime = self.score.highestTime
-            _df.loc[highestTime, :] = 0  # zeroes are just placeholders
-            newCols = []
-            for i in range(len(_df.columns)):
-                ser = _df.iloc[:, i]
-                ser.dropna(inplace=True)
-                vals = ser.index[n:] - ser.index[:-n]
-                ser.drop(labels=ser.index[-n:], inplace=True)
-                ser[:] = vals
-                newCols.append(ser)
-            result = pd.concat(newCols, axis=1)
+            _df.loc[highestTime, :] = 0
+            result = _df.apply(self._durationHelper, args=(n,))
             if df is None and n == 1:
                 self.analyses['Duration'] = result
             else:
@@ -308,10 +305,10 @@ class ImportedPiece:
         return self.analyses["Measure"]
 
     def getSoundingCount(self):
-        '''
-        This would be a single-column dataframe with just the number of 
-        parts that currently have a note sounding.
-        '''
+        """
+        This would return a series with the number of parts that currently have
+        a note sounding.
+        """
 
         if not 'SoundingCount' in self.analyses:
 
@@ -387,6 +384,15 @@ class ImportedPiece:
             else:
                 return '-' + cell.semiSimpleName
         return cell
+
+    def _noQualityDirectedSimple(cell):
+        if hasattr(cell, 'semiSimpleName'):
+            if cell.direction.value == -1:
+                return '-' + cell.semiSimpleName[1:] 
+            else:
+                return cell.semiSimpleName[1:]
+        else:
+            return cell
 
     def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
         '''
@@ -482,57 +488,55 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
-    def _ngramHelper(col, n, max_n, exclude, cell_type):
+    def _ngrams_offsets_helper(col, n, offsets):
+        """
+        Generate a list of series that align the notes from one ngrams according
+        to the first or the last note's offset.
+         :param pandas.Series col: A column that originally contains
+         notes and rests.
+         :param int n: The size of the ngram.
+         :param str offsets: We could input 'first' if we want to group
+         the ngrams by their first note's offset, or 'last' if we
+         want to group the ngram by the last note's offset.
+        :return pandas.Series: a list of shifted series that could be grouped by
+        first or the last note's offset.
+        """
+        if offsets == 'first':
+            chunks = [col.shift(-i) for i in range(n)]
+        else: # offsets == 'last':
+            chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
+        return chunks
+
+    def _ngramHelper(col, n, exclude, offsets):
         col.dropna(inplace=True)
-        if max_n == -1:
+        if n == -1:
             # get the starting and ending elements of ngrams
             starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', np.nan)))]
             ends = col[(col != 'Rest') & (col.shift(-1).isin(('Rest', np.nan)))]
-            df = pd.concat([pd.Series(starts.index), pd.Series(ends.index)], axis=1)  # starting/ending offsets
-            # make ngrams by joining from start to end offsets
-            ret = df.apply(lambda row: ', '.join(col.loc[row[0]:row[1]]), axis=1)
-            ret.name = col.name
-            ret.index = starts.index
-            return ret
+            si = tuple(col.index.get_loc(i) for i in starts.index)
+            ei = tuple(col.index.get_loc(i) + 1 for i in ends.index)
+            ind = starts.index if offsets == 'first' else ends.index
+            vals = [', '.join(col.iloc[si[i] : ei[i]]) for i in range(len(si))]
+            ser = pd.Series(vals, name=col.name, index=ind)
+            return ser
 
-        chunks = [col.shift(-i) for i in range(n)]
+        chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
         chains = pd.concat(chunks, axis=1)
         for excl in exclude:
             chains = chains[(chains != excl).all(1)]
         chains.dropna(inplace=True)
-        if cell_type == str:
-            chains = chains.apply(lambda row: ', '.join(row), axis=1)
-        else:  # cell_type is tuple or list
-            chains = chains.apply(cell_type, axis=1)
+        chains = chains.apply(lambda row: ', '.join(row), axis=1)
         return chains
-
-    def _ngram_report_helper(self, n, df):
-        stacked = df.stack()
-        return (n, len(stacked.index), len(stacked.unique()))
-
-    def _make_ngram_report(self, data, post, count_func):
-        df = pd.DataFrame(data, columns=['N', 'Total', 'Unique'])
-        df.set_index('N', inplace=True)
-        expression = post.stack().apply(count_func).value_counts()
-        expression = expression.reindex_like(df)
-        expression.fillna(0, inplace=True)
-        df['Expression'] = expression.astype(int)
-        return df
-
-    def _cull_ngram_helper(self, ser):
-        ser = ser.dropna()
-        return ser[ser + 1 != ser.shift(1)]
-
+    
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
-                  exclude=['Rest'], interval_settings=('d', True, True),
-                  cell_type=tuple, unit=0, max_n=0, report=False):
-        ''' Group sequences of observations in a sliding window "n" events long
-        (default n=3). These cells of the resulting DataFrame can be grouped as 
-        desired by setting `cell_type` to `tuple` (default), `list`, or `str`. 
-        If the `exclude` parameter is passed, if any item in that list is found 
-        in an ngram, that ngram will be removed from the resulting DataFrame. 
-        Since `exclude` defaults to `['Rest']`, pass an empty list if you want 
-        to allow rests in your ngrams.
+                  exclude=['Rest'], interval_settings=('d', True, True), unit=0,
+                  offsets='first'):
+        '''
+        Group sequences of observations in a sliding window "n" events long
+        (default n=3). If the `exclude` parameter is passed and any item in that
+        list is found in an ngram, that ngram will be removed from the resulting
+        DataFrame. Since `exclude` defaults to `['Rest']`, pass an empty list if
+        you want to allow rests in your ngrams.
 
         There are two primary modes for the `how` parameter. When set to
         "columnwise" (default), this is the simple case where the events in each
@@ -560,6 +564,16 @@ class ImportedPiece:
         the next harmonic interval. Open-ended module ngrams can be useful if 
         you want to see how long the imitation in two voice parts goes on for.
 
+        Another special case is when `n` is set to -1. This finds the longest 
+        ngrams at all time points excluding subset ngrams. The returned 
+        dataframe will have ngrams of length varying between 1 and the longest 
+        ngram in the piece.
+
+        The `offset` setting can have two modes. If "first" is selected (default option),
+        the returned ngrams will be grouped according to their first notes' offsets,
+        while if "last" is selected, the returned ngrams will be grouped according
+        to the last notes' offsets.
+
         If you want want "module" ngrams taken at a regular durational interval,
         you can omit passing `df` and `other` dataframes and instead pass the
         desired `interval_settings` and an integer or float for the `unit`
@@ -577,114 +591,57 @@ class ImportedPiece:
         between held notes and reiterated notes in the lower voice, but if this
         distinction is not wanted for your query, you may want to pass way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
-
-        The `max_n` integer setting aloows searching for the longest ngrams at  
-        all time points. The returned dataframe will have ngrams of length 
-        varying between n and max_n. If you want to get the longest possible 
-        ngrams, you can set max_n to -1. The max_n setting is ignored when its 
-        value is 0 (the default).
-
-        If the `report` setting is set to True, the return will be a 2-tuple of 
-        the ngrams of the piece, and a table of the basic stats about the ngrams
-        at every n. This setting only takes effect if max_n is also set.
         '''
-        if isinstance(cell_type, str) and len(cell_type) > 0:
-            cell_type = cell_type[0].lower()
-        structors = {'l': list, list: list, 's': str, str: str}
-        cell_type = structors.get(cell_type, tuple)  # tuple is the default
-
-        if max_n == -1 and how == 'columnwise':
-            return df.apply(ImportedPiece._ngramHelper, args=(n, max_n, exclude, cell_type))
-        if max_n:
-            if max_n == -1:
-                max_n = 99999
-            if n == 1:
-                if df is not None:
-                    post = df.copy()
-                    post = post[post != 'Rest']
-                else:
-                    post = self.getHarmonic(*interval_settings).copy()
-                    post = post[post != 'Rest']
-                    if cell_type == tuple:
-                        post = post.applymap(lambda x: (x,), na_action='ignore')
-                    elif cell_type == list:
-                        post = post.applymap(lambda x: [x], na_action='ignore')
-            else:
-                post = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
-                    exclude=exclude, interval_settings=interval_settings,
-                    cell_type=cell_type, unit=unit)
-            if report:
-                data = [self._ngram_report_helper(n, post)]
-
-            while n < max_n:
-                n += 1
-                temp = self.getNgrams(df=df, n=n, how=how, other=other, held=held,
-                    exclude=exclude, interval_settings=interval_settings,
-                    cell_type=cell_type, unit=unit)
-                if temp.empty:
-                    break
-                if report:
-                    data.append(self._ngram_report_helper(n, temp))
-                post.update(temp)
-
-            # cull nested smaller ngrams appearing immediately after a 1-larger ngram
-            if cell_type == str:
-                count_func = lambda val: val.count(',') + 1
-            else:  # cell_type is tuple or list
-                if how == 'modules':
-                    count_func = lambda val: val.count(',') + 1
-                else:  # how == 'columnwise'
-                    count_func = len
-            sizes = post.applymap(count_func, na_action='ignore')
-            mask = sizes.apply(self._cull_ngram_helper) > 0
-            post = post[mask]
-
-            if report:
-                return (post, self._make_ngram_report(data, post, count_func))
-            return post
-
         if how == 'columnwise':
-            return df.apply(ImportedPiece._ngramHelper, args=(n, max_n, exclude, cell_type))
-        if how == 'modules':
-            if df is None:
-                df = self.getHarmonic(*interval_settings)
-                if unit:
-                  df = self.regularize(df, unit)
-            if other is None:
-                other = self.getMelodic(*interval_settings, unit=unit)
-            was1 = False
-            if n == 1:
-                was1 = True
-                n = 2
-            cols = []
-            for lowerVoice in other.columns:
-                for pair in df.columns:
-                    if not pair.startswith(lowerVoice + '_'):
-                        continue
-                    combo = pd.concat([other[lowerVoice], df[pair]], axis=1)
-                    combo.fillna({lowerVoice: held}, inplace=True)
-                    if cell_type == str:
-                        combo.insert(loc=1, column='Joiner', value=', ')
-                        combo['_'] = '_'
-                        combo = [combo.shift(-i) for i in range(n)]
-                        combo = pd.concat(combo, axis=1)
-                        if was1:
-                            col = combo.iloc[:, 2:-3].dropna().apply(lambda row: ''.join(row), axis=1)
-                        else:
-                            col = combo.iloc[:, 2:-1].dropna().apply(lambda row: ''.join(row), axis=1)
-                    else:
-                        combo = [combo.shift(-i) for i in range(n)]
-                        combo = pd.concat(combo, axis=1)
-                        if was1:
-                            col = combo.iloc[:, 1:-1].dropna().apply(lambda row: cell_type(row), axis=1)
-                        else:
-                            col = combo.iloc[:, 1:].dropna().apply(lambda row: cell_type(row), axis=1)
-                    col.name = pair
-                    if exclude:
-                        mask = col.apply(lambda cell: all([excl not in cell for excl in exclude]))
-                        col = col[mask]
-                    cols.append(col)
+            return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, offsets))
+        if df is None:
+            df = self.getHarmonic(*interval_settings)
+            if unit:
+              df = self.regularize(df, unit)
+        if other is None:
+            other = self.getMelodic(*interval_settings, unit=unit)
+        cols = []
+        for pair in df.columns:
+            lowerVoice = pair.split('_')[0]
+            combo = pd.concat([other[lowerVoice], df[pair]], axis=1)
+            combo.fillna({lowerVoice: held}, inplace=True)
+            combo.insert(loc=1, column='Joiner', value=', ')
+            combo['_'] = '_'
+            if n == -1:
+                har = df[pair]
+                starts = har[(har != 'Rest') & (har.shift(1).isin(('Rest', np.nan)))]
+                ends = har[(har != 'Rest') & (har.shift(-1).isin(('Rest', np.nan)))]
+                starts.dropna(inplace=True)
+                ends.dropna(inplace=True)
+                si = tuple(har.index.get_loc(i) for i in starts.index)
+                ei = tuple(har.index.get_loc(i) + 1 for i in ends.index)
+                col = [''.join([cell
+                                for row in combo.iloc[si[i] : ei[i]].values   # second loop
+                                for cell in row][2:-1])                       # innermost loop
+                       for i in range(len(si))]                               # outermost loop
+                col = pd.Series(col)
+                if offsets == 'first':
+                    col.index = starts.index
+                else:
+                    col.index = ends.index
+            else: # n >= 1
+                lastIndex = -1
+                if n == 1:
+                    lastIndex = -3
+                    n = 2
+                combo = ImportedPiece._ngrams_offsets_helper(combo, n, offsets)
+                combo = pd.concat(combo, axis=1)
+                col = combo.iloc[:, 2:lastIndex].dropna().apply(lambda row: ''.join(row), axis=1)
+                if exclude:
+                    mask = col.apply(lambda cell: all([excl not in cell for excl in exclude]))
+                    col = col[mask]
+            col.name = pair
+            cols.append(col)
+        # in case piece has no harmony and cols stays empty
+        if cols:
             return pd.concat(cols, axis=1)
+        else:
+            return pd.DataFrame()
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
@@ -738,7 +695,6 @@ class CorpusBase:
                 except:
                     print("Import of " + str(path) + " failed, please check your file path/file type. Continuing to next file...")
             else:
-                print("Requesting file from " + str(path) + "...")
                 try:
                     # self.scores.append(m21.converter.parse(requests.get(path).text))
                     score = m21.converter.parse(httpx.get(path).text)

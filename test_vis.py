@@ -1,13 +1,13 @@
 """
 This file contains unit tests for visualizations.
 """
-from main_objs import CorpusBase
 
 import altair as alt
 import pandas as pd
 import visualizations as viz
 
 from fractions import Fraction
+from main_objs import CorpusBase
 
 def ngrams_heatmap_test_helper(model, notes):
     """
@@ -121,8 +121,6 @@ def test_generate_ngrams_and_dur():
     # diatonic
     mel_diatonic = model.getMelodic(kind='d', directed=True, compound=True, unit=0)
     helper_test_generate_ngrams_and_dur(model, mel_diatonic)
-
-
 
 # test_plot_ngrams_heatmap()
 # test_plot_close_match_heatmap()

@@ -3,12 +3,13 @@ This script contains the method
 """
 
 import altair as alt
-from fractions import Fraction
-from pyvis.network import Network
-from ipywidgets import interact, fixed
 import pandas as pd
 import re
 import textdistance
+
+from fractions import Fraction
+from ipywidgets import interact, fixed
+from pyvis.network import Network
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
     # if type(data.iloc[0, :][variable]) != str:
@@ -145,6 +146,7 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height)
 
 def _from_ema_to_offsets(df, ema_column):
+    # TODO add tests
     """
     This method adds a columns of start and end measure of patterns into
     the relationship dataframe using the column with the ema address.
@@ -216,10 +218,6 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
                             other_selector | main_selector, main_selector)
     bar0 = create_bar_chart(other_category, str('count(' + other_category + ')'), main_category, df,
                             other_selector | main_selector, other_selector)
-
-    # heatmap = create_heatmap('start', 'end', 'id', main_category, df, heat_map_width, heat_map_height,
-    #                          other_selector | main_selector, main_selector,
-    #                          tooltip=[main_category, other_category, 'start', 'end', 'id']).interactive()
 
     heatmap = alt.Chart(df).mark_bar().encode(
         x='start',
@@ -348,12 +346,13 @@ def process_network_df(df, interval_column_name, ema_column_name):
     return result_df
 
 # add nodes to graph
-def create_comparisons_networks(interval_column, interval_type):
+def create_interval_networks(interval_column, interval_type):
     """
-
-    :param interval_column:
-    :param interval_type:
-    :return:
+    Helper method to create networks for observations' intervals
+    :param interval_column: column containing the intervals users want to
+    examine
+    :param interval_type: 'melodic' or 'time'
+    :return: a dictionary of networks describing the intervals
     """
     # dictionary maps the first time/melodic interval to its corresponding
     # network
@@ -366,8 +365,10 @@ def create_comparisons_networks(interval_column, interval_type):
         # create nodes according to the interval types
         if interval_type == 'melodic':
             nodes = re.sub(r'([+-])(?!$)', r'\1,', node).split(",")
+            separator = ''
         elif interval_type == 'time':
             nodes = node.split("/")
+            separator='/'
         else:
             raise Exception("Please put either 'time' or 'melodic' for `type_interval`")
 
@@ -379,7 +380,7 @@ def create_comparisons_networks(interval_column, interval_type):
 
         prev_node = 'all'
         for i in range(1, len(nodes)):
-            node_id = "".join(node for node in nodes[:i])
+            node_id = separator.join(node for node in nodes[:i])
             # add to its own family network
             networks_dict[group].add_node(node_id, group=group, physics=False, level=i)
             if prev_node != "all":
@@ -392,23 +393,17 @@ def create_comparisons_networks(interval_column, interval_type):
 
     return networks_dict
 
-def _manipulate_processed_network_df(df, interval_column, search_pattern, option='starts with'):
+def _manipulate_processed_network_df(df, interval_column, search_pattern_starts_with):
     """
     This method helps to generate interactive widget in create_interactive_compare_df
+    :param search_pattern_starts_with:
     :param df: the dataframe the user interact with
     :param interval_column: the column of intervals
-    :param search_pattern: the pattern users want to examine
-    :param option: the search options the user selected
     :return: A filtered and colored dataframe based on the option the user selected.
     """
-    if option == 'starts with':
-        mask = df[interval_column].astype(str).str.startswith(pat=search_pattern)
-    elif option == 'ends with':
-        mask = df[interval_column].astype(str).str.endswith(pat=search_pattern)
-    else:
-        mask = df[interval_column].astype(str).str.contains(pat=search_pattern, regex=False)
+    mask = df[interval_column].astype(str).str.startswith(pat=search_pattern_starts_with)
     filtered_df = df[mask].copy()
-    return filtered_df.fillna("-").style.applymap(lambda x: "background: #ccebc5" if search_pattern in x else "")
+    return filtered_df.fillna("-").style.applymap(lambda x: "background: #ccebc5" if search_pattern_starts_with in x else "")
 
 def create_interactive_compare_df(df, interval_column):
     """
@@ -420,24 +415,24 @@ def create_interactive_compare_df(df, interval_column):
     search pattern.
     """
     return interact(_manipulate_processed_network_df, df=fixed(df),
-                    interval_column=fixed(interval_column), search_pattern='',
-                    options=['starts with', 'contains', 'ends_with'])
+                    interval_column=fixed(interval_column), search_pattern_starts_with='')
 
 def create_comparisons_networks_and_interactive_df(df, interval_column, interval_type, ema_column, patterns=[]):
+    # TODO add tests
     """
     Generate a dictionary of networks and a simple dataframe allowing the users
     search through the intervals.
     :param df: the dataframe the user interact with
     :param interval_column: the column of intervals
     :param interval_type: put "time" or "melodic"
-    :param ema_column:
-    :param patterns:
-    :return:
+    :param ema_column: column containing ema address
+    :param patterns: we could only choose to look at specific patterns (optional)
+    :return: a dictionary of networks created and a clean interactive df
     """
     # process df
     if patterns:
         df = df[df[interval_column.isin(patterns)]].copy()
 
-    networks_dict = create_comparisons_networks(df[interval_column], interval_type)
+    networks_dict = create_interval_networks(df[interval_column], interval_type)
     df = process_network_df(df, interval_column, ema_column)
     return networks_dict, create_interactive_compare_df(df, interval_column)

@@ -17,5 +17,5 @@ pytz==2021.1
 rfc3986==1.4.0
 six==1.15.0
 sniffio==1.2.0
-textdistance=4.2.1
+textdistance==4.2.1
 webcolors==1.11.1

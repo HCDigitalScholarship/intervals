@@ -28,6 +28,15 @@ def ngrams_heatmap_test_helper(model, notes):
     assert isinstance(chart, alt.VConcatChart)
     assert len(chart.vconcat) == 2
 
+    # test no durations
+    ngrams_multiple = model.getNgrams(df=notes, n=-1)
+    chart_multiple = viz.plot_ngrams_heatmap(ngrams_df=ngrams_multiple)
+
+    # retrieved two charts: one pattern bar chart
+    # and one heatmap
+    assert isinstance(chart_multiple, alt.VConcatChart)
+    assert len(chart_multiple.vconcat) == 2
+
     # popular pattern
     popular_patterns = ngrams.stack().dropna().value_counts().head(10).index.to_list()
     selected_patterns_chart = viz.plot_ngrams_heatmap(ngrams_df=ngrams, selected_patterns=popular_patterns)
@@ -47,6 +56,11 @@ def ngrams_heatmap_test_helper(model, notes):
     assert isinstance(dur_chart, alt.VConcatChart)
     assert len(dur_chart.vconcat) == 2
 
+    ngrams_multiple, ngrams_dur_multiple = viz.generate_ngrams_and_dur(model, df=notes, n=5)
+    dur_chart_multiple = viz.plot_ngrams_heatmap(ngrams_multiple, ngrams_duration=ngrams_dur_multiple)
+    assert isinstance(dur_chart_multiple, alt.VConcatChart)
+    assert len(dur_chart_multiple.vconcat) == 2
+
     # duration and filter voice
     dur_selected_voices_chart = viz.plot_ngrams_heatmap(ngrams, ngrams_duration=ngrams_dur,
                                                         voices=selected_voices)
@@ -58,6 +72,12 @@ def ngrams_heatmap_test_helper(model, notes):
                                                         selected_patterns=popular_patterns)
     assert isinstance(dur_selected_patterns_chart, alt.VConcatChart)
     assert len(dur_selected_patterns_chart.vconcat) == 2
+
+    # with multiple lengths ngrams
+    ngrams_multiple, ngrams_dur_multiple = viz.generate_ngrams_and_dur(model, df=notes, n=-1)
+    dur_chart_multiple = viz.plot_ngrams_heatmap(ngrams_multiple, ngrams_duration=ngrams_dur_multiple)
+    assert isinstance(dur_chart_multiple, alt.VConcatChart)
+    assert len(dur_chart_multiple.vconcat) == 2
 
 def test_plot_ngrams_heatmap():
     corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0017.mei'])
@@ -89,10 +109,10 @@ def test_plot_close_match_heatmap():
     mel_diatonic = model.getMelodic(kind='d', directed=True, compound=True, unit=0)
     helper_test_close_match_(model, mel_diatonic)
 
-def helper_test_generate_ngrams_and_dur(model, notes):
+def helper_test_generate_ngrams_and_dur(model, notes, n):
 
     # throw things into get ngrams and duration
-    ngrams, ngrams_dur = viz.generate_ngrams_and_dur(model, df=notes, n=5)
+    ngrams, ngrams_dur = viz.generate_ngrams_and_dur(model, df=notes, n=n)
 
     for row in ngrams.index:
         for col in ngrams.columns:
@@ -106,7 +126,7 @@ def helper_test_generate_ngrams_and_dur(model, notes):
             ngram_notes = notes.loc[row:Fraction(row+dur), col].dropna().to_list()
 
             # check all of the notes in the notes dataframe against the ngrams
-            assert len(ngram_notes) == 5 or len(ngram_notes) == 6
+            assert len(ngram_notes) == len(ngram) or len(ngram_notes) - 1 == len(ngram)
             for i in range(len(ngram)):
                 assert(ngram_notes[i] == ngram[i])
 
@@ -116,11 +136,18 @@ def test_generate_ngrams_and_dur():
 
     # mel
     mel_notes = model.getMelodic(kind='q', directed=True, compound=True, unit=0)
-    helper_test_generate_ngrams_and_dur(model, mel_notes)
+    helper_test_generate_ngrams_and_dur(model, mel_notes, 5)
+    helper_test_generate_ngrams_and_dur(model, mel_notes, -1)
 
     # diatonic
     mel_diatonic = model.getMelodic(kind='d', directed=True, compound=True, unit=0)
-    helper_test_generate_ngrams_and_dur(model, mel_diatonic)
+    helper_test_generate_ngrams_and_dur(model, mel_diatonic, 5)
+    helper_test_generate_ngrams_and_dur(model, mel_diatonic, -1)
+
+    # chromatic
+    mel_chromatic = model.getMelodic(kind='c', directed=True, compound=True, unit=0)
+    helper_test_generate_ngrams_and_dur(model, mel_chromatic, 5)
+    helper_test_generate_ngrams_and_dur(model, mel_chromatic, -1)
 
 # test_plot_ngrams_heatmap()
 # test_plot_close_match_heatmap()

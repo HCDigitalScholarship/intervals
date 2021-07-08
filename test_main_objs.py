@@ -1,7 +1,12 @@
 from main_objs import *
 
+# small list of working example files
 FILES_FEW = ["01", "02", "04", "17", "09"]
+
+# list of four example files with incorrect measure offsets
 FILES_WRONG= ["01", "08", "14", "16", "17"]
+
+# all files available
 FILES_MANY = [
     'https://crimproject.org/mei/CRIM_Model_0001.mei',
     'https://crimproject.org/mei/CRIM_Model_0002.mei',
@@ -189,43 +194,8 @@ def has_diff_measure_offsets(model):
             return True
     return False
 
-def find_measures_with_diff(model):
-    ms = model.getMeasure()
-    num_voices = len(ms.columns)
-
-    # create a df with time signature and note_rests
-    ts = model.getTimeSignature()
-    nr = model.getNoteRest()
-    dur = model.getDuration(nr)
-
-    # combine and divide dataframe
-    big_df = pd.concat([nr, ts, dur, ms], axis=1)
-    nr_part = big_df.iloc[:, :num_voices]
-    ts_part = big_df.iloc[:, num_voices:num_voices * 2]
-    dur_part = big_df.iloc[:, num_voices * 2:num_voices * 3]
-    ms_part = big_df.iloc[:, num_voices * 3:]
-    ts_part.fillna(method='ffill', axis=0, inplace=True)
-
-    # conditions
-    ts_condition = ts_part == '3/1'
-    nr_condition = nr_part == 'Rest'
-    dur_condition = dur_part == 8.0
-
-    ms_part = ms_part[ts_condition & nr_condition & dur_condition].dropna(how='all')
-
-    return ms_part
-
-def identify_faulty_measures_offsets():
-    files = FILES_MANY
-    models = build_crim_models(files)
-
-    for file, model in models.items():
-        if has_diff_measure_offsets(model):
-            print(file)
-            print(find_measures_with_diff(model))
-
 def test_main():
-    files = FILES_MANY
+    files = FILES_FEW
     models = build_crim_models(files)
 
     for file, model in models.items():

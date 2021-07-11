@@ -261,6 +261,16 @@ class ImportedPiece:
         mask = df.applymap(lambda cell: True, na_action='ignore')
         return dur[mask].dropna(how='all')
 
+    def getLyric(self):
+        '''
+        Return a dataframe of the lyrics associated with each note in the piece.
+        '''
+        if 'Lyric' not in self.analyses:
+            df = self._getM21ObjsNoTies().applymap(na_action='ignore',
+                func=lambda note: note.lyric if note.isNote else None)
+            df.fillna(np.nan, inplace=True)
+            self.analyses['Lyric'] = df
+        return self.analyses['Lyric']
 
     def _noteRestHelper(self, noteOrRest):
         if noteOrRest.isRest:

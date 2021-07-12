@@ -179,34 +179,98 @@ class ImportedPiece:
         vals = col.index[n:] - col.index[:-n]
         return pd.Series(vals, col.index[:-n])
 
-    def getDuration(self, df=None, n=1):
-        # TODO edit the documentation so that the users can only use this on output
-        # TODO get note rest or get melodic
-        '''
-        If no dataframe is passed as the df parameter (the default), return a
-        `pandas.DataFrame` of floats giving the duration of notes and rests in 
-        each part where 1 = quarternote, 1.5 = a dotted quarter, 4 = a whole 
-        note, etc. If a df is passed, then return a df of the same shape giving 
-        the duration of each of the slices of this df. This is useful if you 
-        want to know what the durations of something other than single notes 
-        and rests, such as the durations of intervals.
-        
-        If n is set, it must be an integer >= 1 and less than the number of 
-        rows in df. It determines how many adjacent items have their durations 
-        grouped together. To get the duration of single events, n should be 1 
-        (default). You could set n=3 if you wanted to get the duration of all 
-        consecutive 3-note groups, for example.'''
+    def _maxnDurationHelper(self, _col):
+        col = _col.dropna()
+        starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', np.nan)))]
+        ends = col[(col == 'Rest') & (col.shift(1) != 'Rest')]
+        starts.dropna(inplace=True)
+        ends.dropna(inplace=True)
+        lenStarts = len(starts)
+        colDurs = ends.index[-lenStarts:] - starts.index
+        starts[:] = colDurs
+        return starts
 
-        if 'Duration' not in self.analyses or df is not None or n != 1:
-            _df = self.getNoteRest().copy() if df is None else df.copy()
-            highestTime = self.score.highestTime
-            _df.loc[highestTime, :] = 0
+    def getDuration(self, df=None, n=1, mask_df=None):
+        '''
+        If no arguments are passed, return a `pandas.DataFrame` of floats giving
+        the duration of notes and rests in each part where 1 = quarternote,
+        1.5 = a dotted quarter, 4 = a whole note, etc. If a df is passed, then
+        return a df of the same shape giving the duration of each of the cells
+        of this df. This is useful if you want to know what the durations of
+        something other than single notes and rests, such as the durations of
+        intervals. E.g.:
+
+        har = importedPiece.getHarmonic()
+        harDur = importedPiece.getDuration(df=har)
+
+        The `n` parameter should be an integer greater than zero, or -1. When
+        n is a positive integer, it groups together a sliding window of n
+        consecutive non-NaN cells in each column. If you pass a df, it will sum
+        the durations 'Rest' and non-Rest cell, provided they are in the same
+        n-sized window. For example, set n=3 if you wanted to get the durations
+        of all 3-event-long pair-wise harmonic events:
+        
+        har = importedPiece.getHarmonic()
+        dur_3 = importedPiece.getDuration(df=har, n=3)
+
+        Setting n to -1 sums the durations of all adjacent non-rest events,
+        excluding NaNs. You could use this to find the durations of all melodies
+        in a piece. Note that the results of .getNoteRest() will be used for the
+        `df` parameter if none is provided:
+
+        dur = importedPiece.getDuration(n=-1)
+
+        You can also pass a `mask_df`, which will serve as a filter, only
+        keeping values at the same indecies (i.e. index and columns) as mask_df.
+        This is needed to get the durations of ngrams. To get the durations of
+        ngrams, pass the same value of n and the samedataframe you passed to
+        .getNgrams() as the `n` and `df` parameters, then pass your dataframe of
+        ngrams as the `mask_df`. For example:
+
+        har = importedPiece.getHarmonic()
+        mel = importedPiece.getMelodic()
+        _n = 5
+        ngrams = importedPiece.getNgrams(df=har, other=mel, n=_n)
+        ngramDurations = importedPiece.getDuration(df=har, n=_n, mask_df=ngrams)
+        '''
+        if 'Duration' in self.analyses and df is None and n == 1 and mask_df is None:
+            return self.analyses['Duration']
+        _df = self.getNoteRest().copy() if df is None else df.copy()
+        highestTime = self.score.highestTime
+        _df.loc[highestTime, :] = 'Rest'  # this is just a placeholder
+        if n > 0:
             result = _df.apply(self._durationHelper, args=(n,))
-            if df is None and n == 1:
+            if df is None and n == 1 and mask_df is None:
                 self.analyses['Duration'] = result
-            else:
-                return result
-        return self.analyses['Duration']
+        else:  # n == -1
+            result = _df.apply(self._maxnDurationHelper)
+        if mask_df is not None:
+            mask = mask_df.applymap(lambda cell: True, na_action='ignore')
+            result = result[mask]
+        return result.dropna(how='all')
+
+    def getNgramDuration(self, df, n=3):
+        '''
+        Return the duration of ngrams of size n. Supply a dataframe of ngrams
+        for the df parameter and the size of n used to calculate those ngrams
+        for the n parameter. The results have the durations of all ngrams in the
+        df at the same row and column positions as their corresponding ngrams.
+        '''
+        har = self.getHarmonic()
+        dur = self.getDuration(har, n=n)
+        mask = df.applymap(lambda cell: True, na_action='ignore')
+        return dur[mask].dropna(how='all')
+
+    def getLyric(self):
+        '''
+        Return a dataframe of the lyrics associated with each note in the piece.
+        '''
+        if 'Lyric' not in self.analyses:
+            df = self._getM21ObjsNoTies().applymap(na_action='ignore',
+                func=lambda note: note.lyric if note.isNote else None)
+            df.fillna(np.nan, inplace=True)
+            self.analyses['Lyric'] = df
+        return self.analyses['Lyric']
 
     def _noteRestHelper(self, noteOrRest):
         if noteOrRest.isRest:

@@ -1,164 +1,17 @@
 from main_objs import *
+from test_constants import *
 
-# small list of working example files
-FILES_FEW = ["01", "02", "04", "17", "09"]
-
-# list of four example files with incorrect measure offsets
-FILES_WRONG= ["01", "08", "14", "16", "17"]
-
-# all files available
-FILES_MANY = [
-    'https://crimproject.org/mei/CRIM_Model_0001.mei',
-    'https://crimproject.org/mei/CRIM_Model_0002.mei',
-    'https://crimproject.org/mei/CRIM_Model_0008.mei'
-    'https://crimproject.org/mei/CRIM_Model_0009.mei',
-    'https://crimproject.org/mei/CRIM_Model_0010.mei',
-    'https://crimproject.org/mei/CRIM_Model_0011.mei',
-    'https://crimproject.org/mei/CRIM_Model_0012.mei',
-    'https://crimproject.org/mei/CRIM_Model_0013.mei',
-    'https://crimproject.org/mei/CRIM_Model_0014.mei',
-    'https://crimproject.org/mei/CRIM_Model_0015.mei',
-    'https://crimproject.org/mei/CRIM_Model_0016.mei',
-    'https://crimproject.org/mei/CRIM_Model_0017.mei',
-    'https://crimproject.org/mei/CRIM_Model_0019.mei',
-    'https://crimproject.org/mei/CRIM_Model_0020.mei',
-    'https://crimproject.org/mei/CRIM_Model_0021.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0001_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0001_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0001_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0001_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0001_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0002_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0002_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0002_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0002_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0002_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0003_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0003_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0003_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0003_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0003_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0004_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0004_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0004_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0004_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0004_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0005_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0005_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0005_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0005_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0005_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0006_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0006_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0006_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0006_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0006_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0007_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0007_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0007_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0007_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0007_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0008_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0008_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0008_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0008_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0008_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0009_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0009_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0009_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0009_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0009_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0010_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0010_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0010_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0010_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0010_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0011_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0011_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0011_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0011_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0011_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0012_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0012_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0012_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0012_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0012_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0013_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0013_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0013_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0013_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0013_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0014_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0014_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0014_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0014_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0015_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0015_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0015_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0015_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0015_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0016_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0016_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0016_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0016_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0016_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0017_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0017_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0017_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0017_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0017_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0018_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0018_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0018_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0018_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0018_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0019_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0019_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0019_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0019_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0019_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0020_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0020_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0020_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0020_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0020_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0021_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0021_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0021_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0021_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0021_5.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0022_1.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0022_2.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0022_3.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0022_4.mei',
-    'https://crimproject.org/mei/CRIM_Mass_0022_5.mei'
-]
-
-def build_crim_models(files):
-    """
-    Build a list of crim models for the selected files.
-    """
+def get_crim_model(file):
     root = "https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/"
-    prefix = "CRIM_Model_00"
-    postfix = ".mei"
-    models = {}
-    for file in files:
-        try:
-            if not "http" in file:
-                corpus = CorpusBase([root + prefix + file + postfix])
-            else:
-                file = file.split("/")[-1]
-                corpus = CorpusBase([root + file])
-            model = corpus.scores[0]
-            models[file] = model
-        except:
-            print("Can't import file", file)
-
-    return models
+    return CorpusBase([root + file]).scores[0]
 
 def validate_ngrams_last_offsets(model, df, n, how='columnwise', other=None, held='Held',
                                  exclude=['Rest'], interval_settings=('d', True, True), unit=0):
+    """
+    Objective: Make sure that ngrams' offsets parameter is correct by checking the nrgams
+    grouped by the offsets of the first notes against the nrgams grouped by the offsets
+    of the last notes. If we receive the same ngrams in both cases, then the output is correct
+    """
 
     df1 = model.getNgrams(df=df, n=n, how=how, other=other, held=held,
                   exclude=exclude, interval_settings=interval_settings, unit=unit,
@@ -183,6 +36,9 @@ def validate_ngrams_last_offsets(model, df, n, how='columnwise', other=None, hel
         assert(df1_cols[i].equals(df2_cols[i]))
 
 def has_diff_measure_offsets(model):
+    """
+    Search for different measure offsets across voices
+    """
     # get columns
     measures = model.getMeasure()
     # compare each columns, return FALSE for strange columns
@@ -194,35 +50,81 @@ def has_diff_measure_offsets(model):
             return True
     return False
 
-def test_main():
-    files = FILES_FEW
-    models = build_crim_models(files)
+def test_ngrams_last_offsets():
+    """
+    For a long and short, sampled and not sampled ngrams with different interval
+    settings, test if they output the same ngrams when either offsets='first' and
+    offset='last' is used.
+    """
 
-    for file, model in models.items():
-        # cover all different ngrams possibility
+    for i in range(len(FILES_FEW)):
+        model = get_crim_model(FILES_FEW[i])
         mel = model.getMelodic(kind='q', directed=True, compound=True, unit=0)
         validate_ngrams_last_offsets(model, mel, 5)
         
-        mel_diatonic = model.getMelodic(kind='d', directed=True, compound=True, unit=0)
-        validate_ngrams_last_offsets(model, mel_diatonic, 5)
+        mel_diatonic = model.getMelodic(kind='d', directed=True, compound=False, unit=0)
+        validate_ngrams_last_offsets(model, mel_diatonic, 100)
 
         # sampling
-        mel_sampling = model.getMelodic(kind='q', directed=True, compound=True, unit=4)
-        validate_ngrams_last_offsets(model, mel_sampling, 5)
+        mel_sampling = model.getMelodic(kind='q', directed=False, compound=True, unit=4)
+        validate_ngrams_last_offsets(model, mel_sampling, 8)
 
         mel_diatonic_sampling = model.getMelodic(kind='d', directed=True, compound=True, unit=4)
-        validate_ngrams_last_offsets(model, mel_diatonic_sampling, 5)
+        validate_ngrams_last_offsets(model, mel_diatonic_sampling, 4)
         
         # modules mode
-        validate_ngrams_last_offsets(model, df=None, n=5, how='modules')
+        validate_ngrams_last_offsets(model, df=None, n=10, how='modules')
 
-        # test get measure
+        # different mode with n=-1
+        validate_ngrams_last_offsets(model, mel, -1)
+
+def test_get_measure():
+    """
+    Validate getMeasure() by making sure that the measures are the same
+    as the hardcoded values for each files
+    """
+
+    for i in range(len(FILES_FEW)):
+        file = FILES_FEW[i]
+        model = get_crim_model(file)
+
+        # check measures
         ms = model.getMeasure()
+        hardcoded_ms = pd.DataFrame(FILES_FEW_MS[i])
 
-        # test sounding count
-        sc = model.getSoundingCount()
+        for row in hardcoded_ms.index:
+            for col in hardcoded_ms.columns:
+                assert hardcoded_ms.loc[row, col] == ms.loc[row, col]
 
-        # test time signature
+def test_get_time_signature():
+    """
+    Validate getTimeSignature by making sure that the time signature are the same
+    as the hardcoded values for each files
+    """
+
+    for i in range(len(FILES_FEW)):
+        model = get_crim_model(FILES_FEW[i])
+
+        # check measures
         ts = model.getTimeSignature()
+        hardcoded_ts = pd.DataFrame(FILES_FEW_TS[i])
 
-        # TODO add test with n=-1
+        for row in hardcoded_ts.index:
+            for col in hardcoded_ts.columns:
+                assert hardcoded_ts.loc[row, col] == ts.loc[row, col]
+
+def test_get_sounding_count():
+    """
+    Validate getSoundingCount() by making sure that the sounding count are the same
+    as the hardcoded values for each files
+    """
+
+    for i in range(len(FILES_FEW)):
+        model = get_crim_model(FILES_FEW[i])
+
+        # check measures
+        sc = model.getSoundingCount()
+        hardcoded_sc = pd.Series(FILES_FEW_SC[i])
+
+        for row in hardcoded_sc.index:
+            assert hardcoded_sc.loc[row] == sc.loc[row]

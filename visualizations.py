@@ -146,7 +146,6 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height)
 
 def _from_ema_to_offsets(df, ema_column):
-    # TODO add tests
     """
     This method adds a columns of start and end measure of patterns into
     the relationship dataframe using the column with the ema address.
@@ -160,9 +159,8 @@ def _from_ema_to_offsets(df, ema_column):
     df['locations'] = df[ema_column].str.split("/", n=1, expand=True)[0]
     df['locations'] = df['locations'].str.split(",")
     df = df.explode('locations')
-    df[['start', 'end']] = df['locations'].str.split("-", expand=True)
-    
-    # convert to float in case measures are fractions
+    df[['start', 'end']] = df['locations'].str.split("-", expand=True).fillna(method='ffill')
+
     df['start'] = df['start'].astype(float)
     df['end'] = df['end'].astype(float)
     return df
@@ -319,6 +317,9 @@ def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
     :param offsets: (refer to getNgrams documentation)
     :return: ngram and corresponding duration dataframe!
     """
+    if n==-1:
+        raise Exception("Cannot calculate the duration for this type of ngrams")
+
     # compute dur for the ngrams
     dur = model.getDuration(df)
     dur = dur.reindex_like(df).applymap(str, na_action='ignore')
@@ -422,7 +423,6 @@ def create_interactive_compare_df(df, interval_column):
                     interval_column=fixed(interval_column), search_pattern_starts_with='')
 
 def create_comparisons_networks_and_interactive_df(df, interval_column, interval_type, ema_column, patterns=[]):
-    # TODO add tests
     """
     Generate a dictionary of networks and a simple dataframe allowing the users
     search through the intervals.
@@ -435,7 +435,7 @@ def create_comparisons_networks_and_interactive_df(df, interval_column, interval
     """
     # process df
     if patterns:
-        df = df[df[interval_column.isin(patterns)]].copy()
+        df = df[df[interval_column].isin(patterns)].copy()
 
     networks_dict = create_interval_networks(df[interval_column], interval_type)
     df = process_network_df(df, interval_column, ema_column)

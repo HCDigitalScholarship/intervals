@@ -25,9 +25,9 @@ def ngrams_heatmap_test_helper(model, notes):
     without durations: plot all ngrams, filtered some specific patterns,
     filtered some specific voices.
 
-    :param model:
-    :param notes:
-    :return:
+    :param model: model
+    :param notes: the main melody
+    :return: a chart
     """
     # test no durations
     ngrams = model.getNgrams(df=notes, n=5)
@@ -38,8 +38,6 @@ def ngrams_heatmap_test_helper(model, notes):
     assert isinstance(chart, alt.VConcatChart)
     assert len(chart.vconcat) == 2
 
-    """
-    # add when durations can handle n=-1
     # test no durations
     ngrams_multiple = model.getNgrams(df=notes, n=-1)
     chart_multiple = viz.plot_ngrams_heatmap(ngrams_df=ngrams_multiple)
@@ -48,7 +46,6 @@ def ngrams_heatmap_test_helper(model, notes):
     # and one heatmap
     assert isinstance(chart_multiple, alt.VConcatChart)
     assert len(chart_multiple.vconcat) == 2
-    """
 
     # popular pattern
     popular_patterns = ngrams.stack().dropna().value_counts().head(10).index.to_list()
@@ -194,7 +191,14 @@ def test_generate_networks_and_interactive_df():
     assert pen_widget
 
     # melodic, fug
-    fug_networks, fug_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_pe_tint', 'time',
+    fug_networks, fug_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_fg_int', 'melodic',
                                                                                   'ema')
     assert fug_networks
     assert fug_widget
+
+    patterns = df_observations['mt_fg_int'].to_list()
+    fug_networks_filtered, fug_widget_filtered = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_fg_int',
+                                                                                                    'melodic', 'ema', patterns)
+
+    assert fug_networks_filtered
+    assert fug_widget_filtered

@@ -35,10 +35,10 @@ def validate_ngrams_last_offsets(model, df, n, how='columnwise', other=None, hel
 
         assert(df1_cols[i].equals(df2_cols[i]))
 
+"""
 def has_diff_measure_offsets(model):
-    """
-    Search for different measure offsets across voices
-    """
+    
+    # Search for different measure offsets across voices
     # get columns
     measures = model.getMeasure()
     # compare each columns, return FALSE for strange columns
@@ -49,6 +49,7 @@ def has_diff_measure_offsets(model):
         if not first_voice.equals(measures[voice]):
             return True
     return False
+"""
 
 def test_ngrams_last_offsets():
     """
@@ -62,20 +63,10 @@ def test_ngrams_last_offsets():
         mel = model.getMelodic(kind='q', directed=True, compound=True, unit=0)
         validate_ngrams_last_offsets(model, mel, 5)
         
-        mel_diatonic = model.getMelodic(kind='d', directed=True, compound=False, unit=0)
-        validate_ngrams_last_offsets(model, mel_diatonic, 100)
-
-        # sampling
-        mel_sampling = model.getMelodic(kind='q', directed=False, compound=True, unit=4)
-        validate_ngrams_last_offsets(model, mel_sampling, 8)
-
-        mel_diatonic_sampling = model.getMelodic(kind='d', directed=True, compound=True, unit=4)
-        validate_ngrams_last_offsets(model, mel_diatonic_sampling, 4)
-        
         # modules mode
         validate_ngrams_last_offsets(model, df=None, n=10, how='modules')
 
-        # different mode with n=-1
+        # n=-1 mode
         validate_ngrams_last_offsets(model, mel, -1)
 
 def test_get_measure():

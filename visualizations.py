@@ -25,6 +25,7 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
     )
     return observer_chart
 
+
 def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip):
 
     # if type(data.iloc[0, :][y]) != str:
@@ -42,7 +43,7 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
         height=heat_map_height
     ).add_selection(
         *selectors
-    )
+    ).interactive()
 
     return heatmap
 
@@ -190,8 +191,10 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
     df = df.copy()  # create a deep copy of the selected observations to protect the original dataframe
     df = _from_ema_to_offsets(df, ema_col)
 
-    # sort by id
-    df.sort_values(by=main_category, inplace=True)
+    # # sort by main category
+    # df.sort_values(by=main_category, inplace=True)
+
+    print(df[main_category].to_list())
 
     df = _from_ema_to_offsets(df, ema_col)
     df['website_url'] = _process_crim_json_url(df['url'])
@@ -220,7 +223,10 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
     heatmap = alt.Chart(df).mark_bar().encode(
         x='start',
         x2='end',
-        y='id',
+        y=alt.Y(
+            'id',
+            sort=alt.SortField(field=main_category,  order='ascending')
+        ),
         href='website_url',
         color=main_category,
         opacity=alt.condition(other_selector | main_selector, alt.value(1), alt.value(0.2)),

@@ -119,3 +119,10 @@ def test_get_sounding_count():
 
         for row in hardcoded_sc.index:
             assert hardcoded_sc.loc[row] == sc.loc[row]
+
+def test_intervals_settings():
+    # harmonic
+    # TODO hardcoded harmonic tests
+    # melodic
+    # TODO hardcoded melodic test
+    pass

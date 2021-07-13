@@ -120,9 +120,45 @@ def test_get_sounding_count():
         for row in hardcoded_sc.index:
             assert hardcoded_sc.loc[row] == sc.loc[row]
 
+def interval_settings_helper(df, hardcoded_df):
+    for row in hardcoded_df.index:
+        for col in hardcoded_df.columns:
+            assert hardcoded_df.loc[row, col] == str(df.loc[row, col])
+
 def test_intervals_settings():
-    # harmonic
-    # TODO hardcoded harmonic tests
-    # melodic
-    # TODO hardcoded melodic test
-    pass
+    for i in range(len(FILES_FEW)):
+        file = FILES_FEW[i]
+        model = get_crim_model(file)
+        
+        # harmonic
+        harqtt= model.getHarmonic(kind='q', directed=True, compound=True)
+        hardcoded_harqtt = pd.DataFrame.from_dict(FILES_FEW_HARMONIC_QTT[i])
+        interval_settings_helper(harqtt, hardcoded_harqtt)
+
+        harqtf = model.getHarmonic(kind='q', directed=True, compound=False)
+        hardcoded_harqtf = pd.DataFrame.from_dict(FILES_FEW_HARMONIC_QTF[i])
+        interval_settings_helper(harqtf, hardcoded_harqtf)
+        
+        hardtt= model.getHarmonic(kind='d', directed=True, compound=True)
+        hardcoded_hardtt = pd.DataFrame.from_dict(FILES_FEW_HARMONIC_DTT[i])
+        interval_settings_helper(hardtt, hardcoded_hardtt)
+        hardtf = model.getHarmonic(kind='d', directed=True, compound=False)
+        hardcoded_hardtf = pd.DataFrame.from_dict(FILES_FEW_HARMONIC_DTF[i])
+        interval_settings_helper(hardtf, hardcoded_hardtf)
+        hardft = model.getHarmonic(kind='d', directed=False, compound=True)
+        hardcoded_hardft = pd.DataFrame.from_dict(FILES_FEW_HARMONIC_DFT[i])
+        interval_settings_helper(hardft, hardcoded_hardft)
+        
+        harztt= model.getHarmonic(kind='z', directed=True, compound=True)
+        hardcoded_harztt = pd.DataFrame.from_dict(FILES_FEW_HARMONIC_ZTT[i])
+        interval_settings_helper(harztt, hardcoded_harztt)
+        
+        harctt= model.getHarmonic(kind='c', directed=True, compound=True)
+        hardcoded_harctt = pd.DataFrame.from_dict(FILES_FEW_HARMONIC_CTT[i])
+        interval_settings_helper(harctt, hardcoded_harctt)
+        harcff = model.getHarmonic(kind='c', directed=False, compound=False)
+        hardcoded_harcff = pd.DataFrame.from_dict(FILES_FEW_HARMONIC_CFF[i])
+        interval_settings_helper(harcff, hardcoded_harcff)
+        
+        # melodic
+        # TODO hardcoded melodic test

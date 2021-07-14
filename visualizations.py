@@ -11,6 +11,21 @@ from fractions import Fraction
 from ipywidgets import interact, fixed
 from pyvis.network import Network
 
+# pre-assigned relationship weights for different type of relationships
+RELATIONSHIP_WEIGHTS = {
+        'Quotation':1,
+        'Mechanical transformation':2,
+        'Non-mechanical transformation':3,
+        'New material':4,
+        'Omission':5,
+        'Quotation, Mechanical transformation':6,
+        'Quotation, Non-mechanical transformation':7,
+        'Non-mechanical transformation, Omission':8,
+        'Mechanical transformation, Non-mechanical transformation':9,
+        'Quotation, New material':10,
+        'Quotation, Mechanical transformation, Non-mechanical transformation':11
+        }
+
 def create_bar_chart(variable, count, color, data, condition, *selectors):
     # if type(data.iloc[0, :][variable]) != str:
     #     raise Exception("Label difficult to see!")
@@ -446,3 +461,84 @@ def create_comparisons_networks_and_interactive_df(df, interval_column, interval
     networks_dict = create_interval_networks(df[interval_column], interval_type)
     df = process_network_df(df, interval_column, ema_column)
     return networks_dict, create_interactive_compare_df(df, interval_column)
+
+def _trim_and_combine_piece_ids_with_measures(df):
+    # extract necessary columns
+    df = df[['model_observation.ema', 'model_observation.piece.piece_id',
+            'relationship_type', 'derivative_observation.piece.piece_id',
+            'derivative_observation.ema'
+            ]].copy()
+
+    # combine ema and piece id
+    df['model_observation.ema'] = df['model_observation.ema'].str.split("/", n=1, expand=True)[0]
+    df['derivative_observation.ema'] = df['derivative_observation.ema'].str.split("/", n=1, expand=True)[0]
+    df['source'] = df['model_observation.piece.piece_id'] + "," + df['model_observation.ema']
+    df['derivative'] = df['derivative_observation.piece.piece_id'] + "," + df['derivative_observation.ema']
+
+    return df
+
+def group_observations(source_series, derivative_series):
+    groups = {}
+    for i in source_series.index:
+        x = source_series.loc[i]
+        y = derivative_series.loc[i]
+        xset = groups.get(x, set([x]))
+        yset = groups.get(y, set([y]))
+        jset = xset | yset
+        for z in jset:
+            groups[z] = jset
+    return groups
+
+def plot_relationship_network(df, color='derivative', selected_relationship_types=[],
+                              selected_model_ids=[], selected_derivative_ids=[],
+                              selected_members=[]):
+
+    # process df's piece ids and measure into one column
+    df = _trim_and_combine_piece_ids_with_measures(df)
+
+    # filter df according to users selected relationship_type,
+    # model_ids and derivative_ids
+    if selected_relationship_types:
+        df = df[df['relationship_type'].isin(selected_relationship_types)].dropna(how='all')
+    if selected_model_ids:
+        df = df[df['model_observation.piece.piece_id'].isin(selected_model_ids)].dropna(how='all')
+    if selected_derivative_ids:
+        df = df[df['derivative_observation.piece.piece_id'].isin(selected_derivative_ids)].dropna(how='all')
+    if selected_members:
+        member_relatives_dict = group_observations(df['source'], df['derivative'])
+        relatives = set()
+        for member in selected_members:
+            # TODO member doesn't contain measures while member in member relative dicts are!
+            relatives = set.union(relatives, member_relatives_dict[member])
+        print(relatives)
+    #     df = df[df.isin(relatives)].dropna(how='all')
+    #
+    # weights_dict = RELATIONSHIP_WEIGHTS
+    # df['weight'] = df['relationship_type'].map(weights_dict,
+    #                                            na_action='ignore')
+    # df['weight'].fillna(0, inplace=True)
+    #
+    # # construct the networks
+    nt = Network(directed=True, notebook=True)
+    #
+    # if color=='derivative':
+    #     normal_nodes_column = 'source'
+    #     colored_nodes_column = 'derivative'
+    #     color_inheritance = 'to'
+    # elif color=='source':
+    #     normal_nodes_column = 'derivative'
+    #     colored_nodes_column = 'source'
+    #     color_inheritance = 'from'
+    # else:
+    #     raise Exception("Invalid input for `color`, please put 'derivative' or 'source.")
+    #
+    # nt.add_nodes(df[normal_nodes_column])
+    # for row in df['derivative'].index:
+    #     nt.add_node(df[colored_nodes_column].loc[row], group=df['relationship_type'].loc[row])
+    #
+    # for row in df.index:
+    #     nt.add_edge(df['source'].loc[row], df['derivative'].loc[row],
+    #                 value=int(df['weight'].loc[row]), title=df['relationship_type'].loc[row])
+    # nt.inherit_edge_colors(color_inheritance)
+
+    return nt

@@ -39,6 +39,8 @@ def ngrams_heatmap_test_helper(model, notes):
     # and one heatmap
     assert isinstance(chart, alt.VConcatChart)
     assert len(chart.vconcat) == 2
+    assert isinstance(chart.vconcat[0], alt.Chart)
+    assert isinstance(chart.vconcat[0], alt.Chart)
 
     # test no durations
     ngrams_multiple = model.getNgrams(df=notes, n=-1)

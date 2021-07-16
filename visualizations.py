@@ -206,11 +206,6 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
     df = df.copy()  # create a deep copy of the selected observations to protect the original dataframe
     df = _from_ema_to_offsets(df, ema_col)
 
-    # # sort by main category
-    # df.sort_values(by=main_category, inplace=True)
-
-    print(df[main_category].to_list())
-
     df = _from_ema_to_offsets(df, ema_col)
     df['website_url'] = _process_crim_json_url(df['url'])
 
@@ -472,26 +467,28 @@ def _trim_and_combine_piece_ids_with_measures(df):
     # combine ema and piece id
     df['model_observation.ema'] = df['model_observation.ema'].str.split("/", n=1, expand=True)[0]
     df['derivative_observation.ema'] = df['derivative_observation.ema'].str.split("/", n=1, expand=True)[0]
-    df['source'] = df['model_observation.piece.piece_id'] + "," + df['model_observation.ema']
-    df['derivative'] = df['derivative_observation.piece.piece_id'] + "," + df['derivative_observation.ema']
+    df['model'] = df['model_observation.piece.piece_id'] + ":" + df['model_observation.ema']
+    df['derivative'] = df['derivative_observation.piece.piece_id'] + ":" + df['derivative_observation.ema']
+
+    # TODO convert everything into string for non error handling
 
     return df
 
-def group_observations(source_series, derivative_series):
+def group_observations(model_series, derivative_series):
     groups = {}
-    for i in source_series.index:
-        x = source_series.loc[i]
+    for i in model_series.index:
+        x = model_series.loc[i]
         y = derivative_series.loc[i]
-        xset = groups.get(x, set([x]))
-        yset = groups.get(y, set([y]))
+        xset = groups.get(x.split(":")[0], set([x]))
+        yset = groups.get(y.split(":")[0], set([y]))
         jset = xset | yset
         for z in jset:
-            groups[z] = jset
+            groups[z.split(":")[0]] = jset
     return groups
 
-def plot_relationship_network(df, color='derivative', selected_relationship_types=[],
-                              selected_model_ids=[], selected_derivative_ids=[],
-                              selected_members=[]):
+# TODO rename to something fancy
+def plot_relationship_network(df, color='derivative', selected_relationship_types=[], selected_model_ids=[],
+                              selected_derivative_ids=[], selected_families=[]):
 
     # process df's piece ids and measure into one column
     df = _trim_and_combine_piece_ids_with_measures(df)
@@ -504,41 +501,54 @@ def plot_relationship_network(df, color='derivative', selected_relationship_type
         df = df[df['model_observation.piece.piece_id'].isin(selected_model_ids)].dropna(how='all')
     if selected_derivative_ids:
         df = df[df['derivative_observation.piece.piece_id'].isin(selected_derivative_ids)].dropna(how='all')
-    if selected_members:
-        member_relatives_dict = group_observations(df['source'], df['derivative'])
+    if selected_families:
+        families_dict = group_observations(df['model'], df['derivative'])
         relatives = set()
-        for member in selected_members:
-            # TODO member doesn't contain measures while member in member relative dicts are!
-            relatives = set.union(relatives, member_relatives_dict[member])
-        print(relatives)
-    #     df = df[df.isin(relatives)].dropna(how='all')
-    #
-    # weights_dict = RELATIONSHIP_WEIGHTS
-    # df['weight'] = df['relationship_type'].map(weights_dict,
-    #                                            na_action='ignore')
-    # df['weight'].fillna(0, inplace=True)
-    #
-    # # construct the networks
+        gone_members = []
+        for member in selected_families:
+            # because of previous filtering, this member has been remained from the df
+            if member in families_dict:
+                relatives = set.union(relatives, families_dict[member])
+            else:
+                gone_members.append(member)
+
+        if gone_members:
+            print(str(len(gone_members)) + " " + ", ".join(member for member in gone_members) +
+                  " no longer exist in df because of other filtering options")
+        df = df[df['model'].isin(relatives) | df['derivative'].isin(relatives)].dropna(how='all')
+
+    weights_dict = RELATIONSHIP_WEIGHTS
+    df['weight'] = df['relationship_type'].map(weights_dict,
+                                               na_action='ignore')
+    df['weight'].fillna(0, inplace=True)
+
+    # construct the networks
     nt = Network(directed=True, notebook=True)
-    #
-    # if color=='derivative':
-    #     normal_nodes_column = 'source'
-    #     colored_nodes_column = 'derivative'
-    #     color_inheritance = 'to'
-    # elif color=='source':
-    #     normal_nodes_column = 'derivative'
-    #     colored_nodes_column = 'source'
-    #     color_inheritance = 'from'
-    # else:
-    #     raise Exception("Invalid input for `color`, please put 'derivative' or 'source.")
-    #
-    # nt.add_nodes(df[normal_nodes_column])
-    # for row in df['derivative'].index:
-    #     nt.add_node(df[colored_nodes_column].loc[row], group=df['relationship_type'].loc[row])
-    #
-    # for row in df.index:
-    #     nt.add_edge(df['source'].loc[row], df['derivative'].loc[row],
-    #                 value=int(df['weight'].loc[row]), title=df['relationship_type'].loc[row])
-    # nt.inherit_edge_colors(color_inheritance)
+    if color=='derivative':
+        normal_nodes_column = 'model'
+        colored_nodes_column = 'derivative'
+        color_inheritance = 'to'
+    elif color=='model':
+        normal_nodes_column = 'derivative'
+        colored_nodes_column = 'model'
+        color_inheritance = 'from'
+    else:
+        raise Exception("Invalid input for `color`, please put 'derivative' or 'model'.")
+
+    nt.add_nodes(df[normal_nodes_column])
+
+    for row in df[colored_nodes_column].index:
+        nt.add_node(df[colored_nodes_column].loc[row], group=df['relationship_type'].loc[row])
+
+    for row in df.index:
+        nt.add_edge(df['model'].loc[row], df['derivative'].loc[row],
+                    value=int(df['weight'].loc[row]), title=df['relationship_type'].loc[row])
+    nt.inherit_edge_colors(color_inheritance)
 
     return nt
+
+def plot_pieces_relationship_network():
+    pass
+
+def plot_ngram_network():
+    pass

@@ -196,13 +196,13 @@ class ImportedPiece:
         the duration of notes and rests in each part where 1 = quarternote,
         1.5 = a dotted quarter, 4 = a whole note, etc. If a df is passed, then
         return a df of the same shape giving the duration of each of the cells
-        of this df. This is useful if you want to know what the durations of
+        of this df. This is useful if you want to know what the durations of 
         something other than single notes and rests, such as the durations of
         intervals. E.g.:
 
         har = importedPiece.getHarmonic()
         harDur = importedPiece.getDuration(df=har)
-
+        
         The `n` parameter should be an integer greater than zero, or -1. When
         n is a positive integer, it groups together a sliding window of n
         consecutive non-NaN cells in each column. If you pass a df, it will sum
@@ -222,8 +222,8 @@ class ImportedPiece:
 
         You can also pass a `mask_df`, which will serve as a filter, only
         keeping values at the same indecies (i.e. index and columns) as mask_df.
-        This is needed to get the durations of ngrams. To get the durations of
-        ngrams, pass the same value of n and the samedataframe you passed to
+        This is needed to get the durations of ngrams. To get the durations of 
+        ngrams, pass the same value of n and the samedataframe you passed to 
         .getNgrams() as the `n` and `df` parameters, then pass your dataframe of
         ngrams as the `mask_df`. For example:
 
@@ -251,8 +251,8 @@ class ImportedPiece:
 
     def getNgramDuration(self, df, n=3):
         '''
-        Return the duration of ngrams of size n. Supply a dataframe of ngrams
-        for the df parameter and the size of n used to calculate those ngrams
+        Return the duration of ngrams of size n. Supply a dataframe of ngrams 
+        for the df parameter and the size of n used to calculate those ngrams 
         for the n parameter. The results have the durations of all ngrams in the
         df at the same row and column positions as their corresponding ngrams.
         '''

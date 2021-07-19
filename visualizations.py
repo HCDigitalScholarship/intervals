@@ -174,8 +174,16 @@ def _from_ema_to_offsets(df, ema_column):
     # retrieve the measures from ema address and create start and end in place
     df['locations'] = df[ema_column].str.split("/", n=1, expand=True)[0]
     df['locations'] = df['locations'].str.split(",")
-    df = df.explode('locations')
+    df = df.explode('locations', ignore_index=True)
     df[['start', 'end']] = df['locations'].str.split("-", expand=True).fillna(method='ffill')
+    # print(df['start'].to_dict())
+    # print(df['end'].to_dict())
+
+    for index in df['start'].index:
+        try:
+            float(df['start'].loc[index])
+        except:
+            print(str(index) + ":" + df['start'].loc[index]+".")
 
     df['start'] = df['start'].astype(float)
     df['end'] = df['end'].astype(float)

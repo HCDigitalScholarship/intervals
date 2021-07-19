@@ -21,6 +21,20 @@ OBSERVATIONS_DICT_EXAMPLE = {'Unnamed: 0': {60: 60, 61: 61, 62: 62, 63: 63, 64: 
 
 # TODO add test that should fail (correctness wise)
 
+def ngrams_heatmap_chart(chart):
+    """
+    Make sure that we end up with the correct chart with
+    one bar chart with the pattern's occurances and another
+    heatmap
+    """
+    # retrieved two charts: one pattern bar chart
+    # and one heatmap
+    assert isinstance(chart, alt.VConcatChart)
+    assert len(chart.vconcat) == 2
+    assert isinstance(chart.vconcat[0], alt.Chart)
+    assert isinstance(chart.vconcat[0], alt.Chart)
+    assert len(chart.data) >=0
+
 def ngrams_heatmap_test_helper(model, notes):
     """
     This method tests out three different ways ngrams can be plotted
@@ -34,67 +48,50 @@ def ngrams_heatmap_test_helper(model, notes):
     # test no durations
     ngrams = model.getNgrams(df=notes, n=5)
     chart = viz.plot_ngrams_heatmap(ngrams_df=ngrams)
-
-    # retrieved two charts: one pattern bar chart
-    # and one heatmap
-    assert isinstance(chart, alt.VConcatChart)
-    assert len(chart.vconcat) == 2
-    assert isinstance(chart.vconcat[0], alt.Chart)
-    assert isinstance(chart.vconcat[0], alt.Chart)
+    ngrams_heatmap_chart(chart)
 
     # test no durations
     ngrams_multiple = model.getNgrams(df=notes, n=-1)
     chart_multiple = viz.plot_ngrams_heatmap(ngrams_df=ngrams_multiple)
 
-    # retrieved two charts: one pattern bar chart
-    # and one heatmap
-    assert isinstance(chart_multiple, alt.VConcatChart)
-    assert len(chart_multiple.vconcat) == 2
+    ngrams_heatmap_chart(chart_multiple)
 
     # popular pattern
     popular_patterns = ngrams.stack().dropna().value_counts().head(10).index.to_list()
     selected_patterns_chart = viz.plot_ngrams_heatmap(ngrams_df=ngrams, selected_patterns=popular_patterns)
 
-    assert isinstance(selected_patterns_chart, alt.VConcatChart)
-    assert len(selected_patterns_chart.vconcat) == 2
+    ngrams_heatmap_chart(selected_patterns_chart)
 
     # select all voices but the last one
     selected_voices = ngrams.columns.to_list()[:-1]
     selected_voices_chart = viz.plot_ngrams_heatmap(ngrams, voices = selected_voices)
-    assert isinstance(selected_voices_chart, alt.VConcatChart)
-    assert len(selected_voices_chart.vconcat) == 2
+    ngrams_heatmap_chart(selected_voices_chart)
 
     # with duration!
-    ngrams, ngrams_dur = viz.generate_ngrams_and_duration(model, df=notes, n=5)
+    ngrams_dur = model.getDuration(df=notes, mask_df=ngrams, n=5)
     dur_chart = viz.plot_ngrams_heatmap(ngrams, ngrams_duration=ngrams_dur)
-    assert isinstance(dur_chart, alt.VConcatChart)
-    assert len(dur_chart.vconcat) == 2
-
-    ngrams_multiple, ngrams_dur_multiple = viz.generate_ngrams_and_duration(model, df=notes, n=5)
-    dur_chart_multiple = viz.plot_ngrams_heatmap(ngrams_multiple, ngrams_duration=ngrams_dur_multiple)
-    assert isinstance(dur_chart_multiple, alt.VConcatChart)
-    assert len(dur_chart_multiple.vconcat) == 2
+    ngrams_heatmap_chart(dur_chart)
 
     # duration and filter voice
     dur_selected_voices_chart = viz.plot_ngrams_heatmap(ngrams, ngrams_duration=ngrams_dur,
                                                         voices=selected_voices)
-    assert isinstance(dur_selected_voices_chart, alt.VConcatChart)
-    assert len(dur_selected_voices_chart.vconcat) == 2
+    ngrams_heatmap_chart(dur_selected_voices_chart)
 
     # duration and filter pattern
     dur_selected_patterns_chart = viz.plot_ngrams_heatmap(ngrams, ngrams_duration=ngrams_dur,
                                                         selected_patterns=popular_patterns)
-    assert isinstance(dur_selected_patterns_chart, alt.VConcatChart)
-    assert len(dur_selected_patterns_chart.vconcat) == 2
+    ngrams_heatmap_chart(dur_selected_patterns_chart)
 
-    """
+    chart_not_displayed = viz.plot_ngrams_heatmap(ngrams,ngrams_duration=ngrams_dur, selected_patterns=['-2, -2, 1, -4, 1'], voices=['Bassus'])
+    ngrams_heatmap_chart(chart_not_displayed)
+
     # add when durations can handle n=-1
     # with multiple lengths ngrams
-    ngrams_multiple, ngrams_dur_multiple = viz.generate_ngrams_and_duration(model, df=notes, n=-1)
-    dur_chart_multiple = viz.plot_ngrams_heatmap(ngrams_multiple, ngrams_duration=ngrams_dur_multiple)
-    assert isinstance(dur_chart_multiple, alt.VConcatChart)
-    assert len(dur_chart_multiple.vconcat) == 2
-    """
+    ngrams_multiple = model.getNgrams(df=notes, n=-1)
+    duration = model.getDuration(df=notes, n=-1, mask_df=ngrams)
+    dur_chart_multiple = viz.plot_ngrams_heatmap(ngrams_multiple, ngrams_duration=duration)
+    ngrams_heatmap_chart(dur_chart_multiple)
+
 
 def test_plot_ngrams_heatmap():
     corpus = CorpusBase([EXAMPLE_CRIM_FILE])
@@ -112,6 +109,7 @@ def helper_test_close_match_(model, notes):
     popular_patterns = ngrams.stack().dropna().value_counts().head(5).index.to_list()
 
     for i in range(5):
+        # TODO add assertion here
         chart = viz.plot_close_match_heatmap(ngrams, popular_patterns[i])
 
 def test_plot_close_match_heatmap():
@@ -126,50 +124,51 @@ def test_plot_close_match_heatmap():
     mel_diatonic = model.getMelodic(kind='d', directed=True, compound=True, unit=0)
     helper_test_close_match_(model, mel_diatonic)
 
-def helper_test_generate_ngrams_and_dur(model, notes, n):
+# def helper_test_generate_ngrams_and_dur(model, notes, n):
+#
+#     # throw things into get ngrams and duration
+#     ngrams, ngrams_dur = viz.generate_ngrams_and_duration(model, df=notes, n=n)
+#
+#     for row in ngrams.index:
+#         for col in ngrams.columns:
+#             # get the ngram and total duration
+#             ngram = ngrams.loc[row, col]
+#             if pd.isnull(ngram):
+#                 continue
+#             ngram = ngram.split(', ')
+#             dur = ngrams_dur.loc[row, col]
+#             # check if those within the duration range match the ngrams notes
+#             ngram_notes = notes.loc[row:Fraction(row+dur), col].dropna().to_list()
+#
+#             # check all of the notes in the notes dataframe against the ngrams
+#             assert len(ngram_notes) == len(ngram) or len(ngram_notes) - 1 == len(ngram)
+#             for i in range(len(ngram)):
+#                 assert(ngram_notes[i] == ngram[i])
 
-    # throw things into get ngrams and duration
-    ngrams, ngrams_dur = viz.generate_ngrams_and_duration(model, df=notes, n=n)
-
-    for row in ngrams.index:
-        for col in ngrams.columns:
-            # get the ngram and total duration
-            ngram = ngrams.loc[row, col]
-            if pd.isnull(ngram):
-                continue
-            ngram = ngram.split(', ')
-            dur = ngrams_dur.loc[row, col]
-            # check if those within the duration range match the ngrams notes
-            ngram_notes = notes.loc[row:Fraction(row+dur), col].dropna().to_list()
-
-            # check all of the notes in the notes dataframe against the ngrams
-            assert len(ngram_notes) == len(ngram) or len(ngram_notes) - 1 == len(ngram)
-            for i in range(len(ngram)):
-                assert(ngram_notes[i] == ngram[i])
-
-def test_generate_ngrams_and_dur():
-    corpus = CorpusBase([EXAMPLE_CRIM_FILE])
-    model = corpus.scores[0]
-
-    # all of the n=-1 test would be added again when generate_ngrams_and_duration
-    # works for this case
-
-    # mel
-    mel_notes = model.getMelodic(kind='q', directed=True, compound=True, unit=0)
-    helper_test_generate_ngrams_and_dur(model, mel_notes, 5)
-    # helper_test_generate_ngrams_and_dur(model, mel_notes, -1)
-
-    # diatonic
-    mel_diatonic = model.getMelodic(kind='d', directed=True, compound=True, unit=0)
-    helper_test_generate_ngrams_and_dur(model, mel_diatonic, 5)
-    # helper_test_generate_ngrams_and_dur(model, mel_diatonic, -1)
-
-    # chromatic
-    mel_chromatic = model.getMelodic(kind='c', directed=True, compound=True, unit=0)
-    helper_test_generate_ngrams_and_dur(model, mel_chromatic, 5)
-    # helper_test_generate_ngrams_and_dur(model, mel_chromatic, -1)
+# def test_generate_ngrams_and_dur():
+#     corpus = CorpusBase([EXAMPLE_CRIM_FILE])
+#     model = corpus.scores[0]
+#
+#     # all of the n=-1 test would be added again when generate_ngrams_and_duration
+#     # works for this case
+#
+#     # mel
+#     mel_notes = model.getMelodic(kind='q', directed=True, compound=True, unit=0)
+#     helper_test_generate_ngrams_and_dur(model, mel_notes, 5)
+#     # helper_test_generate_ngrams_and_dur(model, mel_notes, -1)
+#
+#     # diatonic
+#     mel_diatonic = model.getMelodic(kind='d', directed=True, compound=True, unit=0)
+#     helper_test_generate_ngrams_and_dur(model, mel_diatonic, 5)
+#     # helper_test_generate_ngrams_and_dur(model, mel_diatonic, -1)
+#
+#     # chromatic
+#     mel_chromatic = model.getMelodic(kind='c', directed=True, compound=True, unit=0)
+#     helper_test_generate_ngrams_and_dur(model, mel_chromatic, 5)
+#     # helper_test_generate_ngrams_and_dur(model, mel_chromatic, -1)
 
 def test_comparisons_heatmap():
+    # TODO add empty heatmap
     # pieces
     df_relationships = pd.DataFrame(RELATIONSHIPS_DICT_EXAMPLE)
     relationships_chart = viz.plot_comparison_heatmap(df_relationships, 'model_observation.ema',
@@ -202,7 +201,7 @@ def test_generate_networks_and_interactive_df():
     assert fug_networks
     assert fug_widget
 
-    patterns = df_observations['mt_fg_int'].to_list()
+    patterns = df_observations['mt_fg_int'].head(50).to_list()
     fug_networks_filtered, fug_widget_filtered = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_fg_int',
                                                                                                     'melodic', 'ema', patterns)
 

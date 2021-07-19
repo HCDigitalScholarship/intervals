@@ -444,7 +444,7 @@ def create_interactive_compare_df(df, interval_column):
     search pattern.
     """
     return interact(_manipulate_processed_network_df, df=fixed(df),
-                    interval_column=fixed(interval_column), search_pattern_starts_with='')
+                    interval_column=fixed(interval_column), search_pattern_starts_with='Input search pattern')
 
 def create_comparisons_networks_and_interactive_df(df, interval_column, interval_type, ema_column, patterns=[]):
     """

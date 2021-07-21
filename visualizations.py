@@ -5,15 +5,12 @@ This script contains the method
 import altair as alt
 import pandas as pd
 import re
-# TODO remove this requirement
-import textdistance
 
 from fractions import Fraction
 from ipywidgets import interact, fixed
 from pyvis.network import Network
-# TODO add these requirements
 from strsimpy.normalized_levenshtein import NormalizedLevenshtein
-from CloseMatch import NormalizedWeightedIntervalLevenshtein
+from close_match import NormalizedWeightedIntervalLevenshtein
 
 # pre-assigned relationship weights for different type of relationships
 RELATIONSHIP_WEIGHTS = {
@@ -328,8 +325,7 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, algorithm='l', ngrams_durat
 
     ngrams = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration, selected_pattern=selected_patterns,
                                voices=voices)
-    ngrams.dropna(how='any',
-                  inplace=True)  # only the pattern column can be NaN because all columns have starts (==offsets) and voices
+    ngrams.dropna(how='any', inplace=True)
     # calculate the score
     key_pattern = _close_match_helper(key_pattern)
     score_ngrams = _close_match(ngrams, key_pattern, algorithm=algorithm, interval_type=interval_type)
@@ -337,7 +333,6 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, algorithm='l', ngrams_durat
     slider = alt.binding_range(min=0, max=100, step=1, name='cutoff:')
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
                                     bind=slider, init={'cutoff': 50})
-    # TODO add a histogram of the scores!!!
 
     heatmap = create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])

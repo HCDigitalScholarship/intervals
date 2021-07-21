@@ -5,26 +5,31 @@ This script contains the method
 import altair as alt
 import pandas as pd
 import re
+# TODO remove this requirement
 import textdistance
 
 from fractions import Fraction
 from ipywidgets import interact, fixed
 from pyvis.network import Network
+# TODO add these requirements
+from strsimpy.normalized_levenshtein import NormalizedLevenshtein
+from CloseMatch import NormalizedWeightedIntervalLevenshtein
 
 # pre-assigned relationship weights for different type of relationships
 RELATIONSHIP_WEIGHTS = {
-        'Quotation':1,
-        'Mechanical transformation':2,
-        'Non-mechanical transformation':3,
-        'New material':4,
-        'Omission':5,
-        'Quotation, Mechanical transformation':6,
-        'Quotation, Non-mechanical transformation':7,
-        'Non-mechanical transformation, Omission':8,
-        'Mechanical transformation, Non-mechanical transformation':9,
-        'Quotation, New material':10,
-        'Quotation, Mechanical transformation, Non-mechanical transformation':11
-        }
+    'Quotation': 1,
+    'Mechanical transformation': 2,
+    'Non-mechanical transformation': 3,
+    'New material': 4,
+    'Omission': 5,
+    'Quotation, Mechanical transformation': 6,
+    'Quotation, Non-mechanical transformation': 7,
+    'Non-mechanical transformation, Omission': 8,
+    'Mechanical transformation, Non-mechanical transformation': 9,
+    'Quotation, New material': 10,
+    'Quotation, Mechanical transformation, Non-mechanical transformation': 11
+}
+
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
     # if type(data.iloc[0, :][variable]) != str:
@@ -33,7 +38,7 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
     observer_chart = alt.Chart(data).mark_bar().encode(
         y=variable,
         x=count,
-        color = color,    
+        color=color,
         opacity=alt.condition(condition, alt.value(1), alt.value(0.2))
     ).add_selection(
         *selectors
@@ -42,7 +47,6 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
 
 
 def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip):
-
     # if type(data.iloc[0, :][y]) != str:
     #     raise Exception("Label difficult to see!")
 
@@ -50,7 +54,7 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
         x=x,
         x2=x2,
         y=y,
-        color=color, 
+        color=color,
         opacity=alt.condition(selector_condition, alt.value(1), alt.value(0.2)),
         tooltip=tooltip
     ).properties(
@@ -61,6 +65,7 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     ).interactive()
 
     return heatmap
+
 
 def _process_ngrams_df_helper(ngrams_df, main_col):
     """
@@ -82,6 +87,7 @@ def _process_ngrams_df_helper(ngrams_df, main_col):
 
     ngrams_df["start"] = ngrams_df["start"].astype(float)
     return ngrams_df
+
 
 def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, voices=None):
     """
@@ -112,12 +118,13 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
     if voices:
         voice_condition = ngrams_df['voice'].isin(voices)
         ngrams_df = ngrams_df[voice_condition].dropna(how='all')
-    
+
     if selected_pattern:
         pattern_condition = ngrams_df['pattern'].isin(selected_pattern)
         ngrams_df = ngrams_df[pattern_condition].dropna(how='all')
 
     return ngrams_df
+
 
 def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300):
     """
@@ -132,7 +139,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     """
 
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
-    
+
     selector = alt.selection_multi(fields=['pattern'])
 
     # # turns patterns into string to make it easier to see
@@ -142,6 +149,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     heatmap = create_heatmap('start', 'end', 'voice', 'pattern', processed_ngrams_df, heatmap_width, heatmap_height,
                              selector, selector, tooltip=['start', 'end', 'pattern'])
     return alt.vconcat(patterns_bar, heatmap)
+
 
 def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,
                         heatmap_height=300):
@@ -157,9 +165,11 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     :return: a bar chart that displays the different patterns and their counts,
     and a heatmap with the start offsets of chosen voices / patterns
     """
-    processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration, selected_pattern=selected_patterns,
+    processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
+                                            selected_pattern=selected_patterns,
                                             voices=voices)
     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height)
+
 
 def _from_ema_to_offsets(df, ema_column):
     """
@@ -183,16 +193,18 @@ def _from_ema_to_offsets(df, ema_column):
         try:
             float(df['start'].loc[index])
         except:
-            print(str(index) + ":" + df['start'].loc[index]+".")
+            print(str(index) + ":" + df['start'].loc[index] + ".")
 
     df['start'] = df['start'].astype(float)
     df['end'] = df['end'].astype(float)
     return df
 
+
 def _process_crim_json_url(url_column):
     # remove 'data' from http://crimproject.org/data/observations/1/ or http://crimproject.org/data/relationships/5/
     url_column = url_column.map(lambda cell: cell.replace('data/', ''))
     return url_column
+
 
 def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_category='observer.name', option=1,
                             heat_map_width=800, heat_map_height=300):
@@ -225,7 +237,7 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
     new_other_category = other_category.replace(".", "_")
     new_main_category = main_category.replace(".", "_")
 
-    df.rename(columns={other_category: new_other_category, main_category:new_main_category}, inplace=True)
+    df.rename(columns={other_category: new_other_category, main_category: new_main_category}, inplace=True)
 
     other_selector = alt.selection_multi(fields=[new_other_category])
     main_selector = alt.selection_multi(fields=[new_main_category])
@@ -243,7 +255,7 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
         x2='end',
         y=alt.Y(
             'id',
-            sort=alt.SortField(field=main_category,  order='ascending')
+            sort=alt.SortField(field=main_category, order='ascending')
         ),
         href='website_url',
         color=main_category,
@@ -266,39 +278,40 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
 
     return chart
 
-def _recognize_integers(num_str):
-    if num_str[0] == '-':
-        return num_str[1:].isdigit()
-    else:
-        return num_str.isdigit()
 
 def _close_match_helper(cell):
 
-    # process each cell into an interator of *floats* for easy comparisons
     if type(cell) == str:
         cell = cell.split(",")
-
-    if _recognize_integers(cell[0]):
-        cell = tuple(int(item) for item in cell)
-
     return cell
 
 
-def _close_match(ngrams_df, key_pattern):
+def _close_match(ngrams_df, key_pattern, algorithm, interval_type):
+
+    if algorithm == 'l':
+        method = NormalizedLevenshtein()
+    elif algorithm == 'w':
+        if not interval_type:
+            raise Exception("Please put 'd' or 'c' for the diatonic or chromatic interval type.")
+        method = NormalizedWeightedIntervalLevenshtein(interval_type=interval_type)
+
     ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: _close_match_helper(cell), na_action='ignore')
     # making sure that key pattern and other patterns are tuple of string or ints
-    if not (type(ngrams_df.iloc[0, :]['pattern']) == type(key_pattern) == tuple
-            or type(ngrams_df.iloc[0, :]['pattern'][0]) == type(key_pattern[0])):
-        raise Exception("Input patterns and patterns inside dataframe aren't tuple of strings/ints")
+    if not type(ngrams_df.iloc[0, :]['pattern'][0]) == type(key_pattern[0]):
+        raise Exception("Input patterns and patterns inside dataframe aren't of the same data types.")
 
-    ngrams_df['score'] = ngrams_df['pattern'].map(lambda cell: 100*textdistance.levenshtein.normalized_similarity(key_pattern, cell), na_action='ignore')
+    ngrams_df['score'] = ngrams_df['pattern'].map(
+        lambda cell: 100 * method.similarity(key_pattern, cell), na_action='ignore')
     return ngrams_df
 
-def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selected_patterns=[], voices=[],
-                             heatmap_width=800, heatmap_height=300):
+
+def plot_close_match_heatmap(ngrams_df, key_pattern, algorithm='l', ngrams_duration=None, interval_type='None', selected_patterns=[],
+                             voices=[], heatmap_width=800, heatmap_height=300):
     """
     Plot how closely the other vectors match a selected vector.
     Uses the Levenshtein distance.
+    :param interval_type:
+    :param algorithm: 'l' for levenshtein, 'w' for weighted levenshtein.
     :param ngrams_df: crim-intervals getNgram's output
     :param key_pattern: a pattern the users selected to compare other patterns with (tuple of floats)
     :param selected_pattern: the specific other vectors the users selected
@@ -315,16 +328,25 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
 
     ngrams = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration, selected_pattern=selected_patterns,
                                voices=voices)
-    ngrams.dropna(how='any', inplace=True) # only the pattern column can be NaN because all columns have starts (==offsets) and voices
+    ngrams.dropna(how='any',
+                  inplace=True)  # only the pattern column can be NaN because all columns have starts (==offsets) and voices
     # calculate the score
     key_pattern = _close_match_helper(key_pattern)
-    score_ngrams = _close_match(ngrams, key_pattern)
+    score_ngrams = _close_match(ngrams, key_pattern, algorithm=algorithm, interval_type=interval_type)
 
     slider = alt.binding_range(min=0, max=100, step=1, name='cutoff:')
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
                                     bind=slider, init={'cutoff': 50})
-    return create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
+    # TODO add a histogram of the scores!!!
+
+    heatmap = create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
+
+    score_histogram = create_bar_chart('count(score)', 'score', color=alt.value('#1f77b4'),
+                                       data=score_ngrams, condition=alt.datum.score >= selector.cutoff)
+
+    return alt.vconcat(score_histogram, heatmap)
+
 
 def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
                                  interval_settings=('d', True, True), offsets='first'):
@@ -341,7 +363,7 @@ def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
     :param offsets: (refer to getNgrams documentation)
     :return: ngram and corresponding duration dataframe!
     """
-    if n==-1:
+    if n == -1:
         raise Exception("Cannot calculate the duration for this type of ngrams")
 
     # compute dur for the ngrams
@@ -374,6 +396,7 @@ def process_network_df(df, interval_column_name, ema_column_name):
     result_df['segments'] = result_df['segments'].str.split(",")
     return result_df
 
+
 # add nodes to graph
 def create_interval_networks(interval_column, interval_type):
     """
@@ -397,7 +420,7 @@ def create_interval_networks(interval_column, interval_type):
             separator = ''
         elif interval_type == 'time':
             nodes = node.split("/")
-            separator='/'
+            separator = '/'
         else:
             raise Exception("Please put either 'time' or 'melodic' for `type_interval`")
 
@@ -422,6 +445,7 @@ def create_interval_networks(interval_column, interval_type):
 
     return networks_dict
 
+
 def _manipulate_processed_network_df(df, interval_column, search_pattern_starts_with):
     """
     This method helps to generate interactive widget in create_interactive_compare_df
@@ -432,7 +456,9 @@ def _manipulate_processed_network_df(df, interval_column, search_pattern_starts_
     """
     mask = df[interval_column].astype(str).str.startswith(pat=search_pattern_starts_with)
     filtered_df = df[mask].copy()
-    return filtered_df.fillna("-").style.applymap(lambda x: "background: #ccebc5" if search_pattern_starts_with in x else "")
+    return filtered_df.fillna("-").style.applymap(
+        lambda x: "background: #ccebc5" if search_pattern_starts_with in x else "")
+
 
 def create_interactive_compare_df(df, interval_column):
     """
@@ -445,6 +471,7 @@ def create_interactive_compare_df(df, interval_column):
     """
     return interact(_manipulate_processed_network_df, df=fixed(df),
                     interval_column=fixed(interval_column), search_pattern_starts_with='Input search pattern')
+
 
 def create_comparisons_networks_and_interactive_df(df, interval_column, interval_type, ema_column, patterns=[]):
     """
@@ -465,12 +492,13 @@ def create_comparisons_networks_and_interactive_df(df, interval_column, interval
     df = process_network_df(df, interval_column, ema_column)
     return networks_dict, create_interactive_compare_df(df, interval_column)
 
+
 def _trim_and_combine_piece_ids_with_measures(df):
     # extract necessary columns
     df = df[['model_observation.ema', 'model_observation.piece.piece_id',
-            'relationship_type', 'derivative_observation.piece.piece_id',
-            'derivative_observation.ema'
-            ]].copy()
+             'relationship_type', 'derivative_observation.piece.piece_id',
+             'derivative_observation.ema'
+             ]].copy()
 
     # combine ema and piece id
     df['model_observation.ema'] = df['model_observation.ema'].str.split("/", n=1, expand=True)[0]
@@ -478,9 +506,8 @@ def _trim_and_combine_piece_ids_with_measures(df):
     df['model'] = df['model_observation.piece.piece_id'] + ":" + df['model_observation.ema']
     df['derivative'] = df['derivative_observation.piece.piece_id'] + ":" + df['derivative_observation.ema']
 
-    # TODO convert everything into string for non error handling
-
     return df
+
 
 def group_observations(model_series, derivative_series):
     groups = {}
@@ -494,10 +521,10 @@ def group_observations(model_series, derivative_series):
             groups[z.split(":")[0]] = jset
     return groups
 
+
 # TODO rename to something fancy
 def plot_relationship_network(df, color='derivative', selected_relationship_types=[], selected_model_ids=[],
                               selected_derivative_ids=[], selected_families=[]):
-
     # process df's piece ids and measure into one column
     df = _trim_and_combine_piece_ids_with_measures(df)
 
@@ -532,11 +559,11 @@ def plot_relationship_network(df, color='derivative', selected_relationship_type
 
     # construct the networks
     nt = Network(directed=True, notebook=True)
-    if color=='derivative':
+    if color == 'derivative':
         normal_nodes_column = 'model'
         colored_nodes_column = 'derivative'
         color_inheritance = 'to'
-    elif color=='model':
+    elif color == 'model':
         normal_nodes_column = 'derivative'
         colored_nodes_column = 'model'
         color_inheritance = 'from'
@@ -555,8 +582,10 @@ def plot_relationship_network(df, color='derivative', selected_relationship_type
 
     return nt
 
+
 def plot_pieces_relationship_network():
     pass
+
 
 def plot_ngram_network():
     pass

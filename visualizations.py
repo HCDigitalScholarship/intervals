@@ -1,5 +1,5 @@
 """
-This script contains the method
+This script contains the method used to visualize data from CRIM intervals.
 """
 
 import altair as alt
@@ -283,14 +283,16 @@ def _close_match_helper(cell):
     return cell
 
 
-def _close_match(ngrams_df, key_pattern, algorithm, interval_type):
+def _close_match(ngrams_df, key_pattern, algorithm, interval_type, directed):
 
     if algorithm == 'l':
         method = NormalizedLevenshtein()
     elif algorithm == 'w':
         if not interval_type:
             raise Exception("Please put 'd' or 'c' for the diatonic or chromatic interval type.")
-        method = NormalizedWeightedIntervalLevenshtein(interval_type=interval_type)
+        if directed == None:
+            raise Exception("Please specify whether the intervals were directed or not.")
+        method = NormalizedWeightedIntervalLevenshtein(interval_type=interval_type, directed=directed)
 
     ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: _close_match_helper(cell), na_action='ignore')
     # making sure that key pattern and other patterns are tuple of string or ints
@@ -302,11 +304,12 @@ def _close_match(ngrams_df, key_pattern, algorithm, interval_type):
     return ngrams_df
 
 
-def plot_close_match_heatmap(ngrams_df, key_pattern, algorithm='l', ngrams_duration=None, interval_type='None', selected_patterns=[],
-                             voices=[], heatmap_width=800, heatmap_height=300):
+def plot_close_match_heatmap(ngrams_df, key_pattern, algorithm='l', ngrams_duration=None, interval_type=None,
+                             directed=True, selected_patterns=[], voices=[], heatmap_width=800, heatmap_height=300):
     """
     Plot how closely the other vectors match a selected vector.
     Uses the Levenshtein distance.
+    :param directed:
     :param interval_type:
     :param algorithm: 'l' for levenshtein, 'w' for weighted levenshtein.
     :param ngrams_df: crim-intervals getNgram's output
@@ -328,7 +331,7 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, algorithm='l', ngrams_durat
     ngrams.dropna(how='any', inplace=True)
     # calculate the score
     key_pattern = _close_match_helper(key_pattern)
-    score_ngrams = _close_match(ngrams, key_pattern, algorithm=algorithm, interval_type=interval_type)
+    score_ngrams = _close_match(ngrams, key_pattern, algorithm=algorithm, interval_type=interval_type, directed=directed)
 
     slider = alt.binding_range(min=0, max=100, step=1, name='cutoff:')
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],

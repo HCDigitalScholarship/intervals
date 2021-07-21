@@ -4,10 +4,10 @@ from strsimpy.string_distance import StringDistance
 from strsimpy.string_similarity import NormalizedStringSimilarity
 
 def default_insertion_cost(interval):
-    return 2.0
+    return 1.0
 
 def default_deletion_cost(interval):
-    return 2.0
+    return 1.0
 
 def process_interval(interval):
     if interval[0].isalpha():
@@ -18,20 +18,34 @@ def process_interval(interval):
         pass
     return interval
 
-def default_substitution_cost(a, b, interval_type='d'):
+def default_substitution_cost(a, b, interval_type, directed):
     # process a and b so that they could be converted to int
 
     a = process_interval(a)
     b = process_interval(b)
 
     if interval_type == 'd':
-        return abs(int(a) - int(b)) / 8
+        if directed:
+            if int(a) * int(b) > 0:
+                return (abs(int(a) - int(b) + 1) / 8) * 0.5
+            else:
+                return (abs(int(a) - int(b)) / 8) * 0.5
+        else:
+            return abs(int(a) - int(b) + 1) / 8
+    elif interval_type == 'z':
+        if directed:
+            return abs(int(a) - int(b) + 1) / 15
+        else:
+            return abs(int(a) - int(b) + 1) / 8
     else:  # interval_type == 'c':
-        return abs(int(a) - int(b)) / 12
+        if directed:
+            return (abs(int(a) - int(b) + 1) / 12)*0.5
+        else:
+            return abs(int(a) - int(b) + 1) / 12
 
 class WeightedIntervalLevenshtein(StringDistance):
 
-    def __init__(self, interval_type,
+    def __init__(self, interval_type, directed,
                  substitution_cost_fn=default_substitution_cost,
                  insertion_cost_fn=default_insertion_cost,
                  deletion_cost_fn=default_deletion_cost,
@@ -40,6 +54,7 @@ class WeightedIntervalLevenshtein(StringDistance):
         self.insertion_cost_fn = insertion_cost_fn
         self.deletion_cost_fn = deletion_cost_fn
         self.interval_type = interval_type
+        self.directed = directed
 
     def distance(self, s0, s1):
         if s0 is None:
@@ -68,7 +83,8 @@ class WeightedIntervalLevenshtein(StringDistance):
                 s1j = s1[j]
                 cost = 0
                 if s0i != s1j:
-                    cost = self.substitution_cost_fn(s0i, s1j, interval_type=self.interval_type)
+                    cost = self.substitution_cost_fn(s0i, s1j, interval_type=self.interval_type,
+                                                     directed=self.directed)
                 insertion_cost = self.insertion_cost_fn(s1j)
                 v1[j + 1] = min(v1[j] + insertion_cost, v0[j + 1] + deletion_cost, v0[j] + cost)
             v0, v1 = v1, v0
@@ -77,9 +93,9 @@ class WeightedIntervalLevenshtein(StringDistance):
 
 class NormalizedWeightedIntervalLevenshtein(NormalizedStringDistance, NormalizedStringSimilarity):
     # not allow users to choose score metrix for normalized method because different length division!
-    def __init__(self, interval_type):
+    def __init__(self, interval_type, directed):
         self.levenshtein = WeightedIntervalLevenshtein(
-            interval_type=interval_type,
+            interval_type=interval_type, directed=directed,
             substitution_cost_fn=default_substitution_cost,
             insertion_cost_fn=default_insertion_cost,
             deletion_cost_fn=default_deletion_cost
@@ -98,11 +114,11 @@ class NormalizedWeightedIntervalLevenshtein(NormalizedStringDistance, Normalized
         # normalized distance is distance/2*length because deletion score = insertion score = 2
         # while substition score ranges from 0-2
         lev = self.levenshtein.distance(s0, s1)
-        return  lev / (m_len*2)
+        return  lev / m_len
 
     def similarity(self, s0, s1):
         return 1.0 - self.distance(s0, s1)
-nwl = NormalizedWeightedIntervalLevenshtein(interval_type='d')
+# nwl = NormalizedWeightedIntervalLevenshtein(interval_type='d')
 # print("nwl similarity", nwl.similarity(('1', '2', '3', '4'), ('1', '2', '3', '-4')))
 # print("nwl similarity", nwl.similarity(('1', '2', '3', '4'), ('1', '2', '3', '5')))
 # print("nwl similarity", nwl.similarity(('1', '2', '3', '4'), ('1', '2', '3', '6')))

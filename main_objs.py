@@ -80,7 +80,8 @@ class ImportedPiece:
             ('q', False, False): lambda cell: cell.semiSimpleName if hasattr(cell, 'semiSimpleName') else cell,
             # diatonic interals without quality
             ('d', True, True): lambda cell: cell.directedName[1:] if hasattr(cell, 'directedName') else cell,
-            ('d', True, False): ImportedPiece._noQualityDirectedSimple,
+            ('d', True, False): ImportedPiece._noQualityDirectedSemiSimple,
+            ('d', True, 'simple'): ImportedPiece._noQualityDirectedSimple,
             ('d', False, True): lambda cell: cell.name[1:] if hasattr(cell, 'name') else cell,
             ('d', False, False): lambda cell: cell.semiSimpleName[1:] if hasattr(cell, 'semiSimpleName') else cell,
             # chromatic intervals
@@ -353,7 +354,6 @@ class ImportedPiece:
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
 
-        
     def getMeasure(self):
         """
         This method retrieves the offsets of each measure in each voices.
@@ -452,6 +452,15 @@ class ImportedPiece:
         return cell
 
     def _noQualityDirectedSimple(cell):
+        if hasattr(cell, 'simpleName'):
+            if cell.direction.value == -1:
+                return '-' + cell.simpleName[1:] 
+            else:
+                return cell.simpleName[1:]
+        else:
+            return cell
+
+    def _noQualityDirectedSemiSimple(cell):
         if hasattr(cell, 'semiSimpleName'):
             if cell.direction.value == -1:
                 return '-' + cell.semiSimpleName[1:] 
@@ -708,6 +717,135 @@ class ImportedPiece:
             return pd.concat(cols, axis=1)
         else:
             return pd.DataFrame()
+
+    def classifyModules(self):
+        nr = self.getNoteRest()
+        mnr = self.getNgrams(df=nr, n=-1)
+        mnrDur = self.getDuration(df=nr, n=-1, mask_df=mnr)
+        lyr = self.getLyric()
+        mel = self.getMelodic('d')
+        har = self.getHarmonic('d', True, 'simple')
+        maxMel = self.getNgrams(df=mel, n=-1)
+        n4 = self.getNgrams(df=har, how='modules', n=4)
+        d4 = self.getNgramDuration(n4, n=4)
+        maxn = self.getNgrams(how='modules', interval_settings=('d', True, 'simple'), n=-1)
+        stack = maxn.stack()
+        # print('Num ngrams:', len(stack))
+        vc = stack.value_counts()
+        # print('Num unique ngrams:', len(vc))
+        repeated = vc[vc > 1]
+        # print('Num unique ngrams that repeat:', len(repeated))
+        # ngrams should be a minimum of 3 units long
+        mask = repeated.index.map(lambda cell: ((cell.count(', ')) >= 2) and (cell.count('_') > cell.count('_Held')))
+        threePlus = repeated[mask]
+        # print('Num unique ngrams that repeat where n is at least 3:', len(threePlus))
+        modRefNum = 1
+        pairs = []
+        for module in threePlus.index:
+            # print('Working on this module:', module)
+            hits = stack[stack == module]
+            found = False
+            for i, labels in enumerate(hits.index[1:]):
+                modIndex, modVoices = hits.index[i]
+                modDur = d4.at[modIndex, modVoices]
+                repIndex, repVoices = labels
+                repDur = d4.at[labels]
+                lag = repIndex - modIndex
+                if lag < modDur * 4:
+                    # print('Module-Repetition Pair:', hits.index[i], labels)
+                    found = True
+                    category = 'NIm'
+                    subcategory = 'N/A'
+                    lowerVoice, upperVoice = modVoices.split('_')
+                    end = modDur + modIndex
+                    lowerLVI = maxMel.loc[:end, lowerVoice].last_valid_index()
+                    lowerMel = mel.at[lowerLVI, lowerVoice]
+                    upperLVI = maxMel.loc[:end, upperVoice].last_valid_index()
+                    upperMel = mel.at[upperLVI, upperVoice]
+                    # call it imitative if one part's melody starts with roughly
+                    # the first half of the other part's melody
+                    if lowerMel == upperMel:
+                        category = 'ID'  # stands for Imitative Duo
+                    # get starting pitches of the module and repetition voices
+                    lowerNdx = nr.loc[:lowerLVI, lowerVoice].iloc[:-1].last_valid_index()
+                    lowerModPitch = nr.at[lowerNdx, lowerVoice]
+                    upperNdx = nr.loc[:upperLVI, upperVoice].iloc[:-1].last_valid_index()
+                    upperModPitch = nr.at[upperNdx, upperVoice]
+
+                    repLowerVoice, repUpperVoice = repVoices.split('_')
+                    end = repDur + repIndex
+                    lowerLVI = maxMel.loc[:end, repLowerVoice].last_valid_index()
+                    upperLVI = maxMel.loc[:end, repUpperVoice].last_valid_index()
+                    lowerNdx = nr.loc[:lowerLVI, repLowerVoice].iloc[:-1].last_valid_index()
+                    lowerRepPitch = nr.at[lowerNdx, repLowerVoice]
+                    upperNdx = nr.loc[:upperLVI, repUpperVoice].iloc[:-1].last_valid_index()
+                    upperRepPitch = nr.at[upperNdx, repUpperVoice]
+                    startingPitches = (lowerModPitch, upperModPitch, lowerRepPitch, upperRepPitch)
+
+                    if len({lowerVoice, upperVoice, repLowerVoice, repUpperVoice}) == 3:
+                        category = 'PEn'
+                        if len({p[:-1] for p in startingPitches}) == 1:
+                            subcategory = '@1'
+
+                    pairs.append([module, category, subcategory, modVoices, repVoices, 
+                        startingPitches, modDur, repDur, modIndex, repIndex,
+                        lag, modRefNum, np.nan])
+            if found:
+                modRefNum += 1
+        
+        colNames = ('Module', 'Category', 'Subcategory', 'ModVoices', 'RepVoices', 
+            'StartingPitches', 'ModDur', 'RepDur', 'ModOffset',
+            'RepOffset', 'Lag', 'Reference', 'FirstSyllable')
+        res = pd.DataFrame(pairs, columns=colNames)
+        
+        mnrs = mnr.stack()
+        mnrds = mnrDur.stack()
+        nrs = nr.stack()
+        firstNote = nrs.reindex_like(mnrs)
+        lyrs = lyr.stack()
+        mmels = maxMel.stack()
+        mels = mel.stack()
+        mels = mels.reindex_like(mmels)
+        mmels.index = mnrs.index
+        mels.index = mnrs.index
+        firstW = lyrs.reindex_like(mnrs)
+        shiftPrev = firstW.shift(1)
+        shiftNext = firstW.shift(-1)
+        matchPrev = firstW == shiftPrev
+        matchNext = firstW == shiftNext
+        lags = mnrs.index.get_level_values(0)[1:] - mnrs.index.get_level_values(0)[:-1]
+        lags = pd.Series(lags, mnrs.index[1:])
+        repNdx = pd.Series(firstNote.index.get_level_values(0), firstNote.index)
+        mtiVoices = pd.Series(firstNote.index.get_level_values(1), firstNote.index)
+        mtiPitches = pd.concat([firstNote.shift(1), firstNote], axis=1).apply(tuple, axis=1)
+        refs = pd.Series()  # make this an enumeration of the points starting at modrefnum + 1
+        df = pd.concat([mels, pd.Series(), pd.Series(), mtiVoices.shift(1), mtiVoices,
+             mtiPitches, mnrds.shift(1), mnrds, repNdx.shift(1), repNdx, lags, 
+             refs, firstW], axis=1)
+        df.columns = colNames
+        dfs = df.groupby(['Module', 'FirstSyllable'])
+        mtis = []
+        for syll, point in dfs:
+            if len(point) < 3:
+                continue
+            modRefNum += 1
+            temp = point.Lag.iloc[1:] == point.Lag.iat[1]
+            if False in temp[1:].values:
+                point.Category = 'MTI'
+            else:
+                point.Category = 'PEn'
+            point.Reference = modRefNum
+            mtis.append(point[1:])
+        res2 = pd.concat(mtis)
+        res2.set_index(['ModOffset', 'ModVoices'], drop=False, inplace=True)
+        result = pd.concat([res, res2])
+        # pdb.set_trace()
+        result.set_index('ModOffset', drop=False, inplace=True)
+        result.sort_index(level=0, inplace=True)
+        result = result[result.Lag > 0]
+        result = result[result.ModVoices != result.RepVoices]
+        result = result[result.Lag < 50]
+        return result           
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come

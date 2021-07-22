@@ -44,8 +44,6 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
 
 
 def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip):
-    # if type(data.iloc[0, :][y]) != str:
-    #     raise Exception("Label difficult to see!")
 
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,
@@ -62,7 +60,6 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     ).interactive()
 
     return heatmap
-
 
 def _process_ngrams_df_helper(ngrams_df, main_col):
     """
@@ -178,22 +175,24 @@ def _from_ema_to_offsets(df, ema_column):
     :param ema_column: the name of the column storing ema address.
     :return: the processed dataframe with two new columns start and end
     """
+    df.reset_index(inplace=True)
+
     # retrieve the measures from ema address and create start and end in place
     df['locations'] = df[ema_column].str.split("/", n=1, expand=True)[0]
     df['locations'] = df['locations'].str.split(",")
     df = df.explode('locations', ignore_index=True)
-    df[['start', 'end']] = df['locations'].str.split("-", expand=True).fillna(method='ffill')
-    # print(df['start'].to_dict())
-    # print(df['end'].to_dict())
+    df[['start', 'end']] = df['locations'].str.split("-", expand=True).fillna(method='ffill', axis=1)
 
-    for index in df['start'].index:
-        try:
-            float(df['start'].loc[index])
-        except:
-            print(str(index) + ":" + df['start'].loc[index] + ".")
+    # if in the start column has a NaN value, this means that the ema address is invalid.
+    df['start'] = df['start'].map(lambda num: int(num) if num.isdigit() else pd.NA)
+    df['end'] = df['end'].map(lambda num: int(num) if num.isdigit() else pd.NA)
 
-    df['start'] = df['start'].astype(float)
-    df['end'] = df['end'].astype(float)
+    df.set_index('index', inplace=True)
+    # print out the ones with NA adress
+    if df['start'].isna().any() or df['end'].isna().any():
+        print("There exist invalid ema addresses in the dataframe at rows: ",
+              df[df['start'].isna() | df['end'].isna()].index.to_list())
+
     return df
 
 
@@ -203,7 +202,7 @@ def _process_crim_json_url(url_column):
     return url_column
 
 
-def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_category='observer.name', option=1,
+def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_category='observer.name',
                             heat_map_width=800, heat_map_height=300):
     """
     This method plots a chart for relationships/observations dataframe retrieved from their
@@ -223,7 +222,6 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
     df = df.copy()  # create a deep copy of the selected observations to protect the original dataframe
     df = _from_ema_to_offsets(df, ema_col)
 
-    df = _from_ema_to_offsets(df, ema_col)
     df['website_url'] = _process_crim_json_url(df['url'])
 
     df['id'] = df['id'].astype(str)
@@ -279,7 +277,7 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
 def _close_match_helper(cell):
 
     if type(cell) == str:
-        cell = cell.split(",")
+        cell = cell.split(", ")
     return cell
 
 

@@ -290,7 +290,7 @@ def _close_match(ngrams_df, key_pattern, algorithm, interval_type, directed):
             raise Exception("Please put 'd' or 'c' for the diatonic or chromatic interval type.")
         if directed == None:
             raise Exception("Please specify whether the intervals were directed or not.")
-        method = NormalizedWeightedIntervalLevenshtein(interval_type=interval_type, directed=directed)
+        method = NormalizedWeightedIntervalLevenshtein()
 
     ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: _close_match_helper(cell), na_action='ignore')
     # making sure that key pattern and other patterns are tuple of string or ints

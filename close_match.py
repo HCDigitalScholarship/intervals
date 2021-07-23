@@ -1,3 +1,7 @@
+"""
+This code contains...
+"""
+
 from functools import reduce
 from strsimpy.weighted_levenshtein import WeightedLevenshtein
 from strsimpy.string_distance import NormalizedStringDistance
@@ -9,109 +13,42 @@ def default_insertion_cost(interval):
 def default_deletion_cost(interval):
     return 1.0
 
-def process_interval(interval):
-    # TODO ask richard for help with docstring
-    """
-    Retrieve how wide the interval is based on the input.
-    (for example, from M1 to 1, P3 to 3, -m2 to 2)
-    :param str interval: The interval to be processed.
-    :return: if the interval is represented with numbers, return itself,
-    else, process the interval into the number
-    """
-    if interval[0].isalpha():
-        interval = interval[1:]
-    elif len(interval) > 1 and interval[1].isalpha():
-        interval = interval[0] + interval[2:]
+def default_substitution_cost(a, a_index, b, b_index):
+    return 1.0
+
+def test_substitution_cost(a, a_index,b, b_index):
+    if a_index == b_index == 0:
+        return 0.0
     else:
-        pass
-    return interval
-
-def default_substitution_cost(a, b, interval_type, directed):
-    """
-    This method calculate how much different two interval is based on
-    their type (whether they are directed or not).
-    :param a: interval a
-    :param b: interval b
-    :param interval_type: the type of intervals this object would be used on: 'd' for
-    diatonic intervals, 'z' for zero-indexed diatonic intervals, and 'c' for chromatic
-    intervals.
-    :param directed: defaults to True which shows that the voice that is lower on the staff is a
-    higher pitch than the voice that is higher on the staff. This is designated with a "-" prefix.
-    :return: a corresponding different score.
-    """
-    # TODO ask richard for help with correct calculation
-
-    a = process_interval(a)
-    b = process_interval(b)
-
-    if interval_type == 'd':
-        if directed:
-            # for a diatonic and directed interval, the possible values includes everything
-            # but 0 from -8 to 8 (inclusive) . This is calculated so that the substitution
-            # -8 and 8 is given the score 1.
-            if int(a) * int(b) > 0:
-                return (abs(int(a) - int(b) + 1) / 8) * 0.5
-            else:
-                return (abs(int(a) - int(b)) / 8) * 0.5
-        else:
-            # for a diatonic and undirected interval, the possible values are
-            # range from 1 to 8 (inclusive). This is calculated so that the substitution
-            # 1 and 8 is given the score 1.
-            return abs(int(a) - int(b) + 1) / 8
-    elif interval_type == 'z':
-        if directed:
-            # for a zero-indexed, diatonic, and directed interval, the possible values includes
-            # everything between -8 to 8 (inclusive). This is calculated so that the substitution
-            # -7 and 7 is given the score 1.
-            return abs(int(a) - int(b) + 1) / 15
-        else:
-            # for a zero-indexed, diatonic, and directed interval, the possible values includes
-            # everything between 0 to 7 (inclusive). This is calculated so that the substitution
-            # 0 and 7 is given the score 1.
-            return abs(int(a) - int(b) + 1) / 8
-    else:  # interval_type == 'c':
-        if directed:
-            # for a chromatic, and directed interval, the possible values includes
-            # everything between -12 to 12 (inclusive) but 0. This is calculated so that the substitution
-            # -12 and 12 is given the score 1.
-            if int(a) * int(b) > 0:
-                return (abs(int(a) - int(b) + 1) / 12) * 0.5
-            else:
-                return (abs(int(a) - int(b)) / 12) * 0.5
-        else:
-            # for a chromatic, and undirected interval, the possible values includes
-            # everything between 1 to 12 (inclusive) but 0. This is calculated so that the substitution
-            # 1 and 12 is given the score 1.
-            return abs(int(a) - int(b) + 1) / 12
+        return 1.0
 
 class WeightedIntervalLevenshtein(WeightedLevenshtein):
     """
     This class contains the methods to calculate a how similar two
-    interables are using a weighted Levenshtein algorithm, and
+    iterables are using a weighted Levenshtein algorithm, and
     the users can customize how much weight each operation is worth.
     """
-    def __init__(self, interval_type, directed,
-                 substitution_cost_fn=default_substitution_cost,
-                 insertion_cost_fn=default_insertion_cost,
+    def __init__(self, substitution_cost_fn=default_substitution_cost, insertion_cost_fn=default_insertion_cost,
                  deletion_cost_fn=default_deletion_cost):
         """
         This method create an instance of a weighted levenshtein object used for intervals.
-        :param interval_type: The type of intervals this object would be used on: 'd' for
         diatonic intervals, 'z' for zero-indexed diatonic intervals, and 'c' for chromatic intervals.
-        :param directed: defaults to True which shows that the voice that is lower on the staff is a
         higher pitch than the voice that is higher on the staff. This is designated with a "-" prefix.
-        :param substitution_cost_fn: the function that decides how much weight does each substitution
-        accounts for. (see default_substitution_cost()'s docstring for more)
+        :param substitution_cost_fn: the function that decides an insertion's weight. (default to 1)
         :param insertion_cost_fn: the function that decides an insertion's weight. (default to 1)
         :param deletion_cost_fn: the function that decides a deletion's weight. (default to 1)
         """
         WeightedLevenshtein.__init__(self, substitution_cost_fn=substitution_cost_fn,
                                     insertion_cost_fn=insertion_cost_fn,
                                     deletion_cost_fn=deletion_cost_fn)
-        self.interval_type = interval_type
-        self.directed = directed
 
     def distance(self, s0, s1):
+        """
+        Calculate how different two interble of intervals are.
+        :param s0: first interable of interval
+        :param s1: second interable of interval
+        :return: a distance score
+        """
         if s0 is None:
             raise TypeError("Argument s0 is NoneType.")
         if s1 is None:
@@ -138,8 +75,7 @@ class WeightedIntervalLevenshtein(WeightedLevenshtein):
                 s1j = s1[j]
                 cost = 0
                 if s0i != s1j:
-                    cost = self.substitution_cost_fn(s0i, s1j, interval_type=self.interval_type,
-                                                     directed=self.directed)
+                    cost = self.substitution_cost_fn(s0i, i, s1j, j)
                 insertion_cost = self.insertion_cost_fn(s1j)
                 v1[j + 1] = min(v1[j] + insertion_cost, v0[j + 1] + deletion_cost, v0[j] + cost)
             v0, v1 = v1, v0
@@ -149,15 +85,13 @@ class WeightedIntervalLevenshtein(WeightedLevenshtein):
 class NormalizedWeightedIntervalLevenshtein(NormalizedStringDistance, NormalizedStringSimilarity):
     """
     This class contains the methods allowing users to calculate and normalize the weighted Levenshtein
-    score for a pair of interables of intervals.
+    score for a pair of iterables of intervals.
     """
-    def __init__(self, interval_type, directed, substitution_cost_fn=default_substitution_cost,
-                insertion_cost_fn=default_insertion_cost, deletion_cost_fn=default_deletion_cost):
+    def __init__(self, substitution_cost_fn=default_substitution_cost,
+                 insertion_cost_fn=default_insertion_cost, deletion_cost_fn=default_deletion_cost):
         """
         This method create an instance of a normalized weighted levenshtein object used for intervals.
-        :param interval_type: The type of intervals this object would be used on: 'd' for
         diatonic intervals, 'z' for zero-indexed diatonic intervals, and 'c' for chromatic intervals.
-        :param directed: defaults to True which shows that the voice that is lower on the staff is a
         higher pitch than the voice that is higher on the staff. This is designated with a "-" prefix.
         :param substitution_cost_fn: the function that decides how much weight does each substitution
         accounts for. (see default_substitution_cost()'s docstring for more)
@@ -165,18 +99,15 @@ class NormalizedWeightedIntervalLevenshtein(NormalizedStringDistance, Normalized
         :param deletion_cost_fn: the function that decides a deletion's weight. (default to 1)
         """
 
-        self.levenshtein = WeightedIntervalLevenshtein(
-            interval_type=interval_type, directed=directed,
-            substitution_cost_fn=substitution_cost_fn,
-            insertion_cost_fn=insertion_cost_fn,
-            deletion_cost_fn=deletion_cost_fn
-        )
+        self.levenshtein = WeightedIntervalLevenshtein(substitution_cost_fn=substitution_cost_fn,
+                                                       insertion_cost_fn=insertion_cost_fn,
+                                                       deletion_cost_fn=deletion_cost_fn)
 
     def distance(self, s0, s1):
         """
-        Calculate how different two interble of intervals are.
-        :param s0: first interable of interval
-        :param s1: second interable of interval
+        Calculate how different two iterble of intervals are.
+        :param s0: first iterable of interval
+        :param s1: second iterable of interval
         :return: a distance score
         """
         if s0 is None:
@@ -199,3 +130,30 @@ class NormalizedWeightedIntervalLevenshtein(NormalizedStringDistance, Normalized
         :return: a similarity score
         """
         return 1.0 - self.distance(s0, s1)
+
+wl = WeightedIntervalLevenshtein(substitution_cost_fn=test_substitution_cost)
+nwl = NormalizedWeightedIntervalLevenshtein()
+print(wl.distance(['P8', 'P5', 'P8', 'P5', 'P8'], ['P10', 'P5', 'P8', 'P5', 'P8']))
+print(nwl.similarity(['P8', 'P5', 'P8', 'P5', 'P8'], ['P10', 'P5', 'P8', 'P5', 'P8']))
+
+"""
+# modules
+['7_Held', '6_Held', '6_Held', '5_-2', '8'], ['5_Held', '6_-2', '7_Held', '6_-3', '8']
+['7_Held', '6_Held', '6_Held', '5_-2', '8'], ['7_Held', '6_Held', '6_Held', '5_-2', '8']
+
+# notes, q 
+# directed 
+['P8', 'P5', 'P8', 'P5', 'P8'], ['P8', 'M10', 'P1', 'M2', 'M3']
+['-M2', '-P5', '-M6', '-m3', '-m3'], ['m10', 'M10', 'm10', 'P12', 'P11']
+['-M2', '-P5', '-M6', '-m3', '-m3'], ['-M2', '-P5', '-M6', '-m3', '-m3']
+
+# undirected
+['P5', 'M10', 'M9', 'P8', 'M7'], ['M10', 'P5', 'P8', 'P5', 'P8']
+
+# notes, 'd'
+['3', '3', '3', '3', '3'], ['8', '10', '1', '2', '3']
+
+# notes, c
+['19', '19', '15', '16', '20'], ['7', '3', '0', '3', '1']
+['12', '10', '15', '10', '-5'], ['3', '12', '14', '12', '15']
+"""

@@ -113,6 +113,7 @@ def helper_test_close_match_(model, notes):
         chart = viz.plot_close_match_heatmap(ngrams, popular_patterns[i])
 
 def test_plot_close_match_heatmap():
+    # TODO adapt this test for the new parameters
     corpus = CorpusBase([EXAMPLE_CRIM_FILE])
     model = corpus.scores[0]
 
@@ -168,6 +169,7 @@ def test_plot_close_match_heatmap():
 #     # helper_test_generate_ngrams_and_dur(model, mel_chromatic, -1)
 
 def test_comparisons_heatmap():
+
     # TODO add empty heatmap
     # pieces
     df_relationships = pd.DataFrame(RELATIONSHIPS_DICT_EXAMPLE)

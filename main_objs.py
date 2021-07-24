@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
+from itertools import combinations_with_replacement as cwr
 
 
 # Unncessary at the moment
@@ -469,6 +470,33 @@ class ImportedPiece:
         else:
             return cell
 
+    def getDistance(self, df=None, n=3):
+        '''
+        Return the distances between all the values in df which is assumed to be
+        a dataframe of integer ngrams. Specifically, this is meant for
+        0-indexed, directed, and compound melodic ngrams. If nothing is passed
+        for df, melodic ngrams of this type will be provided at the value of n
+        passed. This is computationally intensive, so it may be slow, especially
+        for large n values.
+        Usage:
+
+        importedPiece.getDifferences(n=4)
+        '''
+        if df is None:
+            df = self.getMelodic('z', True, True)
+            df = self.getNgrams(df=df, n=n, exclude=['Rest'])
+        su = pd.Series(df.stack().unique())
+        di = pd.DataFrame.from_records(su.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
+        indecies = pd.DataFrame.from_records(cwr(di.index, 2))
+        d1 = di.iloc[indecies[1]].reset_index(drop=True)
+        d0 = di.iloc[indecies[0]].reset_index(drop=True)
+        dist = (d1 - d0).abs().apply(sum, axis=1)
+        labels0 = su.iloc[indecies[0]].reset_index(drop=True)
+        labels1 = su.iloc[indecies[1]].reset_index(drop=True)
+        result = pd.concat([labels0, labels1, dist], axis=1)
+        result.columns = ['PatternA', 'PatternB', 'Distance']
+        return result
+
     def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
@@ -730,11 +758,8 @@ class ImportedPiece:
         d4 = self.getNgramDuration(n4, n=4)
         maxn = self.getNgrams(how='modules', interval_settings=('d', True, 'simple'), n=-1)
         stack = maxn.stack()
-        # print('Num ngrams:', len(stack))
         vc = stack.value_counts()
-        # print('Num unique ngrams:', len(vc))
         repeated = vc[vc > 1]
-        # print('Num unique ngrams that repeat:', len(repeated))
         # ngrams should be a minimum of 3 units long
         mask = repeated.index.map(lambda cell: ((cell.count(', ')) >= 2) and (cell.count('_') > cell.count('_Held')))
         threePlus = repeated[mask]
@@ -752,7 +777,6 @@ class ImportedPiece:
                 repDur = d4.at[labels]
                 lag = repIndex - modIndex
                 if lag < modDur * 4:
-                    # print('Module-Repetition Pair:', hits.index[i], labels)
                     found = True
                     category = 'NIm'
                     subcategory = 'N/A'
@@ -831,7 +855,7 @@ class ImportedPiece:
             modRefNum += 1
             temp = point.Lag.iloc[1:] == point.Lag.iat[1]
             if False in temp[1:].values:
-                point.Category = 'MTI'
+                point.Category = 'Fuga'
             else:
                 point.Category = 'PEn'
             point.Reference = modRefNum
@@ -839,13 +863,12 @@ class ImportedPiece:
         res2 = pd.concat(mtis)
         res2.set_index(['ModOffset', 'ModVoices'], drop=False, inplace=True)
         result = pd.concat([res, res2])
-        # pdb.set_trace()
         result.set_index('ModOffset', drop=False, inplace=True)
         result.sort_index(level=0, inplace=True)
         result = result[result.Lag > 0]
         result = result[result.ModVoices != result.RepVoices]
         result = result[result.Lag < 50]
-        return result           
+        return result
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come

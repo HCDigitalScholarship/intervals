@@ -472,15 +472,36 @@ class ImportedPiece:
 
     def getDistance(self, df=None, n=3):
         '''
-        Return the distances between all the values in df which is assumed to be
-        a dataframe of integer ngrams. Specifically, this is meant for
+        Return the distances between all the values in df which should be a
+        dataframe of strings of integer ngrams. Specifically, this is meant for
         0-indexed, directed, and compound melodic ngrams. If nothing is passed
         for df, melodic ngrams of this type will be provided at the value of n
-        passed. This is computationally intensive, so it may be slow, especially
-        for large n values.
+        passed. An alternative that would make sense would be to use chromatic
+        melodic intervals instead.
         Usage:
+        # If you're happy with the defaults, call like this:
+        importedPiece.getDifferences()
 
-        importedPiece.getDifferences(n=4)
+        # If you don't pass a value for df, you can specify a different value
+        # for n to change from the default of 3:
+        importedPiece.getDifferences(n=5)
+
+        # If you already have the melodic ngrams calculated for a different
+        # aspect of your query, you can pass that as df to save a little
+        # runtime on a large query. Note that if you pass something for df,
+        # the n parameter will be ignored:
+        mel = importedPiece.getMelodic('z', True, True)
+        ngrams = importedPiece.getNgrams(df=mel, n=4, exclude=['Rest'])
+        importedPiece.getDifferences(df=ngrams)
+
+        # To search the table for the rows where a specific ngram is found do
+        # the following. Keep in mind that the order of the ngrams in the
+        # PatternA and PatternB columns does not matter. This is example looks
+        # for distances involving a melodic pattern that goes up a step, down a
+        # third, up a step, down a third:
+        dist = importedPiece.getDistance(n=4)
+        target = '1, -2, 1, -2'
+        hits = dist[dist.index.map(lambda ind: target in ind)]
         '''
         if df is None:
             df = self.getMelodic('z', True, True)
@@ -491,11 +512,12 @@ class ImportedPiece:
         d1 = di.iloc[indecies[1]].reset_index(drop=True)
         d0 = di.iloc[indecies[0]].reset_index(drop=True)
         dist = (d1 - d0).abs().apply(sum, axis=1)
-        labels0 = su.iloc[indecies[0]].reset_index(drop=True)
-        labels1 = su.iloc[indecies[1]].reset_index(drop=True)
-        result = pd.concat([labels0, labels1, dist], axis=1)
-        result.columns = ['PatternA', 'PatternB', 'Distance']
-        return result
+        dist.name = 'Distance'
+        labels0 = su.iloc[indecies[0]]
+        labels1 = su.iloc[indecies[1]]
+        mi = pd.MultiIndex.from_arrays([labels0, labels1], names=['PatternA', 'PatternB'])
+        dist.index = mi
+        return dist
 
     def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
         '''

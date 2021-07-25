@@ -470,6 +470,30 @@ class ImportedPiece:
         else:
             return cell
 
+    # def _durationalRatioHelper(self, cell):
+    #     cell = tuple(float(val) for val in cell.split(', '))
+    #     result = tuple(cell[i + 1] / cell[i] for i in range(len(cell) - 1))
+    #     return result
+
+    def _durationalRatioHelper(self, row):
+        _row = row.dropna()
+        return _row / _row.shift(1)
+
+    def getDurationalRatio(self, df=None):
+        '''
+        Return durational ratios of each item in each column compared to the
+        previous item in the same column. If a df is passed, it should be of
+        float or integer values. If no df is passed, the default results from
+        .getDuration will be used as input (durations of notes and rests).
+        '''
+        if df is None:
+            df = self.getDuration()
+        return df.apply(self._durationalRatioHelper).dropna(how='all')
+        # ds = dur.applymap(str, na_action='ignore')
+        # dn = self.getNgrams(df=ds, n=n)
+        # dr = dn.applymap(self._durationalRatioHelper, na_action='ignore')
+        # return dr
+
     def getDistance(self, df=None, n=3):
         '''
         Return the distances between all the values in df which should be a

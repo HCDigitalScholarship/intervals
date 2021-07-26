@@ -504,11 +504,11 @@ class ImportedPiece:
         melodic intervals instead.
         Usage:
         # If you're happy with the defaults, call like this:
-        importedPiece.getDifferences()
+        importedPiece.getDistance()
 
         # If you don't pass a value for df, you can specify a different value
         # for n to change from the default of 3:
-        importedPiece.getDifferences(n=5)
+        importedPiece.getDistance(n=5)
 
         # If you already have the melodic ngrams calculated for a different
         # aspect of your query, you can pass that as df to save a little
@@ -516,7 +516,7 @@ class ImportedPiece:
         # the n parameter will be ignored:
         mel = importedPiece.getMelodic('z', True, True)
         ngrams = importedPiece.getNgrams(df=mel, n=4, exclude=['Rest'])
-        importedPiece.getDifferences(df=ngrams)
+        importedPiece.getDistance(df=ngrams)
 
         # To search the table for the rows where a specific ngram is found do
         # the following. Keep in mind that the order of the ngrams in the

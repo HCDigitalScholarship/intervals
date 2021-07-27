@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
+from itertools import combinations_with_replacement as cwr
 
 
 # Unncessary at the moment
@@ -80,7 +81,8 @@ class ImportedPiece:
             ('q', False, False): lambda cell: cell.semiSimpleName if hasattr(cell, 'semiSimpleName') else cell,
             # diatonic interals without quality
             ('d', True, True): lambda cell: cell.directedName[1:] if hasattr(cell, 'directedName') else cell,
-            ('d', True, False): ImportedPiece._noQualityDirectedSimple,
+            ('d', True, False): ImportedPiece._noQualityDirectedSemiSimple,
+            ('d', True, 'simple'): ImportedPiece._noQualityDirectedSimple,
             ('d', False, True): lambda cell: cell.name[1:] if hasattr(cell, 'name') else cell,
             ('d', False, False): lambda cell: cell.semiSimpleName[1:] if hasattr(cell, 'semiSimpleName') else cell,
             # chromatic intervals
@@ -179,32 +181,98 @@ class ImportedPiece:
         vals = col.index[n:] - col.index[:-n]
         return pd.Series(vals, col.index[:-n])
 
-    def getDuration(self, df=None, n=1):
-        '''
-        If no dataframe is passed as the df parameter (the default), return a
-        `pandas.DataFrame` of floats giving the duration of notes and rests in 
-        each part where 1 = quarternote, 1.5 = a dotted quarter, 4 = a whole 
-        note, etc. If a df is passed, then return a df of the same shape giving 
-        the duration of each of the slices of this df. This is useful if you 
-        want to know what the durations of something other than single notes 
-        and rests, such as the durations of intervals.
-        
-        If n is set, it must be an integer >= 1 and less than the number of 
-        rows in df. It determines how many adjacent items have their durations 
-        grouped together. To get the duration of single events, n should be 1 
-        (default). You could set n=3 if you wanted to get the duration of all 
-        consecutive 3-note groups, for example.'''
+    def _maxnDurationHelper(self, _col):
+        col = _col.dropna()
+        starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', np.nan)))]
+        ends = col[(col == 'Rest') & (col.shift(1) != 'Rest')]
+        starts.dropna(inplace=True)
+        ends.dropna(inplace=True)
+        lenStarts = len(starts)
+        colDurs = ends.index[-lenStarts:] - starts.index
+        starts[:] = colDurs
+        return starts
 
-        if 'Duration' not in self.analyses or df is not None or n != 1:
-            _df = self.getNoteRest().copy() if df is None else df.copy()
-            highestTime = self.score.highestTime
-            _df.loc[highestTime, :] = 0
+    def getDuration(self, df=None, n=1, mask_df=None):
+        '''
+        If no arguments are passed, return a `pandas.DataFrame` of floats giving
+        the duration of notes and rests in each part where 1 = quarternote,
+        1.5 = a dotted quarter, 4 = a whole note, etc. If a df is passed, then
+        return a df of the same shape giving the duration of each of the cells
+        of this df. This is useful if you want to know what the durations of 
+        something other than single notes and rests, such as the durations of
+        intervals. E.g.:
+
+        har = importedPiece.getHarmonic()
+        harDur = importedPiece.getDuration(df=har)
+        
+        The `n` parameter should be an integer greater than zero, or -1. When
+        n is a positive integer, it groups together a sliding window of n
+        consecutive non-NaN cells in each column. If you pass a df, it will sum
+        the durations 'Rest' and non-Rest cell, provided they are in the same
+        n-sized window. For example, set n=3 if you wanted to get the durations
+        of all 3-event-long pair-wise harmonic events:
+        
+        har = importedPiece.getHarmonic()
+        dur_3 = importedPiece.getDuration(df=har, n=3)
+
+        Setting n to -1 sums the durations of all adjacent non-rest events,
+        excluding NaNs. You could use this to find the durations of all melodies
+        in a piece. Note that the results of .getNoteRest() will be used for the
+        `df` parameter if none is provided:
+
+        dur = importedPiece.getDuration(n=-1)
+
+        You can also pass a `mask_df`, which will serve as a filter, only
+        keeping values at the same indecies (i.e. index and columns) as mask_df.
+        This is needed to get the durations of ngrams. To get the durations of 
+        ngrams, pass the same value of n and the samedataframe you passed to 
+        .getNgrams() as the `n` and `df` parameters, then pass your dataframe of
+        ngrams as the `mask_df`. For example:
+
+        har = importedPiece.getHarmonic()
+        mel = importedPiece.getMelodic()
+        _n = 5
+        ngrams = importedPiece.getNgrams(df=har, other=mel, n=_n)
+        ngramDurations = importedPiece.getDuration(df=har, n=_n, mask_df=ngrams)
+        '''
+        if 'Duration' in self.analyses and df is None and n == 1 and mask_df is None:
+            return self.analyses['Duration']
+        _df = self.getNoteRest().copy() if df is None else df.copy()
+        highestTime = self.score.highestTime
+        _df.loc[highestTime, :] = 'Rest'  # this is just a placeholder
+        if n > 0:
             result = _df.apply(self._durationHelper, args=(n,))
-            if df is None and n == 1:
+            if df is None and n == 1 and mask_df is None:
                 self.analyses['Duration'] = result
-            else:
-                return result
-        return self.analyses['Duration']
+        else:  # n == -1
+            result = _df.apply(self._maxnDurationHelper)
+        if mask_df is not None:
+            mask = mask_df.applymap(lambda cell: True, na_action='ignore')
+            result = result[mask]
+        return result.dropna(how='all')
+
+    def getNgramDuration(self, df, n=3):
+        '''
+        Return the duration of ngrams of size n. Supply a dataframe of ngrams 
+        for the df parameter and the size of n used to calculate those ngrams 
+        for the n parameter. The results have the durations of all ngrams in the
+        df at the same row and column positions as their corresponding ngrams.
+        '''
+        har = self.getHarmonic()
+        dur = self.getDuration(har, n=n)
+        mask = df.applymap(lambda cell: True, na_action='ignore')
+        return dur[mask].dropna(how='all')
+
+    def getLyric(self):
+        '''
+        Return a dataframe of the lyrics associated with each note in the piece.
+        '''
+        if 'Lyric' not in self.analyses:
+            df = self._getM21ObjsNoTies().applymap(na_action='ignore',
+                func=lambda note: note.lyric if note.isNote else None)
+            df.fillna(np.nan, inplace=True)
+            self.analyses['Lyric'] = df
+        return self.analyses['Lyric']
 
     def _noteRestHelper(self, noteOrRest):
         if noteOrRest.isRest:
@@ -287,7 +355,6 @@ class ImportedPiece:
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
 
-        
     def getMeasure(self):
         """
         This method retrieves the offsets of each measure in each voices.
@@ -386,6 +453,15 @@ class ImportedPiece:
         return cell
 
     def _noQualityDirectedSimple(cell):
+        if hasattr(cell, 'simpleName'):
+            if cell.direction.value == -1:
+                return '-' + cell.simpleName[1:] 
+            else:
+                return cell.simpleName[1:]
+        else:
+            return cell
+
+    def _noQualityDirectedSemiSimple(cell):
         if hasattr(cell, 'semiSimpleName'):
             if cell.direction.value == -1:
                 return '-' + cell.semiSimpleName[1:] 
@@ -393,6 +469,79 @@ class ImportedPiece:
                 return cell.semiSimpleName[1:]
         else:
             return cell
+
+    # def _durationalRatioHelper(self, cell):
+    #     cell = tuple(float(val) for val in cell.split(', '))
+    #     result = tuple(cell[i + 1] / cell[i] for i in range(len(cell) - 1))
+    #     return result
+
+    def _durationalRatioHelper(self, row):
+        _row = row.dropna()
+        return _row / _row.shift(1)
+
+    def getDurationalRatio(self, df=None):
+        '''
+        Return durational ratios of each item in each column compared to the
+        previous item in the same column. If a df is passed, it should be of
+        float or integer values. If no df is passed, the default results from
+        .getDuration will be used as input (durations of notes and rests).
+        '''
+        if df is None:
+            df = self.getDuration()
+        return df.apply(self._durationalRatioHelper).dropna(how='all')
+        # ds = dur.applymap(str, na_action='ignore')
+        # dn = self.getNgrams(df=ds, n=n)
+        # dr = dn.applymap(self._durationalRatioHelper, na_action='ignore')
+        # return dr
+
+    def getDistance(self, df=None, n=3):
+        '''
+        Return the distances between all the values in df which should be a
+        dataframe of strings of integer ngrams. Specifically, this is meant for
+        0-indexed, directed, and compound melodic ngrams. If nothing is passed
+        for df, melodic ngrams of this type will be provided at the value of n
+        passed. An alternative that would make sense would be to use chromatic
+        melodic intervals instead.
+        Usage:
+        # If you're happy with the defaults, call like this:
+        importedPiece.getDistance()
+
+        # If you don't pass a value for df, you can specify a different value
+        # for n to change from the default of 3:
+        importedPiece.getDistance(n=5)
+
+        # If you already have the melodic ngrams calculated for a different
+        # aspect of your query, you can pass that as df to save a little
+        # runtime on a large query. Note that if you pass something for df,
+        # the n parameter will be ignored:
+        mel = importedPiece.getMelodic('z', True, True)
+        ngrams = importedPiece.getNgrams(df=mel, n=4, exclude=['Rest'])
+        importedPiece.getDistance(df=ngrams)
+
+        # To search the table for the rows where a specific ngram is found do
+        # the following. Keep in mind that the order of the ngrams in the
+        # PatternA and PatternB columns does not matter. This is example looks
+        # for distances involving a melodic pattern that goes up a step, down a
+        # third, up a step, down a third:
+        dist = importedPiece.getDistance(n=4)
+        target = '1, -2, 1, -2'
+        hits = dist[dist.index.map(lambda ind: target in ind)]
+        '''
+        if df is None:
+            df = self.getMelodic('z', True, True)
+            df = self.getNgrams(df=df, n=n, exclude=['Rest'])
+        su = pd.Series(df.stack().unique())
+        di = pd.DataFrame.from_records(su.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
+        indecies = pd.DataFrame.from_records(cwr(di.index, 2))
+        d1 = di.iloc[indecies[1]].reset_index(drop=True)
+        d0 = di.iloc[indecies[0]].reset_index(drop=True)
+        dist = (d1 - d0).abs().apply(sum, axis=1)
+        dist.name = 'Distance'
+        labels0 = su.iloc[indecies[0]]
+        labels1 = su.iloc[indecies[1]]
+        mi = pd.MultiIndex.from_arrays([labels0, labels1], names=['PatternA', 'PatternB'])
+        dist.index = mi
+        return dist
 
     def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
         '''
@@ -642,6 +791,130 @@ class ImportedPiece:
             return pd.concat(cols, axis=1)
         else:
             return pd.DataFrame()
+
+    def classifyModules(self):
+        nr = self.getNoteRest()
+        mnr = self.getNgrams(df=nr, n=-1)
+        mnrDur = self.getDuration(df=nr, n=-1, mask_df=mnr)
+        lyr = self.getLyric()
+        mel = self.getMelodic('d')
+        har = self.getHarmonic('d', True, 'simple')
+        maxMel = self.getNgrams(df=mel, n=-1)
+        n4 = self.getNgrams(df=har, how='modules', n=4)
+        d4 = self.getNgramDuration(n4, n=4)
+        maxn = self.getNgrams(how='modules', interval_settings=('d', True, 'simple'), n=-1)
+        stack = maxn.stack()
+        vc = stack.value_counts()
+        repeated = vc[vc > 1]
+        # ngrams should be a minimum of 3 units long
+        mask = repeated.index.map(lambda cell: ((cell.count(', ')) >= 2) and (cell.count('_') > cell.count('_Held')))
+        threePlus = repeated[mask]
+        # print('Num unique ngrams that repeat where n is at least 3:', len(threePlus))
+        modRefNum = 1
+        pairs = []
+        for module in threePlus.index:
+            # print('Working on this module:', module)
+            hits = stack[stack == module]
+            found = False
+            for i, labels in enumerate(hits.index[1:]):
+                modIndex, modVoices = hits.index[i]
+                modDur = d4.at[modIndex, modVoices]
+                repIndex, repVoices = labels
+                repDur = d4.at[labels]
+                lag = repIndex - modIndex
+                if lag < modDur * 4:
+                    found = True
+                    category = 'NIm'
+                    subcategory = 'N/A'
+                    lowerVoice, upperVoice = modVoices.split('_')
+                    end = modDur + modIndex
+                    lowerLVI = maxMel.loc[:end, lowerVoice].last_valid_index()
+                    lowerMel = mel.at[lowerLVI, lowerVoice]
+                    upperLVI = maxMel.loc[:end, upperVoice].last_valid_index()
+                    upperMel = mel.at[upperLVI, upperVoice]
+                    # call it imitative if one part's melody starts with roughly
+                    # the first half of the other part's melody
+                    if lowerMel == upperMel:
+                        category = 'ID'  # stands for Imitative Duo
+                    # get starting pitches of the module and repetition voices
+                    lowerNdx = nr.loc[:lowerLVI, lowerVoice].iloc[:-1].last_valid_index()
+                    lowerModPitch = nr.at[lowerNdx, lowerVoice]
+                    upperNdx = nr.loc[:upperLVI, upperVoice].iloc[:-1].last_valid_index()
+                    upperModPitch = nr.at[upperNdx, upperVoice]
+
+                    repLowerVoice, repUpperVoice = repVoices.split('_')
+                    end = repDur + repIndex
+                    lowerLVI = maxMel.loc[:end, repLowerVoice].last_valid_index()
+                    upperLVI = maxMel.loc[:end, repUpperVoice].last_valid_index()
+                    lowerNdx = nr.loc[:lowerLVI, repLowerVoice].iloc[:-1].last_valid_index()
+                    lowerRepPitch = nr.at[lowerNdx, repLowerVoice]
+                    upperNdx = nr.loc[:upperLVI, repUpperVoice].iloc[:-1].last_valid_index()
+                    upperRepPitch = nr.at[upperNdx, repUpperVoice]
+                    startingPitches = (lowerModPitch, upperModPitch, lowerRepPitch, upperRepPitch)
+
+                    if len({lowerVoice, upperVoice, repLowerVoice, repUpperVoice}) == 3:
+                        category = 'PEn'
+                        if len({p[:-1] for p in startingPitches}) == 1:
+                            subcategory = '@1'
+
+                    pairs.append([module, category, subcategory, modVoices, repVoices, 
+                        startingPitches, modDur, repDur, modIndex, repIndex,
+                        lag, modRefNum, np.nan])
+            if found:
+                modRefNum += 1
+        
+        colNames = ('Module', 'Category', 'Subcategory', 'ModVoices', 'RepVoices', 
+            'StartingPitches', 'ModDur', 'RepDur', 'ModOffset',
+            'RepOffset', 'Lag', 'Reference', 'FirstSyllable')
+        res = pd.DataFrame(pairs, columns=colNames)
+        
+        mnrs = mnr.stack()
+        mnrds = mnrDur.stack()
+        nrs = nr.stack()
+        firstNote = nrs.reindex_like(mnrs)
+        lyrs = lyr.stack()
+        mmels = maxMel.stack()
+        mels = mel.stack()
+        mels = mels.reindex_like(mmels)
+        mmels.index = mnrs.index
+        mels.index = mnrs.index
+        firstW = lyrs.reindex_like(mnrs)
+        shiftPrev = firstW.shift(1)
+        shiftNext = firstW.shift(-1)
+        matchPrev = firstW == shiftPrev
+        matchNext = firstW == shiftNext
+        lags = mnrs.index.get_level_values(0)[1:] - mnrs.index.get_level_values(0)[:-1]
+        lags = pd.Series(lags, mnrs.index[1:])
+        repNdx = pd.Series(firstNote.index.get_level_values(0), firstNote.index)
+        mtiVoices = pd.Series(firstNote.index.get_level_values(1), firstNote.index)
+        mtiPitches = pd.concat([firstNote.shift(1), firstNote], axis=1).apply(tuple, axis=1)
+        refs = pd.Series()  # make this an enumeration of the points starting at modrefnum + 1
+        df = pd.concat([mels, pd.Series(), pd.Series(), mtiVoices.shift(1), mtiVoices,
+             mtiPitches, mnrds.shift(1), mnrds, repNdx.shift(1), repNdx, lags, 
+             refs, firstW], axis=1)
+        df.columns = colNames
+        dfs = df.groupby(['Module', 'FirstSyllable'])
+        mtis = []
+        for syll, point in dfs:
+            if len(point) < 3:
+                continue
+            modRefNum += 1
+            temp = point.Lag.iloc[1:] == point.Lag.iat[1]
+            if False in temp[1:].values:
+                point.Category = 'Fuga'
+            else:
+                point.Category = 'PEn'
+            point.Reference = modRefNum
+            mtis.append(point[1:])
+        res2 = pd.concat(mtis)
+        res2.set_index(['ModOffset', 'ModVoices'], drop=False, inplace=True)
+        result = pd.concat([res, res2])
+        result.set_index('ModOffset', drop=False, inplace=True)
+        result.sort_index(level=0, inplace=True)
+        result = result[result.Lag > 0]
+        result = result[result.ModVoices != result.RepVoices]
+        result = result[result.Lag < 50]
+        return result
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come

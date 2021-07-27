@@ -110,7 +110,7 @@ def helper_test_close_match_(model, notes):
 
     for i in range(5):
         # TODO add assertion here
-        chart = viz.plot_close_match_heatmap(ngrams, popular_patterns[i])
+        chart = viz.plot_close_match_heatmap(ngrams, popular_patterns[i], )
 
 def test_plot_close_match_heatmap():
     # TODO adapt this test for the new parameters

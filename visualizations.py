@@ -274,34 +274,34 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
     return chart
 
 
-def _close_match_helper(cell):
+# def _close_match_helper(cell):
+#
+#     if type(cell) == str:
+#         cell = cell.split(", ")
+#     return cell
 
-    if type(cell) == str:
-        cell = cell.split(", ")
-    return cell
 
-
-def _close_match(ngrams_df, key_pattern, algorithm):
-
-    ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: _close_match_helper(cell), na_action='ignore')
-    # making sure that key pattern and other patterns are tuple of string or ints
-    if not type(ngrams_df.iloc[0, :]['pattern'][0]) == type(key_pattern[0]):
-        raise Exception("Input patterns and patterns inside dataframe aren't of the same data types.")
-
-    ngrams_df['score'] = ngrams_df['pattern'].map(
-        lambda cell: 100 * algorithm.similarity(key_pattern, cell), na_action='ignore')
-    return ngrams_df
+# def _close_match(ngrams_df, key_pattern, algorithm):
+#
+#     ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: _close_match_helper(cell), na_action='ignore')
+#     # making sure that key pattern and other patterns are tuple of string or ints
+#     if not type(ngrams_df.iloc[0, :]['pattern'][0]) == type(key_pattern[0]):
+#         raise Exception("Input patterns and patterns inside dataframe aren't of the same data types.")
+#
+#     ngrams_df['score'] = ngrams_df['pattern'].map(
+#         lambda cell: 100 * algorithm.similarity(key_pattern, cell), na_action='ignore')
+#     return ngrams_df
 
 
 # TODO substitution function here or let them pass levenshtein in?
-def plot_close_match_heatmap(ngrams_df, key_pattern, algorithm, ngrams_duration=None,
-                             selected_patterns=[], voices=[], heatmap_width=800, heatmap_height=300):
+def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, ngrams_duration=None, selected_patterns=[], voices=[],
+                             heatmap_width=800, heatmap_height=300):
     """
     Plot how closely the other vectors match a selected vector.
     Uses the Levenshtein distance.
     :param directed:
     :param interval_type:
-    :param algorithm: 'l' for levenshtein, 'w' for weighted levenshtein.
+    :param score_df: 'l' for levenshtein, 'w' for weighted levenshtein.
     :param ngrams_df: crim-intervals getNgram's output
     :param key_pattern: a pattern the users selected to compare other patterns with (tuple of floats)
     :param selected_pattern: the specific other vectors the users selected
@@ -320,18 +320,20 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, algorithm, ngrams_duration=
                                voices=voices)
     ngrams.dropna(how='any', inplace=True)
     # calculate the score
-    key_pattern = _close_match_helper(key_pattern)
-    score_ngrams = _close_match(ngrams, key_pattern, algorithm=algorithm)
+    # key_pattern = _close_match_helper(key_pattern)
+    # score_ngrams = _close_match(ngrams, key_pattern, algorithm=score_df)
 
-    slider = alt.binding_range(min=0, max=100, step=1, name='cutoff:')
+    ngrams['score'] = ngrams['pattern'].map(lambda cell: score_df[key_pattern, cell])
+
+    slider = alt.binding_range(min=ngrams['score'].min(), max=ngrams['score'].max(), step=1, name='cutoff:')
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
                                     bind=slider, init={'cutoff': 50})
 
-    heatmap = create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
+    heatmap = create_heatmap('start', 'end', 'voice', 'score', ngrams, heatmap_width, heatmap_height,
                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
 
     score_histogram = create_bar_chart('count(score)', 'score', color=alt.value('#1f77b4'),
-                                       data=score_ngrams, condition=alt.datum.score >= selector.cutoff)
+                                       data=ngrams, condition=alt.datum.score >= selector.cutoff)
 
     return alt.vconcat(score_histogram, heatmap)
 

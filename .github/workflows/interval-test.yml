@@ -30,3 +30,4 @@ jobs:
       - name: Test with pytest
         run: |
          pytest  --cov visualizations --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
+         pytest  --cov main_objs --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html

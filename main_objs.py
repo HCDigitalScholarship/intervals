@@ -543,6 +543,19 @@ class ImportedPiece:
         dist.index = mi
         return dist
 
+    def _combineRestsHelper(self, col):
+        col = col.dropna()
+        return col[(col != 'Rest') | ((col == 'Rest') & (col.shift(1) != 'Rest'))]
+
+    def combineRests(self, df=None):
+        '''
+        Return a dataframe of the notes and rests of the piece, but in each
+        voice, only keep the first of a succession of rests.
+        '''
+        if df is None:
+            df = self.getNoteRest()
+        return df.apply(self._combineRestsHelper)
+
     def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
         '''
         Return melodic intervals for all voice pairs. Each melodic interval

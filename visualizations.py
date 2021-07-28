@@ -294,11 +294,9 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, ngrams_duration=N
                                voices=voices)
     ngrams.dropna(how='any', inplace=True)
 
-    # TODO speed!
     ngrams['score'] = ngrams['pattern'].map(lambda cell: score_df[key_pattern, cell]
-                                            if score_df.index.isin([(key_pattern, cell)]).any()
+                                            if (key_pattern, cell) in score_df.index
                                             else score_df[cell, key_pattern])
-
 
     slider = alt.binding_range(min=ngrams['score'].min(), max=ngrams['score'].max(), step=1, name='cutoff:')
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],

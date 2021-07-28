@@ -310,41 +310,6 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, ngrams_duration=N
 
     return alt.vconcat(score_histogram, heatmap)
 
-def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
-                                 interval_settings=('d', True, True), offsets='first'):
-    """
-    This method accept a model and a dataframe with the melody or notes
-    and rests and generate an ngram (in columnwise and unit=0 setting)
-    and a corresponding duration ngram
-    :param model: an Imported Piece object.
-    :param df: dataframe containing consecutive notes.
-    :param n: accept any positive integers and would output ngrams of the corresponding sizes
-    can't handle the n=-1 option (refer to getNgrams documentation for more)
-    :param exclude: (refer to getNgrams documentation)
-    :param interval_settings: (refer to getNgrams documentation)
-    :param offsets: (refer to getNgrams documentation)
-    :return: ngram and corresponding duration dataframe!
-    """
-    if n == -1:
-        raise Exception("Cannot calculate the duration for this type of ngrams")
-
-    # compute dur for the ngrams
-    dur = model.getDuration(df)
-    dur = dur.reindex_like(df).applymap(str, na_action='ignore')
-    # combine them and generate ngrams and duration at the same time
-    notes_dur = pd.concat([df, dur])
-    ngrams = model.getNgrams(df=df, n=n, exclude=exclude,
-                             interval_settings=interval_settings, unit=0, offsets=offsets)
-    dur_ngrams = model.getNgrams(df=dur, n=n, exclude=exclude,
-                                 interval_settings=interval_settings, unit=0, offsets=offsets)
-    dur_ngrams = dur_ngrams.reindex_like(ngrams)
-
-    # sum up durations!
-    dur_ngrams = dur_ngrams.applymap(lambda cell: sum(float(Fraction(item)) for item in cell.split(", ")),
-                                     na_action='ignore')
-
-    return ngrams, dur_ngrams
-
 # Network visualizations
 def process_network_df(df, interval_column_name, ema_column_name):
     """

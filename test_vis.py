@@ -158,8 +158,8 @@ def test_comparisons_heatmap():
 
 def test_generate_networks_and_interactive_df():
     """
-    
-    :return: 
+    Ensuring that generate networks and interactive df output a widget
+    and a network with correct number of nodes and edges.
     """
     df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
 

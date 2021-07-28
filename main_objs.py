@@ -134,7 +134,7 @@ class ImportedPiece:
 
     def _remove_tied(self, noteOrRest):
         if hasattr(noteOrRest, 'tie') and noteOrRest.tie is not None and noteOrRest.tie.type != 'start':
-            return None
+            return np.nan
         return noteOrRest
 
     def _getM21ObjsNoTies(self):

@@ -138,7 +138,9 @@ def test_plot_close_match_heatmap():
     helper_test_close_match_(model, mel_chromatic)
 
 def test_comparisons_heatmap():
-
+    """
+    This method make sure that relationships and observations are displayed.
+    """
     # pieces
     df_relationships = pd.DataFrame(RELATIONSHIPS_DICT_EXAMPLE)
     relationships_chart = viz.plot_comparison_heatmap(df_relationships, 'model_observation.ema',
@@ -155,25 +157,45 @@ def test_comparisons_heatmap():
     assert len(observations_chart.vconcat) == 2
 
 def test_generate_networks_and_interactive_df():
+    """
+    
+    :return: 
+    """
     df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
 
-    # TODO for networks, check the dictionary's correctness
-
     # time, pe
+    # hard coded based on the hardcoded observation's dict, columns 'mt_pe_tint', 'time', 'ema'
+    # {key -> (num nodes, num edges)}
+    pen_networks_hardcoded = {'all': (13, 14), 'S1': (10, 9), 'nan': (0, 0), 'S2': (1, 0), 'M1': (1, 0)}
     pen_networks, pen_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_pe_tint', 'time',
                                                                                   'ema')
-    assert pen_networks
+    for key in pen_networks:
+        assert len(pen_networks[key].nodes) == pen_networks_hardcoded[key][0]
+        assert len(pen_networks[key].edges) == pen_networks_hardcoded[key][1]
+        
     assert pen_widget
 
     # melodic, fug
     fug_networks, fug_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_fg_int', 'melodic',
                                                                                   'ema')
-    assert fug_networks
+    # melodic, fg
+    # hard coded based on the hardcoded observation's dict, columns 'mt_fg_int', 'melodic', 'ema'
+    # {key -> (num nodes, num edges)}
+    fug_networks_hardcoded = {'all': (5, 5), 'nan': (0, 0), '1+': (0, 0), '5-': (0, 0), '8-': (0, 0), '4+': (2, 1), '12+': (1, 0), '2+': (1, 0), '5+': (0, 0)}
+    
+    for key in fug_networks:
+        assert len(fug_networks[key].nodes) == fug_networks_hardcoded[key][0]
+        assert len(fug_networks[key].edges) == fug_networks_hardcoded[key][1]
     assert fug_widget
 
     patterns = df_observations['mt_fg_int'].head(50).to_list()
     fug_networks_filtered, fug_widget_filtered = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_fg_int',
-                                                                                                    'melodic', 'ema', patterns)
-
-    assert fug_networks_filtered
+                                                                                                   'melodic', 'ema', patterns)
+    # melodic, fg, filtered
+    # hard coded based on the hardcoded observation's dict, columns 'mt_fg_int', 'melodic', 'ema'
+    # {key -> (num nodes, num edges)}
+    fug_networks_filtered_hardcoded = {'all': (5, 5), 'nan': (0, 0), '1+': (0, 0), '5-': (0, 0), '8-': (0, 0), '4+': (2, 1), '12+': (1, 0), '2+': (1, 0), '5+': (0, 0)}
+    for key in fug_networks_filtered:
+        assert len(fug_networks_filtered[key].nodes) == fug_networks_filtered_hardcoded[key][0]
+        assert len(fug_networks_filtered[key].edges) == fug_networks_filtered_hardcoded[key][1]
     assert fug_widget_filtered

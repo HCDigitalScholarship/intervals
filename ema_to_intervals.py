@@ -9,6 +9,54 @@ from main_objs import *
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
+Model_0008 = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/CRIM_Model_0008.mei'
+
+RANDOM = ['54-65/1-2,1-2,1-2,1-2,1-2,1-3,1-4,3-4,3-4,3-4,3-4,3-4/@3+@3,@1-4+@1-3,@1-3+@1-3,@1-4.5+@1-3,@1-4+@1-3,@1-4+@1-3+@3,@1+@1+@1-4+@1-3,@1-3+@1-3,@1-4.5+@1-3,@1-4+@1-3,@1-4+@1-3,@1+@1',
+                 '1-10/1,1-4,1-4,1-4,2-4,2-4,3-4,3-4,4,4/@1-3,@1-3+@all+@all+@all,@1-3+@1-3+@all+@all,@1+@1-3+@all+@all,@1-3+@1-3+@all,@1+@1-3+@all,@1-3+@1-3,@1+@1-3,@1-3,@1',
+                 '1/1/@1-3',
+                 '44-46/1,1,1/@3,@1-3,@1',
+                 '46-48/1+3-4,1+3-4,1+4/@3+@2-4+@4,@1-3+@1-4+@1-3,@1+@1',
+                 '50-53/1,1,1+3,1+3/@4,@1.5-4,@1-4+@3,@1+@1',
+                 '1/1/@1-3',
+                 '1/1/@1-3',
+                 '1/1/@3',
+                 '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1']
+
+FUGA = ['23-29/2,2,1,1+3,1+3,1+4,4/@1,@1-3,@1,@1-3+@1,@1-3+@1-3,@1+@1,@1-3',
+ '5-10/3-4,3-4,3-4,3-4,3-4,4/@1-3+@all,@1-3+@all,@1-3+@1-3,@1+@1-3,@all+@1-3,@1',
+ '95-96,99-100,104-107/2,2,2,2,1+3,1+3,2,2/@1-3.5,@1,@1-3.5,@1,@1-3.5+@2-3.5,@1+@1-2,@1-3.5,@1',
+ '1-4/1-2,1-2,1-2,1-2/@1-3+@all,@1-3+@all,@1-3+@1-3,@1+@1-3',
+ '54-56/1-2,1-2,1-2/@3+@3,@1-4+@1-3,@1-3+@1-3',
+ '54-64/1-2,1-4,1-4,1-4,1-4,1-4,1-4,1-4,1-4,1-4,1-4/@3+@3,@1-4+@1-3+@all+@all,@1-3+@1-3+@all+@all,@1-4.5+@1-3+@all+@all,@1-4+@1-3+@all+@all,@1-4+@1-3+@1-3+@all,@1+@1-3+@1-4+@1-3,@all+@all+@1-3+@3,@all+@all+@1-4.5+@1-3,@all+@all+@1-4+@2.5-3,@1-3+@all+@1-2+@1-3',
+ '44-48/3-4,3-4,3-4,3-4,3-4/@3-4+@4,@1-4+@1-3,@1-4+@1-4,@1-4+@1-3,@1+@1',
+]
+
+
+PEN = ['1-10/1,1-4,1-4,1-4,2-4,2-4,3-4,3-4,4,4/@1-3,@1-3+@all+@all+@all,@1-3+@1-3+@all+@all,@1+@1-3+@all+@all,@1-3+@1-3+@all,@1+@1-3+@all,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1-4,1-4,1-4,1-4,1-4,1-4,1-4,3-4,4,4/@1-3+@all+@all+@all,@1-3+@all+@all+@all,@1-3+@1-3+@all+@all,@1+@1-3+@all+@all,@all+@1-3+@1-3+@all,@all+@1+@1-3+@all,@all+@all+@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1-4,1-4,1-4,1-4,1-4,1-4,1-4,3-4,3-4,4/@all+@all+@all+@all,@1-3+@all+@all+@all,@1-3+@1-3+@all+@all,@1+@1-3+@all+@all,@all+@1-3+@1-3+@all,@all+@1+@1-3+@all,@all+@all+@1-3+@1-3,@1+@1-3,@all+@1-3,@1',
+ '8-17/1,1,1-3,1-4,1-4,2-4,2-4,2-4,2-4,4/@1-4,@1-3,@1-3+@1-4+@all,@1-3+@1-3+@all+@all,@1+@2.5-3+@1-4+@all,@1-3+@1-3+@all,@1+@1-3+@1-4,@all+@1-3+@1-3,@all+@1+@1-4,@1',
+ '1-10/1-4,1-4,1-4,1-4,1-4,1-4,1-4,3-4,3-4,4/@1-3+@all+@all+@all,@1-3+@all+@all+@all,@1-3+@1-3+@all+@all,@1+@1-3+@all+@all,@all+@1-3+@1-3+@all,@all+@1+@1-3+@all,@all+@all+@1-3+@1-3,@1+@1-3,@all+@1-3,@1',
+ '1-10/1-4,1-4,1-4,1-4,1-4,1-4,3-4,3-4,3-4,4/@3+@all+@all+@all,@1-3+@all+@all+@all,@1-3+@1-3+@all+@all,@1+@1-3+@all+@all,@all+@1-3+@1-3+@all,@all+@1+@1-3+@all,@1-3+@1-3,@1+@1-3,@all+@1-3,@1',
+ '1-10/1-4,1-4,1-4,1-4,1-4,1-4,1-4,3-4,3-4,4/@1-3+@all+@all+@all,@1-3+@all+@all+@all,@1-3+@1-3+@all+@all,@1+@1-3+@all+@all,@all+@1-3+@1-3+@all,@all+@1+@1-3+@all,@all+@all+@1-3+@1-3,@1+@1-3,@all+@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1-4,1-4,1-4,1-4,1-4,1-4,1-4,3-4,3-4,4/@1-3+@all+@all+@all,@1-3+@all+@all+@all,@1-3+@1-3+@all+@all,@1+@1-3+@all+@all,@all+@1-3+@1-3+@all,@all+@1+@1-3+@all,@all+@all+@1-3+@1-3,@1+@1-3,@all+@1-3,@1',
+ '1-8/1-4,1-4,1-4,1-4,1-4,1-4,1-4,1+3-4/@1-3+@all+@all+@all,@1-3+@all+@all+@all,@1-3+@1-3+@all+@all,@1+@1-3+@all+@all,@all+@1-3+@1-3+@all,@all+@1+@1-3+@all,@all+@all+@1-3+@1-3,@1+@1+@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '8-17/1,1,1-2,1-2,1-3,2-3,2-4,3-4,3-4,4/@1-4,@1-3,@1-3+@1-4,@1-3+@1-3,@1+@1-3+@1-4,@1-3+@1-3,@1+@1-3+@1-4,@1-3+@1-3,@1+@1-4,@1',
+ '16-25/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@3,@1-3,@1-3+@3,@1+@1-3,@1-3+@3,@1+@1-3,@1-3+@3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
+ '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1']
 
 def process_integer_range(range_expression):
     """Process range for measure and staves"""
@@ -52,6 +100,10 @@ def process_beat_helper(beat_expression):
 def process_beat(measure, voice, beat_ex, notes_df, chosen_notes_df):
     """From the measure, and the stave number, return the offsets of the notes of interest"""
     assert beat_ex[0] == '@'
+    if beat_ex == '@all':
+        chosen_notes_df.loc[measure, :][voice] = notes_df.loc[measure, :][voice]
+        return
+
     beat_ex = beat_ex[1:].split("-")
     start = float(beat_ex[0])
     if len(beat_ex) > 1:
@@ -92,7 +144,7 @@ def from_ema_to_offsets(ema, staff_to_voice, notes_df, chosen_notes_df):
 
 
 def main():
-    file_url = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/CRIM_Model_0008.mei'
+    file_url = Model_0008
     corpus = CorpusBase([file_url])
     model = corpus.scores[0]
     nr = model._getM21ObjsNoTies()
@@ -105,51 +157,29 @@ def main():
         soup = BeautifulSoup(fp, 'xml')
 
     for voice in complete_nr.columns:
-        res = soup.find('staffDef', label=voice)
-        if res:
-            voice_index = int(res['n'])
-            staff_to_voice[voice_index] = voice
-        else:
-            print(voice)
+        staff = soup.find('staffDef', label=voice)
+        staff_num = int(staff['n'])
+        staff_to_voice[staff_num] = voice
 
-    example = '33-38/3,3-4,3-5,1+5,1,2/@3-4.5,@1-2+@3-4.5,@1-4+@1-2+@2-4.5,@4+@1,@1-2,@2-4'
-    try:
-        res = from_ema_to_offsets(example, staff_to_voice, complete_nr, chosen_nr).dropna(how='all')
-        for part in res:
-            mel_intervals = ImportedPiece._melodifyPart(res[part].copy())
-            if len(mel_intervals) > 0:
-                # 'z', t, t
-                mel_intervals = mel_intervals.map(
-                    lambda cell: cell.directedName[1:] if hasattr(cell, 'directedName') else cell)
-                mel_intervals = mel_intervals.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
-                print(', '.join(str(item) for item in mel_intervals.to_list()))
-    except ValueError:
-        print("oop, ema address has problems.")
+    examples = FUGA
+
+    for example in examples:
+        try:
+            res = from_ema_to_offsets(example, staff_to_voice, complete_nr, chosen_nr).dropna(how='all')
+            # print(res)
+            for part in res:
+                mel_intervals = ImportedPiece._melodifyPart(res[part].copy())
+                if len(mel_intervals) > 0:
+                    # 'z', t, t
+                    mel_intervals = mel_intervals.map(
+                        lambda cell: cell.directedName[1:] if hasattr(cell, 'directedName') else cell)
+                    mel_intervals = mel_intervals.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+                    print(part, ', '.join(str(item) for item in mel_intervals.to_list()), len(mel_intervals))
+        except ValueError:
+            print("oop, ema address has problems.")
+        finally:
+            print("-----")
 
 
 main()
 
-""" 
-
-hierachy: / , + -
-
-normal
-'1-6/1,1,1-2,1-2,2,2/@1,@1-3,@1-3+@1,@1-3+@1-3,@1-3,@1'
-buggy
--6/1,1,1+3,1+3,3,3/@1-4,@1-3,@1-3+@1-4,@1-3+@1-3,@1-3,@1
-float
-33-38/3,3-4,3-5,1+5,1,2/@3-4.5,@1-2+@3-4.5,@1-4+@1-2+@2-4.5,@4+@1,@1-2,@2-4
-multiple range
-49-51,56-58/1+5,1+5,1,3+6,3+6,3/@3+@3,@1-4+@1,@1,@1+@1-3,@1-4+@1-3,@1
-
-# rules: 
-- means range
-+ means or 
-@ means at
-
-
-<staffDef xml:id="m-a24a2183-b581-4e51-9fbf-703a0b95d2dd" clef.line="2" clef.shape="G" key.sig="0" label="[Superius]" lines="5" n="1">
-    <!-- voice.female.soprano.ensemble.ah -->
-    <instrDef xml:id="m-c13028b9-fcd9-47a9-9830-6f5b690aa767" midi.channel="1" midi.pan="26" midi.volume="100" />
-</staffDef>
-"""

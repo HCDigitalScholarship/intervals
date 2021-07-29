@@ -92,33 +92,33 @@ def process_staff_range(staff_ex):
     return result
 
 
-def process_beat_helper(beat_expression):
-    """Contain different possibility of a beat expression"""
-    return None
-
-
-def process_beat(measure, voice, beat_ex, notes_df, chosen_notes_df):
+def process_beat(measure, voice, beat_ex, offset_df, chosen_notes_df):
     """From the measure, and the stave number, return the offsets of the notes of interest"""
     assert beat_ex[0] == '@'
     if beat_ex == '@all':
-        chosen_notes_df.loc[measure, :][voice] = notes_df.loc[measure, :][voice]
+        chosen_notes_df.loc[measure, :][voice] = offset_df.loc[measure, :][voice]
         return
 
     beat_ex = beat_ex[1:].split("-")
     start = float(beat_ex[0])
     if len(beat_ex) > 1:
         end = float(beat_ex[1])
-        all_beats = notes_df.loc[measure].index
+        all_beats = offset_df.loc[measure].index
         for beat in all_beats:
+
+            # TODO indexing beat within range instead of looping
+            # TODO notes_df [ms, beats, offsets], chosen_notes_df [offsets, voice]
             if start <= beat <= end:
-                chosen_notes_df.loc[measure, beat][voice] = notes_df.loc[measure, beat][voice]
+
+                chosen_notes_df.loc[measure, beat][voice] = offset_df.loc[measure, beat][voice]
                 # chosen_notes_df.loc[measure, beat][voice] = 1
     else:
-        chosen_notes_df.loc[measure, start][voice] = notes_df.loc[measure, start][voice]
+        chosen_notes_df.loc[measure, start][voice] = offset_df.loc[measure, start][voice]
         # chosen_notes_df.loc[measure, start][voice] = 1
 
 
 def from_ema_to_offsets(ema, staff_to_voice, notes_df, chosen_notes_df):
+    # TODO return a list of chosen offsets instead
     # first, split
     measure, staves, beats = ema.split("/")
 
@@ -148,6 +148,9 @@ def main():
     corpus = CorpusBase([file_url])
     model = corpus.scores[0]
     nr = model._getM21ObjsNoTies()
+    offsets = nr.index.copy()
+    index_df = pd.DataFrame(offsets, index=offsets)
+    print(model.detailIndex(df=index_df).to_string())
     complete_nr = model.detailIndex(df=nr, measure=True, beat=True)
     chosen_nr = pd.DataFrame(index=complete_nr.index.copy(), columns=complete_nr.columns.copy())
 
@@ -163,10 +166,12 @@ def main():
 
     examples = FUGA
 
-    for example in examples:
+    for example in examples[2:3]:
         try:
             res = from_ema_to_offsets(example, staff_to_voice, complete_nr, chosen_nr).dropna(how='all')
-            # print(res)
+            # after getting all the chosen offsets in 4 voices, reindex the result M21Objs accordingly
+
+            print(res.to_string())
             for part in res:
                 mel_intervals = ImportedPiece._melodifyPart(res[part].copy())
                 if len(mel_intervals) > 0:

@@ -134,7 +134,7 @@ class ImportedPiece:
 
     def _remove_tied(self, noteOrRest):
         if hasattr(noteOrRest, 'tie') and noteOrRest.tie is not None and noteOrRest.tie.type != 'start':
-            return None
+            return np.nan
         return noteOrRest
 
     def _getM21ObjsNoTies(self):
@@ -542,6 +542,19 @@ class ImportedPiece:
         mi = pd.MultiIndex.from_arrays([labels0, labels1], names=['PatternA', 'PatternB'])
         dist.index = mi
         return dist
+
+    def _combineRestsHelper(self, col):
+        col = col.dropna()
+        return col[(col != 'Rest') | ((col == 'Rest') & (col.shift(1) != 'Rest'))]
+
+    def combineRests(self, df=None):
+        '''
+        Return a dataframe of the notes and rests of the piece, but in each
+        voice, only keep the first of a succession of rests.
+        '''
+        if df is None:
+            df = self.getNoteRest()
+        return df.apply(self._combineRestsHelper)
 
     def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
         '''

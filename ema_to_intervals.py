@@ -92,7 +92,7 @@ def from_ema_to_offsets(ema, staff_to_voice, notes_df, chosen_notes_df):
 
 
 def main():
-    file_url = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/CRIM_Model_0017.mei'
+    file_url = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/CRIM_Model_0008.mei'
     corpus = CorpusBase([file_url])
     model = corpus.scores[0]
     nr = model._getM21ObjsNoTies()

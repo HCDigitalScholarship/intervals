@@ -491,7 +491,8 @@ class ImportedPiece:
         passed. An alternative that would make sense would be to use chromatic
         melodic intervals instead.
         Usage:
-        # If you're happy with the defaults, call like this:
+
+        # Call like this:
         importedPiece.getDistance()
 
         # If you don't pass a value for df, you can specify a different value
@@ -506,29 +507,28 @@ class ImportedPiece:
         ngrams = importedPiece.getNgrams(df=mel, n=4, exclude=['Rest'])
         importedPiece.getDistance(df=ngrams)
 
-        # To search the table for the rows where a specific ngram is found do
-        # the following. Keep in mind that the order of the ngrams in the
-        # PatternA and PatternB columns does not matter. This is example looks
-        # for distances involving a melodic pattern that goes up a step, down a
-        # third, up a step, down a third:
+        # To search the table for the distances from a given pattern, just get
+        # the column of that name. This is example looks for distances
+        # involving a melodic pattern that goes up a step, down a third, up a
+        # step, down a third:
         dist = importedPiece.getDistance(n=4)
         target = '1, -2, 1, -2'
-        hits = dist[dist.index.map(lambda ind: target in ind)]
+        col = dist[target]
+
+        # If you then want to filter that column, say to distances less than or
+        # equal to 2, do this:
+        col[col <= 2]
         '''
         if df is None:
             df = self.getMelodic('z', True, True)
             df = self.getNgrams(df=df, n=n, exclude=['Rest'])
-        su = pd.Series(df.stack().unique())
-        di = pd.DataFrame.from_records(su.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
-        indecies = pd.DataFrame.from_records(cwr(di.index, 2))
-        d1 = di.iloc[indecies[1]].reset_index(drop=True)
-        d0 = di.iloc[indecies[0]].reset_index(drop=True)
-        dist = (d1 - d0).abs().apply(sum, axis=1)
-        dist.name = 'Distance'
-        labels0 = su.iloc[indecies[0]]
-        labels1 = su.iloc[indecies[1]]
-        mi = pd.MultiIndex.from_arrays([labels0, labels1], names=['PatternA', 'PatternB'])
-        dist.index = mi
+        uni = df.stack().unique()
+        ser = pd.Series(uni)
+        df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
+        cols = [(df - df.loc[i]).abs().apply(sum, axis=1) for i in df.index]
+        dist = pd.concat(cols, axis=1)
+        dist.columns = uni
+        dist.index = uni
         return dist
 
     def _combineRestsHelper(self, col):

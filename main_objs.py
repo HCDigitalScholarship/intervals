@@ -419,10 +419,14 @@ class ImportedPiece:
 
     def _melodifyPart(ser):
         ser.dropna(inplace=True)
-        shifted = ser.shift(1)
-        partDF = pd.concat([ser, shifted], axis=1)
-        res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
-        return res
+        if len(ser) > 0:
+            shifted = ser.shift(1)
+            partDF = pd.concat([ser, shifted], axis=1)
+            res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
+            return res
+        else:
+            return pd.Series()
+        #return res
 
     def _getM21MelodicIntervals(self):
         if 'M21MelodicIntervals' not in self.analyses:

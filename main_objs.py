@@ -251,18 +251,6 @@ class ImportedPiece:
             result = result[mask]
         return result.dropna(how='all')
 
-    def getNgramDuration(self, df, n=3):
-        '''
-        Return the duration of ngrams of size n. Supply a dataframe of ngrams 
-        for the df parameter and the size of n used to calculate those ngrams 
-        for the n parameter. The results have the durations of all ngrams in the
-        df at the same row and column positions as their corresponding ngrams.
-        '''
-        har = self.getHarmonic()
-        dur = self.getDuration(har, n=n)
-        mask = df.applymap(lambda cell: True, na_action='ignore')
-        return dur[mask].dropna(how='all')
-
     def getLyric(self):
         '''
         Return a dataframe of the lyrics associated with each note in the piece.

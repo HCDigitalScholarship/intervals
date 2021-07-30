@@ -9,7 +9,7 @@ from main_objs import *
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
-Model_0008 = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/CRIM_Model_0008.mei'
+model_0008 = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/CRIM_Model_0008.mei'
 
 RANDOM = ['54-65/1-2,1-2,1-2,1-2,1-2,1-3,1-4,3-4,3-4,3-4,3-4,3-4/@3+@3,@1-4+@1-3,@1-3+@1-3,@1-4.5+@1-3,@1-4+@1-3,@1-4+@1-3+@3,@1+@1+@1-4+@1-3,@1-3+@1-3,@1-4.5+@1-3,@1-4+@1-3,@1-4+@1-3,@1+@1',
                  '1-10/1,1-4,1-4,1-4,2-4,2-4,3-4,3-4,4,4/@1-3,@1-3+@all+@all+@all,@1-3+@1-3+@all+@all,@1+@1-3+@all+@all,@1-3+@1-3+@all,@1+@1-3+@all,@1-3+@1-3,@1+@1-3,@1-3,@1',
@@ -58,133 +58,183 @@ PEN = ['1-10/1,1-4,1-4,1-4,2-4,2-4,3-4,3-4,4,4/@1-3,@1-3+@all+@all+@all,@1-3+@1-
  '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
  '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1']
 
-def process_integer_range(range_expression):
-    """Process range for measure and staves"""
-    range_expression = range_expression.split("-")
-    start = int(range_expression[0])
-    end = int(range_expression[1])
-    return list(range(start, end + 1))
-
-
-def process_measure_ex(measure_ex):
+class ObservedPiece(ImportedPiece):
     """
-    Process the measures expression list of measures
-    of numbers
+    This class allows users to extract and evaluate observations within a piece
     """
-    result = []
-    measure_ex = measure_ex.split(",")
-    for item in measure_ex:
-        if item.isdigit():
-            result.append(int(item))
+    
+    def __init__(self, scoreAddress):
+        score = ScoreBase(scoreAddress).score
+        ImportedPiece.__init__(self, score)
+        self.scoreAddress = scoreAddress # keep the link to the score
+        self.observationsAnalyses = {} # score the analysis regarding observations 
+        self.stavesToVoices = {} # {int (staff number): str (voice)}
+        with urlopen(self.scoreAddress) as fp:
+            scoreData = BeautifulSoup(fp, 'xml')
+
+        for voice in self._getPartNames():
+            staff = scoreData.find('staffDef', label=voice)
+            staffNum = int(staff['n'])
+            self.stavesToVoices[staffNum] = voice
+
+    def _getMeasureBeatM21ObjsNoTies(self):
+        if not 'MeasureBeatM21ObjsNoTies' in self.observationsAnalyses:
+            m21Objs = self._getM21ObjsNoTies().copy()
+            m21Objs['offset'] = m21Objs.index.copy()
+            m21Objs = self.detailIndex(df=m21Objs, measure=True, beat=True)
+            self.observationsAnalyses['MeasureBeatM21ObjsNoTies'] = m21Objs
+        return self.observationsAnalyses['MeasureBeatM21ObjsNoTies']
+
+    def _processIntegerRange(rangeExpression):
+        """Process range for measure and staves"""
+        rangeExpression = rangeExpression.split("-")
+        start = int(rangeExpression[0])
+        end = int(rangeExpression[1])
+        return list(range(start, end + 1))
+    
+    def _processMeasure(measureExpression):
+        """
+        Process the measures expression list of measures
+        of numbers
+        """
+        result = []
+        measureExpression = measureExpression.split(",")
+        for item in measureExpression:
+            if item.isdigit():
+                result.append(int(item))
+            else:
+                result.extend(ObservedPiece._processIntegerRange(item))
+        return result
+    
+    
+    def _processStaffRange(staffExpression):
+        result = []
+        staffExpression = staffExpression.split("+")
+        for item in staffExpression:
+            if item.isdigit():
+                result.append(int(item))
+            else:
+                result.extend(ObservedPiece._processIntegerRange(item))
+        return result
+    
+    
+    def _processBeat(self, measure, voice, beatExpression, chosenNotesDf):
+        """From the measure, and the stave number, return the offsets of the notes of interest"""
+        assert beatExpression[0] == '@'
+        measureBeatDf = self._getMeasureBeatM21ObjsNoTies()
+        if beatExpression == '@all':
+            chosenNotesDf.loc[(measure, slice(None)), [voice, 'offset']] = \
+                measureBeatDf.loc[(measure, slice(None)), [voice, 'offset']]
+            return
+    
+        beatExpression = beatExpression[1:].split("-")
+        start = float(beatExpression[0])
+        if len(beatExpression) > 1:
+            end = float(beatExpression[1])
+            chosenNotesDf.loc[(measure, start):(measure, end), [voice, 'offset']] = \
+                measureBeatDf.loc[(measure, start):(measure, end), [voice, 'offset']]
         else:
-            result.extend(process_integer_range(item))
-    return result
+            chosenNotesDf.loc[(measure, start), [voice, 'offset']] = measureBeatDf.loc[(measure, start), [voice, 'offset']]
+    
+    
+    def getNotesFromEma(self, ema, chosenNotesDf):
+        # first, split
+        measure, staves, beats = ema.split("/")
+    
+        # select each staff in each measure
+        measure = ObservedPiece._processMeasure(measure)
+    
+        # select each staff
+        staves = staves.split(",")
+        newStaff = []
+        for staff in staves:
+            newStaff.append(ObservedPiece._processStaffRange(staff))
+    
+        beats = beats.split(",")
+        # select each beat
+        for i in range(len(measure)):
+            beat = beats[i].split("+")
+            for j in range(len(newStaff[i])):
+                measureNumber = measure[i]
+                staff = newStaff[i][j]
+                for beatExpression in beat:
+                    self._processBeat(measureNumber, self.stavesToVoices[staff], beatExpression, chosenNotesDf)
+        return chosenNotesDf
+    
+    def _getMelodicIntervals(self, m21objs, kind='z'):
+        kind = kind[0].lower()
+        kind = {'s': 'c'}.get(kind, kind)
+        _kind = {'z': 'd'}.get(kind, kind)
+        settings = (_kind, True, True)
+    
+        df = m21objs.apply(ImportedPiece._melodifyPart)
+        df = df.applymap(self._intervalMethods[settings])
+        if kind == 'z':
+            df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+        
+        return df
 
+    def _getHarmonicIntervals(self, m21Objs, kind='z'):
+        kind = kind[0].lower()
+        kind = {'s': 'c'}.get(kind, kind)
+        _kind = {'z': 'd'}.get(kind, kind)
+        settings = (_kind, True, True)
 
-def process_staff_range(staff_ex):
-    result = []
-    staff_ex = staff_ex.split("+")
-    for item in staff_ex:
-        if item.isdigit():
-            result.append(int(item))
+        pairs = []
+        combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
+        for combo in combos:
+            df = m21Objs.iloc[:, list(combo)].dropna(how='all').ffill()
+            ser = df.apply(ImportedPiece._harmonicIntervalHelper, axis=1)
+            # name each column according to the voice names that make up the intervals, e.g. 'Bassus_Altus'
+            ser.name = '_'.join((m21Objs.columns[combo[0]], m21Objs.columns[combo[1]]))
+            pairs.append(ser)
+        if pairs:
+            dfHar = pd.concat(pairs, axis=1)
         else:
-            result.extend(process_integer_range(item))
-    return result
+            dfHar = pd.DataFrame()
 
+        dfHar = dfHar.applymap(self._intervalMethods[settings])
+        if kind == 'z':
+            dfHar= dfHar.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+        return dfHar
 
-def process_beat(measure, voice, beat_ex, offset_df, chosen_notes_df):
-    """From the measure, and the stave number, return the offsets of the notes of interest"""
-    assert beat_ex[0] == '@'
-    if beat_ex == '@all':
-        chosen_notes_df.loc[measure, :][voice] = offset_df.loc[measure, :][voice]
-        return
+    def _createNgramsHelper(ser):
+        ser.dropna(inplace=True)
+        if len(ser) > 0:
+            offset = ser.index[0]
+            ngram = ", ".join(interval for interval in ser)
+            return pd.Series([ngram], index=[offset], name=ser.name)
+        else:
+            return pd.Series(dtype='float64')
+    
+    def _createNgrams(chosenM21Objs):
+        df = chosenM21Objs.apply(lambda ser: ObservedPiece._createNgramsHelper(ser))
+        return df
+    
+    def getNgramsFromEma(self, ema, interval='m', kind='z'):
+    
+        m21Objs = self._getMeasureBeatM21ObjsNoTies()
+        
+        # this dataframe contains the notes the ema address selected.
+        chosenM21Objs = pd.DataFrame(index=m21Objs.index.copy(), columns=m21Objs.columns.copy())
+    
+        chosenM21Objs = self.getNotesFromEma(ema, chosenM21Objs).dropna(how='all')
+    
+        # turn chosen objects into ngrams intervals
+        chosenM21Objs.reset_index(inplace=True)
+        chosenM21Objs.set_index('offset', inplace=True)
+        chosenM21Objs.drop(columns=['Measure', 'Beat'], inplace=True)
+        if interval == 'm':
+            chosenM21Objs = self._getMelodicIntervals(chosenM21Objs, kind=kind)
+        else: # interval == 'h'
+            chosenM21Objs = self._getHarmonicIntervals(chosenM21Objs, kind=kind)
 
-    beat_ex = beat_ex[1:].split("-")
-    start = float(beat_ex[0])
-    if len(beat_ex) > 1:
-        end = float(beat_ex[1])
-        all_beats = offset_df.loc[measure].index
-        for beat in all_beats:
+        chosenM21Objs = ObservedPiece._createNgrams(chosenM21Objs)
+    
+        return chosenM21Objs
 
-            # TODO indexing beat within range instead of looping
-            # TODO notes_df [ms, beats, offsets], chosen_notes_df [offsets, voice]
-            if start <= beat <= end:
-
-                chosen_notes_df.loc[measure, beat][voice] = offset_df.loc[measure, beat][voice]
-                # chosen_notes_df.loc[measure, beat][voice] = 1
-    else:
-        chosen_notes_df.loc[measure, start][voice] = offset_df.loc[measure, start][voice]
-        # chosen_notes_df.loc[measure, start][voice] = 1
-
-
-def from_ema_to_offsets(ema, staff_to_voice, notes_df, chosen_notes_df):
-    # TODO return a list of chosen offsets instead
-    # first, split
-    measure, staves, beats = ema.split("/")
-
-    # select each staff in each measure
-    measure = process_measure_ex(measure)
-
-    # select each staff
-    staves = staves.split(",")
-    new_staff = []
-    for staff in staves:
-        new_staff.append(process_staff_range(staff))
-
-    beats = beats.split(",")
-    # select each beat
-    for i in range(len(measure)):
-        beat = beats[i].split("+")
-        for j in range(len(new_staff[i])):
-            measure_num = measure[i]
-            staff = new_staff[i][j]
-            for beat_ex in beat:
-                process_beat(measure_num, staff_to_voice[staff], beat_ex, notes_df, chosen_notes_df)
-    return chosen_notes_df
-
-
-def main():
-    file_url = Model_0008
-    corpus = CorpusBase([file_url])
-    model = corpus.scores[0]
-    nr = model._getM21ObjsNoTies()
-    offsets = nr.index.copy()
-    index_df = pd.DataFrame(offsets, index=offsets)
-    print(model.detailIndex(df=index_df).to_string())
-    complete_nr = model.detailIndex(df=nr, measure=True, beat=True)
-    chosen_nr = pd.DataFrame(index=complete_nr.index.copy(), columns=complete_nr.columns.copy())
-
-    staff_to_voice = {}
-    # get the staff number and voices!
-    with urlopen(file_url) as fp:
-        soup = BeautifulSoup(fp, 'xml')
-
-    for voice in complete_nr.columns:
-        staff = soup.find('staffDef', label=voice)
-        staff_num = int(staff['n'])
-        staff_to_voice[staff_num] = voice
-
-    examples = FUGA
-
-    for example in examples[2:3]:
-        try:
-            res = from_ema_to_offsets(example, staff_to_voice, complete_nr, chosen_nr).dropna(how='all')
-            # after getting all the chosen offsets in 4 voices, reindex the result M21Objs accordingly
-
-            print(res.to_string())
-            for part in res:
-                mel_intervals = ImportedPiece._melodifyPart(res[part].copy())
-                if len(mel_intervals) > 0:
-                    # 'z', t, t
-                    mel_intervals = mel_intervals.map(
-                        lambda cell: cell.directedName[1:] if hasattr(cell, 'directedName') else cell)
-                    mel_intervals = mel_intervals.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
-                    print(part, ', '.join(str(item) for item in mel_intervals.to_list()), len(mel_intervals))
-        except ValueError:
-            print("oop, ema address has problems.")
-        finally:
-            print("-----")
-
-
-main()
+examples = PEN
+test = ObservedPiece(model_0008)
+for example in examples:
+    ngram = test.getNgramsFromEma(example, interval='h')
 

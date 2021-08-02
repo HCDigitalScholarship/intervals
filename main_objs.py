@@ -10,6 +10,7 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
 
+
 # Unncessary at the moment
 # MEINSURI = 'http://www.music-encoding.org/ns/mei'
 # MEINS = '{%s}' % MEINSURI
@@ -25,7 +26,6 @@ from itertools import combinations
 # An extension of the music21 note class with more information easily accessible
 
 pathDict = {}
-
 
 class NoteListElement:
     """
@@ -52,7 +52,6 @@ class NoteListElement:
     prev_note : NoteListElement
         prior non-rest note element
     """
-
     def __init__(self, note: m21.note.Note, metadata, part, partNumber, duration, piece_url, prev_note=None):
         self.note = note
         self.prev_note = prev_note
@@ -378,6 +377,7 @@ class ImportedPiece:
         """
 
         if not 'SoundingCount' in self.analyses:
+
             nr = self.getNoteRest().ffill()
             df = nr[nr != 'Rest']
             ser = df.count(axis=1)
@@ -847,8 +847,6 @@ class ImportedPiece:
         return result
 
     # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
-
-
 class CorpusBase:
     # Need to consider whether users can input certain scores (which means needing urls selected too), or just to do all in the corpus automatically
     """
@@ -1069,6 +1067,7 @@ class CorpusBase:
         urls_index += 1
         return pure_notes
 
+
     def vis_pandas_setup(self, min_offset):
         urls_index = 0
         prev_note = None
@@ -1116,7 +1115,6 @@ class CorpusBase:
             dataframes.append(df)
         return dataframes
 
-
 # For single file uploads
 class ScoreBase:
     """
@@ -1131,7 +1129,6 @@ class ScoreBase:
     note_list : list of NoteListElement
         list of notes constructed from score
     """
-
     def __init__(self, url):
         """
         Parameters
@@ -1407,6 +1404,7 @@ class ScoreBase:
                                    self.url, prev_note)
         return pure_notes
 
+
     def vis_pandas_setup(self, min_offset):
         part_rows = []
         prev_note = None
@@ -1449,7 +1447,6 @@ class ScoreBase:
         df = pd.DataFrame(part_rows, index=row_names, columns=column_names)
         return df
 
-
 class VectorInterval:
     """
     An individual vector with information about the notes creating it
@@ -1463,7 +1460,6 @@ class VectorInterval:
     note2 : NoteListElement
         list of notes constructed from score
     """
-
     def __init__(self, vector, note1: NoteListElement, note2: NoteListElement):
         self.vector = vector
         self.note1 = note1
@@ -1477,7 +1473,6 @@ class VectorInterval:
             return "<VectorInterval: {}, First Note: {}, Second Note: {}>".format(self.vector,
                                                                                   self.note1.note.nameWithOctave,
                                                                                   self.note2.note.nameWithOctave)
-
 
 # Allows for selected "vectorizations" given a note list created from either ScoreBase or CorpusBase
 # Consider making this a Standalone method- an object seems slightly redundant/hard to justify
@@ -1494,7 +1489,6 @@ class IntervalBase:
     semitone_intervals : list
         creates list of VectorInterval objects in terms of semitone intervals
     """
-
     def __init__(self, notes):
         """
         Parameters
@@ -1547,7 +1541,6 @@ class IntervalBase:
                 vec.append(interval_obj)
         return vec
 
-
 # An individual match event- can be used for close matches as well
 class Match:
     """
@@ -1568,7 +1561,6 @@ class Match:
     ema_url : str
         url to get mei for the pattern
     """
-
     def __init__(self, pattern, first_note: NoteListElement, last_note: NoteListElement, durations):
         self.pattern = pattern
         self.first_note = first_note
@@ -1588,7 +1580,6 @@ class Match:
         except:
             self.ema_url = "File must be a crim url to have a valid EMA url"
         self.durations = durations
-
 
 # Object representing all the occurences of a pattern in a list of notes/vectors
 # User generally doesn't create this- it is done in the finding matches methods
@@ -1631,7 +1622,6 @@ class PatternMatches:
                 match.durations))
         print("Said pattern or similar appeared " + str(len(self.matches)) + " times.\n")
 
-
 class ClassifiedMatch:
     """
     Group of matches classified to be a periodic entry, imitative duo, or fuga
@@ -1649,7 +1639,6 @@ class ClassifiedMatch:
     ema_url : str
         url to download mei slice for the series of patterns
     """
-
     def __init__(self, matches: list, type):
         """
         Parameters

@@ -31,4 +31,5 @@ jobs:
         run: |
          pip install pytest
          pip install pytest-cov
-         pytest  --cov visualizations --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+         pytest --cov visualizations test_vis.py --cov-report term-missing
+         pytest --cov main_objs test_main_objs.py --cov-report term-missing

@@ -219,8 +219,7 @@ class ImportedPiece:
         in a piece. Note that the results of .getNoteRest() will be used for the
         `df` parameter if none is provided:
 
-        dur = importedPiece.getDuration(n=-1)
-
+        dur = importedPiece.getDuration(n=-1
         You can also pass a `mask_df`, which will serve as a filter, only
         keeping values at the same indecies (i.e. index and columns) as mask_df.
         This is needed to get the durations of ngrams. To get the durations of

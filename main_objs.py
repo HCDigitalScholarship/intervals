@@ -425,7 +425,7 @@ class ImportedPiece:
             res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
             return res
         else:
-            return pd.Series()
+            return pd.Series(dtype='object')
         #return res
 
     def _getM21MelodicIntervals(self):

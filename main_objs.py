@@ -101,7 +101,7 @@ class ImportedPiece:
                 part_name = flat_part.partName or 'Part_' + str(i + 1)
                 ser = pd.Series(notesAndRests, name=part_name)
                 ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
-                ser = ser[~ser.index.duplicated()] # remove multiple events at the same offset in a given part
+                ser = ser[~ser.index.duplicated()]  # remove multiple events at the same offset in a given part
                 part_series.append(ser)
             self.analyses['PartSeries'] = part_series
         return self.analyses['PartSeries']
@@ -170,8 +170,8 @@ class ImportedPiece:
         vals = []
         step = unit * 1000
         while spot < end:
-          vals.append(spot)
-          spot += step
+            vals.append(spot)
+            spot += step
         new_index = pd.Index(vals).map(lambda i: round(i) / 1000)
         res = df.ffill().reindex(new_index, method='pad')
         return res
@@ -198,13 +198,13 @@ class ImportedPiece:
         the duration of notes and rests in each part where 1 = quarternote,
         1.5 = a dotted quarter, 4 = a whole note, etc. If a df is passed, then
         return a df of the same shape giving the duration of each of the cells
-        of this df. This is useful if you want to know what the durations of
+        of this df. This is useful if you want to know what the durations of 
         something other than single notes and rests, such as the durations of
         intervals. E.g.:
 
         har = importedPiece.getHarmonic()
         harDur = importedPiece.getDuration(df=har)
-
+        
         The `n` parameter should be an integer greater than zero, or -1. When
         n is a positive integer, it groups together a sliding window of n
         consecutive non-NaN cells in each column. If you pass a df, it will sum
@@ -224,8 +224,8 @@ class ImportedPiece:
 
         You can also pass a `mask_df`, which will serve as a filter, only
         keeping values at the same indecies (i.e. index and columns) as mask_df.
-        This is needed to get the durations of ngrams. To get the durations of
-        ngrams, pass the same value of n and the samedataframe you passed to
+        This is needed to get the durations of ngrams. To get the durations of 
+        ngrams, pass the same value of n and the samedataframe you passed to 
         .getNgrams() as the `n` and `df` parameters, then pass your dataframe of
         ngrams as the `mask_df`. For example:
 
@@ -251,25 +251,13 @@ class ImportedPiece:
             result = result[mask]
         return result.dropna(how='all')
 
-    def getNgramDuration(self, df, n=3):
-        '''
-        Return the duration of ngrams of size n. Supply a dataframe of ngrams
-        for the df parameter and the size of n used to calculate those ngrams
-        for the n parameter. The results have the durations of all ngrams in the
-        df at the same row and column positions as their corresponding ngrams.
-        '''
-        har = self.getHarmonic()
-        dur = self.getDuration(har, n=n)
-        mask = df.applymap(lambda cell: True, na_action='ignore')
-        return dur[mask].dropna(how='all')
-
     def getLyric(self):
         '''
         Return a dataframe of the lyrics associated with each note in the piece.
         '''
         if 'Lyric' not in self.analyses:
             df = self._getM21ObjsNoTies().applymap(na_action='ignore',
-                func=lambda note: note.lyric if note.isNote else None)
+                                                   func=lambda note: note.lyric if note.isNote else None)
             df.fillna(np.nan, inplace=True)
             self.analyses['Lyric'] = df
         return self.analyses['Lyric']
@@ -364,11 +352,11 @@ class ImportedPiece:
             partMeasures = []
             for part in parts:
                 partMeasures.append(pd.Series({m.offset: m.measureNumber \
-                                for m in part.getElementsByClass(['Measure'])}))
+                                               for m in part.getElementsByClass(['Measure'])}))
             df = pd.concat(partMeasures, axis=1)
             df.columns = self._getPartNames()
             self.analyses["Measure"] = df
-        
+
         return self.analyses["Measure"]
 
     def getSoundingCount(self):
@@ -387,7 +375,6 @@ class ImportedPiece:
             self.analyses['SoundingCount'] = ser
 
         return self.analyses['SoundingCount']
-        
 
     def _zeroIndexIntervals(ntrvl):
         '''
@@ -459,7 +446,7 @@ class ImportedPiece:
     def _noQualityDirectedSimple(cell):
         if hasattr(cell, 'simpleName'):
             if cell.direction.value == -1:
-                return '-' + cell.simpleName[1:] 
+                return '-' + cell.simpleName[1:]
             else:
                 return cell.simpleName[1:]
         else:
@@ -468,7 +455,7 @@ class ImportedPiece:
     def _noQualityDirectedSemiSimple(cell):
         if hasattr(cell, 'semiSimpleName'):
             if cell.direction.value == -1:
-                return '-' + cell.semiSimpleName[1:] 
+                return '-' + cell.semiSimpleName[1:]
             else:
                 return cell.semiSimpleName[1:]
         else:
@@ -507,7 +494,8 @@ class ImportedPiece:
         passed. An alternative that would make sense would be to use chromatic
         melodic intervals instead.
         Usage:
-        # If you're happy with the defaults, call like this:
+
+        # Call like this:
         importedPiece.getDistance()
 
         # If you don't pass a value for df, you can specify a different value
@@ -522,29 +510,28 @@ class ImportedPiece:
         ngrams = importedPiece.getNgrams(df=mel, n=4, exclude=['Rest'])
         importedPiece.getDistance(df=ngrams)
 
-        # To search the table for the rows where a specific ngram is found do
-        # the following. Keep in mind that the order of the ngrams in the
-        # PatternA and PatternB columns does not matter. This is example looks
-        # for distances involving a melodic pattern that goes up a step, down a
-        # third, up a step, down a third:
+        # To search the table for the distances from a given pattern, just get
+        # the column of that name. This is example looks for distances
+        # involving a melodic pattern that goes up a step, down a third, up a
+        # step, down a third:
         dist = importedPiece.getDistance(n=4)
         target = '1, -2, 1, -2'
-        hits = dist[dist.index.map(lambda ind: target in ind)]
+        col = dist[target]
+
+        # If you then want to filter that column, say to distances less than or
+        # equal to 2, do this:
+        col[col <= 2]
         '''
         if df is None:
             df = self.getMelodic('z', True, True)
             df = self.getNgrams(df=df, n=n, exclude=['Rest'])
-        su = pd.Series(df.stack().unique())
-        di = pd.DataFrame.from_records(su.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
-        indecies = pd.DataFrame.from_records(cwr(di.index, 2))
-        d1 = di.iloc[indecies[1]].reset_index(drop=True)
-        d0 = di.iloc[indecies[0]].reset_index(drop=True)
-        dist = (d1 - d0).abs().apply(sum, axis=1)
-        dist.name = 'Distance'
-        labels0 = su.iloc[indecies[0]]
-        labels1 = su.iloc[indecies[1]]
-        mi = pd.MultiIndex.from_arrays([labels0, labels1], names=['PatternA', 'PatternB'])
-        dist.index = mi
+        uni = df.stack().unique()
+        ser = pd.Series(uni)
+        df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
+        cols = [(df - df.loc[i]).abs().apply(sum, axis=1) for i in df.index]
+        dist = pd.concat(cols, axis=1)
+        dist.columns = uni
+        dist.index = uni
         return dist
 
     def _combineRestsHelper(self, col):
@@ -669,7 +656,7 @@ class ImportedPiece:
         """
         if offsets == 'first':
             chunks = [col.shift(-i) for i in range(n)]
-        else: # offsets == 'last':
+        else:  # offsets == 'last':
             chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
         return chunks
 
@@ -682,7 +669,7 @@ class ImportedPiece:
             si = tuple(col.index.get_loc(i) for i in starts.index)
             ei = tuple(col.index.get_loc(i) + 1 for i in ends.index)
             ind = starts.index if offsets == 'first' else ends.index
-            vals = [', '.join(col.iloc[si[i] : ei[i]]) for i in range(len(si))]
+            vals = [', '.join(col.iloc[si[i]: ei[i]]) for i in range(len(si))]
             ser = pd.Series(vals, name=col.name, index=ind)
             return ser
 
@@ -693,7 +680,7 @@ class ImportedPiece:
         chains.dropna(inplace=True)
         chains = chains.apply(lambda row: ', '.join(row), axis=1)
         return chains
-    
+
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True), unit=0,
                   offsets='first'):
@@ -763,7 +750,7 @@ class ImportedPiece:
         if df is None:
             df = self.getHarmonic(*interval_settings)
             if unit:
-              df = self.regularize(df, unit)
+                df = self.regularize(df, unit)
         if other is None:
             other = self.getMelodic(*interval_settings, unit=unit)
         cols = []
@@ -782,15 +769,15 @@ class ImportedPiece:
                 si = tuple(har.index.get_loc(i) for i in starts.index)
                 ei = tuple(har.index.get_loc(i) + 1 for i in ends.index)
                 col = [''.join([cell
-                                for row in combo.iloc[si[i] : ei[i]].values   # second loop
-                                for cell in row][2:-1])                       # innermost loop
-                       for i in range(len(si))]                               # outermost loop
+                                for row in combo.iloc[si[i]: ei[i]].values  # second loop
+                                for cell in row][2:-1])  # innermost loop
+                       for i in range(len(si))]  # outermost loop
                 col = pd.Series(col)
                 if offsets == 'first':
                     col.index = starts.index
                 else:
                     col.index = ends.index
-            else: # n >= 1
+            else:  # n >= 1
                 lastIndex = -1
                 if n == 1:
                     lastIndex = -3
@@ -874,17 +861,17 @@ class ImportedPiece:
                         if len({p[:-1] for p in startingPitches}) == 1:
                             subcategory = '@1'
 
-                    pairs.append([module, category, subcategory, modVoices, repVoices, 
-                        startingPitches, modDur, repDur, modIndex, repIndex,
-                        lag, modRefNum, np.nan])
+                    pairs.append([module, category, subcategory, modVoices, repVoices,
+                                  startingPitches, modDur, repDur, modIndex, repIndex,
+                                  lag, modRefNum, np.nan])
             if found:
                 modRefNum += 1
-        
-        colNames = ('Module', 'Category', 'Subcategory', 'ModVoices', 'RepVoices', 
-            'StartingPitches', 'ModDur', 'RepDur', 'ModOffset',
-            'RepOffset', 'Lag', 'Reference', 'FirstSyllable')
+
+        colNames = ('Module', 'Category', 'Subcategory', 'ModVoices', 'RepVoices',
+                    'StartingPitches', 'ModDur', 'RepDur', 'ModOffset',
+                    'RepOffset', 'Lag', 'Reference', 'FirstSyllable')
         res = pd.DataFrame(pairs, columns=colNames)
-        
+
         mnrs = mnr.stack()
         mnrds = mnrDur.stack()
         nrs = nr.stack()
@@ -907,8 +894,8 @@ class ImportedPiece:
         mtiPitches = pd.concat([firstNote.shift(1), firstNote], axis=1).apply(tuple, axis=1)
         refs = pd.Series()  # make this an enumeration of the points starting at modrefnum + 1
         df = pd.concat([mels, pd.Series(), pd.Series(), mtiVoices.shift(1), mtiVoices,
-             mtiPitches, mnrds.shift(1), mnrds, repNdx.shift(1), repNdx, lags, 
-             refs, firstW], axis=1)
+                        mtiPitches, mnrds.shift(1), mnrds, repNdx.shift(1), repNdx, lags,
+                        refs, firstW], axis=1)
         df.columns = colNames
         dfs = df.groupby(['Module', 'FirstSyllable'])
         mtis = []
@@ -952,7 +939,8 @@ class CorpusBase:
     note_list_no_unisons : list of NoteListElement
         list of notes constructed from scores, combining unisons
     """
-    def __init__(self, paths:list):
+
+    def __init__(self, paths: list):
         """
         Parameters
         ----------
@@ -966,7 +954,7 @@ class CorpusBase:
             If at least one score isn't succesfully imported, raises error
         """
         self.paths = paths
-        self.scores = [] # store lists of ImportedPieces generated from the path above
+        self.scores = []  # store lists of ImportedPieces generated from the path above
         mei_conv = converter.subConverters.ConverterMEI()
         for path in paths:
             if path in pathDict:
@@ -983,7 +971,8 @@ class CorpusBase:
                     self.scores.append(pathDict[path])
                     print("Successfully imported.")
                 except:
-                    print("Import of " + str(path) + " failed, please check your file path/file type. Continuing to next file...")
+                    print("Import of " + str(
+                        path) + " failed, please check your file path/file type. Continuing to next file...")
             else:
                 try:
                     # self.scores.append(m21.converter.parse(requests.get(path).text))
@@ -992,7 +981,8 @@ class CorpusBase:
                     self.scores.append(pathDict[path])
                     print("Successfully imported.")
                 except:
-                    print("Import from " + str(path) + " failed, please check your url. File paths must begin with a '/'. Continuing to next file...")
+                    print("Import from " + str(
+                        path) + " failed, please check your url. File paths must begin with a '/'. Continuing to next file...")
 
         if len(self.scores) == 0:
             raise Exception("At least one score must be succesfully imported")
@@ -1021,17 +1011,20 @@ class CorpusBase:
                 for note in noteList:
                     if note.tie is not None:
                         if note.tie.type == 'start':
-                            note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index], prev_note)
+                            note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part),
+                                                       note.quarterLength, self.paths[urls_index], prev_note)
                             score_notes.append(note_obj)
                         else:
                             score_notes[-1].duration += note.quarterLength
                     else:
-                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index], prev_note)
+                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part),
+                                                   note.quarterLength, self.paths[urls_index], prev_note)
                         score_notes.append(note_obj)
                     # Rests carry the last non-rest note as their prev_note
                     if not score_notes[-1].note.isRest:
                         prev_note = score_notes[-1]
-                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index], prev_note)
+                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0,
+                                           self.paths[urls_index], prev_note)
                 score_notes.append(note_obj)
             urls_index += 1
             # add to dictionary
@@ -1056,9 +1049,10 @@ class CorpusBase:
                 prev_pitch = None
                 for note in noteList:
                     if not note.isRest and note.nameWithOctave == prev_pitch:
-                        pure_notes[len(pure_notes)-1].duration += note.quarterLength
+                        pure_notes[len(pure_notes) - 1].duration += note.quarterLength
                     else:
-                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index], prev_note)
+                        note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part),
+                                                   note.quarterLength, self.paths[urls_index], prev_note)
                         pure_notes.append(note_obj)
                     if not note.isRest:
                         prev_pitch = note.nameWithOctave
@@ -1066,7 +1060,8 @@ class CorpusBase:
                         prev_pitch == 'Rest'
                     if not pure_notes[-1].note.isRest:
                         prev_note = pure_notes[-1]
-                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index], prev_note)
+                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0,
+                                           self.paths[urls_index], prev_note)
                 pure_notes.append(note_obj)
             urls_index += 1
         return pure_notes
@@ -1093,9 +1088,10 @@ class CorpusBase:
                     for voice in voices:
                         for note in voice:
                             for point in offsets:
-                                #print(note.offset, point)
+                                # print(note.offset, point)
                                 if point >= note.offset and point < (note.offset + note.quarterLength):
-                                    note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part), note.quarterLength, self.paths[urls_index], prev_note)
+                                    note_obj = NoteListElement(note, score.metadata, part.partName, score.index(part),
+                                                               note.quarterLength, self.paths[urls_index], prev_note)
                                     pure_notes.append(note_obj)
                                     if not pure_notes[-1].note.isRest:
                                         prev_note = pure_notes[-1]
@@ -1120,24 +1116,29 @@ class CorpusBase:
             for part in score.getElementsByClass(stream.Part):
                 counter = 0
                 while counter < score.highestTime - min_offset:
-                    stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False, includeEndBoundary=True, includeElementsThatEndAtStart=False)
+                    stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False,
+                                                                    mustFinishInSpan=False, includeEndBoundary=True,
+                                                                    includeElementsThatEndAtStart=False)
                     note_at_offset = None
                     for item in stuff_at_offset:
                         if type(item) == m21.note.Note or type(item) == m21.note.Rest:
                             note_at_offset = item
                             break
                     if note_at_offset:
-                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index], prev_note)
+                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part),
+                                                   min_offset, self.paths[urls_index], prev_note)
                         note_obj.offset = counter
                         pure_notes.append(note_obj)
                     else:
-                        note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index], prev_note)
+                        note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part),
+                                                   min_offset, self.paths[urls_index], prev_note)
                         note_obj.offset = counter
                         pure_notes.append(note_obj)
                     counter += min_offset
                     if not pure_notes[-1].note.isRest:
                         prev_note = pure_notes[-1]
-            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index], prev_note)
+            note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0,
+                                       self.paths[urls_index], prev_note)
         urls_index += 1
         return pure_notes
 
@@ -1155,18 +1156,22 @@ class CorpusBase:
                 counter = 0
                 row_names.append(part.partName)
                 while counter < score.highestTime - min_offset:
-                    stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False, includeEndBoundary=True, includeElementsThatEndAtStart=False)
+                    stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False,
+                                                                    mustFinishInSpan=False, includeEndBoundary=True,
+                                                                    includeElementsThatEndAtStart=False)
                     note_at_offset = None
                     for item in stuff_at_offset:
                         if type(item) == m21.note.Note or type(item) == m21.note.Rest:
                             note_at_offset = item
                             break
                     if note_at_offset:
-                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index], prev_note)
+                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part),
+                                                   min_offset, self.paths[urls_index], prev_note)
                         note_obj.offset = counter
                         pure_notes.append(note_obj)
                     else:
-                        note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), min_offset, self.paths[urls_index], prev_note)
+                        note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part),
+                                                   min_offset, self.paths[urls_index], prev_note)
                         note_obj.offset = counter
                         pure_notes.append(note_obj)
                     counter += min_offset
@@ -1181,7 +1186,7 @@ class CorpusBase:
                 column_names.append(i)
                 i += min_offset
 
-            df = pd.DataFrame(part_rows, index = row_names, columns = column_names)
+            df = pd.DataFrame(part_rows, index=row_names, columns=column_names)
             dataframes.append(df)
         return dataframes
 
@@ -1245,16 +1250,19 @@ class ScoreBase:
             for note in noteList:
                 if note.tie is not None:
                     if note.tie.type == 'start':
-                        note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
+                        note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part),
+                                                   note.quarterLength, self.url, prev_note)
                         pure_notes.append(note_obj)
                     else:
-                        pure_notes[len(pure_notes)-1].duration += note.quarterLength
+                        pure_notes[len(pure_notes) - 1].duration += note.quarterLength
                 else:
-                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
+                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part),
+                                               note.quarterLength, self.url, prev_note)
                     pure_notes.append(note_obj)
                 if not pure_notes[-1].note.isRest:
                     prev_note = pure_notes[-1]
-            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
+            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0,
+                                       self.url, prev_note)
             pure_notes.append(note_obj)
         return pure_notes
 
@@ -1274,9 +1282,10 @@ class ScoreBase:
             prev_pitch = None
             for note in noteList:
                 if not note.isRest and note.nameWithOctave == prev_pitch:
-                    pure_notes[len(pure_notes)-1].duration += note.quarterLength
+                    pure_notes[len(pure_notes) - 1].duration += note.quarterLength
                 else:
-                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
+                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part),
+                                               note.quarterLength, self.url, prev_note)
                     pure_notes.append(note_obj)
                 if not note.isRest:
                     prev_pitch = note.nameWithOctave
@@ -1284,7 +1293,8 @@ class ScoreBase:
                     prev_pitch == 'Rest'
                 if not pure_notes[-1].note.isRest:
                     prev_note = pure_notes[-1]
-            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
+            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0,
+                                       self.url, prev_note)
             pure_notes.append(note_obj)
         urls_index += 1
         return pure_notes
@@ -1306,15 +1316,17 @@ class ScoreBase:
             noteList = part.flat.getElementsByClass(['Note', 'Rest'])
             for note in noteList:
                 if note.beat in beats:
-                        note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
-                        pure_notes.append(note_obj)
-                        if not pure_notes[-1].note.isRest:
-                            prev_note = pure_notes[-1]
-            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
+                    note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part),
+                                               note.quarterLength, self.url, prev_note)
+                    pure_notes.append(note_obj)
+                    if not pure_notes[-1].note.isRest:
+                        prev_note = pure_notes[-1]
+            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0,
+                                       self.url, prev_note)
             pure_notes.append(note_obj)
         return pure_notes
 
-    def note_list_by_offset(self, offsets:list):
+    def note_list_by_offset(self, offsets: list):
         """
         Creates a note list from the whole piece, going by provided offsets
 
@@ -1336,7 +1348,8 @@ class ScoreBase:
                     for note in voice:
                         for point in offsets:
                             if point >= note.offset and point < (note.offset + note.quarterLength):
-                                note_obj = NoteListElement(note, self.score.metadata, part.partName, part_number, note.quarterLength, self.url, prev_note)
+                                note_obj = NoteListElement(note, self.score.metadata, part.partName, part_number,
+                                                           note.quarterLength, self.url, prev_note)
                                 pure_notes.append(note_obj)
                                 if not pure_notes[-1].note.isRest:
                                     prev_note = pure_notes[-1]
@@ -1363,7 +1376,7 @@ class ScoreBase:
         measures_selected = []
         prev_note = None
         for i in range(num_measures):
-            measures_selected.append(measures[i+measure_start])
+            measures_selected.append(measures[i + measure_start])
         for measure in measures_selected:
             voices = measure.getElementsByClass(stream.Voice)
             for voice in voices:
@@ -1371,12 +1384,14 @@ class ScoreBase:
                     print(note.offset)
                     if note.tie is not None:
                         if note.tie.type == 'start':
-                            note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part, note.quarterLength, self.url, prev_note)
+                            note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part,
+                                                       note.quarterLength, self.url, prev_note)
                             pure_notes.append(note_obj)
                         else:
-                            pure_notes[len(pure_notes)-1].duration += note.quarterLength
+                            pure_notes[len(pure_notes) - 1].duration += note.quarterLength
                     else:
-                        note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part, note.quarterLength, self.url, prev_note)
+                        note_obj = NoteListElement(note, self.score.metadata, part_selected.partName, part,
+                                                   note.quarterLength, self.url, prev_note)
                         pure_notes.append(note_obj)
                     if not pure_notes[-1].note.isRest:
                         prev_note = pure_notes[-1]
@@ -1401,24 +1416,28 @@ class ScoreBase:
             measures = part.getElementsByClass(stream.Measure)
             measures_selected = []
             for i in range(num_measures):
-                measures_selected.append(measures[i+measure_start])
+                measures_selected.append(measures[i + measure_start])
             for measure in measures_selected:
                 voices = measure.getElementsByClass(stream.Voice)
                 for voice in voices:
                     for note in voice:
                         if note.tie is not None:
                             if note.tie.type == 'start':
-                                note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
+                                note_obj = NoteListElement(note, self.score.metadata, part.partName,
+                                                           self.score.index(part), note.quarterLength, self.url,
+                                                           prev_note)
                                 pure_notes.append(note_obj)
                             else:
-                                pure_notes[len(pure_notes)-1].duration += note.quarterLength
+                                pure_notes[len(pure_notes) - 1].duration += note.quarterLength
                         else:
-                            note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part), note.quarterLength, self.url, prev_note)
+                            note_obj = NoteListElement(note, self.score.metadata, part.partName, self.score.index(part),
+                                                       note.quarterLength, self.url, prev_note)
                             pure_notes.append(note_obj)
                         if not pure_notes[-1].note.isRest:
                             prev_note = pure_notes[-1]
             # Added rest to ensure parts don't overlap
-            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
+            note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0,
+                                       self.url, prev_note)
             pure_notes.append(note_obj)
         return pure_notes
 
@@ -1436,24 +1455,29 @@ class ScoreBase:
         for part in self.score.getElementsByClass(stream.Part):
             counter = 0
             while counter < self.score.highestTime - min_offset:
-                stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False, includeEndBoundary=True, includeElementsThatEndAtStart=False)
+                stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False,
+                                                                includeEndBoundary=True,
+                                                                includeElementsThatEndAtStart=False)
                 note_at_offset = None
                 for item in stuff_at_offset:
                     if type(item) == m21.note.Note or type(item) == m21.note.Rest:
                         note_at_offset = item
                         break
                 if note_at_offset:
-                    note_obj = NoteListElement(note_at_offset, self.score.metadata, part.partName, self.score.index(part), min_offset, self.url, prev_note)
+                    note_obj = NoteListElement(note_at_offset, self.score.metadata, part.partName,
+                                               self.score.index(part), min_offset, self.url, prev_note)
                     note_obj.offset = counter
                     pure_notes.append(note_obj)
                 else:
-                    note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), min_offset, self.url, prev_note)
+                    note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName,
+                                               self.score.index(part), min_offset, self.url, prev_note)
                     note_obj.offset = counter
                     pure_notes.append(note_obj)
                 if not pure_notes[-1].note.isRest:
                     prev_note = pure_notes[-1]
                 counter += min_offset
-        note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0, self.url, prev_note)
+        note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0,
+                                   self.url, prev_note)
         return pure_notes
 
 
@@ -1466,18 +1490,22 @@ class ScoreBase:
             counter = 0
             row_names.append(part.partName)
             while counter < self.score.highestTime - min_offset:
-                stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False, includeEndBoundary=True, includeElementsThatEndAtStart=False)
+                stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False,
+                                                                includeEndBoundary=True,
+                                                                includeElementsThatEndAtStart=False)
                 note_at_offset = None
                 for item in stuff_at_offset:
                     if type(item) == m21.note.Note or type(item) == m21.note.Rest:
                         note_at_offset = item
                         break
                 if note_at_offset:
-                    note_obj = NoteListElement(note_at_offset, self.score.metadata, part.partName, self.score.index(part), min_offset, self.url, prev_note)
+                    note_obj = NoteListElement(note_at_offset, self.score.metadata, part.partName,
+                                               self.score.index(part), min_offset, self.url, prev_note)
                     note_obj.offset = counter
                     pure_notes.append(note_obj)
                 else:
-                    note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName, self.score.index(part), min_offset, self.url, prev_note)
+                    note_obj = NoteListElement(m21.note.Rest(), self.score.metadata, part.partName,
+                                               self.score.index(part), min_offset, self.url, prev_note)
                     note_obj.offset = counter
                     pure_notes.append(note_obj)
                 counter += min_offset
@@ -1492,7 +1520,7 @@ class ScoreBase:
             column_names.append(i)
             i += min_offset
 
-        df = pd.DataFrame(part_rows, index = row_names, columns = column_names)
+        df = pd.DataFrame(part_rows, index=row_names, columns=column_names)
         return df
 
 class VectorInterval:
@@ -1515,9 +1543,12 @@ class VectorInterval:
 
     def __str__(self):
         if self.note1.note.isRest or self.note2.note.isRest:
-            return "<VectorInterval: Rest, First Note: {}, Second Note: {}>".format(self.vector, self.note1.note, self.note2.note)
+            return "<VectorInterval: Rest, First Note: {}, Second Note: {}>".format(self.vector, self.note1.note,
+                                                                                    self.note2.note)
         else:
-            return "<VectorInterval: {}, First Note: {}, Second Note: {}>".format(self.vector, self.note1.note.nameWithOctave, self.note2.note.nameWithOctave)
+            return "<VectorInterval: {}, First Note: {}, Second Note: {}>".format(self.vector,
+                                                                                  self.note1.note.nameWithOctave,
+                                                                                  self.note2.note.nameWithOctave)
 
 # Allows for selected "vectorizations" given a note list created from either ScoreBase or CorpusBase
 # Consider making this a Standalone method- an object seems slightly redundant/hard to justify
@@ -1555,13 +1586,13 @@ class IntervalBase:
             (frequently self.notes): note list gathered from either CorpusBase or ScoreBase's methods/attributes
         """
         vec = []
-        for i in range(len(notes)-1):
-            if notes[i].note.isRest or notes[i+1].note.isRest:
-                interval_obj = VectorInterval("Rest", notes[i], notes[i+1])
+        for i in range(len(notes) - 1):
+            if notes[i].note.isRest or notes[i + 1].note.isRest:
+                interval_obj = VectorInterval("Rest", notes[i], notes[i + 1])
                 vec.append(interval_obj)
             else:
-                interval_semitones = interval.Interval(notes[i].note, notes[i+1].note).semitones
-                interval_obj = VectorInterval(interval_semitones, notes[i], notes[i+1])
+                interval_semitones = interval.Interval(notes[i].note, notes[i + 1].note).semitones
+                interval_obj = VectorInterval(interval_semitones, notes[i], notes[i + 1])
                 vec.append(interval_obj)
         return vec
 
@@ -1575,13 +1606,14 @@ class IntervalBase:
             (frequently self.notes): note list gathered from either CorpusBase or ScoreBase's methods/attributes
         """
         vec = []
-        for i in range(len(notes)-1):
-            if notes[i].note.isRest or notes[i+1].note.isRest:
-                interval_obj = VectorInterval("Rest", notes[i], notes[i+1])
+        for i in range(len(notes) - 1):
+            if notes[i].note.isRest or notes[i + 1].note.isRest:
+                interval_obj = VectorInterval("Rest", notes[i], notes[i + 1])
                 vec.append(interval_obj)
             else:
-                interval_semitones = interval.Interval(notes[i].note, notes[i+1].note).semitones
-                interval_obj = VectorInterval(interval.convertSemitoneToSpecifierGeneric(interval_semitones)[1], notes[i], notes[i+1])
+                interval_semitones = interval.Interval(notes[i].note, notes[i + 1].note).semitones
+                interval_obj = VectorInterval(interval.convertSemitoneToSpecifierGeneric(interval_semitones)[1],
+                                              notes[i], notes[i + 1])
                 vec.append(interval_obj)
         return vec
 
@@ -1610,7 +1642,8 @@ class Match:
         self.first_note = first_note
         self.last_note = last_note
         # Construct an ema address for the entire pattern to pass on
-        ema =  str(self.first_note.note.measureNumber) + "-" + str(self.last_note.note.measureNumber) + "/" + str(self.first_note.partNumber) + "/"
+        ema = str(self.first_note.note.measureNumber) + "-" + str(self.last_note.note.measureNumber) + "/" + str(
+            self.first_note.partNumber) + "/"
         ema += ("@" + str(self.first_note.note.beat) + "-end")
         for i in range(self.last_note.note.measureNumber - self.first_note.note.measureNumber - 1):
             ema += ",@start-end"
@@ -1618,7 +1651,8 @@ class Match:
         self.ema = ema
         try:
             splice = self.first_note.piece_url.index('mei/')
-            self.ema_url = "https://ema.crimproject.org/https%3A%2F%2Fcrimproject.org%2Fmei%2F" + str(self.first_note.piece_url[splice + 4:]) + "/" + str(self.ema)
+            self.ema_url = "https://ema.crimproject.org/https%3A%2F%2Fcrimproject.org%2Fmei%2F" + str(
+                self.first_note.piece_url[splice + 4:]) + "/" + str(self.ema)
         except:
             self.ema_url = "File must be a crim url to have a valid EMA url"
         self.durations = durations
@@ -1636,7 +1670,8 @@ class PatternMatches:
     matches : list
         list of Match objects found to be matching the pattern
     """
-    def __init__(self, pattern, matches:list):
+
+    def __init__(self, pattern, matches: list):
         self.pattern = pattern
         self.matches = matches
 
@@ -1645,8 +1680,10 @@ class PatternMatches:
         """
         print("Melodic interval/pattern " + str(self.pattern) + " occurs " + str(len(self.matches)) + " times:")
         for match in self.matches:
-            print("In " + str(match.first_note.metadata.title) + " part " + str(match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) +\
-            " and ending in measure " + str(match.last_note.note.measureNumber) + ". Notes lengths: " + str(match.durations))
+            print("In " + str(match.first_note.metadata.title) + " part " + str(
+                match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) + \
+                  " and ending in measure " + str(match.last_note.note.measureNumber) + ". Notes lengths: " + str(
+                match.durations))
         print("\n")
 
     def print_close_matches(self):
@@ -1654,8 +1691,11 @@ class PatternMatches:
         """
         print("Occurences of " + str(self.pattern) + " or similar:")
         for match in self.matches:
-            print("Pattern " + str(match.pattern) + " appears in " + str(match.first_note.metadata.title) + " part " + str(match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) +\
-            " and ending in measure " + str(match.last_note.note.measureNumber) + ". Notes lengths: " + str(match.durations))
+            print("Pattern " + str(match.pattern) + " appears in " + str(
+                match.first_note.metadata.title) + " part " + str(
+                match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) + \
+                  " and ending in measure " + str(match.last_note.note.measureNumber) + ". Notes lengths: " + str(
+                match.durations))
         print("Said pattern or similar appeared " + str(len(self.matches)) + " times.\n")
 
 class ClassifiedMatch:
@@ -1692,17 +1732,21 @@ class ClassifiedMatch:
         ema_parts = ""
         ema_beats = ""
         for match in self.matches:
-            ema_measures += str(match.first_note.note.measureNumber) + "-" + str(match.last_note.note.measureNumber) + ","
+            ema_measures += str(match.first_note.note.measureNumber) + "-" + str(
+                match.last_note.note.measureNumber) + ","
             for i in range(match.last_note.note.measureNumber - match.first_note.note.measureNumber + 1):
                 ema_parts += str(match.first_note.partNumber) + ","
             ema_beats += "@" + str(match.first_note.note.beat) + "-end,"
             for j in range(match.last_note.note.measureNumber - match.first_note.note.measureNumber - 1):
                 ema_beats += "@start-end,"
             ema_beats += "@start-" + str(match.last_note.note.beat) + ","
-        self.ema = ema_measures[0:len(ema_measures)-1] + "/" + ema_parts[0:len(ema_parts)-1] + "/" + ema_beats[0:len(ema_beats)-1]
+        self.ema = ema_measures[0:len(ema_measures) - 1] + "/" + ema_parts[0:len(ema_parts) - 1] + "/" + ema_beats[
+                                                                                                         0:len(
+                                                                                                             ema_beats) - 1]
 
         try:
             splice = self.matches[0].first_note.piece_url.index('mei/')
-            self.ema_url = "https://ema.crimproject.org/https%3A%2F%2Fcrimproject.org%2Fmei%2F" + str(self.matches[0].first_note.piece_url[splice + 4:]) + "/" + str(self.ema)
+            self.ema_url = "https://ema.crimproject.org/https%3A%2F%2Fcrimproject.org%2Fmei%2F" + str(
+                self.matches[0].first_note.piece_url[splice + 4:]) + "/" + str(self.ema)
         except:
             self.ema_url = "File must be a crim url (not a file path) to have a valid EMA url"

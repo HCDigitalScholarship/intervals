@@ -83,7 +83,8 @@ def find_close_matches(patterns_data, min_matches, threshold):
                 matches_list.matches.append(close_match)
         if len(matches_list.matches) > min_matches:
             all_matches_list.append(matches_list)
-    print(str(len(all_matches_list)) + " melodic intervals had more than " + str(min_matches) + " exact or close matches.\n")
+    print(str(len(all_matches_list)) + " melodic intervals had more than " + str(
+        min_matches) + " exact or close matches.\n")
     return all_matches_list
 
 # Allows for the addition of non-moving-window pattern searching approaches
@@ -105,22 +106,23 @@ def into_patterns(vectors_list, interval):
     """
     pattern, patterns_data = [], []
     for vectors in vectors_list:
-        for i in range(len(vectors)-interval):
+        for i in range(len(vectors) - interval):
             pattern = []
             durations = []
             valid_pattern = True
             durations.append(vectors[i].note1.duration)
             for num_notes in range(interval):
-                if vectors[i+num_notes].vector == 'Rest':
+                if vectors[i + num_notes].vector == 'Rest':
                     valid_pattern = False
-                pattern.append(vectors[i+num_notes].vector)
-                durations.append(vectors[i+num_notes].note2.duration)
+                pattern.append(vectors[i + num_notes].vector)
+                durations.append(vectors[i + num_notes].note2.duration)
             if valid_pattern:
-            # Here, with help from vectorize() you can jam in whatever more data you would like about the note
-                patterns_data.append((pattern, vectors[i].note1, vectors[i+num_notes].note2, durations))
+                # Here, with help from vectorize() you can jam in whatever more data you would like about the note
+                patterns_data.append((pattern, vectors[i].note1, vectors[i + num_notes].note2, durations))
     return patterns_data
 
-def into_patterns_pd(df:list, interval_size):
+
+def into_patterns_pd(df: list, interval_size):
     """Takes in a series of vector patterns with data attached and finds close matches
 
     Parameters
@@ -142,16 +144,16 @@ def into_patterns_pd(df:list, interval_size):
             vectors_list.append(dflist[j][i])
         vectors_list.append(float('nan'));
     pattern, patterns_data = [], []
-    for h in range(len(vectors_list)-interval_size):
+    for h in range(len(vectors_list) - interval_size):
         pattern = []
         valid_pattern = True
         for num_notes in range(interval_size):
-            if pd.isna(vectors_list[h+num_notes]):
+            if pd.isna(vectors_list[h + num_notes]):
                 valid_pattern = False
-            pattern.append(vectors_list[h+num_notes])
+            pattern.append(vectors_list[h + num_notes])
         if valid_pattern:
-        # Here, with help from vectorize() you can jam in whatever more data you would like about the note
-            patterns_data.append((pattern, vectors_list[i], vectors_list[i+num_notes]))
+            # Here, with help from vectorize() you can jam in whatever more data you would like about the note
+            patterns_data.append((pattern, vectors_list[i], vectors_list[i + num_notes]))
     return patterns_data
 
 # sample usage
@@ -195,23 +197,23 @@ def similarity_score(notes1, notes2):
         # For each piece create a list of all patterns and then a list of unique patterns to compare against it
         pattern, patterns1, patterns_nodup1, patterns2, patterns_nodup2 = [], [], [], [], []
 
-        for i in range(len(vectors1)-interval):
+        for i in range(len(vectors1) - interval):
             pattern = []
             valid_pattern = True
             for num_notes in range(interval):
-                if vectors1[i+num_notes].vector == 'Rest':
+                if vectors1[i + num_notes].vector == 'Rest':
                     valid_pattern = False
-                pattern.append(vectors1[i+num_notes].vector)
+                pattern.append(vectors1[i + num_notes].vector)
             if valid_pattern:
                 patterns1.append(pattern)
 
-        for j in range(len(vectors2)-interval):
+        for j in range(len(vectors2) - interval):
             pattern = []
             valid_pattern = True
             for num_notes in range(interval):
-                if vectors2[j+num_notes].vector == 'Rest':
+                if vectors2[j + num_notes].vector == 'Rest':
                     valid_pattern = False
-                pattern.append(vectors2[j+num_notes].vector)
+                pattern.append(vectors2[j + num_notes].vector)
             if valid_pattern:
                 patterns2.append(pattern)
 
@@ -235,7 +237,7 @@ def similarity_score(notes1, notes2):
                     for c in range(interval):
                         diff += abs(a[c] - b[c])
                     if diff == 1 or diff == 2:
-                        #score += 0.5
+                        # score += 0.5
                         break
         for d in patterns_nodup2:
             if patterns1.count(d) > 3:
@@ -279,7 +281,10 @@ def find_motif(pieces: CorpusBase, motif: list, generic: bool = True):
     occurences = 0
     for pat in patterns:
         if motif == pat[0]:
-            print("Selected pattern occurs in " + str(pat[1].metadata.title) + " part " + str(pat[1].part) + " beginning in measure " + str(pat[1].note.measureNumber) + " and ending in measure " + str(pat[2].note.measureNumber) + ". Note durations: " + str(pat[3]))
+            print("Selected pattern occurs in " + str(pat[1].metadata.title) + " part " + str(
+                pat[1].part) + " beginning in measure " + str(
+                pat[1].note.measureNumber) + " and ending in measure " + str(
+                pat[2].note.measureNumber) + ". Note durations: " + str(pat[3]))
             occurences += 1
     print("Selected pattern occurs " + str(occurences) + " times.")
 
@@ -302,14 +307,23 @@ def export_to_csv(matches: list):
     with open(csv_name, mode='w') as matches_file:
         matches_writer = csv.writer(matches_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         if type(matches[0]) == PatternMatches:
-            matches_writer.writerow(['Pattern Generating Match', 'Pattern matched', 'Piece Title', 'Part', 'First Note Measure Number', 'Last Note Measure Number', 'Note Durations', 'EMA', 'EMA url'])
+            matches_writer.writerow(
+                ['Pattern Generating Match', 'Pattern matched', 'Piece Title', 'Part', 'First Note Measure Number',
+                 'Last Note Measure Number', 'Note Durations', 'EMA', 'EMA url'])
             for match_series in matches:
                 for match in match_series.matches:
-                    matches_writer.writerow([match_series.pattern, match.pattern, match.first_note.metadata.title, match.first_note.part, match.first_note.note.measureNumber, match.last_note.note.measureNumber, match.durations, match.ema, match.ema_url])
+                    matches_writer.writerow(
+                        [match_series.pattern, match.pattern, match.first_note.metadata.title, match.first_note.part,
+                         match.first_note.note.measureNumber, match.last_note.note.measureNumber, match.durations,
+                         match.ema, match.ema_url])
         else:
-            matches_writer.writerow(['Pattern Generating Match', 'Classification Type', 'EMA', 'EMA url', 'Soggetti 1 Part', 'Soggetti 1 Measure', 'Soggetti 2 Part', 'Soggetti 2 Measure', 'Soggetti 3 Part', 'Soggetti 3 Measure', 'Soggetti 4 Part', 'Soggetti 4 Measure'])
+            matches_writer.writerow(
+                ['Pattern Generating Match', 'Classification Type', 'EMA', 'EMA url', 'Soggetti 1 Part',
+                 'Soggetti 1 Measure', 'Soggetti 2 Part', 'Soggetti 2 Measure', 'Soggetti 3 Part', 'Soggetti 3 Measure',
+                 'Soggetti 4 Part', 'Soggetti 4 Measure'])
             for classified_matches in matches:
-                row_array = [classified_matches.pattern, classified_matches.type, classified_matches.ema, classified_matches.ema_url]
+                row_array = [classified_matches.pattern, classified_matches.type, classified_matches.ema,
+                             classified_matches.ema_url]
                 for soggetti in classified_matches.matches:
                     row_array.append(soggetti.first_note.part)
                     row_array.append(soggetti.first_note.note.measureNumber)
@@ -327,7 +341,8 @@ def assisted_interface():
     matches : list
         list of PatternMatches based on the users various inputs
     """
-    print("You can use ctrl-c to quit exit at any time. If you proceed through the entire process, the matches array will be returned from this function")
+    print(
+        "You can use ctrl-c to quit exit at any time. If you proceed through the entire process, the matches array will be returned from this function")
     urls = []
     url = input("Enter a url, or 'done' when finished: ")
     while url != 'done':
@@ -373,7 +388,7 @@ def compare_durations(durations1, durations2, threshold):
     total = 0
     durations1_sum, durations2_sum = 0, 0
     for i in range(len(durations1)):
-        total += abs(durations1[i]-durations2[i])
+        total += abs(durations1[i] - durations2[i])
         durations1_sum += durations1[i]
         durations2_sum += durations2[i]
     # if total <= threshold or durations1_sum == durations2_sum:
@@ -388,7 +403,7 @@ def sortMatches(match):
     return match.first_note.offset
 
 
-def classify_matches(exact_matches: list, durations_threshold = 2):
+def classify_matches(exact_matches: list, durations_threshold=2):
     """Classifies groups of matches into periodic entries, imitative duos, and fuga
 
     Classifies through offset comparison of matching melodic patterns, prints out information gathered.
@@ -415,32 +430,45 @@ def classify_matches(exact_matches: list, durations_threshold = 2):
     for list_matches in exact_matches:
         offset_difs, offset_difs_info = [], []
         match_instance = list_matches.matches
-        match_instance.sort(key = sortMatches)
+        match_instance.sort(key=sortMatches)
         for index in range(len(match_instance) - 1):
-            if compare_durations(match_instance[index + 1].durations, match_instance[index].durations, durations_threshold):
-                offset_difs.append(match_instance[index + 1].first_note.offset -  match_instance[index].first_note.offset)
+            if compare_durations(match_instance[index + 1].durations, match_instance[index].durations,
+                                 durations_threshold):
+                offset_difs.append(
+                    match_instance[index + 1].first_note.offset - match_instance[index].first_note.offset)
                 offset_difs_info.append((match_instance[index], match_instance[index + 1]))
         i = 0
         while i < len(offset_difs) - 2:
-            if offset_difs[i] > 64 or offset_difs[i + 1] > 64 or abs(offset_difs_info[i][1].last_note.note.measureNumber - offset_difs_info[i + 1][0].first_note.note.measureNumber) > 8:
+            if offset_difs[i] > 64 or offset_difs[i + 1] > 64 or abs(
+                    offset_difs_info[i][1].last_note.note.measureNumber - offset_difs_info[i + 1][
+                        0].first_note.note.measureNumber) > 8:
                 pass
             elif offset_difs[i] == offset_difs[i + 1] and offset_difs[i] == offset_difs[i + 2]:
-                grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
+                grouping = (
+                    offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0],
+                    offset_difs_info[i + 1][1],
+                    offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
                 grouping = list(dict.fromkeys(grouping))
                 classified_obj = ClassifiedMatch(grouping, "periodic_entry")
                 classified_matches.append(classified_obj)
             elif offset_difs[i] == offset_difs[i + 1]:
-                grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1])
+                grouping = (
+                    offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0],
+                    offset_difs_info[i + 1][1])
                 grouping = list(dict.fromkeys(grouping))
                 classified_obj = ClassifiedMatch(grouping, "periodic entry")
                 classified_matches.append(classified_obj)
             elif offset_difs[i] == offset_difs[i + 2]:
-                grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
+                grouping = (
+                    offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 2][0],
+                    offset_difs_info[i + 2][1])
                 grouping = list(dict.fromkeys(grouping))
                 classified_obj = ClassifiedMatch(grouping, "imitative duo")
                 classified_matches.append(classified_obj)
             else:
-                grouping = (offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1])
+                grouping = (
+                    offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0],
+                    offset_difs_info[i + 1][1])
                 grouping = list(dict.fromkeys(grouping))
                 classified_obj = ClassifiedMatch(grouping, "fuga")
                 classified_matches.append(classified_obj)
@@ -450,7 +478,8 @@ def classify_matches(exact_matches: list, durations_threshold = 2):
         print(str(entry.type) + ":")
         desc_str = "Pattern: " + str(entry.pattern) + ", Locations in entry: "
         for soggetti in entry.matches:
-            desc_str += "\n- Measure " + str(soggetti.first_note.note.measureNumber) + " in voice " + str(soggetti.first_note.partNumber)
+            desc_str += "\n- Measure " + str(soggetti.first_note.note.measureNumber) + " in voice " + str(
+                soggetti.first_note.partNumber)
         print(desc_str)
 
     return classified_matches
@@ -460,19 +489,19 @@ def export_pandas(matches):
     for match_series in matches:
         for match in match_series.matches:
             match_dict = {
-              "pattern_generating_match": match_series.pattern,
-              "pattern_matched": match.pattern,
-              "piece_title": match.first_note.metadata.title,
-              "part": match.first_note.part,
-              "start_measure": match.first_note.note.measureNumber,
-              "start_beat": match.first_note.note.beat,
-              "end_measure": match.last_note.note.measureNumber,
-              "end_beat": match.last_note.note.beat,
-              "start_offset": match.first_note.offset,
-              "end_offset": match.last_note.offset,
-              "note_durations": match.durations,
-              "ema": match.ema,
-              "ema_url": match.ema_url
+                "pattern_generating_match": match_series.pattern,
+                "pattern_matched": match.pattern,
+                "piece_title": match.first_note.metadata.title,
+                "part": match.first_note.part,
+                "start_measure": match.first_note.note.measureNumber,
+                "start_beat": match.first_note.note.beat,
+                "end_measure": match.last_note.note.measureNumber,
+                "end_beat": match.last_note.note.beat,
+                "start_offset": match.first_note.offset,
+                "end_offset": match.last_note.offset,
+                "note_durations": match.durations,
+                "ema": match.ema,
+                "ema_url": match.ema_url
             }
             match_data.append(match_dict)
     return pd.DataFrame(match_data)

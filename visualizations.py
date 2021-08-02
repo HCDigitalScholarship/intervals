@@ -25,6 +25,7 @@ RELATIONSHIP_WEIGHTS = {
 }
 
 
+
 def create_bar_chart(variable, count, color, data, condition, *selectors):
 
     observer_chart = alt.Chart(data).mark_bar().encode(
@@ -55,6 +56,7 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     ).interactive()
 
     return heatmap
+
 
 def _process_ngrams_df_helper(ngrams_df, main_col):
     """
@@ -194,7 +196,7 @@ def _process_crim_json_url(url_column):
     return url_column
 
 
-def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_category='observer.name',
+def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_category='observer.name', option=1,
                             heat_map_width=800, heat_map_height=300):
     """
     This method plots a chart for relationships/observations dataframe retrieved from their
@@ -265,50 +267,16 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
 
     return chart
 
-def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, ngrams_duration=None, selected_patterns=[], voices=[],
-                             heatmap_width=800, heatmap_height=300):
-    """
-    Plot how closely the other vectors match a selected vector.
-    Uses the Levenshtein distance.
-    :param directed:
-    :param interval_type:
-    :param score_df: dataframe containing the score for each pair of patterns.
-    :param ngrams_df: crim-intervals getNgram's output
-    :param key_pattern: a pattern the users selected to compare other patterns with (tuple of floats)
-    :param selected_pattern: the specific other vectors the users selected
-    :param ngrams_duration: if None, simply output the offsets. If the users input a
-    list of durations, caculate the end by adding durations with offsets and
-    display the end on the heatmap accordingly.
-    :param selected_patterns: list of specific patterns the users want (optional)
-    :param voices: list of specific voices the users want (optional)
-    :param heatmap_width: the width of the final heatmap (optional)
-    :param heatmap_height: the height of the final heatmap (optional)
-    :return: a bar chart that displays the different patterns and their counts,
-    and a heatmap with the start offsets of chosen voices / patterns
-    """
 
-    ngrams = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration, selected_pattern=selected_patterns,
-                               voices=voices)
-    ngrams.dropna(how='any', inplace=True)
-
-    ngrams['score'] = ngrams['pattern'].map(lambda cell: score_df[key_pattern, cell]
-                                            if (key_pattern, cell) in score_df.index
-                                            else score_df[cell, key_pattern])
-
-    slider = alt.binding_range(min=ngrams['score'].min(), max=ngrams['score'].max(), step=1, name='cutoff:')
-    selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
-                                    bind=slider, init={'cutoff': 50})
-
-    heatmap = create_heatmap('start', 'end', 'voice', 'score', ngrams, heatmap_width, heatmap_height,
-                          alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
-
-    score_histogram = create_bar_chart('count(score)', 'score', color=alt.value('#1f77b4'),
-                                       data=ngrams, condition=alt.datum.score >= selector.cutoff)
-
-    return alt.vconcat(score_histogram, heatmap)
+def _recognize_integers(num_str):
+    if num_str[0] == '-':
+        return num_str[1:].isdigit()
+    else:
+        return num_str.isdigit()
 
 
 def _close_match_helper(cell):
+    # process each cell into an interator of *floats* for easy comparisons
 
     if type(cell) == str:
         cell = cell.split(", ")
@@ -316,11 +284,11 @@ def _close_match_helper(cell):
 
 
 def _close_match(ngrams_df, key_pattern, algorithm):
-
     ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: _close_match_helper(cell), na_action='ignore')
     # making sure that key pattern and other patterns are tuple of string or ints
-    if not type(ngrams_df.iloc[0, :]['pattern'][0]) == type(key_pattern[0]):
-        raise Exception("Input patterns and patterns inside dataframe aren't of the same data types.")
+    if not (type(ngrams_df.iloc[0, :]['pattern']) == type(key_pattern) == tuple
+            or type(ngrams_df.iloc[0, :]['pattern'][0]) == type(key_pattern[0])):
+        raise Exception("Input patterns and patterns inside dataframe aren't tuple of strings/ints")
 
     ngrams_df['score'] = ngrams_df['pattern'].map(
         lambda cell: 100 * algorithm.similarity(key_pattern, cell), na_action='ignore')
@@ -364,6 +332,7 @@ def plot_close_match_levenshtein_heatmap(ngrams_df, key_pattern, algorithm, ngra
     #                                    data=score_ngrams, condition=alt.datum.score >= selector.cutoff)
 
     return score_ngrams
+
 
 # Network visualizations
 def process_network_df(df, interval_column_name, ema_column_name):
@@ -571,3 +540,4 @@ def plot_pieces_relationship_network():
 
 def plot_ngram_network():
     pass
+

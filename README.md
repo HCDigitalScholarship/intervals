@@ -1,15 +1,12 @@
 # An interval-analysis based music similarity engine
 
 ### Find the project on Github and PyPI
-
 #### Current Version: 0.3.3
-
 - [Github](https://github.com/HCDigitalScholarship/intervals)
 - [PyPI](https://pypi.org/project/crim-intervals/)
 - [Streamlet](https://crim-intervals-search.herokuapp.com/)
 
 ## Project Capabilities
-
 - Find exact and close melodic matches given an mei file
 - Find occurences of matching soggetto given a "vectorized" pattern
 - Output a 0-1 similarity score between two musical works
@@ -17,7 +14,6 @@
 - Output match data in a variety of ways: command line output, csv, pandas, python data types
 
 ## Getting Started
-
 To download the project via the Python Packagae Index, use ```pip install crim-intervals``` and in a python shell
 enter ```from crim_intervals import *```
 To use the project via github, clone the repository and in a python shell in the directory of the repository
@@ -29,18 +25,14 @@ The project is now documented with docstrings, for help using/understanding meth
 use ```help(method_or_class_name)```
 
 ## Assisted Usage
-
 For a guided way to get results for the basic intended usages of the project, simply enter:
-
 ```
 from crim_intervals import *
 assisted_interface()
 ```
-
 wherever you are writing your code. The assisted interface will return an array of matches.
 
 ## User-inputted parameters
-
 Each parameter listed has its own section below detailing configuration.
 
 - Whether to input one score at a time, or a entire corpus at once with more limited selection ability, as well as what
@@ -57,13 +49,10 @@ Each parameter listed has its own section below detailing configuration.
 This section covers the capabilities falling under the CorpusBase object, which has the capability to import multiple
 pieces at once. To begin, import your scores using either as a list of urls and/or file paths. File paths must begin
 with a '/', otherwise they will be processed as urls.
-
 ```
 corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', 'path/to/mei/file1.mei', 'path/to/mei/file2.mei'])
 ```
-
 After, the first decision to be made is how you want to analyze the imported pieces:
-
 - Get the whole piece ```corpus.note_list_whole_piece()```
 - Get the whole piece combining unisons into one note ```corpus.note_list_no_unisons()```
 - Get the whole piece only at selected offset within a
@@ -123,7 +112,6 @@ pitches), we bring in the ```patterns``` variable from the previous section:
 ```exact_matches = find_exact_matches(patterns, min_matches)```
 where the parameter ```min_matches``` determines the minimum number of matches a pattern needs to be considered relevant
 and displayed. To print information about all matches found, use a simple for loop and another method:
-
 ```
 for item in exact_matches:
     item.print_exact_matches()

@@ -1,6 +1,5 @@
 from main_objs import *
 
-
 # Potential redesign needed due to unstable nature of having user give over patterns_data
 # Potential fix is reincorporating into_patterns back into this method
 def find_exact_matches(patterns_data, min_matches=5):
@@ -43,7 +42,6 @@ def find_exact_matches(patterns_data, min_matches=5):
     print(str(len(all_matches_list)) + " melodic intervals had more than " + str(min_matches) + " exact matches.\n")
     # all_matches_list has a nested structure- it contains a list of PatternMatches objects, which contain a list of individual Match objects
     return all_matches_list
-
 
 # Finds matches based on a cumulative distance difference between two patterns
 def find_close_matches(patterns_data, min_matches, threshold):
@@ -88,7 +86,6 @@ def find_close_matches(patterns_data, min_matches, threshold):
     print(str(len(all_matches_list)) + " melodic intervals had more than " + str(
         min_matches) + " exact or close matches.\n")
     return all_matches_list
-
 
 # Allows for the addition of non-moving-window pattern searching approaches
 # Needs to be called before any matches can be made
@@ -159,7 +156,6 @@ def into_patterns_pd(df: list, interval_size):
             patterns_data.append((pattern, vectors_list[i], vectors_list[i + num_notes]))
     return patterns_data
 
-
 # sample usage
 # a = into_patterns_pd(melodic, 5)
 # a.sort()
@@ -170,14 +166,12 @@ def sortFunc(pattern):
     """
     return len(pattern.matches)
 
-
 # Sorting based on the amount of matches each pattern has
 def sort_matches(matches_list):
     """Sorts and returns a list of PatternMatch objects, ordering by size
     """
     matches_list.sort(reverse=True, key=sortFunc)
     return matches_list
-
 
 # Generates a score from 0-1 based on how many patterns within a piece can be found in the other
 def similarity_score(notes1, notes2):
@@ -256,13 +250,12 @@ def similarity_score(notes1, notes2):
                     for f in range(interval):
                         diff += abs(d[f] - e[f])
                     if diff == 1 or diff == 2:
-                        # score += 0.5
+                        #score += 0.5
                         break
         interval += 1
         scores.append(score / (len(patterns_nodup2) + len(patterns_nodup1)))
     final_score = (scores[0] + scores[1] + scores[2] + scores[3]) / 4
     return final_score
-
 
 # Find all occurences of a specified pattern within a corpus
 def find_motif(pieces: CorpusBase, motif: list, generic: bool = True):
@@ -294,7 +287,6 @@ def find_motif(pieces: CorpusBase, motif: list, generic: bool = True):
                 pat[2].note.measureNumber) + ". Note durations: " + str(pat[3]))
             occurences += 1
     print("Selected pattern occurs " + str(occurences) + " times.")
-
 
 # Given list of matches, write to csv in current working directory
 def export_to_csv(matches: list):
@@ -338,7 +330,6 @@ def export_to_csv(matches: list):
                 matches_writer.writerow(row_array)
 
     print("CSV created in your current working directory.")
-
 
 # For more naive usage- allows for user interaction, has return value of list of matches
 # All features incorporated except non-whole piece selection
@@ -389,7 +380,6 @@ def assisted_interface():
                 item.print_exact_matches()
     return matches
 
-
 def compare_durations(durations1, durations2, threshold):
     """Helper for classify_matches
 
@@ -406,7 +396,6 @@ def compare_durations(durations1, durations2, threshold):
         return True
     else:
         return False
-
 
 def sortMatches(match):
     """ Helper function for classify_matches
@@ -456,30 +445,26 @@ def classify_matches(exact_matches: list, durations_threshold=2):
                 pass
             elif offset_difs[i] == offset_difs[i + 1] and offset_difs[i] == offset_difs[i + 2]:
                 grouping = (
-                    offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0],
-                    offset_difs_info[i + 1][1],
-                    offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
+                offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1],
+                offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
                 grouping = list(dict.fromkeys(grouping))
                 classified_obj = ClassifiedMatch(grouping, "periodic_entry")
                 classified_matches.append(classified_obj)
             elif offset_difs[i] == offset_difs[i + 1]:
                 grouping = (
-                    offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0],
-                    offset_difs_info[i + 1][1])
+                offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1])
                 grouping = list(dict.fromkeys(grouping))
                 classified_obj = ClassifiedMatch(grouping, "periodic entry")
                 classified_matches.append(classified_obj)
             elif offset_difs[i] == offset_difs[i + 2]:
                 grouping = (
-                    offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 2][0],
-                    offset_difs_info[i + 2][1])
+                offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 2][0], offset_difs_info[i + 2][1])
                 grouping = list(dict.fromkeys(grouping))
                 classified_obj = ClassifiedMatch(grouping, "imitative duo")
                 classified_matches.append(classified_obj)
             else:
                 grouping = (
-                    offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0],
-                    offset_difs_info[i + 1][1])
+                offset_difs_info[i][0], offset_difs_info[i][1], offset_difs_info[i + 1][0], offset_difs_info[i + 1][1])
                 grouping = list(dict.fromkeys(grouping))
                 classified_obj = ClassifiedMatch(grouping, "fuga")
                 classified_matches.append(classified_obj)
@@ -494,7 +479,6 @@ def classify_matches(exact_matches: list, durations_threshold=2):
         print(desc_str)
 
     return classified_matches
-
 
 def export_pandas(matches):
     match_data = []

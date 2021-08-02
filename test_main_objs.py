@@ -6,14 +6,37 @@ def get_crim_model(file):
     root = "https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/"
     return CorpusBase([root + file]).scores[0]
 
+def test_get_semi_flat_parts_name():
+    """
+    Make sure that we could have correct names for each part.
+    Somewhat make sure that we could get all parts in the score.
+    """
+    hardcoded_names = FILES_PART_NAMES
+    for i in range(len(TEST_FILES)):
+        file = TEST_FILES[i]
+        model = get_crim_model(file)
+        names = model._getPartNames()
+        for j in range(len(hardcoded_names)):
+            assert(names[j] == hardcoded_names[i][j])
 
-# TODO add test semi flat parts
+# def test_get_semi_flat_parts():
+#     for i in range(len(TEST_FILES)):
+#         file = TEST_FILES[i]
+#         model = get_crim_model(file)
+#
+#         # retrieve parts
+#         semi_flats = model._getSemiFlatParts()
+#         print(semi_flats)
 
-# TODO add test partnames
+# TODO note rest important method to verify whether the content of the mei file is correctly imported
+def test_get_note_rests():
+    for i in range(len(TEST_FILES)):
+        hardcoded_nr = pd.DataFrame(FILES_NOTE_RESTS[i])
+        print(hardcoded_nr)
+        # file = TEST_FILES[i]
+        # model = get_crim_model(file)
+        # nr = model.getNoteRest()
 
-# TODO ties
-
-# TODO m21object no ties
 
 def validate_ngrams_last_offsets(model, df, n, how='columnwise', other=None, held='Held',
                                  exclude=['Rest'], interval_settings=('d', True, True), unit=0):

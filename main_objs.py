@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
+from itertools import combinations_with_replacement as cwr
 
 
 # Unncessary at the moment
@@ -133,7 +134,7 @@ class ImportedPiece:
 
     def _remove_tied(self, noteOrRest):
         if hasattr(noteOrRest, 'tie') and noteOrRest.tie is not None and noteOrRest.tie.type != 'start':
-            return None
+            return np.nan
         return noteOrRest
 
     def _getM21ObjsNoTies(self):
@@ -197,13 +198,13 @@ class ImportedPiece:
         the duration of notes and rests in each part where 1 = quarternote,
         1.5 = a dotted quarter, 4 = a whole note, etc. If a df is passed, then
         return a df of the same shape giving the duration of each of the cells
-        of this df. This is useful if you want to know what the durations of
+        of this df. This is useful if you want to know what the durations of 
         something other than single notes and rests, such as the durations of
         intervals. E.g.:
 
         har = importedPiece.getHarmonic()
         harDur = importedPiece.getDuration(df=har)
-
+        
         The `n` parameter should be an integer greater than zero, or -1. When
         n is a positive integer, it groups together a sliding window of n
         consecutive non-NaN cells in each column. If you pass a df, it will sum
@@ -219,11 +220,12 @@ class ImportedPiece:
         in a piece. Note that the results of .getNoteRest() will be used for the
         `df` parameter if none is provided:
 
-        dur = importedPiece.getDuration(n=-1
+        dur = importedPiece.getDuration(n=-1)
+
         You can also pass a `mask_df`, which will serve as a filter, only
         keeping values at the same indecies (i.e. index and columns) as mask_df.
-        This is needed to get the durations of ngrams. To get the durations of
-        ngrams, pass the same value of n and the samedataframe you passed to
+        This is needed to get the durations of ngrams. To get the durations of 
+        ngrams, pass the same value of n and the samedataframe you passed to 
         .getNgrams() as the `n` and `df` parameters, then pass your dataframe of
         ngrams as the `mask_df`. For example:
 
@@ -248,18 +250,6 @@ class ImportedPiece:
             mask = mask_df.applymap(lambda cell: True, na_action='ignore')
             result = result[mask]
         return result.dropna(how='all')
-
-    def getNgramDuration(self, df, n=3):
-        '''
-        Return the duration of ngrams of size n. Supply a dataframe of ngrams
-        for the df parameter and the size of n used to calculate those ngrams
-        for the n parameter. The results have the durations of all ngrams in the
-        df at the same row and column positions as their corresponding ngrams.
-        '''
-        har = self.getHarmonic()
-        dur = self.getDuration(har, n=n)
-        mask = df.applymap(lambda cell: True, na_action='ignore')
-        return dur[mask].dropna(how='all')
 
     def getLyric(self):
         '''
@@ -466,6 +456,92 @@ class ImportedPiece:
                 return cell.semiSimpleName[1:]
         else:
             return cell
+
+    # def _durationalRatioHelper(self, cell):
+    #     cell = tuple(float(val) for val in cell.split(', '))
+    #     result = tuple(cell[i + 1] / cell[i] for i in range(len(cell) - 1))
+    #     return result
+
+    def _durationalRatioHelper(self, row):
+        _row = row.dropna()
+        return _row / _row.shift(1)
+
+    def getDurationalRatio(self, df=None):
+        '''
+        Return durational ratios of each item in each column compared to the
+        previous item in the same column. If a df is passed, it should be of
+        float or integer values. If no df is passed, the default results from
+        .getDuration will be used as input (durations of notes and rests).
+        '''
+        if df is None:
+            df = self.getDuration()
+        return df.apply(self._durationalRatioHelper).dropna(how='all')
+        # ds = dur.applymap(str, na_action='ignore')
+        # dn = self.getNgrams(df=ds, n=n)
+        # dr = dn.applymap(self._durationalRatioHelper, na_action='ignore')
+        # return dr
+
+    def getDistance(self, df=None, n=3):
+        '''
+        Return the distances between all the values in df which should be a
+        dataframe of strings of integer ngrams. Specifically, this is meant for
+        0-indexed, directed, and compound melodic ngrams. If nothing is passed
+        for df, melodic ngrams of this type will be provided at the value of n
+        passed. An alternative that would make sense would be to use chromatic
+        melodic intervals instead.
+        Usage:
+
+        # Call like this:
+        importedPiece.getDistance()
+
+        # If you don't pass a value for df, you can specify a different value
+        # for n to change from the default of 3:
+        importedPiece.getDistance(n=5)
+
+        # If you already have the melodic ngrams calculated for a different
+        # aspect of your query, you can pass that as df to save a little
+        # runtime on a large query. Note that if you pass something for df,
+        # the n parameter will be ignored:
+        mel = importedPiece.getMelodic('z', True, True)
+        ngrams = importedPiece.getNgrams(df=mel, n=4, exclude=['Rest'])
+        importedPiece.getDistance(df=ngrams)
+
+        # To search the table for the distances from a given pattern, just get
+        # the column of that name. This is example looks for distances
+        # involving a melodic pattern that goes up a step, down a third, up a
+        # step, down a third:
+        dist = importedPiece.getDistance(n=4)
+        target = '1, -2, 1, -2'
+        col = dist[target]
+
+        # If you then want to filter that column, say to distances less than or
+        # equal to 2, do this:
+        col[col <= 2]
+        '''
+        if df is None:
+            df = self.getMelodic('z', True, True)
+            df = self.getNgrams(df=df, n=n, exclude=['Rest'])
+        uni = df.stack().unique()
+        ser = pd.Series(uni)
+        df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
+        cols = [(df - df.loc[i]).abs().apply(sum, axis=1) for i in df.index]
+        dist = pd.concat(cols, axis=1)
+        dist.columns = uni
+        dist.index = uni
+        return dist
+
+    def _combineRestsHelper(self, col):
+        col = col.dropna()
+        return col[(col != 'Rest') | ((col == 'Rest') & (col.shift(1) != 'Rest'))]
+
+    def combineRests(self, df=None):
+        '''
+        Return a dataframe of the notes and rests of the piece, but in each
+        voice, only keep the first of a succession of rests.
+        '''
+        if df is None:
+            df = self.getNoteRest()
+        return df.apply(self._combineRestsHelper)
 
     def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
         '''
@@ -728,11 +804,8 @@ class ImportedPiece:
         d4 = self.getNgramDuration(n4, n=4)
         maxn = self.getNgrams(how='modules', interval_settings=('d', True, 'simple'), n=-1)
         stack = maxn.stack()
-        # print('Num ngrams:', len(stack))
         vc = stack.value_counts()
-        # print('Num unique ngrams:', len(vc))
         repeated = vc[vc > 1]
-        # print('Num unique ngrams that repeat:', len(repeated))
         # ngrams should be a minimum of 3 units long
         mask = repeated.index.map(lambda cell: ((cell.count(', ')) >= 2) and (cell.count('_') > cell.count('_Held')))
         threePlus = repeated[mask]
@@ -750,7 +823,6 @@ class ImportedPiece:
                 repDur = d4.at[labels]
                 lag = repIndex - modIndex
                 if lag < modDur * 4:
-                    # print('Module-Repetition Pair:', hits.index[i], labels)
                     found = True
                     category = 'NIm'
                     subcategory = 'N/A'
@@ -829,7 +901,7 @@ class ImportedPiece:
             modRefNum += 1
             temp = point.Lag.iloc[1:] == point.Lag.iat[1]
             if False in temp[1:].values:
-                point.Category = 'MTI'
+                point.Category = 'Fuga'
             else:
                 point.Category = 'PEn'
             point.Reference = modRefNum
@@ -837,7 +909,6 @@ class ImportedPiece:
         res2 = pd.concat(mtis)
         res2.set_index(['ModOffset', 'ModVoices'], drop=False, inplace=True)
         result = pd.concat([res, res2])
-        # pdb.set_trace()
         result.set_index('ModOffset', drop=False, inplace=True)
         result.sort_index(level=0, inplace=True)
         result = result[result.Lag > 0]
@@ -845,7 +916,8 @@ class ImportedPiece:
         result = result[result.Lag < 50]
         return result
 
-    # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
+
+# For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
 class CorpusBase:
     # Need to consider whether users can input certain scores (which means needing urls selected too), or just to do all in the corpus automatically
     """

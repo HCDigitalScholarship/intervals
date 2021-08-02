@@ -19,23 +19,17 @@ def test_get_semi_flat_parts_name():
         for j in range(len(hardcoded_names)):
             assert(names[j] == hardcoded_names[i][j])
 
-# def test_get_semi_flat_parts():
-#     for i in range(len(TEST_FILES)):
-#         file = TEST_FILES[i]
-#         model = get_crim_model(file)
-#
-#         # retrieve parts
-#         semi_flats = model._getSemiFlatParts()
-#         print(semi_flats)
-
-# TODO note rest important method to verify whether the content of the mei file is correctly imported
 def test_get_note_rests():
     for i in range(len(TEST_FILES)):
         hardcoded_nr = pd.DataFrame(FILES_NOTE_RESTS[i])
-        print(hardcoded_nr)
-        # file = TEST_FILES[i]
-        # model = get_crim_model(file)
-        # nr = model.getNoteRest()
+        file = TEST_FILES[i]
+        model = get_crim_model(file)
+        nr = model.getNoteRest()
+
+        for row in hardcoded_nr.index:
+            for col in hardcoded_nr.columns:
+                assert (hardcoded_nr.loc[row, col] == nr.loc[row, col] or
+                        (pd.isna(hardcoded_nr.loc[row, col]) and pd.isna(nr.loc[row, col])))
 
 
 def validate_ngrams_last_offsets(model, df, n, how='columnwise', other=None, held='Held',
@@ -145,7 +139,8 @@ def test_get_sounding_count():
 def interval_settings_helper(df, hardcoded_df):
     for row in hardcoded_df.index:
         for col in hardcoded_df.columns:
-            assert hardcoded_df.loc[row, col] == str(df.loc[row, col])
+            assert (hardcoded_df.loc[row, col] == df.loc[row, col] or
+                    (pd.isna(hardcoded_df.loc[row, col]) == pd.isna(df.loc[row, col])))
 
 
 def test_intervals_settings():

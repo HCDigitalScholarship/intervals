@@ -310,6 +310,64 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, ngrams_duration=N
 
     return alt.vconcat(score_histogram, heatmap)
 
+
+def _close_match_helper(cell):
+
+    if type(cell) == str:
+        cell = cell.split(", ")
+    return cell
+
+
+def _close_match(ngrams_df, key_pattern, algorithm):
+
+    ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: _close_match_helper(cell), na_action='ignore')
+    # making sure that key pattern and other patterns are tuple of string or ints
+    if not type(ngrams_df.iloc[0, :]['pattern'][0]) == type(key_pattern[0]):
+        raise Exception("Input patterns and patterns inside dataframe aren't of the same data types.")
+
+    ngrams_df['score'] = ngrams_df['pattern'].map(
+        lambda cell: 100 * algorithm.similarity(key_pattern, cell), na_action='ignore')
+    return ngrams_df
+
+def plot_close_match_levenshtein_heatmap(ngrams_df, key_pattern, algorithm, ngrams_duration=None,
+                                        selected_patterns=[], voices=[], heatmap_width=800, heatmap_height=300):
+    """
+    Plot how closely the other vectors match a selected vector.
+    Uses the Levenshtein distance.
+    :param algorithm: levenshtein object.
+    :param ngrams_df: crim-intervals getNgram's output
+    :param key_pattern: a pattern the users selected to compare other patterns with (tuple of floats)
+    :param selected_pattern: the specific other vectors the users selected
+    :param ngrams_duration: if None, simply output the offsets. If the users input a
+    list of durations, caculate the end by adding durations with offsets and
+    display the end on the heatmap accordingly.
+    :param selected_patterns: list of specific patterns the users want (optional)
+    :param voices: list of specific voices the users want (optional)
+    :param heatmap_width: the width of the final heatmap (optional)
+    :param heatmap_height: the height of the final heatmap (optional)
+    :return: a bar chart that displays the different patterns and their counts,
+    and a heatmap with the start offsets of chosen voices / patterns
+    """
+
+    ngrams = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration, selected_pattern=selected_patterns,
+                               voices=voices)
+    ngrams.dropna(how='any', inplace=True)
+    # calculate the score
+    key_pattern = _close_match_helper(key_pattern)
+    score_ngrams = _close_match(ngrams, key_pattern, algorithm=algorithm)
+
+    # slider = alt.binding_range(min=0, max=100, step=1, name='cutoff:')
+    # selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
+    #                                 bind=slider, init={'cutoff': 50})
+    #
+    # heatmap = create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
+    #                       alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
+    #
+    # score_histogram = create_bar_chart('count(score)', 'score', color=alt.value('#1f77b4'),
+    #                                    data=score_ngrams, condition=alt.datum.score >= selector.cutoff)
+
+    return score_ngrams
+
 # Network visualizations
 def process_network_df(df, interval_column_name, ema_column_name):
     """

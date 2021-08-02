@@ -109,6 +109,7 @@ def test_plot_ngrams_heatmap():
 
 
 def helper_test_close_match_(model, notes):
+    print(model)
     ngrams = model.getNgrams(df=notes, n=5)
     popular_patterns = ngrams.stack().dropna().value_counts().head(5).index.to_list()
     score_df = model.getDistance(df=ngrams)

@@ -6,11 +6,8 @@ import altair as alt
 import pandas as pd
 import re
 
-from fractions import Fraction
 from ipywidgets import interact, fixed
 from pyvis.network import Network
-from strsimpy.normalized_levenshtein import NormalizedLevenshtein
-from close_match import NormalizedWeightedIntervalLevenshtein
 
 # pre-assigned relationship weights for different type of relationships
 RELATIONSHIP_WEIGHTS = {

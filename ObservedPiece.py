@@ -58,6 +58,15 @@ PEN = ['1-10/1,1-4,1-4,1-4,2-4,2-4,3-4,3-4,4,4/@1-3,@1-3+@all+@all+@all,@1-3+@1-
  '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1',
  '1-10/1,1,1-2,1-2,2-3,2-3,3-4,3-4,4,4/@1-3,@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3+@1-3,@1+@1-3,@1-3,@1']
 
+CADENCE = ['50-53/1,1,1+3,1+3/@4,@1.5-4,@1-4+@3,@1+@1', # checked
+         '23-24/2-3,2-3/@1+@1-4,@1-3+@1-3', # checked
+         '33-35/1-2,1-2,1-2/@4+@4,@1-4+@1-3,@1+@1', # checked
+         '59-60/1-2,1-3/@2-4+@2-3,@1+@1+@1', # checked
+         '64-65/3-4,3-4/@2-4+@2-3,@1+@1', # checked
+         '52-53/1+3,1+3/@2-4+@2-3,@1+@1',
+         '52-53/1+3,1+3/@2-4+@3,@1+@1',
+         '64-65/3-4,1+3-4/@2-4+@2-3,@1+@1+@1']
+
 class ObservedPiece(ImportedPiece):
     """
     This class allows users to extract and evaluate observations within a piece
@@ -137,7 +146,18 @@ class ObservedPiece(ImportedPiece):
             chosenNotesDf.loc[(measure, start), [voice, 'offset']] = measureBeatDf.loc[(measure, start), [voice, 'offset']]
     
     
-    def getNotesFromEma(self, ema, chosenNotesDf):
+    def getNotesFromEma(self, ema):
+        """
+        Get dataframe of M21 notes objects that are included in the ema address.
+        :param ema: ema address
+        :return: dataframe with chosen notes.
+        """
+
+        # create an empty dataframe with the m21objects columns and index to later
+        # fill it with chosen notes
+        m21Objs = self._getMeasureBeatM21ObjsNoTies()
+        chosenM21Objs = pd.DataFrame(index=m21Objs.index.copy(), columns=m21Objs.columns.copy())
+
         # first, split
         measure, staves, beats = ema.split("/")
     
@@ -157,9 +177,8 @@ class ObservedPiece(ImportedPiece):
             for j in range(len(newStaff[i])):
                 measureNumber = measure[i]
                 staff = newStaff[i][j]
-                for beatExpression in beat:
-                    self._processBeat(measureNumber, self.stavesToVoices[staff], beatExpression, chosenNotesDf)
-        return chosenNotesDf
+                self._processBeat(measureNumber, self.stavesToVoices[staff], beat[j], chosenM21Objs)
+        return chosenM21Objs
     
     def _getMelodicIntervals(self, m21objs, kind='z'):
         kind = kind[0].lower()
@@ -212,13 +231,18 @@ class ObservedPiece(ImportedPiece):
         return df
     
     def getNgramsFromEma(self, ema, interval='m', kind='z'):
+        """
+        This method outputs a dataframe of ngrams in the ema address.
+        :param ema: the ema address
+        :param interval: the type of interval the users want the ngrams to be
+        ('m' for melodic and 'h' for harmonic intervals)
+        :param kind: the settings for the interval. Users could put in 'z'
+        for directed, compound, zero-indexed diatonic intervals, or 'c' for
+        directed, compound, chromatic intervals.
+        :return: a dataframe of ngrams of intervals of the selected types.
+        """
     
-        m21Objs = self._getMeasureBeatM21ObjsNoTies()
-        
-        # this dataframe contains the notes the ema address selected.
-        chosenM21Objs = pd.DataFrame(index=m21Objs.index.copy(), columns=m21Objs.columns.copy())
-    
-        chosenM21Objs = self.getNotesFromEma(ema, chosenM21Objs).dropna(how='all')
+        chosenM21Objs = self.getNotesFromEma(ema).dropna(how='all')
     
         # turn chosen objects into ngrams intervals
         chosenM21Objs.reset_index(inplace=True)
@@ -226,15 +250,23 @@ class ObservedPiece(ImportedPiece):
         chosenM21Objs.drop(columns=['Measure', 'Beat'], inplace=True)
         if interval == 'm':
             chosenM21Objs = self._getMelodicIntervals(chosenM21Objs, kind=kind)
-        else: # interval == 'h'
+        elif interval == 'h':
             chosenM21Objs = self._getHarmonicIntervals(chosenM21Objs, kind=kind)
+        else:
+            raise Exception("Please put only 'm' or 'h' for `interval`.")
 
         chosenM21Objs = ObservedPiece._createNgrams(chosenM21Objs)
-    
+
+        # add a column to know which ema a ngram belongs to
+        chosenM21Objs['ema'] = ema
+
         return chosenM21Objs
 
-examples = PEN
+examples = CADENCE
 test = ObservedPiece(model_0008)
+
+cadences = []
 for example in examples:
-    ngram = test.getNgramsFromEma(example, interval='h')
+    ngram = test.getNgramsFromEma(example, interval='m')
+    cadences.append(ngram)
 

@@ -1215,7 +1215,8 @@ class ScoreBase:
         # Detect if local file of url based on leading /
         if url in pathDict:
             pathScore = ImportedPiece(pathDict[url])
-            self.score = pathDict[url].analyses['scores']
+            self.score = pathScore
+            # self.score = pathDict[url].analyses['scores']
             print("Memoized piece detected...")
         else:
             if url[0] == '/':
@@ -1223,7 +1224,7 @@ class ScoreBase:
                     self.score = converter.subConverters.ConverterMEI().parseFile(url)
                     print("Successfully imported.")
                 except:
-                    raise Exception("Import from " + str(self.url) + " failed, please check your ath/file type")
+                    raise Exception("Import from " + str(self.url) + " failed, please check your      ath/file type")
             else:
                 try:
                     # self.score = m21.converter.parse(requests.get(self.url).text)

@@ -6,6 +6,31 @@ def get_crim_model(file):
     root = "https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/"
     return CorpusBase([root + file]).scores[0]
 
+def test_get_semi_flat_parts_name():
+    """
+    Make sure that we could have correct names for each part.
+    Somewhat make sure that we could get all parts in the score.
+    """
+    hardcoded_names = FILES_PART_NAMES
+    for i in range(len(TEST_FILES)):
+        file = TEST_FILES[i]
+        model = get_crim_model(file)
+        names = model._getPartNames()
+        for j in range(len(hardcoded_names)):
+            assert(names[j] == hardcoded_names[i][j])
+
+def test_get_note_rests():
+    for i in range(len(TEST_FILES)):
+        hardcoded_nr = pd.DataFrame(FILES_NOTE_RESTS[i])
+        file = TEST_FILES[i]
+        model = get_crim_model(file)
+        nr = model.getNoteRest()
+
+        for row in hardcoded_nr.index:
+            for col in hardcoded_nr.columns:
+                assert (hardcoded_nr.loc[row, col] == nr.loc[row, col] or
+                        (pd.isna(hardcoded_nr.loc[row, col]) and pd.isna(nr.loc[row, col])))
+
 
 def validate_ngrams_last_offsets(model, df, n, how='columnwise', other=None, held='Held',
                                  exclude=['Rest'], interval_settings=('d', True, True), unit=0):
@@ -56,6 +81,7 @@ def test_ngrams_last_offsets():
         # n=-1 mode
         validate_ngrams_last_offsets(model, mel, -1)
 
+
 def test_get_measure():
     """
     Validate getMeasure() by making sure that the measures are the same
@@ -74,6 +100,7 @@ def test_get_measure():
             for col in hardcoded_ms.columns:
                 assert hardcoded_ms.loc[row, col] == ms.loc[row, col]
 
+
 def test_get_time_signature():
     """
     Validate getTimeSignature by making sure that the time signature are the same
@@ -91,6 +118,7 @@ def test_get_time_signature():
             for col in hardcoded_ts.columns:
                 assert hardcoded_ts.loc[row, col] == ts.loc[row, col]
 
+
 def test_get_sounding_count():
     """
     Validate getSoundingCount() by making sure that the sounding count are the same
@@ -107,10 +135,13 @@ def test_get_sounding_count():
         for row in hardcoded_sc.index:
             assert hardcoded_sc.loc[row] == sc.loc[row]
 
+
 def interval_settings_helper(df, hardcoded_df):
     for row in hardcoded_df.index:
         for col in hardcoded_df.columns:
-            assert hardcoded_df.loc[row, col] == str(df.loc[row, col])
+            assert (hardcoded_df.loc[row, col] == df.loc[row, col] or
+                    (pd.isna(hardcoded_df.loc[row, col]) == pd.isna(df.loc[row, col])))
+
 
 def test_intervals_settings():
     for i in range(len(TEST_FILES)):

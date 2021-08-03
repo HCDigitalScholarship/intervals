@@ -1,6 +1,6 @@
 name: interval-test
 
-on: [push]
+on: [ push ]
 
 jobs:
   build:
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [ 3.7, 3.8, 3.9 ]
 
     steps:
       - uses: actions/checkout@v2
@@ -29,5 +29,5 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test with pytest
         run: |
-         pytest  --cov visualizations --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
-         pytest  --cov main_objs --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
+          pytest  --cov visualizations --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
+          pytest  --cov main_objs --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html

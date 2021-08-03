@@ -495,6 +495,13 @@ def _trim_and_combine_piece_ids_with_measures(df):
 
 
 def group_observations(model_series, derivative_series):
+    """
+    From pairs of model and derivative observation, output groups of pieces that are connected
+    to one another through a relationship.
+    :param model_series: the series of model ids
+    :param derivative_series: the series of derivative observation ids
+    :return: a dictionary of how one id maps to its group of pieces.
+    """
     groups = {}
     for i in model_series.index:
         x = model_series.loc[i]
@@ -507,9 +514,26 @@ def group_observations(model_series, derivative_series):
     return groups
 
 
-# TODO rename to something fancy
 def plot_relationship_network(df, color='derivative', selected_relationship_types=[], selected_model_ids=[],
                               selected_derivative_ids=[], selected_families=[]):
+    """
+    This method outputs a network of how segments are connected to one another.
+    The nodes are the segments inside pieces, labeled with <Piece ID>:<measures>.
+    The edges are labeled with the relationship between these observations.
+    :param df: dataframe containing the relationships.
+    :param color: the coloring method. If "derivative" is selected (default), the derivative observation
+    in the relationship would be colored according to the relationship type; if "model" is selected,
+    the edges and the model nodes would be colored according to the relationship types.
+    :param selected_relationship_types: a list of relationship types of interests. Only these relationships of
+    these types would be plotted.
+    :param selected_model_ids: The list of ids of pieces of interest. Only relationships with these pieces being models
+     would be included in the plot.
+    :param selected_derivative_ids: The list of ids of pieces of interest. Only relationships with these pieces being
+    derivatives would be included in the plot.
+    :param selected_families: Some pieces of interests. Then, any pieces has a direct/indirect relationship with these
+    pieces would be included in the plot.
+    :return: a network.
+    """
     # process df's piece ids and measure into one column
     df = _trim_and_combine_piece_ids_with_measures(df)
 
@@ -538,8 +562,7 @@ def plot_relationship_network(df, color='derivative', selected_relationship_type
         df = df[df['model'].isin(relatives) | df['derivative'].isin(relatives)].dropna(how='all')
 
     weights_dict = RELATIONSHIP_WEIGHTS
-    df['weight'] = df['relationship_type'].map(weights_dict,
-                                               na_action='ignore')
+    df['weight'] = df['relationship_type'].map(weights_dict, na_action='ignore')
     df['weight'].fillna(0, inplace=True)
 
     # construct the networks
@@ -566,12 +589,4 @@ def plot_relationship_network(df, color='derivative', selected_relationship_type
     nt.inherit_edge_colors(color_inheritance)
 
     return nt
-
-
-def plot_pieces_relationship_network():
-    pass
-
-
-def plot_ngram_network():
-    pass
 

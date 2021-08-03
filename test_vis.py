@@ -214,3 +214,41 @@ def test_generate_networks_and_interactive_df():
         assert len(fug_networks_filtered[key].nodes) == fug_networks_filtered_hardcoded[key][0]
         assert len(fug_networks_filtered[key].edges) == fug_networks_filtered_hardcoded[key][1]
     assert fug_widget_filtered
+
+
+def test_plot_relationship_network():
+    df = pd.DataFrame.from_dict(data=RELATIONSHIPS_DICT_EXAMPLE)
+
+    # normal relationships (use the rela dict)
+    hardcoded_nt = (53, 30)
+    nt = viz.plot_relationship_network(df)
+    assert len(nt.nodes) == hardcoded_nt[0]
+    assert len(nt.edges) == hardcoded_nt[1]
+
+    # rela type filter
+    hardcoded_non_mechanical_nt = (34, 19)
+    non_mechanical_nt = viz.plot_relationship_network(df, selected_relationship_types=['Non-mechanical transformation'])
+    assert len(non_mechanical_nt.nodes) == hardcoded_non_mechanical_nt[0]
+    assert len(non_mechanical_nt.edges) == hardcoded_non_mechanical_nt[1]
+
+    # model ids
+    hardcoded_selected_model_nt = (7, 4)
+    selected_model_nt = viz.plot_relationship_network(df, selected_model_ids=['CRIM_Model_0011'])
+    assert len(selected_model_nt.nodes) == hardcoded_selected_model_nt[0]
+    assert len(selected_model_nt.edges) == hardcoded_selected_model_nt[1]
+
+    # derivative ids
+    hardcoded_selected_derivative_nt = (11, 7)
+    selected_derivative_nt = viz.plot_relationship_network(df, selected_derivative_ids=['CRIM_Mass_0009_3',
+                                                                                        'CRIM_Mass_0009_5',
+                                                                                        'CRIM_Mass_0017_4'])
+    assert len(selected_derivative_nt.nodes) == hardcoded_selected_derivative_nt[0]
+    assert len(selected_derivative_nt.edges) == hardcoded_selected_derivative_nt[1]
+
+    # families and color according to model
+    hardcoded_selected_families_nt = (10, 6)
+    selected_families_nt = viz.plot_relationship_network(df, selected_families=['CRIM_Model_0017', 'CRIM_Mass_0009_3',
+                                                                                'CRIM_Mass_0009_5', 'CRIM_Mass_0017_4'],
+                                                         color="model")
+    assert len(selected_families_nt.nodes) == hardcoded_selected_families_nt[0]
+    assert len(selected_families_nt.edges) == hardcoded_selected_families_nt[1]

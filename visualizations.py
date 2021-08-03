@@ -268,18 +268,17 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
 
 def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, ngrams_duration=None, selected_patterns=[], voices=[],
                              heatmap_width=800, heatmap_height=300):
+    # TODO add a distance or similarity affect the direction.
     """
     Plot how closely the other vectors match a selected vector.
     Uses the Levenshtein distance.
-    :param directed:
-    :param interval_type:
     :param score_df: dataframe containing the score for each pair of patterns.
     :param ngrams_df: crim-intervals getNgram's output
-    :param key_pattern: a pattern the users selected to compare other patterns with (tuple of floats)
-    :param selected_pattern: the specific other vectors the users selected
+    :param key_pattern: a pattern the users selected to compare other patterns with (str)
+    :param selected_pattern: the specific other vectors the users selected (optional)
     :param ngrams_duration: if None, simply output the offsets. If the users input a
     list of durations, caculate the end by adding durations with offsets and
-    display the end on the heatmap accordingly.
+    display the end on the heatmap accordingly. (optional)
     :param selected_patterns: list of specific patterns the users want (optional)
     :param voices: list of specific voices the users want (optional)
     :param heatmap_width: the width of the final heatmap (optional)
@@ -294,9 +293,10 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, ngrams_duration=N
 
     ngrams['score'] = ngrams['pattern'].map(lambda cell: score_df.loc[key_pattern, cell])
 
-    slider = alt.binding_range(min=ngrams['score'].min(), max=ngrams['score'].max(), step=1, name='cutoff:')
+    slider = alt.binding_range(min=ngrams['score'].min(), max=ngrams['score'].max(), step=ngrams['score'].max() / 100,
+                               name='cutoff:')
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
-                                    bind=slider, init={'cutoff': 50})
+                                    bind=slider, init={'cutoff': 0})
 
     heatmap = create_heatmap('start', 'end', 'voice', 'score', ngrams, heatmap_width, heatmap_height,
                              alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
@@ -307,64 +307,37 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, ngrams_duration=N
     return alt.vconcat(score_histogram, heatmap)
 
 
-# def _close_match_helper(cell):
-#     # process each cell into an interator of *floats* for easy comparisons
-#
-#     if type(cell) == str:
-#         cell = cell.split(", ")
-#     return cell
-#
-#
-# def _close_match(ngrams_df, key_pattern, algorithm):
-#     ngrams_df['pattern'] = ngrams_df['pattern'].map(lambda cell: _close_match_helper(cell), na_action='ignore')
-#     # making sure that key pattern and other patterns are tuple of string or ints
-#     if not (type(ngrams_df.iloc[0, :]['pattern']) == type(key_pattern) == tuple
-#             or type(ngrams_df.iloc[0, :]['pattern'][0]) == type(key_pattern[0])):
-#         raise Exception("Input patterns and patterns inside dataframe aren't tuple of strings/ints")
-#
-#     ngrams_df['score'] = ngrams_df['pattern'].map(
-#         lambda cell: 100 * algorithm.similarity(key_pattern, cell), na_action='ignore')
-#     return ngrams_df
+def compute_levenshtein_similarity(ngram, method):
+    """
+    This method computes the similarity between patterns based on the
+    method the user selected.
+    :param ngram: dataframe containing ngrams to compare.
+    :param method: whatever comparison methods that accepts two
+    arguments. For example:
+    from strsimpy.normalized_levenshtein import NormalizedLevenshtein
+    algorithm = NormalizedLevenshtein()
+    compute_levenshtein_similarity(ngram, algorithm.similarity)
+    :return: a multi-indexed series containing scores indexed with
+    its two patterns.
+    """
+    uni = ngram.stack().unique()
+    ser = pd.Series(uni)
+    # turn the values into tuples for higher accuracy
+    ser = ser.map(lambda cell: tuple(cell.split(", ")))
 
-# def plot_close_match_levenshtein_heatmap(ngrams_df, key_pattern, algorithm, ngrams_duration=None,
-#                                         selected_patterns=[], voices=[], heatmap_width=800, heatmap_height=300):
-#     """
-#     Plot how closely the other vectors match a selected vector.
-#     Uses the Levenshtein distance.
-#     :param algorithm: levenshtein object.
-#     :param ngrams_df: crim-intervals getNgram's output
-#     :param key_pattern: a pattern the users selected to compare other patterns with (tuple of floats)
-#     :param selected_pattern: the specific other vectors the users selected
-#     :param ngrams_duration: if None, simply output the offsets. If the users input a
-#     list of durations, caculate the end by adding durations with offsets and
-#     display the end on the heatmap accordingly.
-#     :param selected_patterns: list of specific patterns the users want (optional)
-#     :param voices: list of specific voices the users want (optional)
-#     :param heatmap_width: the width of the final heatmap (optional)
-#     :param heatmap_height: the height of the final heatmap (optional)
-#     :return: a bar chart that displays the different patterns and their counts,
-#     and a heatmap with the start offsets of chosen voices / patterns
-#     """
-#
-#     ngrams = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration, selected_pattern=selected_patterns,
-#                                voices=voices)
-#     ngrams.dropna(how='any', inplace=True)
-#     # calculate the score
-#     key_pattern = _close_match_helper(key_pattern)
-#     score_ngrams = _close_match(ngrams, key_pattern, algorithm=algorithm)
-#
-#     # slider = alt.binding_range(min=0, max=100, step=1, name='cutoff:')
-#     # selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
-#     #                                 bind=slider, init={'cutoff': 50})
-#     #
-#     # heatmap = create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
-#     #                       alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
-#     #
-#     # score_histogram = create_bar_chart('count(score)', 'score', color=alt.value('#1f77b4'),
-#     #                                    data=score_ngrams, condition=alt.datum.score >= selector.cutoff)
-#
-#     return score_ngrams
+    # compute the score
+    index = pd.MultiIndex.from_product([ser, ser], names=["pattern", "other"])
+    score_df = pd.DataFrame(index=index)
+    score_df['score'] = index.map(lambda cell: method(cell[0], cell[1]))
 
+    # turn patterns back into string for ease of use
+    score_df.reset_index(inplace=True)
+    score_df[['pattern', 'other']] = score_df[['pattern', 'other']].applymap(
+        lambda cell: ", ".join(item for item in cell),
+        na_action="ignore")
+    score_df.set_index(keys=['pattern', 'other'], inplace=True)
+
+    return score_df['score']
 
 # Network visualizations
 def process_network_df(df, interval_column_name, ema_column_name):

@@ -156,10 +156,10 @@ def test_intervals_settings():
         # TODO hardcoded melodic test
 
 
-def helper_test_observed_piece(model, emas, hardcoded_ema_ngrams):
+def helper_test_observed_piece(model, emas, hardcoded_ema_ngrams, interval, kind):
     # model = ObservedPiece(model_0008)
     for i, ema in enumerate(emas):
-        emaNgram = model.getNgramsFromEma(ema, kind='z')
+        emaNgram = model.getNgramsFromEma(ema, interval=interval, kind=kind)
         hardcodedEma = pd.DataFrame.from_dict(hardcoded_ema_ngrams[i])
         # there could be observations which don't result in an interval
         assert emaNgram.equals(hardcodedEma) or len(emaNgram) == len(hardcodedEma) == 0
@@ -167,7 +167,9 @@ def helper_test_observed_piece(model, emas, hardcoded_ema_ngrams):
 
 def test_get_ngram_to_ema():
     model = ObservedPiece(model_0008)
-    helper_test_observed_piece(model, PEN, HARDCODED_PEN)
-    helper_test_observed_piece(model, FUGA, HARDCODED_FUGA)
-    helper_test_observed_piece(model, RANDOM, HARDCODED_RANDOM)
-    helper_test_observed_piece(model, CADENCE, HARDCODED_CADENCE)
+    helper_test_observed_piece(model, PEN, HARCODED_DIATONIC_PEN, 'm', 'z')
+    helper_test_observed_piece(model, FUGA, HARCODED_DIATONIC_FUGA, 'm', 'z')
+    helper_test_observed_piece(model, FUGA, HARDCODED_CHROMATIC_FUGA, 'm', 'c')
+    helper_test_observed_piece(model, RANDOM, HARCODED_DIATONIC_RANDOM, 'm', 'z')
+    helper_test_observed_piece(model, CADENCE, HARCODED_DIATONIC_CADENCE, 'm', 'z')
+    helper_test_observed_piece(model, CADENCE, HARDCODED_HARMONIC_CADENCE, 'h', 'z')

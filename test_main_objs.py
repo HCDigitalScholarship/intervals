@@ -1,9 +1,13 @@
 from main_objs import *
 from test_constants import *
 
+from ObservedPiece import ObservedPiece
+
+
 def get_crim_model(file):
     root = "https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/"
     return CorpusBase([root + file]).scores[0]
+
 
 def validate_ngrams_last_offsets(model, df, n, how='columnwise', other=None, held='Held',
                                  exclude=['Rest'], interval_settings=('d', True, True), unit=0):
@@ -150,3 +154,20 @@ def test_intervals_settings():
 
         # melodic
         # TODO hardcoded melodic test
+
+
+def helper_test_observed_piece(model, emas, hardcoded_ema_ngrams):
+    # model = ObservedPiece(model_0008)
+    for i, ema in enumerate(emas):
+        emaNgram = model.getNgramsFromEma(ema, kind='z')
+        hardcodedEma = pd.DataFrame.from_dict(hardcoded_ema_ngrams[i])
+        # there could be observations which don't result in an interval
+        assert emaNgram.equals(hardcodedEma) or len(emaNgram) == len(hardcodedEma) == 0
+
+
+def test_get_ngram_to_ema():
+    model = ObservedPiece(model_0008)
+    helper_test_observed_piece(model, PEN, HARDCODED_PEN)
+    helper_test_observed_piece(model, FUGA, HARDCODED_FUGA)
+    helper_test_observed_piece(model, RANDOM, HARDCODED_RANDOM)
+    helper_test_observed_piece(model, CADENCE, HARDCODED_CADENCE)

@@ -266,21 +266,20 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
     return chart
 
 
-def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, ngrams_duration=None, compare='d',
+def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, compare, ngrams_duration=None,
                              selected_patterns=[], voices=[], heatmap_width=800, heatmap_height=300):
     """
     Plot how closely the other vectors match a selected vector.
     Uses the Levenshtein distance.
-    :param score_df: dataframe containing the score for each pair of patterns.
     :param ngrams_df: crim-intervals getNgram's output
     :param key_pattern: a pattern the users selected to compare other patterns with (str)
-    :param selected_pattern: the specific other vectors the users selected (optional)
-    :param ngrams_duration: if None, simply output the offsets. If the users input a
-    list of durations, caculate the end by adding durations with offsets and
-    display the end on the heatmap accordingly. (optional)
+    :param score_df: dataframe containing the score for each pair of patterns.
     :param compare: 'd' if compare distance, 's' if compare similarity. The chart
     would be colored bolder if the pattern are more different/similar based on the
     parameters.
+    :param ngrams_duration: if None, simply output the offsets. If the users input a
+    list of durations, calculate the end by adding durations with offsets and
+    display the end on the heatmap accordingly. (optional)
     :param selected_patterns: list of specific patterns the users want (optional)
     :param voices: list of specific voices the users want (optional)
     :param heatmap_width: the width of the final heatmap (optional)
@@ -306,11 +305,13 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, ngrams_duration=N
     elif compare == 's':
         filter = alt.datum.score > selector.cutoff
         color = alt.Color(shorthand="score", sort="ascending")
+    else:
+        raise Exception("Please input 'd' for distance and 's' for similarity!")
 
     heatmap = create_heatmap('start', 'end', 'voice', color, ngrams, heatmap_width, heatmap_height,
                              filter, selector, tooltip=['start', 'end', 'pattern', 'score'])
 
-    score_histogram = create_bar_chart('count(score)', 'score', color=alt.value('#1f77b4'),
+    score_histogram = create_bar_chart('count(score)', 'score', color='score',
                                        data=ngrams, condition=filter)
 
     return alt.vconcat(score_histogram, heatmap)

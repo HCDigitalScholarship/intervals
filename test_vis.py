@@ -108,35 +108,36 @@ def test_plot_ngrams_heatmap():
     ngrams_heatmap_test_helper(model, mel_diatonic)
 
 
-def helper_test_close_match_(model, notes):
-    print(model)
-    ngrams = model.getNgrams(df=notes, n=5)
-    popular_patterns = ngrams.stack().dropna().value_counts().head(5).index.to_list()
-    score_df = model.getDistance(df=ngrams)
-    for i in range(5):
-        chart = viz.plot_close_match_heatmap(ngrams, popular_patterns[i], score_df)
-        assert isinstance(chart, alt.VConcatChart)
-        assert len(chart.vconcat) == 2
-        assert isinstance(chart.vconcat[0], alt.Chart)
-        assert isinstance(chart.vconcat[1], alt.Chart)
-        assert len(chart.data) >= 0
-
-
-def test_plot_close_match_heatmap():
-    """
-    Make sure that plot_close_match_heatmap generate appropriate
-    chart visualizations for the tw2o mode that getDistance could be used upon
-    ('z', directed, compound) and ('c', directed, compound)
-    """
-    corpus = CorpusBase([EXAMPLE_CRIM_FILE])
-    model = corpus.scores[0]
-
-    # ngrams in diatonics
-    mel_diatonic = model.getMelodic(kind='z', directed=True, compound=True, unit=0)
-    helper_test_close_match_(model, mel_diatonic)
-
-    mel_chromatic = model.getMelodic(kind='c', directed=True, compound=True, unit=0)
-    helper_test_close_match_(model, mel_chromatic)
+# TODO rewrite!!!
+# def helper_test_close_match_(model, notes):
+#     print(model)
+#     ngrams = model.getNgrams(df=notes, n=5)
+#     popular_patterns = ngrams.stack().dropna().value_counts().head(5).index.to_list()
+#     score_df = model.getDistance(df=ngrams)
+#     for i in range(5):
+#         chart = viz.plot_close_match_heatmap(ngrams, popular_patterns[i], score_df)
+#         assert isinstance(chart, alt.VConcatChart)
+#         assert len(chart.vconcat) == 2
+#         assert isinstance(chart.vconcat[0], alt.Chart)
+#         assert isinstance(chart.vconcat[1], alt.Chart)
+#         assert len(chart.data) >= 0
+#
+#
+# def test_plot_close_match_heatmap():
+#     """
+#     Make sure that plot_close_match_heatmap generate appropriate
+#     chart visualizations for the tw2o mode that getDistance could be used upon
+#     ('z', directed, compound) and ('c', directed, compound)
+#     """
+#     corpus = CorpusBase([EXAMPLE_CRIM_FILE])
+#     model = corpus.scores[0]
+#
+#     # ngrams in diatonics
+#     mel_diatonic = model.getMelodic(kind='z', directed=True, compound=True, unit=0)
+#     helper_test_close_match_(model, mel_diatonic)
+#
+#     mel_chromatic = model.getMelodic(kind='c', directed=True, compound=True, unit=0)
+#     helper_test_close_match_(model, mel_chromatic)
 
 
 def test_comparisons_heatmap():
@@ -146,7 +147,7 @@ def test_comparisons_heatmap():
     # pieces
     df_relationships = pd.DataFrame(RELATIONSHIPS_DICT_EXAMPLE)
     relationships_chart = viz.plot_comparison_heatmap(df_relationships, 'model_observation.ema',
-                                main_category='relationship_type',other_category='observer.name',
+                                                      main_category='relationship_type', other_category='observer.name',
                                 heat_map_width=800, heat_map_height=300)
     assert isinstance(relationships_chart, alt.VConcatChart)
     assert len(relationships_chart.vconcat) == 2

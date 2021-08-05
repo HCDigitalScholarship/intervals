@@ -317,7 +317,7 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, compare, ngrams_d
     return alt.vconcat(score_histogram, heatmap)
 
 
-def compute_levenshtein_similarity(ngram, method):
+def score_ngram(ngram, method):
     """
     This method computes the similarity between patterns based on the
     method the user selected.
@@ -326,7 +326,7 @@ def compute_levenshtein_similarity(ngram, method):
     arguments. For example:
     from strsimpy.normalized_levenshtein import NormalizedLevenshtein
     algorithm = NormalizedLevenshtein()
-    compute_levenshtein_similarity(ngram, algorithm.similarity)
+    score_ngram(ngram, algorithm.similarity)
     :return: a multi-indexed series containing scores indexed with
     its two patterns.
     """

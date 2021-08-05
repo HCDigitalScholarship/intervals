@@ -1,6 +1,10 @@
 """
 This file contains unit tests for visualizations.
  pytest --cov visualizations test_vis.py --cov-report term-missing
+
+
+UNIT TESTING DOC GUIDE LINE
+ what is being tested, the situation under test and the expected behavior. For example:
 """
 
 import altair as alt
@@ -90,8 +94,6 @@ def ngrams_heatmap_test_helper(model, notes):
     dur_chart_multiple = viz.plot_ngrams_heatmap(ngrams_multiple, ngrams_duration=duration)
     ngrams_heatmap_chart(dur_chart_multiple)
 
-
-
 def test_plot_ngrams_heatmap():
     """
     Validate the ngram's heatmap's results when this method
@@ -108,36 +110,36 @@ def test_plot_ngrams_heatmap():
     ngrams_heatmap_test_helper(model, mel_diatonic)
 
 
-# TODO rewrite!!!
-# def helper_test_close_match_(model, notes):
-#     print(model)
-#     ngrams = model.getNgrams(df=notes, n=5)
-#     popular_patterns = ngrams.stack().dropna().value_counts().head(5).index.to_list()
-#     score_df = model.getDistance(df=ngrams)
-#     for i in range(5):
-#         chart = viz.plot_close_match_heatmap(ngrams, popular_patterns[i], score_df)
-#         assert isinstance(chart, alt.VConcatChart)
-#         assert len(chart.vconcat) == 2
-#         assert isinstance(chart.vconcat[0], alt.Chart)
-#         assert isinstance(chart.vconcat[1], alt.Chart)
-#         assert len(chart.data) >= 0
-#
-#
-# def test_plot_close_match_heatmap():
-#     """
-#     Make sure that plot_close_match_heatmap generate appropriate
-#     chart visualizations for the tw2o mode that getDistance could be used upon
-#     ('z', directed, compound) and ('c', directed, compound)
-#     """
-#     corpus = CorpusBase([EXAMPLE_CRIM_FILE])
-#     model = corpus.scores[0]
-#
-#     # ngrams in diatonics
-#     mel_diatonic = model.getMelodic(kind='z', directed=True, compound=True, unit=0)
-#     helper_test_close_match_(model, mel_diatonic)
-#
-#     mel_chromatic = model.getMelodic(kind='c', directed=True, compound=True, unit=0)
-#     helper_test_close_match_(model, mel_chromatic)
+def helper_test_close_match_(model, notes):
+    ngrams = model.getNgrams(df=notes, n=5)
+    popular_patterns = ngrams.stack().dropna().value_counts().head(5).index.to_list()
+    score_df = model.getDistance(df=ngrams)
+    ngrams_dur = model.getDuration(df=notes, mask_df=ngrams, n=5)
+    for i in range(5):
+        chart = viz.plot_close_match_heatmap(ngrams, popular_patterns[i], score_df, 'd',
+                                             ngrams_dur)
+        assert isinstance(chart, alt.VConcatChart)
+        assert len(chart.vconcat) == 2
+        assert isinstance(chart.vconcat[0], alt.Chart)
+        assert isinstance(chart.vconcat[1], alt.Chart)
+        assert len(chart.data) >= 0
+
+
+def test_plot_close_match_heatmap():
+    """
+    Make sure that plot_close_match_heatmap generate appropriate
+    chart visualizations for the tw2o mode that getDistance could be used upon
+    ('z', directed, compound) and ('c', directed, compound)
+    """
+    corpus = CorpusBase([EXAMPLE_CRIM_FILE])
+    model = corpus.scores[0]
+
+    # ngrams in diatonics
+    mel_diatonic = model.getMelodic(kind='z', directed=True, compound=True, unit=0)
+    helper_test_close_match_(model, mel_diatonic)
+
+    mel_chromatic = model.getMelodic(kind='c', directed=True, compound=True, unit=0)
+    helper_test_close_match_(model, mel_chromatic)
 
 
 def test_comparisons_heatmap():
@@ -154,11 +156,19 @@ def test_comparisons_heatmap():
 
     df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
     observations_chart = viz.plot_comparison_heatmap(df_observations, 'ema',
-                                main_category='musical_type',other_category='observer.name',
-                                heat_map_width=800, heat_map_height=300)
+                                                     main_category='musical_type', other_category='observer.name',
+                                                     heat_map_width=800, heat_map_height=300)
     assert isinstance(observations_chart, alt.VConcatChart)
     assert len(observations_chart.vconcat) == 2
 
+
+# def test_score_ngram():
+#     """
+#     This method ensures that viz.score_ngram's output match the hardcoded
+#     result.
+#     """
+#
+#     # TODO retrieve ngram
 
 def test_generate_networks_and_interactive_df():
     """
@@ -218,6 +228,10 @@ def test_generate_networks_and_interactive_df():
 
 
 def test_plot_relationship_network():
+    """
+    Make sure that viz.plot_relationship_network's output matches the hardcoded
+    number of edges and nodes.
+    """
     df = pd.DataFrame.from_dict(data=RELATIONSHIPS_DICT_EXAMPLE)
 
     # normal relationships (use the rela dict)

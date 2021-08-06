@@ -794,6 +794,11 @@ class ImportedPiece:
             return pd.DataFrame()
 
     def classifyModules(self):
+        '''
+        This method is under active development. It finds and classifies
+        points of imitation according the nature of their repeating harmonic and
+        melodic counterpoint.
+        '''
         nr = self.getNoteRest()
         mnr = self.getNgrams(df=nr, n=-1)
         mnrDur = self.getDuration(df=nr, n=-1, mask_df=mnr)
@@ -802,7 +807,7 @@ class ImportedPiece:
         har = self.getHarmonic('d', True, 'simple')
         maxMel = self.getNgrams(df=mel, n=-1)
         n4 = self.getNgrams(df=har, how='modules', n=4)
-        d4 = self.getNgramDuration(n4, n=4)
+        d4 = self.getDuration(df=har, n=4, mask_df=n4)
         maxn = self.getNgrams(how='modules', interval_settings=('d', True, 'simple'), n=-1)
         stack = maxn.stack()
         vc = stack.value_counts()
@@ -810,11 +815,9 @@ class ImportedPiece:
         # ngrams should be a minimum of 3 units long
         mask = repeated.index.map(lambda cell: ((cell.count(', ')) >= 2) and (cell.count('_') > cell.count('_Held')))
         threePlus = repeated[mask]
-        # print('Num unique ngrams that repeat where n is at least 3:', len(threePlus))
         modRefNum = 1
         pairs = []
         for module in threePlus.index:
-            # print('Working on this module:', module)
             hits = stack[stack == module]
             found = False
             for i, labels in enumerate(hits.index[1:]):
@@ -868,54 +871,58 @@ class ImportedPiece:
             'StartingPitches', 'ModDur', 'RepDur', 'ModOffset',
             'RepOffset', 'Lag', 'Reference', 'FirstSyllable')
         res = pd.DataFrame(pairs, columns=colNames)
+        res.set_index('ModOffset', drop=False, inplace=True)
+        res.sort_index(inplace=True)
+
+        return res
         
-        mnrs = mnr.stack()
-        mnrds = mnrDur.stack()
-        nrs = nr.stack()
-        firstNote = nrs.reindex_like(mnrs)
-        lyrs = lyr.stack()
-        mmels = maxMel.stack()
-        mels = mel.stack()
-        mels = mels.reindex_like(mmels)
-        mmels.index = mnrs.index
-        mels.index = mnrs.index
-        firstW = lyrs.reindex_like(mnrs)
-        shiftPrev = firstW.shift(1)
-        shiftNext = firstW.shift(-1)
-        matchPrev = firstW == shiftPrev
-        matchNext = firstW == shiftNext
-        lags = mnrs.index.get_level_values(0)[1:] - mnrs.index.get_level_values(0)[:-1]
-        lags = pd.Series(lags, mnrs.index[1:])
-        repNdx = pd.Series(firstNote.index.get_level_values(0), firstNote.index)
-        mtiVoices = pd.Series(firstNote.index.get_level_values(1), firstNote.index)
-        mtiPitches = pd.concat([firstNote.shift(1), firstNote], axis=1).apply(tuple, axis=1)
-        refs = pd.Series()  # make this an enumeration of the points starting at modrefnum + 1
-        df = pd.concat([mels, pd.Series(), pd.Series(), mtiVoices.shift(1), mtiVoices,
-             mtiPitches, mnrds.shift(1), mnrds, repNdx.shift(1), repNdx, lags, 
-             refs, firstW], axis=1)
-        df.columns = colNames
-        dfs = df.groupby(['Module', 'FirstSyllable'])
-        mtis = []
-        for syll, point in dfs:
-            if len(point) < 3:
-                continue
-            modRefNum += 1
-            temp = point.Lag.iloc[1:] == point.Lag.iat[1]
-            if False in temp[1:].values:
-                point.Category = 'Fuga'
-            else:
-                point.Category = 'PEn'
-            point.Reference = modRefNum
-            mtis.append(point[1:])
-        res2 = pd.concat(mtis)
-        res2.set_index(['ModOffset', 'ModVoices'], drop=False, inplace=True)
-        result = pd.concat([res, res2])
-        result.set_index('ModOffset', drop=False, inplace=True)
-        result.sort_index(level=0, inplace=True)
-        result = result[result.Lag > 0]
-        result = result[result.ModVoices != result.RepVoices]
-        result = result[result.Lag < 50]
-        return result
+        # mnrs = mnr.stack()
+        # mnrds = mnrDur.stack()
+        # nrs = nr.stack()
+        # firstNote = nrs.reindex_like(mnrs)
+        # lyrs = lyr.stack()
+        # mmels = maxMel.stack()
+        # mels = mel.stack()
+        # mels = mels.reindex_like(mmels)
+        # mmels.index = mnrs.index
+        # mels.index = mnrs.index
+        # firstW = lyrs.reindex_like(mnrs)
+        # shiftPrev = firstW.shift(1)
+        # shiftNext = firstW.shift(-1)
+        # matchPrev = firstW == shiftPrev
+        # matchNext = firstW == shiftNext
+        # lags = mnrs.index.get_level_values(0)[1:] - mnrs.index.get_level_values(0)[:-1]
+        # lags = pd.Series(lags, mnrs.index[1:])
+        # repNdx = pd.Series(firstNote.index.get_level_values(0), firstNote.index)
+        # mtiVoices = pd.Series(firstNote.index.get_level_values(1), firstNote.index)
+        # mtiPitches = pd.concat([firstNote.shift(1), firstNote], axis=1).apply(tuple, axis=1)
+        # refs = pd.Series()  # make this an enumeration of the points starting at modrefnum + 1
+        # df = pd.concat([mels, pd.Series(), pd.Series(), mtiVoices.shift(1), mtiVoices,
+        #      mtiPitches, mnrds.shift(1), mnrds, repNdx.shift(1), repNdx, lags, 
+        #      refs, firstW], axis=1)
+        # df.columns = colNames
+        # dfs = df.groupby(['Module', 'FirstSyllable'])
+        # mtis = []
+        # for syll, point in dfs:
+        #     if len(point) < 3:
+        #         continue
+        #     modRefNum += 1
+        #     temp = point.Lag.iloc[1:] == point.Lag.iat[1]
+        #     if False in temp[1:].values:
+        #         point.Category = 'Fuga'
+        #     else:
+        #         point.Category = 'PEn'
+        #     point.Reference = modRefNum
+        #     mtis.append(point[1:])
+        # res2 = pd.concat(mtis)
+        # res2.set_index(['ModOffset', 'ModVoices'], drop=False, inplace=True)
+        # result = pd.concat([res, res2])
+        # result.set_index('ModOffset', drop=False, inplace=True)
+        # result.sort_index(level=0, inplace=True)
+        # result = result[result.Lag > 0]
+        # result = result[result.ModVoices != result.RepVoices]
+        # result = result[result.Lag < 50]
+        # return result
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come

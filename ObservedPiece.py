@@ -8,7 +8,7 @@ from urllib.request import urlopen
 
 class ObservedPiece(ImportedPiece):
     """
-    This class allows users to extract and evaluate observations within a piece
+    This class allows users to extract and evaluate observations within a piece.
     """
 
     def __init__(self, scoreAddress):
@@ -26,6 +26,7 @@ class ObservedPiece(ImportedPiece):
             self.stavesToVoices[staffNum] = voice
 
     def _getMeasureBeatM21ObjsNoTies(self):
+        """Retrieve an dataframe of m21 objects indexed by measures and beats."""
         if not 'MeasureBeatM21ObjsNoTies' in self.observationsAnalyses:
             m21Objs = self._getM21ObjsNoTies().copy()
             m21Objs['offset'] = m21Objs.index.copy()
@@ -41,10 +42,7 @@ class ObservedPiece(ImportedPiece):
         return list(range(start, end + 1))
     
     def _processMeasure(measureExpression):
-        """
-        Process the measures expression list of measures
-        of numbers
-        """
+        """Process the ema measures expression"""
         result = []
         measureExpression = measureExpression.split(",")
         for item in measureExpression:
@@ -56,6 +54,7 @@ class ObservedPiece(ImportedPiece):
     
     
     def _processStaffRange(staffExpression):
+        """Process the ema staff expression"""
         result = []
         staffExpression = staffExpression.split("+")
         for item in staffExpression:
@@ -66,7 +65,8 @@ class ObservedPiece(ImportedPiece):
         return result
 
     def _processBeat(self, measure, voice, staffBeat, chosenNotesDf):
-        """From the measure, and the stave number, return the offsets of the notes of interest"""
+        """From the measure, and the stave number, return the offsets of
+        the notes of interest"""
         for beatExpression in staffBeat.split("@"):
             if beatExpression == '':
                 continue
@@ -89,9 +89,9 @@ class ObservedPiece(ImportedPiece):
     
     def getNotesFromEma(self, ema):
         """
-        Get dataframe of M21 notes objects that are included in the ema address.
+        Outputs the m21 notes and rests that the ema address selected
         :param ema: ema address
-        :return: dataframe with chosen notes.
+        :return: dataframe with chosen notes
         """
 
         # create an empty dataframe with the m21objects columns and index to later
@@ -122,6 +122,7 @@ class ObservedPiece(ImportedPiece):
         return chosenM21Objs
     
     def _getMelodicIntervals(self, m21objs, kind='z'):
+        """Retrieve melodic intervals from a dataframe of m21 objects"""
         kind = kind[0].lower()
         kind = {'s': 'c'}.get(kind, kind)
         _kind = {'z': 'd'}.get(kind, kind)
@@ -135,6 +136,8 @@ class ObservedPiece(ImportedPiece):
         return df
 
     def _getHarmonicIntervals(self, m21Objs, kind='z'):
+        """Retrieve harmonic intervals from dataframe of m21 objects,
+        borrowed from ImportedPiece _getM21HarmonicIntervals method."""
         kind = kind[0].lower()
         kind = {'s': 'c'}.get(kind, kind)
         _kind = {'z': 'd'}.get(kind, kind)
@@ -159,6 +162,7 @@ class ObservedPiece(ImportedPiece):
         return dfHar
 
     def _createNgramsHelper(ser):
+        """Return a ngram of selected intervals from series"""
         ser.dropna(inplace=True)
         if len(ser) > 0:
             offset = ser.index[0]
@@ -166,8 +170,10 @@ class ObservedPiece(ImportedPiece):
             return pd.Series([ngram], index=[offset], name=ser.name)
         else:
             return pd.Series(dtype='float64')
-    
+
     def _createNgrams(chosenM21Objs):
+        """From a dataframe of selected notes, create an ngram for each voice
+        with all of the selected notes"""
         df = chosenM21Objs.apply(lambda ser: ObservedPiece._createNgramsHelper(ser))
         return df
     

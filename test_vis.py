@@ -12,7 +12,10 @@ import pandas as pd
 import visualizations as viz
 
 from main_objs import CorpusBase
+from strsimpy.levenshtein import Levenshtein
+from strsimpy.weighted_levenshtein import WeightedLevenshtein
 from test_constants import EXAMPLE_CRIM_FILE, OBSERVATIONS_DICT_EXAMPLE, RELATIONSHIPS_DICT_EXAMPLE
+
 
 def ngrams_heatmap_chart(chart):
     """
@@ -169,13 +172,58 @@ def test_comparisons_heatmap():
     assert len(observations_chart.vconcat) == 2
 
 
-# def test_score_ngram():
-#     """
-#     This method ensures that viz.score_ngram's output match the hardcoded
-#     result.
-#     """
-#
-#     # TODO retrieve ngram
+def helper_substitution_cost(char_a, char_b):
+    """Helper substitution method to weight substitution less than insertion
+    or deletion"""
+    return 0.5
+
+
+def test_score_ngram():
+    """
+    This method test viz.score_ngram with fixed length ngrams and variable length
+    ngrams, and two algorithms (Levenshtein and Weighted Levenshtein) by
+    calculating the scores and comparing the results against some hardcoded scores.
+    """
+    model = CorpusBase([EXAMPLE_CRIM_FILE]).scores[0]
+    # hardcoded Levenshtein distance scores for ngrams of length 5 in Model 17
+    some_hardcoded_ngrams_fixed_score = {('P1, M2, M2, m2, -P4', 'P1, M2, M2, m2, -P4'): 0.0,
+                                         ('P1, M2, M2, m2, -P4', 'M2, M2, m2, -P4, P8'): 2.0,
+                                         ('-P4, P5, -P4, M2, m2', '-M2, -M2, -M2, -m2, m2'): 4.0,
+                                         ('-m3, m2, -m3, M2, -M2', '-m3, m2, -m3, M2, -M2'): 0.0,
+                                         ('M2, M2, -P5, P5, -M2', 'M2, M2, -P5, P5, -M2'): 0.0}
+    # hardcoded Weighted Levenshtein distance score for nrgams of variable lengths
+    # in model 17
+    some_hardcoded_ngrams_variable_score = {('1, 2, 2, 2, -4, 8, -2, -2, 2, -3, -2, 2, 2, 2, 2, 2, -3, 2',
+                                             '1, 2, 2, 2, -4, 8, -2, -2, 2, -3, -2, 2, 2, 2, 2, 2, -3, 2'): 0.0, (
+                                                '1, 2, 2, 2, -4, 8, -2, -2, 2, -3, -2, 2, 2, 2, 2, 2, -3, 2',
+                                                '1, 2, 1, 2, -3'): 13.5, (
+                                                '2, -2, -2, -2, 2, 2, 2, 2, 2, 2, -3, 2, 3, -2, -2, -3, 3, -2, -2, -2, 2',
+                                                '2, -2, -2, -2, 2, 2, 2, 2, 2, 2, -3, 2, 3, -2, -2, -3, 3, -2, -2, -2, 2'): 0.0,
+                                            ('-4, 3, -4, 5', '-4, 3, -4, 5'): 0.0, (
+                                                '2, -5, 2, 2, 2, 2, -5, 2, 2, 2, 2, -5, 5, -2',
+                                                '2, -5, 2, 2, 2, 2, -5, 2, 2, 2, 2, -5, 5, -2'): 0.0}
+
+    # ngrams fixed length length
+    nl = Levenshtein()
+    ngrams_fixed = model.getNgrams(df=model.getMelodic(), n=5)
+
+    score_fixed = viz.score_ngram(ngrams_fixed, nl.distance)
+
+    hardcoded_score_fixed = pd.Series(some_hardcoded_ngrams_fixed_score)
+    for pattern, other in hardcoded_score_fixed.index:
+        assert (score_fixed.loc[pattern, other] == hardcoded_score_fixed.loc[pattern, other])
+
+    # ngram different lengths, weighted
+    wl = WeightedLevenshtein(substitution_cost_fn=helper_substitution_cost)
+    ngrams_variable = model.getNgrams(df=model.getMelodic(kind='d'), n=-1)
+
+    score_variable = viz.score_ngram(ngrams_variable, wl.distance)
+
+    hardcoded_score_variable = pd.Series(some_hardcoded_ngrams_variable_score)
+    for pattern, other in hardcoded_score_variable.index:
+        assert (score_variable.loc[pattern, other] ==
+                hardcoded_score_variable.loc[pattern, other])
+
 
 def test_generate_networks_and_interactive_df():
     """
@@ -234,8 +282,7 @@ def test_generate_networks_and_interactive_df():
 def test_plot_relationship_network():
     """
     test viz.plot_relationship_network with different parameters (selected_relationship_types, selected_model_ids,
-     selected_derivative_ids) and confirm that its output network matches the number
-    number of edges and nodes.
+    selected_derivative_ids) and confirm that its output network matches the hardcoded number of nodes and edges
     """
     df = pd.DataFrame.from_dict(data=RELATIONSHIPS_DICT_EXAMPLE)
 

@@ -319,11 +319,11 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, score_df, compare, ngrams_d
 
 def score_ngram(ngram, method):
     """
-    This method computes the similarity between patterns based on the
-    method the user selected.
+    This method splits ngrams into tuples of strings, computes the similarity
+    between patterns based on the method the user selected.
     :param ngram: dataframe containing ngrams to compare.
     :param method: whatever comparison methods that accepts two
-    arguments. For example:
+    iterables (tuples of strings). For example:
     from strsimpy.normalized_levenshtein import NormalizedLevenshtein
     algorithm = NormalizedLevenshtein()
     score_ngram(ngram, algorithm.similarity)
@@ -338,6 +338,7 @@ def score_ngram(ngram, method):
     # compute the score
     index = pd.MultiIndex.from_product([ser, ser], names=["pattern", "other"])
     score_df = pd.DataFrame(index=index)
+
     score_df['score'] = index.map(lambda cell: method(cell[0], cell[1]))
 
     # turn patterns back into string for ease of use

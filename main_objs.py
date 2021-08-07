@@ -276,13 +276,33 @@ class ImportedPiece:
             self.analyses['NoteRest'] = df
         return self.analyses['NoteRest']
 
+    def _getBeatUnit(self):
+        '''
+        Return a dataframe of the duration of the beat for each time signature
+        object in the piece.
+        '''
+        tsigs = self._getM21TSigObjs()
+        tsigs.columns = self._getPartNames()
+        df = tsigs.applymap(lambda tsig: tsig.beatDuration.quarterLength, na_action='ignore')
+        return df
+
     def getBeat(self):
         '''
         Return a table of the beat positions of all the notes and rests.
         '''
         if 'Beat' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(lambda note: note.beat, na_action='ignore')
-            self.analyses['Beat'] = df
+            nr = self.getNoteRest()
+            nrOffs = nr.apply(lambda row: row.index)
+            ms = self.getMeasure().apply(lambda row: row.index)
+            temp = pd.concat([ms, nr], axis=1)
+            ms = temp.iloc[:, :len(ms.columns)].ffill()
+            ms = ms[nr.notnull()]
+            offFromMeas = nrOffs - ms
+            beatDur = self._getBeatUnit()
+            temp = pd.concat([beatDur, nr], axis=1)
+            beatDur = temp.iloc[:, :len(beatDur.columns)].ffill()
+            beatDur = beatDur[nr.notnull()]
+            self.analyses['Beat'] = (offFromMeas / beatDur) + 1
         return self.analyses['Beat']
 
     def _getBeatIndex(self):
@@ -290,7 +310,7 @@ class ImportedPiece:
         Return a series of the first valid value in each row of .getBeat().
         '''
         if 'BeatIndex' not in self.analyses:
-            ser = self.getBeat().apply(lambda row: row.dropna()[0], axis=1)
+            ser = self.getBeat().dropna(how='all').apply(lambda row: row.dropna()[0], axis=1)
             self.analyses['BeatIndex'] = ser
         return self.analyses['BeatIndex']
 
@@ -328,16 +348,21 @@ class ImportedPiece:
             self.analyses['BeatStrength'] = df
         return self.analyses['BeatStrength']
 
+    def _getM21TSigObjs(self):
+        if 'M21TSigObjs' not in self.analyses:
+            tsigs = []
+            for part in self._getSemiFlatParts():
+                tsigs.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
+            df = pd.concat(tsigs, axis=1)
+            self.analyses['M21TSigObjs'] = df
+        return self.analyses['M21TSigObjs']
+
     def getTimeSignature(self):
         """
-        Return a data frame containing the time signatures and their offsets
+        Return a data frame containing the time signatures and their offsets.
         """
-
         if 'TimeSignature' not in self.analyses:
-            time_signatures = []
-            for part in self._getSemiFlatParts():
-                time_signatures.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
-            df = pd.concat(time_signatures, axis=1)
+            df = self._getM21TSigObjs()
             df = df.applymap(lambda ts: ts.ratioString, na_action='ignore')
             df.columns = self._getPartNames()
             self.analyses['TimeSignature'] = df

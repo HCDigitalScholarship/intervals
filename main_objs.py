@@ -267,14 +267,27 @@ class ImportedPiece:
             return 'Rest'
         return noteOrRest.nameWithOctave
 
-    def getNoteRest(self):
+    def _combineRests(self, col):
+        col = col.dropna()
+        return col[(col != 'Rest') | ((col == 'Rest') & (col.shift(1) != 'Rest'))]
+
+    def _combineUnisons(self, col):
+        col = col.dropna()
+        return col[(col == 'Rest') | (col != col.shift(1))]
+
+    def getNoteRest(self, combineRests=True, combineUnisons=False):
         '''Return a table of the notes and rests in the piece. Rests are
         designated with the string "Rest". Notes are shown such that middle C
         is "C4".'''
         if 'NoteRest' not in self.analyses:
             df = self._getM21ObjsNoTies().applymap(self._noteRestHelper, na_action='ignore')
             self.analyses['NoteRest'] = df
-        return self.analyses['NoteRest']
+        ret = self.analyses['NoteRest']
+        if combineRests:
+            ret = ret.apply(self._combineRests)
+        if combineUnisons:
+            ret = ret.apply(self._combineUnisons)
+        return ret
 
     def _getBeatUnit(self):
         '''
@@ -555,19 +568,6 @@ class ImportedPiece:
         dist.columns = uni
         dist.index = uni
         return dist
-
-    def _combineRestsHelper(self, col):
-        col = col.dropna()
-        return col[(col != 'Rest') | ((col == 'Rest') & (col.shift(1) != 'Rest'))]
-
-    def combineRests(self, df=None):
-        '''
-        Return a dataframe of the notes and rests of the piece, but in each
-        voice, only keep the first of a succession of rests.
-        '''
-        if df is None:
-            df = self.getNoteRest()
-        return df.apply(self._combineRestsHelper)
 
     def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
         '''

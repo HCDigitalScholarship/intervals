@@ -276,9 +276,15 @@ class ImportedPiece:
         return col[(col == 'Rest') | (col != col.shift(1))]
 
     def getNoteRest(self, combineRests=True, combineUnisons=False):
-        '''Return a table of the notes and rests in the piece. Rests are
+        '''
+        Return a table of the notes and rests in the piece. Rests are
         designated with the string "Rest". Notes are shown such that middle C
-        is "C4".'''
+        is "C4".
+        If `combineRests` is True (default), non-first consecutive rests will be
+        removed, effectively combining consecutive rests in each voice.
+        `combineUnisons` works the same way for consecutive attacks on the same
+        pitch in a given voice, however, `combineUnisons` defaults to False.
+        '''
         if 'NoteRest' not in self.analyses:
             df = self._getM21ObjsNoTies().applymap(self._noteRestHelper, na_action='ignore')
             self.analyses['NoteRest'] = df

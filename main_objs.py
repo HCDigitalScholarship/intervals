@@ -954,6 +954,28 @@ class ImportedPiece:
         # result = result[result.ModVoices != result.RepVoices]
         # result = result[result.Lag < 50]
         # return result
+    
+    def classifyCadences(self):
+        '''
+        Return a dataframe of cadence labels in the piece.
+        '''
+        c3 = ('6_Held, 5_-1, 7', '1_-1, 2_1, 0')
+        c4 = ('6_Held, 5_Held, 4_-1, 7', '1_-1, 2_-1, 3_2, 0') # under-third cadences
+        c5 = ('6_Held, 5_Held, 4_Held, 5_-1, 7', '1_-1, 2_-1, 3_1, 2_1, 0')
+        n3 = self.getNgrams(how='modules', interval_settings=('z', True, False), n=3).stack()
+        n4 = self.getNgrams(how='modules', interval_settings=('z', True, False), n=4).stack()
+        n5 = self.getNgrams(how='modules', interval_settings=('z', True, False), n=5).stack()
+        cv3 = n3[n3.isin(c3)]
+        cv4 = n4[n4.isin(c4)]
+        cv5 = n5[n5.isin(c5)]
+        cadences = pd.concat((cv3, cv4, cv5))
+        cadences.sort_index(level=0, )
+        result = pd.DataFrame(cadences)
+        result['CadenceType'] = 'Clausula Vera'
+        result.columns = ('Ngram', 'CadenceType')
+        result.index.names = ('Offset', 'VoicePair')
+        return result
+        
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
@@ -1053,7 +1075,7 @@ class CorpusBase:
                     # Rests carry the last non-rest note as their prev_note
                     if not score_notes[-1].note.isRest:
                         prev_note = score_notes[-1]
-                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 4.0, self.paths[urls_index], prev_note)
+                note_obj = NoteListElement(m21.note.Rest(), score.metadata, part.partName, score.index(part), 5.0, self.paths[urls_index], prev_note)
                 score_notes.append(note_obj)
             urls_index += 1
             # add to dictionary

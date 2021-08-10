@@ -969,7 +969,7 @@ class ImportedPiece:
         cv4 = n4[n4.isin(c4)]
         cv5 = n5[n5.isin(c5)]
         cadences = pd.concat((cv3, cv4, cv5))
-        cadences.sort_index(level=0, )
+        cadences.sort_index(level=0, inplace=True)
         result = pd.DataFrame(cadences)
         result['CadenceType'] = 'Clausula Vera'
         result.columns = ('Ngram', 'CadenceType')

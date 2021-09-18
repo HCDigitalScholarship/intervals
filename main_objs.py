@@ -1011,34 +1011,30 @@ class CorpusBase:
         """
         self.paths = paths
         self.scores = []  # store lists of ImportedPieces generated from the path above
-        mei_conv = converter.subConverters.ConverterMEI()
         for path in paths:
             if path in pathDict:
-                # if the path has already been "memorized"
-                pathScore = ImportedPiece(pathDict[path])
+                # if the piece has already been imported
                 self.scores.append(pathDict[path])
                 print("Memoized piece detected...")
-                continue
-            elif not path.startswith('http'):
-                print("Requesting file from " + str(path) + "...")
-                try:
-                    score = mei_conv.parseFile(path)
-                    pathDict[path] = ImportedPiece(score)
-                    self.scores.append(pathDict[path])
-                    print("Successfully imported.")
-                except:
-                    print("Import of " + str(
-                        path) + " failed, please check your file path/file type. Continuing to next file...")
             else:
+                if path.startswith('http'):
+                    print('Downloading remote score...')
+                    try:
+                        to_import = httpx.get(path).text
+                    except:
+                        print('Error downloading',  str(path) + ', please check',
+                              'your url and try again. Continuing to next file.')
+                        continue
+                else:
+                    to_import = path
                 try:
-                    # self.scores.append(m21.converter.parse(requests.get(path).text))
-                    score = m21.converter.parse(httpx.get(path).text)
+                    score = m21.converter.parse(to_import)
                     pathDict[path] = ImportedPiece(score)
                     self.scores.append(pathDict[path])
-                    print("Successfully imported.")
+                    print("Successfully imported", path)
                 except:
-                    print("Import from " + str(
-                        path) + " failed, please check your url. File paths must begin with a '/'. Continuing to next file...")
+                    print("Import of", str(path), "failed, please check your",
+                          "file path/url. Continuing to next file.")
 
         if len(self.scores) == 0:
             raise Exception("At least one score must be succesfully imported")
@@ -1282,7 +1278,7 @@ class ScoreBase:
             if url[0] == '/':
                 try:
                     self.score = converter.subConverters.ConverterMEI().parseFile(url)
-                    print("Successfully imported.")
+                    print("Successfully imported local file.")
                 except:
                     raise Exception("Import from " + str(self.url) + " failed, please check your ath/file type")
             else:

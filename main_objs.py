@@ -28,6 +28,37 @@ from itertools import combinations_with_replacement as cwr
 
 pathDict = {}
 
+def import_m21_score(path):
+    '''
+    Import piece and return a music21 score. Return None if there is an error.
+    '''
+
+    if path in pathDict:
+        print('Memoized piece detected.')
+    else:
+        if path.startswith('http'):
+            print('Downloading remote score...')
+            try:
+                to_import = httpx.get(path).text
+            except:
+                print('Error downloading',  str(path) + ', please check',
+                      'your url and try again. Continuing to next file.')
+                return None
+        else:
+            to_import = path
+        try:
+            score = m21.converter.parse(to_import)
+            pathDict[path] = ImportedPiece(score)
+            print("Successfully imported", path)
+
+        except:
+            print("Import of", str(path), "failed, please check your",
+                  "file path/url. Continuing to next file.")
+            return None
+    
+    return pathDict[path]
+
+
 class NoteListElement:
     """
     An extension of the music21 note class
@@ -1012,29 +1043,9 @@ class CorpusBase:
         self.paths = paths
         self.scores = []  # store lists of ImportedPieces generated from the path above
         for path in paths:
-            if path in pathDict:
-                # if the piece has already been imported
+            _score = import_m21_score(path)
+            if _score is not None:
                 self.scores.append(pathDict[path])
-                print("Memoized piece detected...")
-            else:
-                if path.startswith('http'):
-                    print('Downloading remote score...')
-                    try:
-                        to_import = httpx.get(path).text
-                    except:
-                        print('Error downloading',  str(path) + ', please check',
-                              'your url and try again. Continuing to next file.')
-                        continue
-                else:
-                    to_import = path
-                try:
-                    score = m21.converter.parse(to_import)
-                    pathDict[path] = ImportedPiece(score)
-                    self.scores.append(pathDict[path])
-                    print("Successfully imported", path)
-                except:
-                    print("Import of", str(path), "failed, please check your",
-                          "file path/url. Continuing to next file.")
 
         if len(self.scores) == 0:
             raise Exception("At least one score must be succesfully imported")
@@ -1268,26 +1279,10 @@ class ScoreBase:
             If score isn't succesfully imported, raises error
         """
         self.url = url
-        print("Requesting file from " + str(self.url) + "...")
-        # Detect if local file of url based on leading /
-        if url in pathDict:
-            pathScore = ImportedPiece(pathDict[url])
-            self.score = pathDict[url].analyses['scores']
-            print("Memoized piece detected...")
-        else:
-            if url[0] == '/':
-                try:
-                    self.score = converter.subConverters.ConverterMEI().parseFile(url)
-                    print("Successfully imported local file.")
-                except:
-                    raise Exception("Import from " + str(self.url) + " failed, please check your ath/file type")
-            else:
-                try:
-                    # self.score = m21.converter.parse(requests.get(self.url).text)
-                    self.score = m21.converter.parse(httpx.get(self.url).text)
-                    print("Successfully imported.")
-                except:
-                    raise Exception("Import from " + str(self.url) + " failed, please check your url/file type")
+        self.score = import_m21_score(url)
+        if self.score is None:
+            raise Exception("Import from", str(self.url),
+                            "failed, please check your ath/file type.")
         self.note_list = self.note_list_whole_piece()
 
     def note_list_whole_piece(self):

@@ -49,7 +49,6 @@ def import_m21_score(path):
             score = converter.parse(to_import)
             pathDict[path] = ImportedPiece(score)
             print("Successfully imported", path)
-
         except:
             print("Import of", str(path), "failed, please check your",
                   "file path/url. Continuing to next file.")

@@ -336,7 +336,8 @@ class ImportedPiece:
 
     def getBeat(self):
         '''
-        Return a table of the beat positions of all the notes and rests.
+        Return a table of the beat positions of all the notes and rests. Beats 
+        are expressed as floats.
         '''
         if 'Beat' not in self.analyses:
             nr = self.getNoteRest()

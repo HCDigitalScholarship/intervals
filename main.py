@@ -501,3 +501,68 @@ def export_pandas(matches):
             }
             match_data.append(match_dict)
     return pd.DataFrame(match_data)
+
+def _emaMeasureHelper(string):
+    measures = []
+    chunks = string.split(',')
+    for chunk in chunks:
+        spans = chunk.split('+')
+        for span in spans:
+            ends = tuple(int(m) for m in span.split('-'))
+            for m in range(ends[0], ends[1] + 1):
+                yield m
+
+def _emaVoiceHelper(voiceStr, partNames):
+    ret = []
+    measures = voiceStr.split(',')
+    for measure in measures:
+        spans = measure.split('+')
+        thisMeasure = []
+        for span in spans:
+            ends = [int(vox) for vox in span.split('-')]
+            thisMeasure.extend(partNames[v] for v in range(ends[0] - 1, ends[-1]))
+        ret.append(thisMeasure)
+    return ret
+
+def _emaBeatHelper(beatStr):
+    ret = []
+    measures = beatStr.split(',')
+    for m in measures:
+        voicesInMeasure = []
+        voices = m.split('+')
+        for voice in voices:
+            beatsInVoice = []
+            spans = voice[1:].split('@')
+            for span in spans:
+                ends = tuple(float(beat) for beat in span.split('-'))
+                beatsInVoice.append((ends[0], ends[-1]))
+            voicesInMeasure.append(beatsInVoice)
+        ret.append(voicesInMeasure)
+    return ret
+
+def ema2ex(emaStr, df):
+    """
+    Return the excerpt from the df that is designated by the emaStr. The df 
+    must have a Measure and Beat multiIndex as the index labels. You can get 
+    this by passing a regular df of an ImportedPiece to 
+    ImportedPiece.detailIndex().
+    """
+    # retrieve the measures from ema address and create start and end in place
+    post = {}
+    mStr, vStr, bStr = emaStr.split("/")
+    voices = _emaVoiceHelper(vStr, df.columns)
+    beats = _emaBeatHelper(bStr)
+    for mi, measure in enumerate(_emaMeasureHelper(mStr)):
+        voicesInMeasure = voices[mi]
+        for vi, voice in enumerate(voicesInMeasure):
+            beatsInVoice = beats[mi][vi]
+            for beatRange in beatsInVoice:
+                chunk = df.loc[(measure, beatRange[0]):(measure, beatRange[1]), voice]
+                if voice in post:
+                    post[voice].append(chunk)
+                else:
+                    post[voice] = [chunk]
+    parts = [pd.concat(vox) for vox in post.values()]
+    ret = pd.concat(parts, axis=1)
+    ret.columns = post.keys()
+    return ret

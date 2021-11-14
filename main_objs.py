@@ -10,6 +10,8 @@ import xml.etree.ElementTree as ET
 from itertools import combinations
 from itertools import combinations_with_replacement as cwr
 
+import pdb
+
 
 # Unncessary at the moment
 # MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -363,13 +365,24 @@ class ImportedPiece:
             self.analyses['BeatIndex'] = ser
         return self.analyses['BeatIndex']
 
-    def detailIndex(self, df, offset=True, measure=True, beat=True):
+    def detailIndex(self, df, measure=True, beat=True, offset=False):
         '''
-        Return the passed dataframe with a multi-index of the measure and beat
-        position.
+        Return the passed dataframe with a multi-index of any combination of the
+        measure, beat, and offset in the index labels. At least one must be 
+        chosen, and the default is to have measure and beat information, but not
+        offset information. Pass offset=True to add offsets to index.
         '''
-        cols = [df, self.getMeasure().iloc[:, 0], self._getBeatIndex()]
-        names = ['Measure', 'Beat']
+        cols = [df]
+        names = []
+        if measure:
+            cols.append(self.getMeasure().iloc[:, 0])
+            names.append('Measure')
+        if beat:
+            cols.append(self._getBeatIndex())
+            names.append('Beat')
+        if offset:
+            cols.append(df.index.to_series())
+            names.append('Offset')
         temp = pd.concat(cols, axis=1)
         temp2 = temp.iloc[:, len(df.columns):].ffill()
         temp2.iloc[:, 0] = temp2.iloc[:, 0].astype(int)
@@ -984,23 +997,28 @@ class ImportedPiece:
         # result = result[result.Lag < 50]
         # return result
     
-    def classifyCadences(self):
+    def classifyCadences(self, cadences=None):
         '''
-        Return a dataframe of cadence labels in the piece.
+        Return a dataframe of cadence labels in the piece. You can pass your own
+        diction of cadences labels in the form {n: list_of_cadential_ngrams}
+        where n is for various sizes of n and list_of_cadential_ngrams is a list
+        of ngrams of its corresponding n length that must have been calculated
+        with ('d', True, False) interval quality settings.
         '''
-        c3 = ('6_Held, 5_-1, 7', '1_-1, 2_1, 0')
-        c4 = ('6_Held, 5_Held, 4_-1, 7', '1_-1, 2_-1, 3_2, 0') # under-third cadences
-        c5 = ('6_Held, 5_Held, 4_Held, 5_-1, 7', '1_-1, 2_-1, 3_1, 2_1, 0')
-        n3 = self.getNgrams(how='modules', interval_settings=('z', True, False), n=3).stack()
-        n4 = self.getNgrams(how='modules', interval_settings=('z', True, False), n=4).stack()
-        n5 = self.getNgrams(how='modules', interval_settings=('z', True, False), n=5).stack()
-        cv3 = n3[n3.isin(c3)]
-        cv4 = n4[n4.isin(c4)]
-        cv5 = n5[n5.isin(c5)]
-        cadences = pd.concat((cv3, cv4, cv5))
-        cadences.sort_index(level=0, inplace=True)
-        result = pd.DataFrame(cadences)
-        result['CadenceType'] = 'Clausula Vera'
+        if cadences is None:
+          cadences = {
+            3: ['7_Held, 6_-2, 8'],
+            4: ['1_Held, 2_-2, 3_2, 3', '3_Held, 2_-2, 3_2, 1'],
+            5: ['3_2, 1_Held, 2_-2, 3_2, 1'],
+            6: ['1_Held, 2_-2, 3_-2, 4_2, 3_2, 1', '8_Held, 7_Held, 6_-2, 7_Held, 6_-2, 8'],
+            8: ['3_Held, 2_-2, 3_1, 2_Held, 1_Held, 2_-2, 3_2, 1', '6_-2, 7_Held, 6_-2, 7_-2, 8_2, 7_Held, 6_-2, 8']}
+        ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False), n=n).stack()
+                  for n in cadences}
+        hits = [df[df.isin(cadences[n])] for n, df in ngrams.items()]
+        cads = pd.concat(hits)
+        cads.sort_index(level=0, inplace=True)
+        result = pd.DataFrame(cads)
+        result['CadenceType'] = 'Authentic'
         result.columns = ('Ngram', 'CadenceType')
         result.index.names = ('Offset', 'VoicePair')
         return result

@@ -573,11 +573,15 @@ def _gatherNgram(row):
     nr = piece.getNoteRest()
     di = piece.detailIndex(nr, offset=True)
     excerpt = ema2ex(ema, di)
+    if len(excerpt.columns) != 2 or len(excerpt) == 0:
+        return (False,)*4
     n = len(excerpt)
     ngrams = piece.getNgrams(n=n, how='modules', offsets='last')
     pair = '_'.join(excerpt.columns)
     if pair not in ngrams.columns:
         pair = '_'.join(reversed(excerpt.columns))
+    if excerpt.index[-1][-1] not in ngrams.index:
+        return (False,)*4
     ngram = ngrams.at[excerpt.index[-1][-1], pair]
     lower, upper = pair.split('_')
     lower_cvf, upper_cvf = '', ''
@@ -589,14 +593,21 @@ def _gatherNgram(row):
         upper_cvf = 'Cantizans'
     elif tz == upper:
         upper_cvf = 'Tenorizans'
-    return ngram, n, pair, lower_cvf, upper_cvf, excerpt.index[-1][-1]
+    return ngram, n, lower_cvf, upper_cvf
 
-def gatherNgrams(df, ema_col='ema', piece_col='piece.piece_id'):
+def gatherNgrams(df, ema_col='ema', piece_col='piece.piece_id', filename=''):
     url_root = 'https://crimproject.org/mei/'
     df2 = df.loc[:, [ema_col, piece_col, 'mt_cad_cantizans', 'mt_cad_tenorizans']].copy()
     df2[piece_col] = url_root + df2[piece_col] + '.mei'
     ngrams = df2.apply(_gatherNgram, axis=1, result_type='expand')
-    ngrams.columns = ('Ngram', 'N', 'Voices', 'LowerCVF', 'UpperCVF', 'CadOffset')
-    return ngrams
-    
+    ngrams.columns = ('Ngram', 'N', 'LowerCVF', 'UpperCVF')
+    ngrams = ngrams[~ngrams.Ngram.isin((False, float('nan')))]
+    if filename:
+        if filename[-4:] != '.csv':
+            filename += '.csv'
+        path = './data/cadences/' + filename
+        ngrams.to_csv(path, index=False)
+    else:
+        return ngrams
+
 

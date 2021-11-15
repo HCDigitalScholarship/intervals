@@ -10,8 +10,6 @@ import xml.etree.ElementTree as ET
 from itertools import combinations
 from itertools import combinations_with_replacement as cwr
 
-import pdb
-
 
 # Unncessary at the moment
 # MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -1006,20 +1004,18 @@ class ImportedPiece:
         with ('d', True, False) interval quality settings.
         '''
         if cadences is None:
-          cadences = {
-            3: ['7_Held, 6_-2, 8'],
-            4: ['1_Held, 2_-2, 3_2, 3', '3_Held, 2_-2, 3_2, 1'],
-            5: ['3_2, 1_Held, 2_-2, 3_2, 1'],
-            6: ['1_Held, 2_-2, 3_-2, 4_2, 3_2, 1', '8_Held, 7_Held, 6_-2, 7_Held, 6_-2, 8'],
-            8: ['3_Held, 2_-2, 3_1, 2_Held, 1_Held, 2_-2, 3_2, 1', '6_-2, 7_Held, 6_-2, 7_-2, 8_2, 7_Held, 6_-2, 8']}
+            cadences = pd.read_csv('data/cadences/Ignesti.csv', index_col='Ngram')
         ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False), n=n).stack()
-                  for n in cadences}
-        hits = [df[df.isin(cadences[n])] for n, df in ngrams.items()]
-        cads = pd.concat(hits)
-        cads.sort_index(level=0, inplace=True)
-        result = pd.DataFrame(cads)
-        result['CadenceType'] = 'Authentic'
-        result.columns = ('Ngram', 'CadenceType')
+                  for n in cadences.N.unique()}
+        hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
+        hits = pd.concat(hits)
+        hits.sort_index(level=0, inplace=True)
+        hits.name = 'Ngram'
+        result = pd.DataFrame(hits)
+        result = result.join(cadences, on='Ngram')
+        nr = self.getNoteRest()
+        voices = [pair.split('_') for pair in result.index.get_level_values(1)]
+        result[['LowerVoice', 'UpperVoice']] = voices
         result.index.names = ('Offset', 'VoicePair')
         return result
         

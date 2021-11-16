@@ -995,6 +995,19 @@ class ImportedPiece:
         # result = result[result.Lag < 50]
         # return result
     
+    def _labelCadence(self, row, mel):
+        if ((row.UpperCVF == 'Cantizans' and mel.at[row.name[0], row.UpperVoice] in ('m2', 'm3'))
+            or (row.LowerCVF == 'Cantizans' and mel.at[row.name[0], row.LowerVoice] in ('m2', 'm3'))):
+            return 'Authentic'
+        elif ((row.UpperCVF == 'Tenorizans' and mel.at[row.name[0], row.UpperVoice] == '-m2')
+            or (row.LowerCVF == 'Tenorizans' and mel.at[row.name[0], row.LowerVoice] == '-m2')):
+            return 'Phrygian'
+        elif ( all(mel.loc[row.name[0], [row.UpperVoice, row.LowerVoice]].values == ('M2', '-M2'))
+            or all(mel.loc[row.name[0], [row.UpperVoice, row.LowerVoice]].values == ('-M2', 'M2'))):
+            return 'Missing Accidental'
+        else:
+            return 'Unknown'
+
     def classifyCadences(self, cadences=None):
         '''
         Return a dataframe of cadence labels in the piece. You can pass your own
@@ -1005,7 +1018,7 @@ class ImportedPiece:
         '''
         if cadences is None:
             cadences = pd.read_csv('data/cadences/Ignesti.csv', index_col='Ngram')
-        ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False), n=n).stack()
+        ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False), n=n, offsets='last').stack()
                   for n in cadences.N.unique()}
         hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
         hits = pd.concat(hits)
@@ -1014,9 +1027,11 @@ class ImportedPiece:
         result = pd.DataFrame(hits)
         result = result.join(cadences, on='Ngram')
         nr = self.getNoteRest()
+        mel = self.getMelodic('q', True, True)
         voices = [pair.split('_') for pair in result.index.get_level_values(1)]
         result[['LowerVoice', 'UpperVoice']] = voices
         result.index.names = ('Offset', 'VoicePair')
+        result['CadenceType'] = result.apply(self._labelCadence, axis=1, args=(mel,))
         return result
         
 

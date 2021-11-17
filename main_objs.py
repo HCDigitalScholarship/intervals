@@ -996,14 +996,18 @@ class ImportedPiece:
         # return result
     
     def _labelCadence(self, row, mel):
-        if ((row.UpperCVF == 'Cantizans' and mel.at[row.name[0], row.UpperVoice] in ('m2', 'm3'))
-            or (row.LowerCVF == 'Cantizans' and mel.at[row.name[0], row.LowerVoice] in ('m2', 'm3'))):
+        if ((row.UpperCVF == 'C' and mel.at[row.name[0], row.UpperVoice] in ('m2', 'm3'))
+            or (row.LowerCVF == 'C' and mel.at[row.name[0], row.LowerVoice] in ('m2', 'm3'))):
             return 'Authentic'
-        elif ((row.UpperCVF == 'Tenorizans' and mel.at[row.name[0], row.UpperVoice] == '-m2')
-            or (row.LowerCVF == 'Tenorizans' and mel.at[row.name[0], row.LowerVoice] == '-m2')):
+        elif ((row.UpperCVF == 'T' and mel.at[row.name[0], row.UpperVoice] == '-m2')
+            or (row.LowerCVF == 'T' and mel.at[row.name[0], row.LowerVoice] == '-m2')):
             return 'Phrygian'
-        elif ( all(mel.loc[row.name[0], [row.UpperVoice, row.LowerVoice]].values == ('M2', '-M2'))
-            or all(mel.loc[row.name[0], [row.UpperVoice, row.LowerVoice]].values == ('-M2', 'M2'))):
+        elif (((row.UpperCVF =='C' and row.LowerCVF in ('B', 'b', 'L')) and
+                mel.at[row.name[0], row.UpperVoice] == 'M2')
+            or (all(row.loc[['UpperCVF', 'LowerCVF']].values == ('C', 'T')) and
+                all(mel.loc[row.name[0], [row.UpperVoice, row.LowerVoice]].values == ('M2', '-M2')))
+            or (all(row.loc[['UpperCVF', 'LowerCVF']].values == ('T', 'C')) and
+                all(mel.loc[row.name[0], [row.UpperVoice, row.LowerVoice]].values == ('-M2', 'M2')))):
             return 'Missing Accidental'
         else:
             return 'Unknown'
@@ -1017,7 +1021,7 @@ class ImportedPiece:
         with ('d', True, False) interval quality settings.
         '''
         if cadences is None:
-            cadences = pd.read_csv('data/cadences/Ignesti.csv', index_col='Ngram')
+            cadences = pd.read_csv('data/cadences/cadenceLibrary.csv', index_col='Ngram')
         ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False), n=n, offsets='last').stack()
                   for n in cadences.N.unique()}
         hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
@@ -1031,7 +1035,7 @@ class ImportedPiece:
         voices = [pair.split('_') for pair in result.index.get_level_values(1)]
         result[['LowerVoice', 'UpperVoice']] = voices
         result.index.names = ('Offset', 'VoicePair')
-        result['CadenceType'] = result.apply(self._labelCadence, axis=1, args=(mel,))
+        result['PairType'] = result.apply(self._labelCadence, axis=1, args=(mel,))
         return result
         
 

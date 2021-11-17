@@ -142,7 +142,7 @@ def into_patterns_pd(df: list, interval_size):
     for i in range(len(dflist[0])):
         for j in range(len(dflist)):
             vectors_list.append(dflist[j][i])
-        vectors_list.append(float('nan'));
+        vectors_list.append(float('nan'))
     pattern, patterns_data = [], []
     for h in range(len(vectors_list) - interval_size):
         pattern = []

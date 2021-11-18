@@ -1051,9 +1051,7 @@ class ImportedPiece:
         keys = pd.DataFrame(keys)
         cadDict = pd.read_csv('./data/cadences/cadenceLabels.csv', index_col=0)
         labels = keys.join(cadDict, on='Key')
-        df['CadType'] = labels.Label
         m21 = self._getM21ObjsNoTies().ffill()
-        # lowest = [min(m21.asof(i).dropna()) for i in labels.index]
         labels['LowestPitch'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
         nr = self.getNoteRest()
         labels['CadTone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)

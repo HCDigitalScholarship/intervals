@@ -1,0 +1,52 @@
+Key,Label
+C1T-2,Clausula Vera
+C2T-2,Clausula Vera - Missing Accidental
+C3T-2,Clausula Vera
+A1C1T-2,Double Leading Tone
+A2C1T-2,Clausula Vera
+A2C2T-2,Clausula Vera - Missing Accidental
+A2C3T-2,Clausula Vera
+A3C3T-2,Double Leading Tone
+C1t2,Evaded Clausula Vera
+C1t1,Evaded Clausula Vera
+C2t1,Evaded Clausula Vera
+C2t2,Evaded Clausula Vera
+C3t2,Evaded Clausula Vera
+C3t1,Evaded Clausula Vera
+A1C1t2,Evaded Clausula Vera
+A1C1t1,Evaded Clausula Vera
+A1C3t2,Evaded Clausula Vera
+A1C3t1,Evaded Clausula Vera
+A2C1t2,Evaded Clausula Vera
+A2C1t1,Evaded Clausula Vera
+A2C3t2,Evaded Clausula Vera
+A2C3t1,Evaded Clausula Vera
+A3C3t2,Evaded Clausula Vera
+A3C3t1,Evaded Clausula Vera
+C2T-1,Phrygian
+A2C2T-1,Phrygian
+A3C3T-1,Phrygian
+A2C3T-1,Phrygian
+A1T-2,Altizans Only
+A2T-2,Altizans Only - Missing Accidental
+A2T-1,Phrygian Altizans
+C2P-5T-1,Plagal
+C2P7T-1,Plagal
+B-7C1T-2,Authentic
+B5C1T-2,Authentic
+B-7C2T-2,Authentic - Missing Accidental
+B5C2T-2,Authentic - Missing Accidental
+B-7C1,Authentic
+B5C1,Authentic
+B-7C2,Authentic - Missing Accidental
+B5C2,Authentic - Missing Accidental
+C1T-2b1,Evaded Authentic
+C1T-2b2,Evaded Authentic
+C2T-2b1,Evaded Authentic - Missing Accidental
+C2T-2b2,Evaded Authentic - Missing Accidental
+C1b1,Evaded Authentic
+C1b2,Evaded Authentic
+C2b1,Evaded Authentic - Missing Accidental
+C2b2,Evaded Authentic - Missing Accidental
+C1L12T-2,Leaping Contratenor
+C2L12T-2,Leaping Contratenor - Missing Accidental

@@ -994,32 +994,38 @@ class ImportedPiece:
         # result = result[result.ModVoices != result.RepVoices]
         # result = result[result.Lag < 50]
         # return result
-    
-    def _labelCadence(self, row, mel):
-        if ((row.UpperCVF == 'C' and mel.at[row.name[0], row.UpperVoice] in ('m2', 'm3'))
-            or (row.LowerCVF == 'C' and mel.at[row.name[0], row.LowerVoice] in ('m2', 'm3'))):
-            return 'Authentic'
-        elif ((row.UpperCVF == 'T' and mel.at[row.name[0], row.UpperVoice] == '-m2')
-            or (row.LowerCVF == 'T' and mel.at[row.name[0], row.LowerVoice] == '-m2')):
-            return 'Phrygian'
-        elif (((row.UpperCVF =='C' and row.LowerCVF in ('B', 'b', 'L')) and
-                mel.at[row.name[0], row.UpperVoice] == 'M2')
-            or (all(row.loc[['UpperCVF', 'LowerCVF']].values == ('C', 'T')) and
-                all(mel.loc[row.name[0], [row.UpperVoice, row.LowerVoice]].values == ('M2', '-M2')))
-            or (all(row.loc[['UpperCVF', 'LowerCVF']].values == ('T', 'C')) and
-                all(mel.loc[row.name[0], [row.UpperVoice, row.LowerVoice]].values == ('-M2', 'M2')))):
-            return 'Missing Accidental'
-        else:
-            return 'Unknown'
 
-    def classifyCadences(self, cadences=None):
+    def _cvf_helper(self, row, df):
+        df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, row.UpperCVF)
+
+    def _lowest_pitch(self, row, m21):
+        filtered = [note for note in m21.asof(row.name) if note.isNote]
+        return min(filtered).nameWithOctave
+
+    def _cadential_pitch(self, row, nr):
+        if 'C' in row.values:
+            return nr.at[row.name, row.index[np.where(row == 'C')[0][0]]][:-1]
+        elif 'A' in row.values:
+            return nr.at[row.name, row.index[np.where(row == 'A')[0][0]]][:-1]
+
+    def classifyCadences(self, cadences=None, return_type='cadences'):
         '''
         Return a dataframe of cadence labels in the piece. You can pass your own
         diction of cadences labels in the form {n: list_of_cadential_ngrams}
         where n is for various sizes of n and list_of_cadential_ngrams is a list
         of ngrams of its corresponding n length that must have been calculated
         with ('d', True, False) interval quality settings.
+
+        When return_type is set to "cadences" (default) a table of the cadence 
+        labels, lowest pitch at moment of cadence, and cadential goal tone is
+        returned. You can also set it to "functions" (or just "f") if you want 
+        to get a table of just the cadential voice functions.
         '''
+        if 'Cadences' in self.analyses:
+            if return_type[0].lower() == 'c':
+                return self.analyses['Cadences']
+            elif return_type[0].lower() == 'f':
+                return self.analyses['CVF']
         if cadences is None:
             cadences = pd.read_csv('data/cadences/cadenceLibrary.csv', index_col='Ngram')
         ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False), n=n, offsets='last').stack()
@@ -1028,15 +1034,34 @@ class ImportedPiece:
         hits = pd.concat(hits)
         hits.sort_index(level=0, inplace=True)
         hits.name = 'Ngram'
-        result = pd.DataFrame(hits)
-        result = result.join(cadences, on='Ngram')
+        df = pd.DataFrame(hits)
+        df = df.join(cadences, on='Ngram')
+        voices = [pair.split('_') for pair in df.index.get_level_values(1)]
+        df[['LowerVoice', 'UpperVoice']] = voices
+        df.index = df.index.get_level_values(0)
+        df.index.names = ('Offset',)
+        cvfs = pd.DataFrame(columns=self._getPartNames())
+        df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
+        self.analyses['CVF'] = cvfs
+        mel = self.getMelodic('c', True, True)
+        mel = mel[cvfs.notnull()].dropna(how='all')
+        cadKeys = cvfs + mel
+        keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values()), axis=1)
+        keys.name = 'Key'
+        keys = pd.DataFrame(keys)
+        cadDict = pd.read_csv('./data/cadences/cadenceLabels.csv', index_col=0)
+        labels = keys.join(cadDict, on='Key')
+        df['CadType'] = labels.Label
+        m21 = self._getM21ObjsNoTies().ffill()
+        # lowest = [min(m21.asof(i).dropna()) for i in labels.index]
+        labels['LowestPitch'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
         nr = self.getNoteRest()
-        mel = self.getMelodic('q', True, True)
-        voices = [pair.split('_') for pair in result.index.get_level_values(1)]
-        result[['LowerVoice', 'UpperVoice']] = voices
-        result.index.names = ('Offset', 'VoicePair')
-        result['PairType'] = result.apply(self._labelCadence, axis=1, args=(mel,))
-        return result
+        labels['CadTone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
+        labels.drop('Key', axis=1, inplace=True)
+        self.analyses['Cadences'] = labels
+        if return_type[0].lower() == 'f':
+            return cvfs
+        return labels
         
 
 

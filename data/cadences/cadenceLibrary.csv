@@ -42,7 +42,7 @@ Ngram,N,LowerCVF,UpperCVF
 "-4_Held, -3_Held, -2_-5, -8",4,C,B
 "-4_Held, -3_Held, -3_Held, -2_-5, -8",5,C,B
 "-4_Held, -3_Held, -2_Held, -3_-5, -8",5,C,B
-"5_2, 4_Held, 3_2, 3",3,b,C
+"5_2, 4_Held, 3_2, 3",4,b,C
 "5_2, 4_Held, 3_Held, 2_2, 3",5,b,C
 "5_2, 4_Held, 3_Held, 3_Held, 2_2, 3",6,b,C
 "5_2, 4_Held, 3_Held, 2_Held, 3_2, 3",6,b,C

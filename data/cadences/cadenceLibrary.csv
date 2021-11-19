@@ -34,6 +34,7 @@ Ngram,N,LowerCVF,UpperCVF
 "-6_-2, -5_Held, -6_Held, -6_Held, -7_-2, -4",6,T,A
 "-6_-2, -5_Held, -6_Held, -7_Held, -6_-2, -4",6,T,A
 "4_Held, 3_-5, 8",3,B,C
+"5_2, 3_-5, 8",3,B,C
 "4_Held, 3_Held, 2_-5, 8",4,B,C
 "4_Held, 3_Held, 3_Held, 2_-5, 8",5,B,C
 "4_Held, 3_Held, 2_Held, 3_-5, 8",5,B,C

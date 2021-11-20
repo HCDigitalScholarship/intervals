@@ -1112,6 +1112,35 @@ class CorpusBase:
         self.note_list = self.note_list_whole_piece()
         self.no_unisons = self.note_list_no_unisons()
 
+    def batch(self, func, kwargs={}):
+        '''
+        Run the `func` on each of the scores in this CorpusBase object and
+        return a list of the results. `func` should be a method from the
+        ImportedPiece class. If you need to pass arguments to that function,
+        pass them as a dictionary of keyword arguments with the kwargs
+        parameter. These parameters will be the same for each ImportedPiece
+        object as it gets the `func` applied to its score.
+
+        Example of basic analysis with no added parameters:
+        corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+        func = ImportedPiece.getNoteRest  # <- NB there are no parentheses here
+        list_of_dfs = corpus.batch(func)
+
+        Example passing some parameters to `func` calls. Note that you only ad
+        the parameters to kwargs that you need to pass. This example returns a
+        list of dataframes of the melodic intervals of each piece in the corpus,
+        and in this case will be chromatic and undirected intervals because of
+        parameters passed in kwargs.
+        corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+        func = ImportedPiece.getMelodic  # <- NB there are no parentheses here
+        kwargs = {'kind': c, 'directed': False} 
+        list_of_dfs = corpus.batch(func, kwargs)
+        '''
+        res = [func(score, **kwargs) for score in self.scores]
+        return res
+
     def note_list_whole_piece(self):
         """ Creates a note list from the whole piece for all scores- default note_list
         """

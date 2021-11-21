@@ -1123,7 +1123,7 @@ class CorpusBase:
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
         func = ImportedPiece.getMelodic  # <- NB there are no parentheses here
-        kwargs = {'kind': c, 'directed': False} 
+        kwargs = {'kind': 'c', 'directed': False} 
         list_of_dfs = corpus.batch(func, kwargs)
         '''
         post = []

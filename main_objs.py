@@ -1,6 +1,5 @@
 from music21 import *
 import time
-# import requests
 # httpx appears to be faster than requests, will fit better with an async version
 import httpx
 from pathlib import Path
@@ -11,17 +10,8 @@ from itertools import combinations
 from itertools import combinations_with_replacement as cwr
 
 
-# Unncessary at the moment
-# MEINSURI = 'http://www.music-encoding.org/ns/mei'
-# MEINS = '{%s}' % MEINSURI
-# mei_doc = ET.fromstring(requests.get(path).text)
-#   # Find the title from the MEI file and update the Music21 Score metadata
-# title = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}title').text
-# score.metadata.title = title
-# mei_doc = ET.fromstring(requests.get(path).text)
-#   # Find the composer from the MEI file and update the Music21 Score metadata
-# composer = mei_doc.find(f'{MEINS}meiHead//{MEINS}respStmt/{MEINS}persName').text
-# score.metadata.composer = composer
+MEINSURI = 'http://www.music-encoding.org/ns/mei'
+MEINS = '{%s}' % MEINSURI
 
 # An extension of the music21 note class with more information easily accessible
 
@@ -39,15 +29,18 @@ def import_m21_score(path):
             print('Downloading remote score...')
             try:
                 to_import = httpx.get(path).text
+                mei_doc = ET.fromstring(to_import)
             except:
                 print('Error downloading',  str(path) + ', please check',
                       'your url and try again. Continuing to next file.')
                 return None
         else:
             to_import = path
+            with open(path, "r") as file:
+                mei_doc = ET.fromstring(file.read())
         try:
             score = converter.parse(to_import)
-            pathDict[path] = ImportedPiece(score)
+            pathDict[path] = ImportedPiece(score, mei_doc)
             print("Successfully imported", path)
         except:
             print("Import of", str(path), "failed, please check your",
@@ -98,8 +91,12 @@ class NoteListElement:
 
 
 class ImportedPiece:
-    def __init__(self, score):
+    def __init__(self, score, mei_doc):
         self.score = score
+        self.mei_doc = mei_doc
+        self.metadata = {
+          'title': mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}title').text,
+          'composer': mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}composer').text}
         self.analyses = {'note_list': None}
         self._intervalMethods = {
             # (quality, directed, compound):   function returning the specified type of interval
@@ -542,11 +539,6 @@ class ImportedPiece:
         else:
             return cell
 
-    # def _durationalRatioHelper(self, cell):
-    #     cell = tuple(float(val) for val in cell.split(', '))
-    #     result = tuple(cell[i + 1] / cell[i] for i in range(len(cell) - 1))
-    #     return result
-
     def _durationalRatioHelper(self, row):
         _row = row.dropna()
         return _row / _row.shift(1)
@@ -561,10 +553,6 @@ class ImportedPiece:
         if df is None:
             df = self.getDuration()
         return df.apply(self._durationalRatioHelper).dropna(how='all')
-        # ds = dur.applymap(str, na_action='ignore')
-        # dn = self.getNgrams(df=ds, n=n)
-        # dr = dn.applymap(self._durationalRatioHelper, na_action='ignore')
-        # return dr
 
     def getDistance(self, df=None, n=3):
         '''
@@ -1112,7 +1100,7 @@ class CorpusBase:
         self.note_list = self.note_list_whole_piece()
         self.no_unisons = self.note_list_no_unisons()
 
-    def batch(self, func, kwargs={}):
+    def batch(self, func, kwargs={}, metadata=True):
         '''
         Run the `func` on each of the scores in this CorpusBase object and
         return a list of the results. `func` should be a method from the
@@ -1138,8 +1126,14 @@ class CorpusBase:
         kwargs = {'kind': c, 'directed': False} 
         list_of_dfs = corpus.batch(func, kwargs)
         '''
-        res = [func(score, **kwargs) for score in self.scores]
-        return res
+        post = []
+        for score in self.scores:
+            df = func(score, **kwargs)
+            if isinstance(df, pd.DataFrame):
+                if metadata:
+                    df[['Composer', 'Title']] = score.metadata['composer'], score.metadata['title']
+            post.append(df)
+        return post
 
     def note_list_whole_piece(self):
         """ Creates a note list from the whole piece for all scores- default note_list

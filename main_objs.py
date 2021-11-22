@@ -94,10 +94,14 @@ class ImportedPiece:
     def __init__(self, score, mei_doc):
         self.score = score
         self.mei_doc = mei_doc
-        self.metadata = {
-          'title': mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}title').text,
-          'composer': mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}composer').text}
         self.analyses = {'note_list': None}
+        title = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}title').text or 'Not found'
+        composer = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}composer')
+        if composer is None:
+            composer = 'Not found'
+        else:
+            composer = composer.text or 'Not found'
+        self.metadata = {'title': title,'composer': composer}
         self._intervalMethods = {
             # (quality, directed, compound):   function returning the specified type of interval
             # diatonic with quality

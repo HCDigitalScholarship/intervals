@@ -1,14 +1,11 @@
 [tool.poetry]
-name = "crim-intervals"
-version = "0.3.3"
+name = "CRIM_Intervals_Collab"
+version = "0.1.0"
 description = ""
-authors = ["Freddie Gould <fgould@haverford.edu>"]
-packages = [
-    { include = "crim_intervals" },
-]
+authors = ["Richard Freedman <rfreedma@haverford.edu>"]
 
 [tool.poetry.dependencies]
-python = ">=3.7.1,<4.0"
+python = "^3.9"
 altair==4.1.0
 certifi==2020.12.5
 chardet==4.0.0
@@ -31,9 +28,9 @@ six==1.15.0
 sniffio==1.2.0
 textdistance==4.2.1
 webcolors==1.11.1
-
 [tool.poetry.dev-dependencies]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+

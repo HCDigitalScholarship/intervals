@@ -828,6 +828,7 @@ class ImportedPiece:
             lowerVoice = pair.split('_')[0]
             combo = pd.concat([other[lowerVoice], df[pair]], axis=1)
             combo.fillna({lowerVoice: held}, inplace=True)
+            combo.dropna(subset=(pair,), inplace=True)
             combo.insert(loc=1, column='Joiner', value=', ')
             combo['_'] = '_'
             if n == -1:

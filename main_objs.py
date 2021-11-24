@@ -1,6 +1,5 @@
 from music21 import *
 import time
-# import requests
 # httpx appears to be faster than requests, will fit better with an async version
 import httpx
 from pathlib import Path
@@ -11,17 +10,8 @@ from itertools import combinations
 from itertools import combinations_with_replacement as cwr
 
 
-# Unncessary at the moment
-# MEINSURI = 'http://www.music-encoding.org/ns/mei'
-# MEINS = '{%s}' % MEINSURI
-# mei_doc = ET.fromstring(requests.get(path).text)
-#   # Find the title from the MEI file and update the Music21 Score metadata
-# title = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}title').text
-# score.metadata.title = title
-# mei_doc = ET.fromstring(requests.get(path).text)
-#   # Find the composer from the MEI file and update the Music21 Score metadata
-# composer = mei_doc.find(f'{MEINS}meiHead//{MEINS}respStmt/{MEINS}persName').text
-# score.metadata.composer = composer
+MEINSURI = 'http://www.music-encoding.org/ns/mei'
+MEINS = '{%s}' % MEINSURI
 
 # An extension of the music21 note class with more information easily accessible
 
@@ -39,15 +29,21 @@ def import_m21_score(path):
             print('Downloading remote score...')
             try:
                 to_import = httpx.get(path).text
+                mei_doc = ET.fromstring(to_import) if path.endswith('.mei') else None
             except:
                 print('Error downloading',  str(path) + ', please check',
                       'your url and try again. Continuing to next file.')
                 return None
         else:
             to_import = path
+            if path.endswith('.mei'):
+                with open(path, "r") as file:
+                    mei_doc = ET.fromstring(file.read())
+            else:
+                mei_doc = None
         try:
             score = converter.parse(to_import)
-            pathDict[path] = ImportedPiece(score)
+            pathDict[path] = ImportedPiece(score, mei_doc)
             print("Successfully imported", path)
         except:
             print("Import of", str(path), "failed, please check your",
@@ -98,9 +94,24 @@ class NoteListElement:
 
 
 class ImportedPiece:
-    def __init__(self, score):
+    def __init__(self, score, mei_doc=None):
         self.score = score
+        self.mei_doc = mei_doc
         self.analyses = {'note_list': None}
+        if mei_doc:
+            title = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}title')
+            if title is None:
+                title = 'Not found'
+            else:
+                title = title.text or 'Not found'
+            composer = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}composer')
+            if composer is None:
+                composer = 'Not found'
+            else:
+                composer = composer.text or 'Not found'
+            self.metadata = {'title': title, 'composer': composer}
+        else:
+            self.metadata = {'title': 'Not found', 'composer': 'Not found'}
         self._intervalMethods = {
             # (quality, directed, compound):   function returning the specified type of interval
             # diatonic with quality
@@ -542,11 +553,6 @@ class ImportedPiece:
         else:
             return cell
 
-    # def _durationalRatioHelper(self, cell):
-    #     cell = tuple(float(val) for val in cell.split(', '))
-    #     result = tuple(cell[i + 1] / cell[i] for i in range(len(cell) - 1))
-    #     return result
-
     def _durationalRatioHelper(self, row):
         _row = row.dropna()
         return _row / _row.shift(1)
@@ -561,10 +567,6 @@ class ImportedPiece:
         if df is None:
             df = self.getDuration()
         return df.apply(self._durationalRatioHelper).dropna(how='all')
-        # ds = dur.applymap(str, na_action='ignore')
-        # dn = self.getNgrams(df=ds, n=n)
-        # dr = dn.applymap(self._durationalRatioHelper, na_action='ignore')
-        # return dr
 
     def getDistance(self, df=None, n=3):
         '''
@@ -826,6 +828,7 @@ class ImportedPiece:
             lowerVoice = pair.split('_')[0]
             combo = pd.concat([other[lowerVoice], df[pair]], axis=1)
             combo.fillna({lowerVoice: held}, inplace=True)
+            combo.dropna(subset=(pair,), inplace=True)
             combo.insert(loc=1, column='Joiner', value=', ')
             combo['_'] = '_'
             if n == -1:
@@ -1008,13 +1011,9 @@ class ImportedPiece:
         elif 'A' in row.values:
             return nr.at[row.name, row.index[np.where(row == 'A')[0][0]]][:-1]
 
-    def classifyCadences(self, cadences=None, return_type='cadences'):
+    def classifyCadences(self, return_type='cadences'):
         '''
-        Return a dataframe of cadence labels in the piece. You can pass your own
-        diction of cadences labels in the form {n: list_of_cadential_ngrams}
-        where n is for various sizes of n and list_of_cadential_ngrams is a list
-        of ngrams of its corresponding n length that must have been calculated
-        with ('d', True, False) interval quality settings.
+        Return a dataframe of cadence labels in the piece. 
 
         When return_type is set to "cadences" (default) a table of the cadence 
         labels, lowest pitch at moment of cadence, and cadential goal tone is
@@ -1026,8 +1025,7 @@ class ImportedPiece:
                 return self.analyses['Cadences']
             elif return_type[0].lower() == 'f':
                 return self.analyses['CVF']
-        if cadences is None:
-            cadences = pd.read_csv('data/cadences/cadenceLibrary.csv', index_col='Ngram')
+        cadences = pd.read_csv('data/cadences/cadenceLibrary.csv', index_col='Ngram')
         ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False), n=n, offsets='last').stack()
                   for n in cadences.N.unique()}
         hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
@@ -1111,6 +1109,51 @@ class CorpusBase:
 
         self.note_list = self.note_list_whole_piece()
         self.no_unisons = self.note_list_no_unisons()
+
+    def batch(self, func, kwargs={}, metadata=True):
+        '''
+        Run the `func` on each of the scores in this CorpusBase object and
+        return a list of the results. `func` should be a method from the
+        ImportedPiece class. If you need to pass arguments to that function,
+        pass them as a dictionary of keyword arguments with the kwargs
+        parameter. These parameters will be the same for each ImportedPiece
+        object as it gets the `func` applied to its score.
+
+        # Example of basic analysis with no added parameters:
+        corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+        func = ImportedPiece.getNoteRest  # <- NB there are no parentheses here
+        list_of_dfs = corpus.batch(func)
+
+        # Example passing some parameters to `func` calls. Note that you only ad
+        # the parameters to kwargs that you need to pass. This example returns a
+        # list of dataframes of the melodic intervals of each piece in the corpus,
+        # and in this case will be chromatic and undirected intervals because of
+        # parameters passed in kwargs.
+        corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+        func = ImportedPiece.getMelodic  # <- NB there are no parentheses here
+        kwargs = {'kind': 'c', 'directed': False} 
+        list_of_dfs = corpus.batch(func, kwargs)
+
+        # Example using batch to count the cadence types from multiple pieces:
+        corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+        list_of_dfs = corpus.batch(ImportedPiece.classifyCadences, metadata=False)
+        combined_df = pd.concat(list_of_dfs, ignore_index=True)
+        # Get the number of each type of cadence observed:
+        cadTypeCounts = combined_df['CadType'].value_counts()
+        # Get the number of cadences per BeatStrength level:
+        cadTypeCounts = combined_df['BeatStrength'].value_counts()
+        '''
+        post = []
+        for score in self.scores:
+            df = func(score, **kwargs)
+            if isinstance(df, pd.DataFrame):
+                if metadata:
+                    df[['Composer', 'Title']] = score.metadata['composer'], score.metadata['title']
+            post.append(df)
+        return post
 
     def note_list_whole_piece(self):
         """ Creates a note list from the whole piece for all scores- default note_list

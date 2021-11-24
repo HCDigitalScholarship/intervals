@@ -8,7 +8,6 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
 from itertools import combinations_with_replacement as cwr
-import pdb
 
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'

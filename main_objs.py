@@ -1091,8 +1091,8 @@ class ImportedPiece:
         labels['CadTone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
         labels.drop('Key', axis=1, inplace=True)
         labels['Measure'] = self.getMeasure().iloc[:, 0].asof(labels.index).astype(int)
-        beatStrength = self.getBeatStrength().loc[labels.index, :]
-        labels['BeatStrength'] = beatStrength.bfill(axis=1).iloc[:, 0]
+        beat = self.getBeat().loc[labels.index, :]
+        labels['Beat'] = beat.bfill(axis=1).iloc[:, 0]
         labels['Progress'] = labels.index / nr.index[-1]
         self.analyses['Cadences'] = labels
         if return_type[0].lower() == 'f':

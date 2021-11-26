@@ -1053,6 +1053,11 @@ class ImportedPiece:
         labels, lowest pitch at moment of cadence, and cadential goal tone is
         returned. You can also set it to "functions" (or just "f") if you want 
         to get a table of just the cadential voice functions.
+
+        The SinceLast and ToNext columns are the time in quarter notes since 
+        the last or to the next cadence. The first cadence's SinceLast time and
+        the last cadence's ToNext time are the time since/to the beginning/end
+        of the piece.
         '''
         if 'Cadences' in self.analyses:
             if return_type[0].lower() == 'c':
@@ -1094,6 +1099,11 @@ class ImportedPiece:
         beat = self.getBeat().loc[labels.index, :]
         labels['Beat'] = beat.bfill(axis=1).iloc[:, 0]
         labels['Progress'] = labels.index / nr.index[-1]
+        ndx = labels.index.to_series()
+        labels['SinceLast'] = ndx - ndx.shift(1)
+        labels.iat[0, -1] = labels.index[0]
+        labels['ToNext'] = labels['SinceLast'].shift(-1)
+        labels.iat[-1, -1] = self.score.highestTime - labels.index[-1]
         self.analyses['Cadences'] = labels
         if return_type[0].lower() == 'f':
             return cvfs

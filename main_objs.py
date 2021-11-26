@@ -999,9 +999,16 @@ class ImportedPiece:
         # return result
 
     def _cvf_helper(self, row, df):
+        '''
+        Assign the cadential voice function of the lower and upper voices in 
+        each pair to their respective part name columns.'''
         df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, row.UpperCVF)
 
     def _cvf_disambiguate_h(self, row):
+        '''
+        The 'h' label is used internally to help reduce the amount of false 
+        positives we get with unprepared 4ths. They are either removed or 
+        replaced with 'b' labels if they seem to be evaded bassizans cvfs.'''
         if 'h' in row.values:  # h is for potential evaded bassizans that gets confused with a chanson idiom
             if len(row.dropna()) > 2:
                 row.replace('h', 'b', inplace=True)
@@ -1010,6 +1017,11 @@ class ImportedPiece:
         return row
 
     def _cvf_simplifier(self, row):
+        '''
+        Reduce the cadential voice function labels to only what is needed for 
+        classification. These changes are done on a copy of the cvf table, so 
+        they don't impact the cvf results. This just makes it simpler to write 
+        cadenceLabels.'''
         if 't' in row.values and 'T' in row.values:
             row = row.replace('t', float('nan'))
         if 'B' in row.values or 'b' in row.values:
@@ -1017,10 +1029,17 @@ class ImportedPiece:
         return row
 
     def _lowest_pitch(self, row, m21):
+        '''
+        Return a column of the lowest pitch at each cadence. m21 is a df of 
+        music21 Note or Rest objects for the whole piece.'''
         filtered = [note for note in m21.asof(row.name) if note.isNote]
         return min(filtered).nameWithOctave
 
     def _cadential_pitch(self, row, nr):
+        '''
+        Return a column of the pitch cadenced to. This is considered to be the 
+        note the Cantizans cadences to, or if there is no Cantizans, the note 
+        the Altizans cadences to.'''
         if 'C' in row.values:
             return nr.at[row.name, row.index[np.where(row == 'C')[0][0]]][:-1]
         elif 'A' in row.values:

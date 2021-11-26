@@ -1001,6 +1001,21 @@ class ImportedPiece:
     def _cvf_helper(self, row, df):
         df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, row.UpperCVF)
 
+    def _cvf_disambiguate_h(self, row):
+        if 'h' in row.values:  # h is for potential evaded bassizans that gets confused with a chanson idiom
+            if len(row.dropna()) > 2:
+                row.replace('h', 'b', inplace=True)
+            else:
+                row.replace(('C', 'h'), float('nan'), inplace=True)
+        return row
+
+    def _cvf_simplifier(self, row):
+        if 't' in row.values and 'T' in row.values:
+            row = row.replace('t', float('nan'))
+        if 'B' in row.values or 'b' in row.values:
+            row = row.replace({'t': float('nan'), 'T': float('nan'), 'u': float('nan')})
+        return row
+
     def _lowest_pitch(self, row, m21):
         filtered = [note for note in m21.asof(row.name) if note.isNote]
         return min(filtered).nameWithOctave
@@ -1040,10 +1055,12 @@ class ImportedPiece:
         df.index.names = ('Offset',)
         cvfs = pd.DataFrame(columns=self._getPartNames())
         df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
+        cvfs = cvfs.apply(self._cvf_disambiguate_h, axis=1).dropna(how='all')
         self.analyses['CVF'] = cvfs
+        _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
         mel = self.getMelodic('c', True, True)
-        mel = mel[cvfs.notnull()].dropna(how='all')
-        cadKeys = cvfs + mel
+        mel = mel[_cvfs.notnull()].dropna(how='all')
+        cadKeys = _cvfs + mel
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values()), axis=1)
         keys.name = 'Key'
         keys = pd.DataFrame(keys)

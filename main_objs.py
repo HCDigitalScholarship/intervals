@@ -1193,8 +1193,8 @@ class CorpusBase:
         combined_df = pd.concat(list_of_dfs, ignore_index=True)
         # Get the number of each type of cadence observed:
         cadTypeCounts = combined_df['CadType'].value_counts()
-        # Get the number of cadences per BeatStrength level:
-        cadTypeCounts = combined_df['BeatStrength'].value_counts()
+        # Get the number of cadences per Beat level:
+        cadTypeCounts = combined_df['Beat'].value_counts()
         '''
         post = []
         for score in self.scores:

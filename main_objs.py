@@ -1091,9 +1091,13 @@ class ImportedPiece:
         cadDict = pd.read_csv('./data/cadences/cadenceLabels.csv', index_col=0)
         labels = keys.join(cadDict, on='Key')
         m21 = self._getM21ObjsNoTies().ffill()
-        labels['LowestPitch'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
+        labels['Low'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
+        final = note.Note(labels.iat[-1, -1])  # lowest pitch of last cadence
+        labels['RelLow'] = labels.Low.apply(lambda x: interval.Interval(final, note.Note(x)).simpleName)
         nr = self.getNoteRest()
-        labels['CadTone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
+        labels['Tone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
+        lastTone = note.Note(labels.iat[-1, -1])  # last pitch cadenced to
+        labels['RelTone'] = labels.Tone.apply(lambda x: interval.Interval(lastTone, note.Note(x)).simpleName)
         labels.drop('Key', axis=1, inplace=True)
         labels['Measure'] = self.getMeasure().iloc[:, 0].asof(labels.index).astype(int)
         beat = self.getBeat().loc[labels.index, :]

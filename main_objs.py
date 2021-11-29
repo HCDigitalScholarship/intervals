@@ -1081,10 +1081,13 @@ class ImportedPiece:
         cvfs = pd.DataFrame(columns=self._getPartNames())
         df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
         cvfs = cvfs.apply(self._cvf_disambiguate_h, axis=1).dropna(how='all')
-        self.analyses['CVF'] = cvfs
         _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
         mel = self.getMelodic('c', True, True)
         mel = mel[_cvfs.notnull()].dropna(how='all')
+        cvfs[(cvfs == 'x') & mel.isin(('5', '-7'))] = 'B'
+        cvfs[(cvfs == 'y') & mel.isin(('1', '2'))] = 'C'
+        cvfs[(cvfs == 'z') & mel.isin(('-1', '-2'))] = 'T'
+        self.analyses['CVF'] = cvfs
         cadKeys = _cvfs + mel
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values()), axis=1)
         keys.name = 'Key'

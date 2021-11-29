@@ -21,8 +21,8 @@ Ngram,N,LowerCVF,UpperCVF
 "3_Held, 2_-2, 3_2, 3",4,C,t
 "1_Held, 2_-2, 3_2, 3",4,C,t
 "8_Held, 2_-2, 3_2, 3",4,C,t
-"-3_-2, -2_Held, -3_Rest, Rest",4,z,y
-"3_Held, 2_-2, 3_Rest, Rest",4,y,z
+"-2_Held, -3_Rest, Rest",3,z,y
+"2_-2, 3_Rest, Rest",3,y,z
 "8_5, 4_Held, 3_Rest, Rest",4,x,y
 "3_-2, 4_Held, 3_-2, 5",4,T,A
 "3_-2, 4_Held, 3_Held, 2_-2, 5",5,T,A

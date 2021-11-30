@@ -1045,7 +1045,7 @@ class ImportedPiece:
         elif 'A' in row.values:
             return nr.at[row.name, row.index[np.where(row == 'A')[0][0]]][:-1]
 
-    def classifyCadences(self, return_type='cadences'):
+    def classifyCadences(self, return_type='cadences', keep_keys=False):
         '''
         Return a dataframe of cadence labels in the piece. 
 
@@ -1102,7 +1102,8 @@ class ImportedPiece:
         labels['Tone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
         lastTone = note.Note(labels.iat[-1, -1])  # last pitch cadenced to
         labels['RelTone'] = labels.Tone.apply(lambda x: interval.Interval(lastTone, note.Note(x)).simpleName)
-        labels.drop('Key', axis=1, inplace=True)
+        if not keep_keys:
+            labels.drop('Key', axis=1, inplace=True)
         labels['Measure'] = self.getMeasure().iloc[:, 0].asof(labels.index).astype(int)
         beat = self.getBeat().loc[labels.index, :]
         labels['Beat'] = beat.bfill(axis=1).iloc[:, 0]

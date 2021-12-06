@@ -1054,10 +1054,43 @@ class ImportedPiece:
         returned. You can also set it to "functions" (or just "f") if you want 
         to get a table of just the cadential voice functions.
 
-        The SinceLast and ToNext columns are the time in quarter notes since 
-        the last or to the next cadence. The first cadence's SinceLast time and
-        the last cadence's ToNext time are the time since/to the beginning/end
-        of the piece.
+        In 'cadences' mode, the SinceLast and ToNext columns are the time in 
+        quarter notes since the last or to the next cadence. The first cadence's
+        SinceLast time and the last cadence's ToNext time are the time since/to
+        the beginning/end of the piece. The "Low" and "Tone" columns give the
+        pitches of the lowest sounding pitch at the perfection, and the goal
+        tone of the cantizans (or altizans if there is no cantizans)
+        respectively. These are usually the same pitch class, but not always.
+        "Rel" is short for relative, so "RelLow" is the lowest pitch of each
+        cadence shown as an interval measured against the last pitch in the
+        "Low" column. Likewise, "RelTone" is the cadential tone shown as an
+        interval measured against the last pitch in the "Tone" column.
+
+        When return_type is set to 'functions' (or just 'f' for short), a table
+        of the cadential voice functions (CVF) is returned. Each CVF is
+        represented with a single-character label with the meanings as follows:
+
+        "C": cantizans motion up a step (can also be ornamented e.g. Landini)
+        "T": tenorizans motion down a step (can be ornamented with anticipations)
+        "B": bassizans motion up a fourth or down a fifth
+        "A": altizans motion, similar to cantizans, but cadences to a fifth
+            above a tenorizans instead of an octave
+        "L": leaping contratenor motion up an octave at the perfection
+        "P": plagal bassizans motion up a fifth or down a fourth
+
+        "c": evaded cantizans when it moves to an unexpected note at the perfection
+        "t": evaded tenorizans when it goes up by step at the perfection
+        "b": evaded bassizans when it goes up by step at the perfection
+        "u": evaded bassizans when it goes down by third at the perfection
+        (there are no evaded labels for the altizans, plagal bassizans leaping
+        contratenor CVFs)
+
+        "x": evaded bassizans motion where the voice drops out at the perfection
+        "y": evaded cantizans motion where the voice drops out at the perfection
+        "z": evaded tenorizans motion where the voice drops out at the perfection
+
+        The way these CVFs combine determines which cadence labels are assigned
+        when return_type='cadences'.
         '''
         if 'Cadences' in self.analyses:
             if return_type[0].lower() == 'c':

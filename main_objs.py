@@ -115,7 +115,7 @@ class ImportedPiece:
         self._intervalMethods = {
             # (quality, directed, compound):   function returning the specified type of interval
             # diatonic with quality
-            ('q', True, True): ImportedPiece._qualityUndirectedCompound,
+            ('q', True, True): ImportedPiece._qualityDirectedCompound,
             ('q', True, False): ImportedPiece._qualityDirectedSimple,
             ('q', False, True): lambda cell: cell.name if hasattr(cell, 'name') else cell,
             ('q', False, False): lambda cell: cell.semiSimpleName if hasattr(cell, 'semiSimpleName') else cell,
@@ -519,7 +519,7 @@ class ImportedPiece:
         m21Objs = self.regularize(m21Objs, unit=unit)
         return m21Objs.apply(ImportedPiece._melodifyPart)
 
-    def _qualityUndirectedCompound(cell):
+    def _qualityDirectedCompound(cell):
         if hasattr(cell, 'direction'):
             if cell.direction.value >= 0:
                 return cell.name
@@ -1131,12 +1131,13 @@ class ImportedPiece:
         labels = keys.join(cadDict, on='Key')
         m21 = self._getM21ObjsNoTies().ffill()
         labels['Low'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
-        final = note.Note(labels.iat[-1, -1])  # lowest pitch of last cadence
-        labels['RelLow'] = labels.Low.apply(lambda x: interval.Interval(final, note.Note(x)).simpleName)
+        final = note.Note(labels.Low.dropna().iat[-1])  # lowest pitch of last cadence
+        labels['RelLow'] = labels.Low.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(final, note.Note(x))))
         nr = self.getNoteRest()
         labels['Tone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
-        lastTone = note.Note(labels.iat[-1, -1])  # last pitch cadenced to
-        labels['RelTone'] = labels.Tone.apply(lambda x: interval.Interval(lastTone, note.Note(x)).simpleName)
+        lastTone = note.Note(labels.Tone.dropna().iat[-1])  # last pitch cadenced to
+        labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(lastTone, note.Note(x))))
+        labels.RelTone = labels.RelTone[labels.Tone.notnull()]
         if not keep_keys:
             labels.drop('Key', axis=1, inplace=True)
         labels['Measure'] = self.getMeasure().iloc[:, 0].asof(labels.index).astype(int)

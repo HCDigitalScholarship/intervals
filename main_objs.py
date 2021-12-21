@@ -999,19 +999,53 @@ class ImportedPiece:
         # return result
 
     def _cvf_helper(self, row, df):
+        '''
+        Assign the cadential voice function of the lower and upper voices in 
+        each pair to their respective part name columns.'''
         df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, row.UpperCVF)
 
+    def _cvf_disambiguate_h(self, row):
+        '''
+        The 'h' label is used internally to help reduce the amount of false 
+        positives we get with unprepared 4ths. They are either removed or 
+        replaced with 'b' labels if they seem to be evaded bassizans cvfs.'''
+        if 'h' in row.values:  # h is for potential evaded bassizans that gets confused with a chanson idiom
+            if len(row.dropna()) > 2:
+                row.replace('h', 'b', inplace=True)
+            else:
+                row.replace(('C', 'h'), float('nan'), inplace=True)
+        return row
+
+    def _cvf_simplifier(self, row):
+        '''
+        Reduce the cadential voice function labels to only what is needed for 
+        classification. These changes are done on a copy of the cvf table, so 
+        they don't impact the cvf results. This just makes it simpler to write 
+        cadenceLabels.'''
+        if 't' in row.values and 'T' in row.values:
+            row = row.replace('t', float('nan'))
+        if 'B' in row.values or 'b' in row.values:
+            row = row.replace({'t': float('nan'), 'T': float('nan'), 'u': float('nan')})
+        return row
+
     def _lowest_pitch(self, row, m21):
+        '''
+        Return a column of the lowest pitch at each cadence. m21 is a df of 
+        music21 Note or Rest objects for the whole piece.'''
         filtered = [note for note in m21.asof(row.name) if note.isNote]
         return min(filtered).nameWithOctave
 
     def _cadential_pitch(self, row, nr):
+        '''
+        Return a column of the pitch cadenced to. This is considered to be the 
+        note the Cantizans cadences to, or if there is no Cantizans, the note 
+        the Altizans cadences to.'''
         if 'C' in row.values:
             return nr.at[row.name, row.index[np.where(row == 'C')[0][0]]][:-1]
         elif 'A' in row.values:
             return nr.at[row.name, row.index[np.where(row == 'A')[0][0]]][:-1]
 
-    def classifyCadences(self, return_type='cadences'):
+    def classifyCadences(self, return_type='cadences', keep_keys=False):
         '''
         Return a dataframe of cadence labels in the piece. 
 
@@ -1019,14 +1053,54 @@ class ImportedPiece:
         labels, lowest pitch at moment of cadence, and cadential goal tone is
         returned. You can also set it to "functions" (or just "f") if you want 
         to get a table of just the cadential voice functions.
+
+        In 'cadences' mode, the SinceLast and ToNext columns are the time in 
+        quarter notes since the last or to the next cadence. The first cadence's
+        SinceLast time and the last cadence's ToNext time are the time since/to
+        the beginning/end of the piece. The "Low" and "Tone" columns give the
+        pitches of the lowest sounding pitch at the perfection, and the goal
+        tone of the cantizans (or altizans if there is no cantizans)
+        respectively. These are usually the same pitch class, but not always.
+        "Rel" is short for relative, so "RelLow" is the lowest pitch of each
+        cadence shown as an interval measured against the last pitch in the
+        "Low" column. Likewise, "RelTone" is the cadential tone shown as an
+        interval measured against the last pitch in the "Tone" column.
+
+        When return_type is set to 'functions' (or just 'f' for short), a table
+        of the cadential voice functions (CVF) is returned. Each CVF is
+        represented with a single-character label with the meanings as follows:
+
+        "C": cantizans motion up a step (can also be ornamented e.g. Landini)
+        "T": tenorizans motion down a step (can be ornamented with anticipations)
+        "B": bassizans motion up a fourth or down a fifth
+        "A": altizans motion, similar to cantizans, but cadences to a fifth
+            above a tenorizans instead of an octave
+        "L": leaping contratenor motion up an octave at the perfection
+        "P": plagal bassizans motion up a fifth or down a fourth
+
+        "c": evaded cantizans when it moves to an unexpected note at the perfection
+        "t": evaded tenorizans when it goes up by step at the perfection
+        "b": evaded bassizans when it goes up by step at the perfection
+        "u": evaded bassizans when it goes down by third at the perfection
+        (there are no evaded labels for the altizans, plagal bassizans leaping
+        contratenor CVFs)
+
+        "x": evaded bassizans motion where the voice drops out at the perfection
+        "y": evaded cantizans motion where the voice drops out at the perfection
+        "z": evaded tenorizans motion where the voice drops out at the perfection
+
+        The way these CVFs combine determines which cadence labels are assigned
+        when return_type='cadences'.
         '''
         if 'Cadences' in self.analyses:
             if return_type[0].lower() == 'c':
                 return self.analyses['Cadences']
             elif return_type[0].lower() == 'f':
                 return self.analyses['CVF']
-        cadences = pd.read_csv('data/cadences/cadenceLibrary.csv', index_col='Ngram')
-        ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False), n=n, offsets='last').stack()
+        cadences = pd.read_csv('data/cadences/CVFLabels.csv', index_col='Ngram')
+        cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
+        ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False),
+                                    n=n, offsets='last', exclude=[]).stack()
                   for n in cadences.N.unique()}
         hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
         hits = pd.concat(hits)
@@ -1040,24 +1114,40 @@ class ImportedPiece:
         df.index.names = ('Offset',)
         cvfs = pd.DataFrame(columns=self._getPartNames())
         df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
-        self.analyses['CVF'] = cvfs
         mel = self.getMelodic('c', True, True)
-        mel = mel[cvfs.notnull()].dropna(how='all')
-        cadKeys = cvfs + mel
+        mel = mel[cvfs.notnull()]
+        cvfs = cvfs.apply(self._cvf_disambiguate_h, axis=1).dropna(how='all')
+        cvfs[(cvfs == 'x') & mel.isin(('5', '-7'))] = 'B'
+        cvfs[(cvfs == 'y') & mel.isin(('1', '2'))] = 'C'
+        cvfs[(cvfs == 'z') & mel.isin(('-1', '-2'))] = 'T'
+        self.analyses['CVF'] = cvfs
+        _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
+        mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
+        cadKeys = _cvfs + mel
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values()), axis=1)
         keys.name = 'Key'
         keys = pd.DataFrame(keys)
         cadDict = pd.read_csv('./data/cadences/cadenceLabels.csv', index_col=0)
         labels = keys.join(cadDict, on='Key')
         m21 = self._getM21ObjsNoTies().ffill()
-        labels['LowestPitch'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
+        labels['Low'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
+        final = note.Note(labels.iat[-1, -1])  # lowest pitch of last cadence
+        labels['RelLow'] = labels.Low.apply(lambda x: interval.Interval(final, note.Note(x)).simpleName)
         nr = self.getNoteRest()
-        labels['CadTone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
-        labels.drop('Key', axis=1, inplace=True)
+        labels['Tone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
+        lastTone = note.Note(labels.iat[-1, -1])  # last pitch cadenced to
+        labels['RelTone'] = labels.Tone.apply(lambda x: interval.Interval(lastTone, note.Note(x)).simpleName)
+        if not keep_keys:
+            labels.drop('Key', axis=1, inplace=True)
         labels['Measure'] = self.getMeasure().iloc[:, 0].asof(labels.index).astype(int)
-        beatStrength = self.getBeatStrength().loc[labels.index, :]
-        labels['BeatStrength'] = beatStrength.bfill(axis=1).iloc[:, 0]
+        beat = self.getBeat().loc[labels.index, :]
+        labels['Beat'] = beat.bfill(axis=1).iloc[:, 0]
         labels['Progress'] = labels.index / nr.index[-1]
+        ndx = labels.index.to_series()
+        labels['SinceLast'] = ndx - ndx.shift(1)
+        labels.iat[0, -1] = labels.index[0]
+        labels['ToNext'] = labels['SinceLast'].shift(-1)
+        labels.iat[-1, -1] = self.score.highestTime - labels.index[-1]
         self.analyses['Cadences'] = labels
         if return_type[0].lower() == 'f':
             return cvfs
@@ -1143,8 +1233,8 @@ class CorpusBase:
         combined_df = pd.concat(list_of_dfs, ignore_index=True)
         # Get the number of each type of cadence observed:
         cadTypeCounts = combined_df['CadType'].value_counts()
-        # Get the number of cadences per BeatStrength level:
-        cadTypeCounts = combined_df['BeatStrength'].value_counts()
+        # Get the number of cadences per Beat level:
+        cadTypeCounts = combined_df['Beat'].value_counts()
         '''
         post = []
         for score in self.scores:

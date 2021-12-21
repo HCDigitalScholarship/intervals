@@ -1097,7 +1097,8 @@ class ImportedPiece:
                 return self.analyses['Cadences']
             elif return_type[0].lower() == 'f':
                 return self.analyses['CVF']
-        cadences = pd.read_csv('data/cadences/cadenceLibrary.csv', index_col='Ngram')
+        cadences = pd.read_csv('data/cadences/CVFLabels.csv', index_col='Ngram')
+        cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False),
                                     n=n, offsets='last', exclude=[]).stack()
                   for n in cadences.N.unique()}

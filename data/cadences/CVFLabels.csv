@@ -53,13 +53,10 @@ Ngram,LowerCVF,UpperCVF
 "5_2, 4_Held, 3_Held, 2_2, 3",b,C
 "5_2, 4_Held, 3_Held, 3_Held, 2_2, 3",b,C
 "5_2, 4_Held, 3_Held, 2_Held, 3_2, 3",b,C
-"5_-2, 6_2, 8",C,B
-"5_-2, 6_2, 1",C,B
 "4_Held, 3_4, 8",B,C
 "4_Held, 3_4, 1",B,C
 "-4_Held, -3_4, -8",C,B
 "-4_Held, -3_4, 1",C,B
-"5_-2, 6_2, 8",C,B
 "4_Held, 3_-3, 6",u,C
 "4_Held, 3_Held, 2_-3, 6",u,C
 "4_Held, 3_Held, 3_Held, 2_-3, 6",u,C

@@ -74,3 +74,6 @@ Ngram,LowerCVF,UpperCVF
 "3_2, 2_Held, 1_-4, 5",P,C
 "2_Held, 8_Held, 8_5, 5",P,C
 "2_Held, 8_Held, 8_-4, 5",P,C
+"4_Held, 3_-5, 3",B,c
+"4_Held, 3_4, 3",B,c
+"7_Held, 6_-2, 3",T,c

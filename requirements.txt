@@ -19,4 +19,5 @@ rfc3986==1.4.0
 six==1.15.0
 sniffio==1.2.0
 textdistance==4.2.1
+xlsxwriter==3.0.2
 webcolors==1.11.1

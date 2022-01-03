@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "crim intervals package"
 authors = ["Richard Freedman <rfreedma@haverford.edu>"]
 license = "creative commons"
+packages = [
+    { include = "*.py" },
+]
 
 [tool.poetry.dependencies]
 python = ">=3.7.1,<4.0"

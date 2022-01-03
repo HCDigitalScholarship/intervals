@@ -1127,7 +1127,7 @@ class ImportedPiece:
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values()), axis=1)
         keys.name = 'Key'
         keys = pd.DataFrame(keys)
-        cadDict = pd.read_csv('data/cadences/cadenceLabels.csv', index_col=0)
+        cadDict = pd.read_csv('./data/cadences/cadenceLabels.csv', index_col=0)
         labels = keys.join(cadDict, on='Key')
         m21 = self._getM21ObjsNoTies().ffill()
         labels['Low'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)

@@ -1,5 +1,4 @@
-from main_objs import *
-
+from .main_objs import * 
 # Potential redesign needed due to unstable nature of having user give over patterns_data
 # Potential fix is reincorporating into_patterns back into this method
 def find_exact_matches(patterns_data, min_matches=5):

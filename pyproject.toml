@@ -6,6 +6,7 @@ authors = ["Richard Freedman <rfreedma@haverford.edu>"]
 license = "creative commons"
 packages = [
     { include = "*.py" },
+    { include = data/cadences},
 ]
 
 [tool.poetry.dependencies]

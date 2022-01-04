@@ -21,3 +21,4 @@ sniffio==1.2.0
 textdistance==4.2.1
 xlsxwriter==3.0.2
 webcolors==1.11.1
+requests==2.27.0

@@ -1,6 +1,6 @@
 import numpy as np
 #from main import *
-from .main_objs import CorpusBase
+from .main_objs import CorpusBase, IntervalBase
 import pandas as pd
 import numpy as np
 import re

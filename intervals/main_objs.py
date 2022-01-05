@@ -8,7 +8,8 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
 from itertools import combinations_with_replacement as cwr
-
+import os 
+cwd = os.getcwd()
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
@@ -1097,7 +1098,7 @@ class ImportedPiece:
                 return self.analyses['Cadences']
             elif return_type[0].lower() == 'f':
                 return self.analyses['CVF']
-        cadences = pd.read_csv('data/cadences/CVFLabels.csv', index_col='Ngram')
+        cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False),
                                     n=n, offsets='last', exclude=[]).stack()
@@ -1127,7 +1128,7 @@ class ImportedPiece:
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values()), axis=1)
         keys.name = 'Key'
         keys = pd.DataFrame(keys)
-        cadDict = pd.read_csv('./data/cadences/cadenceLabels.csv', index_col=0)
+        cadDict = pd.read_csv(cwd+'/data/cadences/cadenceLabels.csv', index_col=0)
         labels = keys.join(cadDict, on='Key')
         m21 = self._getM21ObjsNoTies().ffill()
         labels['Low'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)

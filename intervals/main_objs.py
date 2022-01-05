@@ -9,7 +9,8 @@ import xml.etree.ElementTree as ET
 from itertools import combinations
 from itertools import combinations_with_replacement as cwr
 import os 
-cwd = os.getcwd()
+import intervals
+cwd = os.path.dirname(intervals.__file__)
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI

@@ -1,5 +1,4 @@
 from music21 import *
-import time
 # httpx appears to be faster than requests, will fit better with an async version
 import httpx
 from pathlib import Path
@@ -8,6 +7,7 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
 from itertools import combinations_with_replacement as cwr
+import re
 
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -17,7 +17,7 @@ MEINS = '{%s}' % MEINSURI
 
 pathDict = {}
 
-def import_m21_score(path):
+def importScore(path):
     '''
     Import piece and return a music21 score. Return None if there is an error.
     '''
@@ -43,7 +43,7 @@ def import_m21_score(path):
                 mei_doc = None
         try:
             score = converter.parse(to_import)
-            pathDict[path] = ImportedPiece(score, mei_doc)
+            pathDict[path] = ImportedPiece(score, path, mei_doc)
             print("Successfully imported", path)
         except:
             print("Import of", str(path), "failed, please check your",
@@ -51,6 +51,189 @@ def import_m21_score(path):
             return None
     
     return pathDict[path]
+
+# Allows for the addition of non-moving-window pattern searching approaches
+# Needs to be called before any matches can be made
+def into_patterns(vectors_list, interval):
+    """Takes in a series of vector patterns with data attached and finds close matches
+    Parameters
+    ----------
+    vectors_list : list of vectorized lists
+        MUST be a list from calling generic_intervals or semitone_intervals on a VectorInterval object
+    interval : int
+        size of interval to be analyzed
+
+    Returns
+    -------
+    patterns_data : list of tuples
+        A list of vector patterns with additional information about notes attached
+    """
+    pattern, patterns_data = [], []
+    for vectors in vectors_list:
+        for i in range(len(vectors) - interval):
+            pattern = []
+            durations = []
+            valid_pattern = True
+            durations.append(vectors[i].note1.duration)
+            for num_notes in range(interval):
+                if vectors[i + num_notes].vector == 'Rest':
+                    valid_pattern = False
+                pattern.append(vectors[i + num_notes].vector)
+                durations.append(vectors[i + num_notes].note2.duration)
+            if valid_pattern:
+                # Here, with help from vectorize() you can jam in whatever more data you would like about the note
+                patterns_data.append((pattern, vectors[i].note1, vectors[i + num_notes].note2, durations))
+    return patterns_data
+
+# Potential redesign needed due to unstable nature of having user give over patterns_data
+# Potential fix is reincorporating into_patterns back into this method
+def find_exact_matches(patterns_data, min_matches=5):
+    """Takes in a series of vector patterns with data attached and finds exact matches
+
+    Parameters
+    ----------
+    patterns_data : return value from into_patterns
+        MUST be return value from into_patterns
+    min_matches : int, optional
+        Minimum number of matches needed to be deemed relevant, defaults to 5
+
+    Returns
+    -------
+    all_matches_list : list
+        A list of PatternMatches objects
+    """
+    # A series of arrays are needed to keep track of various data associated with each pattern
+    print("Finding exact matches...")
+    patterns_nodup, patterns = [], []
+    p = 0
+    for pattern in patterns_data:
+        patterns.append(pattern[0])
+        if pattern[0] not in patterns_nodup:
+            patterns_nodup.append(pattern[0])
+    m = 0
+    # Go through each individual pattern and count up its occurences
+    all_matches_list = []
+    for p in patterns_nodup:
+        amt = patterns.count(p)
+        # If a pattern occurs more than the designated threshold, we add it to our list of matches
+        if amt > min_matches:
+            matches_list = PatternMatches(p, [])
+            m += 1
+            for a in patterns_data:
+                if p == a[0]:
+                    exact_match = Match(p, a[1], a[2], a[3])
+                    matches_list.matches.append(exact_match)
+            all_matches_list.append(matches_list)
+    print(str(len(all_matches_list)) + " melodic intervals had more than " + str(min_matches) + " exact matches.\n")
+    # all_matches_list has a nested structure- it contains a list of PatternMatches objects, which contain a list of individual Match objects
+    return all_matches_list
+
+# Finds matches based on a cumulative distance difference between two patterns
+def find_close_matches(patterns_data, min_matches, threshold):
+    """Takes in a series of vector patterns with data attached and finds close matches
+
+    Parameters
+    ----------
+    patterns_data : return value from into_patterns
+        MUST be return value from into_patterns
+    min_matches : int, optional
+        Minimum number of matches needed to be deemed relevant, defaults to 5
+    threshold : int
+        Cumulative variance allowed between vector patterns before they are deemed not similar
+
+    Returns
+    -------
+    all_matches_list : list
+        A list of PatternMatches objects
+    """
+    # A series of arrays are needed to keep track of various data associated with each pattern
+    print("Finding close matches...")
+    patterns_nodup = []
+    for pat in patterns_data:
+        # Build up a list of patterns without duplicates
+        if pat[0] not in patterns_nodup:
+            patterns_nodup.append(pat[0])
+    # Go through each individual pattern and count up its occurences
+    all_matches_list = []
+    for p in patterns_nodup:
+        matches_list = PatternMatches(p, [])
+        # If a pattern occurs more than the designated threshold
+        for a in patterns_data:
+            rhytmic_match = 0
+            # Calculate the "difference" by comparing each vector with the matching one in the other pattern
+            for v in range(len(a[0])):
+                rhytmic_match += abs(p[v] - a[0][v])
+            if rhytmic_match <= threshold:
+                close_match = Match(a[0], a[1], a[2], a[3])
+                matches_list.matches.append(close_match)
+        if len(matches_list.matches) > min_matches:
+            all_matches_list.append(matches_list)
+    print(str(len(all_matches_list)) + " melodic intervals had more than " + str(
+        min_matches) + " exact or close matches.\n")
+    return all_matches_list
+
+def export_pandas(matches):
+    match_data = []
+    for match_series in matches:
+        for match in match_series.matches:
+            match_dict = {
+                "pattern_generating_match": match_series.pattern,
+                "pattern_matched": match.pattern,
+                "piece_title": match.first_note.metadata.title,
+                "part": match.first_note.part,
+                "start_measure": match.first_note.note.measureNumber,
+                "start_beat": match.first_note.note.beat,
+                "end_measure": match.last_note.note.measureNumber,
+                "end_beat": match.last_note.note.beat,
+                "start_offset": match.first_note.offset,
+                "end_offset": match.last_note.offset,
+                "note_durations": match.durations,
+                "ema": match.ema,
+                "ema_url": match.ema_url
+            }
+            match_data.append(match_dict)
+    return pd.DataFrame(match_data)
+
+# Filters for the length of the Presentation Type in the Classifier
+def limit_offset_size(array, limit):
+    under_limit = np.cumsum(array) <= limit
+    return array[: sum(under_limit)]
+
+# Gets the the list of offset differences for each group
+def get_offset_difference_list(group):
+    # if we do sort values as part of the func call, then we don't need this first line
+    group = group.sort_values("start_offset")
+    group["next_offset"] = group.start_offset.shift(-1)
+    offset_difference_list = (group.next_offset - group.start_offset).dropna().tolist()
+    return offset_difference_list
+
+# The classifications are done here
+# be sure to have the offset difference limit set here and matched in gap check below  80 = ten bars
+def classify_offsets(offset_difference_list, offset_difference_limit):
+    """
+    Put logic for classifying an offset list here
+    """
+    offset_difference_list = limit_offset_size(offset_difference_list, offset_difference_limit)
+    alt_list = offset_difference_list[::2]
+
+    if len(set(offset_difference_list)) == 1 and len(offset_difference_list) > 1:
+        return ("PEN", offset_difference_list)
+    # elif (len(offset_difference_list) %2 != 0) and (len(set(alt_list)) == 1):
+    elif (len(offset_difference_list) % 2 != 0) and (len(set(alt_list)) == 1) and (len(offset_difference_list) >= 3):
+        return ("ID", offset_difference_list)
+    elif len(offset_difference_list) >= 1:
+        return ("Fuga", offset_difference_list)
+    else:
+        return ("Singleton", offset_difference_list)
+
+def predict_type(group, offset_difference_limit):
+    offset_differences = get_offset_difference_list(group)
+    predicted_type, offsets = classify_offsets(offset_differences, offset_difference_limit)
+
+    group["predicted_type"] = [predicted_type for i in range(len(group))]
+    group["offset_diffs"] = [offsets for i in range(len(group))]
+    group["entry_number"] = [i + 1 for i in range(len(group))]
+    return group
 
 
 class NoteListElement:
@@ -94,8 +277,9 @@ class NoteListElement:
 
 
 class ImportedPiece:
-    def __init__(self, score, mei_doc=None):
+    def __init__(self, score, path, mei_doc=None):
         self.score = score
+        self.path = path
         self.mei_doc = mei_doc
         self.analyses = {'note_list': None}
         if mei_doc:
@@ -1153,6 +1337,108 @@ class ImportedPiece:
         if return_type[0].lower() == 'f':
             return cvfs
         return labels
+
+    def getPoints(self, duration_type="real", interval_type="generic", match_type="close", min_exact_matches=2, 
+        min_close_matches=3, close_distance=1, vector_size=4, increment_size=4, forward_gap_limit=40,
+        backward_gap_limit=40, min_sum_durations=10, max_sum_durations=30, offset_difference_limit=500):
+        corpus = CorpusBase([self.path])
+        if duration_type == "real":
+            vectors = IntervalBase(corpus.note_list)
+        elif duration_type == "incremental":
+            vectors = IntervalBase(corpus.note_list_incremental_offset(increment_size))
+
+        if interval_type == "generic":
+            patterns = into_patterns([vectors.generic_intervals], vector_size)
+        elif interval_type == "semitone":
+            patterns = into_patterns([vectors.semitone_intervals], vector_size)
+
+        if match_type == "exact":
+            exact_matches = find_exact_matches(patterns, min_exact_matches)
+            df = export_pandas(exact_matches)
+        elif match_type == "close":
+            close_matches = find_close_matches(patterns, min_close_matches, close_distance)
+            output_close = export_pandas(close_matches)
+            output_close["pattern_generating_match"] = output_close["pattern_generating_match"].apply(tuple)
+            df = output_close
+            pd.set_option("display.max_rows", None, "display.max_columns", None)
+
+        df["note_durations"] = df["note_durations"].map(lambda x: pd.eval(x))
+        df["start_offset"] = df["start_offset"].map(lambda x: pd.eval(x))
+        df["end_offset"] = df["end_offset"].map(lambda x: pd.eval(x))
+        df["pattern_generating_match"] = df["pattern_generating_match"].apply(tuple)
+        df["pattern_matched"] = df["pattern_matched"].apply(tuple)
+        df["sum_durs"] = df.note_durations.apply(sum)
+        df = df.round(2)
+
+        # Make Groups, Sort By Group and Offset, then and Add Previous/Next
+        df["group_number"] = df.groupby("pattern_matched").ngroup()
+        df = df.sort_values(["group_number", "start_offset"])
+        df["prev_entry_off"] = df["start_offset"].shift(1)
+        df["next_entry_off"] = df["start_offset"].shift(-1)
+
+        first_of_group = df.drop_duplicates(subset=["pattern_matched"], keep="first").index
+        df["is_first"] = df.index.isin(first_of_group)
+        last_of_group = df.drop_duplicates(subset=["pattern_matched"], keep="last").index
+        df["is_last"] = df.index.isin(last_of_group)
+
+        # Check Differences between Next and Last Offset
+        df["last_off_diff"] = df["start_offset"] - df["prev_entry_off"]
+        df["next_off_diff"] = df["next_entry_off"] - df["start_offset"]
+
+        # Find Parallel Entries
+        df["parallel"] = df["last_off_diff"] == 0
+
+        # Set Gap Limits and Check Gaps Forward and Back
+        df["forward_gapped"] = df["next_off_diff"] >= forward_gap_limit
+        df["back_gapped"] = df["last_off_diff"] >= backward_gap_limit
+
+        # Find Singletons and Split Groups with Gaps
+        df["singleton"] = (df["forward_gapped"] == True) & (df["back_gapped"] == True) | (
+            df["back_gapped"] == True
+        ) & (df["is_last"])
+        df["split_group"] = (df["forward_gapped"] == False) & (df["back_gapped"] == True)
+
+        # Mask Out Parallels and Singletons
+        df = df[df["parallel"] != True]
+        df = df[df["singleton"] != True]
+        df["next_off_diff"] = df["next_off_diff"].abs()
+        df["last_off_diff"] = df["last_off_diff"].abs()
+
+        # Find Final Groups
+        df["combined_group"] = df.split_group | df.is_first
+        df.loc[(df["combined_group"]), "sub_group_id"] = range(df.combined_group.sum())
+        df["sub_group_id"] = df["sub_group_id"].ffill()
+
+        ### FILTER SHORT OR LONG ENTRIES
+        df = df[df["sum_durs"] >= min_sum_durations]
+        df = df[df["sum_durs"] <= max_sum_durations]
+
+        classified2 = (df.applymap(lambda cell: tuple(cell) if isinstance(cell, list) else cell)
+            .groupby("sub_group_id").apply(predict_type, **{"offset_difference_limit": offset_difference_limit}))
+
+        # OPTIONAL:  drop the new singletons
+        classified2.drop(classified2[classified2["predicted_type"] == "Singleton"].index, inplace=True)
+        # OPTIONAL:  select only certain presentation types
+        # classified2 = classified2[classified2["predicted_type"] == "PEN"]
+
+        classified2["start"] = classified2["start_measure"].astype(str) + "/" + classified2["start_beat"].astype(str)
+        classified2.drop(columns=["start_measure", "start_beat", "offset_diffs"], inplace=True)
+
+        # put things back in order by offset and group them again
+        classified2.sort_values(by=["start_offset"], inplace=True)
+        # return classified2
+        # Now transform as Pivot Table
+        pivot = classified2.pivot_table(
+            index=["piece_title", "pattern_generating_match", "pattern_matched", "predicted_type", "sub_group_id"],
+            columns="entry_number",
+            values=["part", "start_offset", "start", "sum_durs"],
+            aggfunc=lambda x: x)
+        pivot_sort = pivot.sort_values(by=[("start_offset", 1)])
+        pivot_sort = pivot_sort.fillna("-")
+        pivot_sort.reset_index(inplace=True)
+        # pivot_sort = pivot_sort.drop(columns=["sub_group_id", "start_offset"], level=0)
+        pivot_sort = pivot_sort.drop(columns=["sub_group_id"], level=0)
+        return pivot_sort
         
 
 
@@ -1191,7 +1477,7 @@ class CorpusBase:
         self.paths = paths
         self.scores = []  # store lists of ImportedPieces generated from the path above
         for path in paths:
-            _score = import_m21_score(path)
+            _score = importScore(path)
             if _score is not None:
                 self.scores.append(_score)
 
@@ -1471,7 +1757,7 @@ class ScoreBase:
             If score isn't succesfully imported, raises error
         """
         self.url = url
-        self.score = import_m21_score(url)
+        self.score = importScore(url)
         if self.score is None:
             raise Exception("Import from", str(self.url),
                             "failed, please check your ath/file type.")

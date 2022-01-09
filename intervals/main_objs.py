@@ -277,6 +277,7 @@ class NoteListElement:
 class ImportedPiece:
     def __init__(self, score, path, mei_doc=None):
         self.score = score
+        self.path = path
         self.mei_doc = mei_doc
         self.analyses = {'note_list': None}
         if mei_doc:

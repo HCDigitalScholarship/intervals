@@ -684,19 +684,29 @@ class ImportedPiece:
                 return interval.Interval(row[1], row[0])
         return None
 
-    def _melodifyPart(ser):
+    def _melodifyPart(ser, end):
         ser.dropna(inplace=True)
-        shifted = ser.shift(1)
+        shifted = ser.shift(1) if end else ser.shift(-1)
         partDF = pd.concat([ser, shifted], axis=1)
-        res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
+        if end:
+            res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
+        else:
+            res = partDF.apply(ImportedPiece._harmonicIntervalHelper, axis=1).dropna()
         return res
 
-    def _getM21MelodicIntervals(self):
-        if 'M21MelodicIntervals' not in self.analyses:
-            m21Objs = self._getM21ObjsNoTies()
-            df = m21Objs.apply(ImportedPiece._melodifyPart)
-            self.analyses['M21MelodicIntervals'] = df
-        return self.analyses['M21MelodicIntervals']
+    def _getM21MelodicIntervals(self, end):
+        if end:
+            if 'M21MelodicIntervalsEnd' not in self.analyses:
+                m21Objs = self._getM21ObjsNoTies()
+                df = m21Objs.apply(ImportedPiece._melodifyPart, args=(end,))
+                self.analyses['M21MelodicIntervalsEnd'] = df
+            return self.analyses['M21MelodicIntervalsEnd']
+        else:
+            if 'M21MelodicIntervalsStart' not in self.analyses:
+                m21Objs = self._getM21ObjsNoTies()
+                df = m21Objs.apply(ImportedPiece._melodifyPart, args=(end,))
+                self.analyses['M21MelodicIntervalsStart'] = df
+            return self.analyses['M21MelodicIntervalsStart']
 
     def _getRegularM21MelodicIntervals(self, unit):
         m21Objs = self._getM21ObjsNoTies()
@@ -801,7 +811,7 @@ class ImportedPiece:
         dist.index = uni
         return dist
 
-    def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
+    def getMelodic(self, kind='q', directed=True, compound=True, unit=0, end=True):
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
@@ -832,9 +842,9 @@ class ImportedPiece:
         kind = {'s': 'c'}.get(kind, kind)
         _kind = {'z': 'd'}.get(kind, kind)
         settings = (_kind, directed, compound)
-        key = ('MelodicIntervals', kind, directed, compound)
+        key = ('MelodicIntervals', kind, directed, compound, end)
         if key not in self.analyses or unit:
-            df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals()
+            df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals(end)
             df = df.applymap(self._intervalMethods[settings])
             if kind == 'z':
                 df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')

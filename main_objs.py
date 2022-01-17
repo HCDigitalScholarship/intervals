@@ -1351,6 +1351,40 @@ class ImportedPiece:
             return cvfs
         return labels
 
+    def _entryHelper(self, col):
+        """Return True for cells in column that correspond to notes that either
+        begin a piece, or are immediately preceded by a rest."""
+        _col = col.dropna()
+        mask = ((_col != 'Rest') & (_col.shift().fillna('Rest') == 'Rest'))
+        return mask
+
+    def getEntryMask(self):
+        """Return a dataframe of True, False, or NaN values which can be used as
+        a mask (filter). When applied to another dataframe, only the True cells
+        in the mask will be kept. Usage:
+        piece = importScore('path_to_piece')
+        mask = piece.getEntryMask()
+        df = piece.getNoteRest()
+        df[mask]
+        """
+        nr = self.getNoteRest()
+        mask = nr.apply(self._entryHelper)
+        return mask
+
+    def getMelodicEntries(self, interval_settings=('d', True, True), n=3):
+        """Return a dataframe of the melodies that either start a piece or come
+        after a silence. The melodies will be shown according to the 
+        interval_settings passed and n melodic intervals long. The offset of 
+        each melodic entry is the starting offset of the first note in the 
+        melody. If you want melodies 4 notes long, for example, note that this
+        would be n=3, because four consecutive notes are constitute 3 melodic
+        intervals.
+        """
+        mel = self.getMelodic(*interval_settings, end=False)  # "end" indexes from first note of each interval
+        melNgrams = self.getNgrams(mel, n)  # 3grams of melodic movements
+        mask = self.getEntryMask()
+        return melNgrams[mask].dropna(how='all')
+
     def getPoints(self, duration_type="real", interval_type="generic", match_type="close", min_exact_matches=2, 
         min_close_matches=3, close_distance=1, vector_size=4, increment_size=4, forward_gap_limit=40,
         backward_gap_limit=40, min_sum_durations=10, max_sum_durations=30, offset_difference_limit=500):

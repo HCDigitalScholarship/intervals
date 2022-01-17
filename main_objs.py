@@ -815,8 +815,9 @@ class ImportedPiece:
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
-        interval. If you want melodic intervals measured at a regular duration,
-        do not pipe this methods result to the `unit` method. Instead,
+        interval. To associate intervals with the offset of the first notes, 
+        pass end=False. If you want melodic intervals measured at a regular
+        duration, do not pipe this methods result to the `unit` method. Instead,
         pass the desired regular durational interval as an integer or float as
         the `unit` parameter.
 
@@ -836,6 +837,9 @@ class ImportedPiece:
         :param int/float unit: regular durational interval at which to measure
             melodic intervals. See the documentation of the `unit` method for
             more about this.
+        :param bool end: True (default) associates each melodic interval with 
+            the offset of the second note in the interval. Pass False to 
+            change this to the first note in each interval.
         :returns: `pandas.DataFrame` of melodic intervals in each part
         '''
         kind = kind[0].lower()

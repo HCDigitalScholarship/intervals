@@ -426,7 +426,7 @@ def ema2ex(emaStr, df):
 
 def _gatherNgram(row):
     ema, url, cz, tz = row  # cz/tz are for cantizans/tenorizans
-    piece = import_m21_score(url)
+    piece = importScore(url)
     nr = piece.getNoteRest()
     di = piece.detailIndex(nr, offset=True)
     excerpt = ema2ex(ema, di)

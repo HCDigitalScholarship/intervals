@@ -4,7 +4,7 @@ from test_constants import *
 
 def get_crim_model(file):
     root = "https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/"
-    return import_m21_score(root + file)
+    return importScore(root + file)
 
 def test_get_semi_flat_parts_name():
     """

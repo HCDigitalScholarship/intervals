@@ -233,7 +233,6 @@ def predict_type(group, offset_difference_limit):
     return group
 
 
-
 class NoteListElement:
     """
     An extension of the music21 note class
@@ -682,19 +681,29 @@ class ImportedPiece:
                 return interval.Interval(row[1], row[0])
         return None
 
-    def _melodifyPart(ser):
+    def _melodifyPart(ser, end):
         ser.dropna(inplace=True)
-        shifted = ser.shift(1)
+        shifted = ser.shift(1) if end else ser.shift(-1)
         partDF = pd.concat([ser, shifted], axis=1)
-        res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
+        if end:
+            res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
+        else:  # not a typo, this uses _harmonicIntervalHelper if end == False
+            res = partDF.apply(ImportedPiece._harmonicIntervalHelper, axis=1).dropna()
         return res
 
-    def _getM21MelodicIntervals(self):
-        if 'M21MelodicIntervals' not in self.analyses:
-            m21Objs = self._getM21ObjsNoTies()
-            df = m21Objs.apply(ImportedPiece._melodifyPart)
-            self.analyses['M21MelodicIntervals'] = df
-        return self.analyses['M21MelodicIntervals']
+    def _getM21MelodicIntervals(self, end):
+        if end:
+            if 'M21MelodicIntervalsEnd' not in self.analyses:
+                m21Objs = self._getM21ObjsNoTies()
+                df = m21Objs.apply(ImportedPiece._melodifyPart, args=(end,))
+                self.analyses['M21MelodicIntervalsEnd'] = df
+            return self.analyses['M21MelodicIntervalsEnd']
+        else:
+            if 'M21MelodicIntervalsStart' not in self.analyses:
+                m21Objs = self._getM21ObjsNoTies()
+                df = m21Objs.apply(ImportedPiece._melodifyPart, args=(end,))
+                self.analyses['M21MelodicIntervalsStart'] = df
+            return self.analyses['M21MelodicIntervalsStart']
 
     def _getRegularM21MelodicIntervals(self, unit):
         m21Objs = self._getM21ObjsNoTies()
@@ -799,12 +808,13 @@ class ImportedPiece:
         dist.index = uni
         return dist
 
-    def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
+    def getMelodic(self, kind='q', directed=True, compound=True, unit=0, end=True):
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
-        interval. If you want melodic intervals measured at a regular duration,
-        do not pipe this methods result to the `unit` method. Instead,
+        interval. To associate intervals with the offset of the first notes, 
+        pass end=False. If you want melodic intervals measured at a regular
+        duration, do not pipe this methods result to the `unit` method. Instead,
         pass the desired regular durational interval as an integer or float as
         the `unit` parameter.
 
@@ -824,15 +834,18 @@ class ImportedPiece:
         :param int/float unit: regular durational interval at which to measure
             melodic intervals. See the documentation of the `unit` method for
             more about this.
+        :param bool end: True (default) associates each melodic interval with 
+            the offset of the second note in the interval. Pass False to 
+            change this to the first note in each interval.
         :returns: `pandas.DataFrame` of melodic intervals in each part
         '''
         kind = kind[0].lower()
         kind = {'s': 'c'}.get(kind, kind)
         _kind = {'z': 'd'}.get(kind, kind)
         settings = (_kind, directed, compound)
-        key = ('MelodicIntervals', kind, directed, compound)
+        key = ('MelodicIntervals', kind, directed, compound, end)
         if key not in self.analyses or unit:
-            df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals()
+            df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals(end)
             df = df.applymap(self._intervalMethods[settings])
             if kind == 'z':
                 df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
@@ -930,7 +943,10 @@ class ImportedPiece:
         for excl in exclude:
             chains = chains[(chains != excl).all(1)]
         chains.dropna(inplace=True)
-        chains = chains.apply(lambda row: ', '.join(row), axis=1)
+        if col.dtype.name in ('float64', 'int64'):
+            chains = chains.apply(tuple, axis=1)
+        else:
+            chains = chains.apply(lambda row: ', '.join(row), axis=1)
         return chains
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
@@ -1335,7 +1351,40 @@ class ImportedPiece:
         if return_type[0].lower() == 'f':
             return cvfs
         return labels
-        
+
+    def _entryHelper(self, col):
+        """Return True for cells in column that correspond to notes that either
+        begin a piece, or are immediately preceded by a rest."""
+        _col = col.dropna()
+        mask = ((_col != 'Rest') & (_col.shift().fillna('Rest') == 'Rest'))
+        return mask
+
+    def getEntryMask(self):
+        """Return a dataframe of True, False, or NaN values which can be used as
+        a mask (filter). When applied to another dataframe, only the True cells
+        in the mask will be kept. Usage:
+        piece = importScore('path_to_piece')
+        mask = piece.getEntryMask()
+        df = piece.getNoteRest()
+        df[mask]
+        """
+        nr = self.getNoteRest()
+        mask = nr.apply(self._entryHelper)
+        return mask
+
+    def getMelodicEntries(self, interval_settings=('d', True, True), n=3):
+        """Return a dataframe of the melodies that either start a piece or come
+        after a silence. The melodies will be shown according to the 
+        interval_settings passed and n melodic intervals long. The offset of 
+        each melodic entry is the starting offset of the first note in the 
+        melody. If you want melodies 4 notes long, for example, note that this
+        would be n=3, because four consecutive notes are constitute 3 melodic
+        intervals.
+        """
+        mel = self.getMelodic(*interval_settings, end=False)  # end=False indexes from first note of each interval
+        melNgrams = self.getNgrams(mel, n)
+        mask = self.getEntryMask()
+        return melNgrams[mask].dropna(how='all')
 
     def getPoints(self, duration_type="real", interval_type="generic", match_type="close", min_exact_matches=2, 
         min_close_matches=3, close_distance=1, vector_size=4, increment_size=4, forward_gap_limit=40,

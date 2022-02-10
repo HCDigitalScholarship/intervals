@@ -1474,19 +1474,19 @@ class ImportedPiece:
 
         # put things back in order by offset and group them again
         classified2.sort_values(by=["start_offset"], inplace=True)
-        # return classified2
+        return classified2
         # Now transform as Pivot Table
-        pivot = classified2.pivot_table(
-            index=["piece_title", "pattern_generating_match", "pattern_matched", "predicted_type", "sub_group_id"],
-            columns="entry_number",
-            values=["part", "start_offset", "start", "sum_durs"],
-            aggfunc=lambda x: x)
-        pivot_sort = pivot.sort_values(by=[("start_offset", 1)])
-        pivot_sort = pivot_sort.fillna("-")
-        pivot_sort.reset_index(inplace=True)
-        # pivot_sort = pivot_sort.drop(columns=["sub_group_id", "start_offset"], level=0)
-        pivot_sort = pivot_sort.drop(columns=["sub_group_id"], level=0)
-        return pivot_sort
+#         pivot = classified2.pivot_table(
+#             index=["piece_title", "pattern_generating_match", "pattern_matched", "predicted_type", "sub_group_id"],
+#             columns="entry_number",
+#             values=["part", "start_offset", "start", "sum_durs"],
+#             aggfunc=lambda x: x)
+#         pivot_sort = pivot.sort_values(by=[("start_offset", 1)])
+#         pivot_sort = pivot_sort.fillna("-")
+#         pivot_sort.reset_index(inplace=True)
+#         # pivot_sort = pivot_sort.drop(columns=["sub_group_id", "start_offset"], level=0)
+#         pivot_sort = pivot_sort.drop(columns=["sub_group_id"], level=0)
+#         return pivot_sort
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come

@@ -1580,8 +1580,8 @@ class CorpusBase:
         should always be an iterable of values for a given parameter.
 
         # Example using .batch to first get the melodic intervals of each piece 
-        in a corpus, and then pass that list of dataframes on to get melodic 
-        ngrams for each piece.
+        # in a corpus, and then pass that list of dataframes on to get melodic 
+        # ngrams for each piece:
 
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])

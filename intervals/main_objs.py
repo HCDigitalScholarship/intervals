@@ -1534,7 +1534,7 @@ class CorpusBase:
         self.note_list = self.note_list_whole_piece()
         self.no_unisons = self.note_list_no_unisons()
 
-    def batch(self, func, kwargs={}, metadata=True):
+    def batch(self, func, kwargs={}, list_args={}, metadata=True):
         '''
         Run the `func` on each of the scores in this CorpusBase object and
         return a list of the results. `func` should be a method from the
@@ -1549,7 +1549,7 @@ class CorpusBase:
         func = ImportedPiece.getNoteRest  # <- NB there are no parentheses here
         list_of_dfs = corpus.batch(func)
 
-        # Example passing some parameters to `func` calls. Note that you only ad
+        # Example passing some parameters to `func` calls. Note that you only add
         # the parameters to kwargs that you need to pass. This example returns a
         # list of dataframes of the melodic intervals of each piece in the corpus,
         # and in this case will be chromatic and undirected intervals because of
@@ -1569,10 +1569,32 @@ class CorpusBase:
         cadTypeCounts = combined_df['CadType'].value_counts()
         # Get the number of cadences per Beat level:
         cadTypeCounts = combined_df['Beat'].value_counts()
+
+        The `list_args` parameter can be used when you want to pass a different
+        value for the same parameter for each piece in the corpus. This is often
+        the case when you need to pass a dataframe of prior results to a 
+        function. Using `list_args` you can pass a list of dataframes and these 
+        will be used in the same order of pieces in the corpus. This makes it 
+        easy to chain uses of the .batch method. `list_args` is a dictionary 
+        where the keys are the names of the parameters you want, and the values 
+        should always be an iterable of values for a given parameter.
+
+        # Example using .batch to first get the melodic intervals of each piece 
+        in a corpus, and then pass that list of dataframes on to get melodic 
+        ngrams for each piece.
+
+        corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+        func1 = ImportedPiece.getMelodic
+        # NB: you would probably want to set metadata to False for most preliminary results
+        list_of_dfs = corpus.batch(func=func1, kwargs={'end': False}, metadata=False)
+        func2 = ImportedPiece.getNgrams
+        list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4}, list_args={'df': list_of_dfs})
         '''
         post = []
-        for score in self.scores:
-            df = func(score, **kwargs)
+        for i, score in enumerate(self.scores):
+            largs = {key: val[i] for key, val in list_args.items()}
+            df = func(score, **kwargs, **largs)
             if isinstance(df, pd.DataFrame):
                 if metadata:
                     df[['Composer', 'Title']] = score.metadata['composer'], score.metadata['title']

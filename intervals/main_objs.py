@@ -691,19 +691,24 @@ class ImportedPiece:
             res = partDF.apply(ImportedPiece._harmonicIntervalHelper, axis=1).dropna()
         return res
 
-    def _getM21MelodicIntervals(self, end):
-        if end:
-            if 'M21MelodicIntervalsEnd' not in self.analyses:
+    def _strToM21Obj(cell):
+        '''Convert a df cell from a string to a music21 note or rest. NAs are ignored.'''
+        if cell == 'Rest':
+            return note.Rest()
+        return note.Note(cell)
+
+    def _getM21MelodicIntervals(self, end, df):
+        key = 'M21MelodicIntervals' + 'End' if end else 'Start'
+        if key not in self.analyses or df is not None:
+            if df is None:
                 m21Objs = self._getM21ObjsNoTies()
-                df = m21Objs.apply(ImportedPiece._melodifyPart, args=(end,))
-                self.analyses['M21MelodicIntervalsEnd'] = df
-            return self.analyses['M21MelodicIntervalsEnd']
-        else:
-            if 'M21MelodicIntervalsStart' not in self.analyses:
-                m21Objs = self._getM21ObjsNoTies()
-                df = m21Objs.apply(ImportedPiece._melodifyPart, args=(end,))
-                self.analyses['M21MelodicIntervalsStart'] = df
-            return self.analyses['M21MelodicIntervalsStart']
+            else:
+                m21Objs = df.applymap(ImportedPiece._strToM21Obj, na_action='ignore')
+            _df = m21Objs.apply(ImportedPiece._melodifyPart, args=(end,))
+            if df is not None:
+                return _df
+            self.analyses[key] = _df
+        return self.analyses[key]
 
     def _getRegularM21MelodicIntervals(self, unit):
         m21Objs = self._getM21ObjsNoTies()
@@ -808,7 +813,7 @@ class ImportedPiece:
         dist.index = uni
         return dist
 
-    def getMelodic(self, kind='q', directed=True, compound=True, unit=0, end=True):
+    def getMelodic(self, kind='q', directed=True, compound=True, unit=0, end=True, df=None):
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
@@ -844,15 +849,15 @@ class ImportedPiece:
         _kind = {'z': 'd'}.get(kind, kind)
         settings = (_kind, directed, compound)
         key = ('MelodicIntervals', kind, directed, compound, end)
-        if key not in self.analyses or unit:
-            df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals(end)
-            df = df.applymap(self._intervalMethods[settings])
+        if key not in self.analyses or unit or df is not None:
+            _df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals(end, df)
+            _df = _df.applymap(self._intervalMethods[settings])
             if kind == 'z':
-                df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
-            if unit:
-                return df
+                _df = _df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+            if unit or df is not None:
+                return _df
             else:
-                self.analyses[key] = df
+                self.analyses[key] = _df
         return self.analyses[key]
 
     def _getM21HarmonicIntervals(self):

@@ -1252,7 +1252,7 @@ class ImportedPiece:
         returned. You can also set it to "functions" (or just "f") if you want 
         to get a table of just the cadential voice functions.
 
-        In 'cadences' mode, the SinceLast and ToNext columns are the time in 
+        In 'cadence' mode, the SinceLast and ToNext columns are the time in 
         quarter notes since the last or to the next cadence. The first cadence's
         SinceLast time and the last cadence's ToNext time are the time since/to
         the beginning/end of the piece. The "Low" and "Tone" columns give the
@@ -1262,11 +1262,18 @@ class ImportedPiece:
         "Rel" is short for relative, so "RelLow" is the lowest pitch of each
         cadence shown as an interval measured against the last pitch in the
         "Low" column. Likewise, "RelTone" is the cadential tone shown as an
-        interval measured against the last pitch in the "Tone" column.
+        interval measured against the last pitch in the "Tone" column. If
+        `keep_keys` is set to True in cadence mode, the "Key" column will be
+        kept in the cadence results table. This corresponds to the combination
+        of cadential voice functions and chromatic intervals used as a key to
+        lookup the cadence information in the cadenceLabels.csv file.
 
         When return_type is set to 'functions' (or just 'f' for short), a table
-        of the cadential voice functions (CVF) is returned. Each CVF is
-        represented with a single-character label with the meanings as follows:
+        of the cadential voice functions (CVF) is returned. In CVF mode, if
+        `keep_keys` is set to True, the ngrams that triggered each CVF pair
+        will be shown in additional columns in the table.
+
+        Each CVF is represented with a single-character label as follows:
 
         "C": cantizans motion up a step (can also be ornamented e.g. Landini)
         "T": tenorizans motion down a step (can be ornamented with anticipations)
@@ -1290,10 +1297,11 @@ class ImportedPiece:
         The way these CVFs combine determines which cadence labels are assigned
         when return_type='cadences'.
         '''
+        rType = return_type[0].lower()
         if 'Cadences' in self.analyses:
-            if return_type[0].lower() == 'c':
+            if rType == 'c':
                 return self.analyses['Cadences']
-            elif return_type[0].lower() == 'f':
+            elif rType == 'f':
                 return self.analyses['CVF']
         cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
@@ -1303,6 +1311,8 @@ class ImportedPiece:
         hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
         hits = pd.concat(hits)
         hits.sort_index(level=0, inplace=True)
+        if rType == 'f' and keep_keys:
+            ngramKeys = hits.unstack(level=1)
         hits.name = 'Ngram'
         df = pd.DataFrame(hits)
         df = df.join(cadences, on='Ngram')
@@ -1318,6 +1328,8 @@ class ImportedPiece:
         cvfs[(cvfs == 'x') & mel.isin(('5', '-7'))] = 'B'
         cvfs[(cvfs == 'y') & mel.isin(('1', '2'))] = 'C'
         cvfs[(cvfs == 'z') & mel.isin(('-1', '-2'))] = 'T'
+        if rType == 'f' and keep_keys:
+            cvfs = pd.concat([cvfs, ngramKeys], axis=1)
         self.analyses['CVF'] = cvfs
         _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
@@ -1572,8 +1584,8 @@ class CorpusBase:
 
         When passing on a parameter that is a dataframe, a different dataframe
         is needed for each piece in the corpus. This applies to the parameters
-        called "df", "mask_df", and "other". In these cases you should pass a 
-        list of dataframes in batch's kwargs for that parameter. This makes it 
+        called "df", "mask_df", and "other". In these cases you should pass a
+        list of dataframes in batch's kwargs for that parameter. This makes it
         easy to chain uses of the .batch method.
 
         # Example using .batch to first get the melodic intervals of each piece 

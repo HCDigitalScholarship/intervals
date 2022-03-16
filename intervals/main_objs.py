@@ -819,9 +819,9 @@ class ImportedPiece:
         is associated with the starting offset of the second note in the
         interval. To associate intervals with the offset of the first notes, 
         pass end=False. If you want melodic intervals measured at a regular
-        duration, do not pipe this methods result to the `unit` method. Instead,
-        pass the desired regular durational interval as an integer or float as
-        the `unit` parameter.
+        duration, do not pipe this method's result to the `regularize` method.
+        Instead, pass the desired regular durational interval as an integer or
+        float as the `unit` parameter.
 
         :param str kind: use "q" (default) for diatonic intervals with quality,
             "d" for diatonic intervals without quality, "z" for zero-indexed
@@ -837,11 +837,18 @@ class ImportedPiece:
             unisons. But for semitonal intervals, an interval of an octave
             (12 semitones) would does get simplified to a unison (0).
         :param int/float unit: regular durational interval at which to measure
-            melodic intervals. See the documentation of the `unit` method for
-            more about this.
+            melodic intervals. See the documentation of the `regularize` method
+            for more about this.
         :param bool end: True (default) associates each melodic interval with 
             the offset of the second note in the interval. Pass False to 
             change this to the first note in each interval.
+        :param pandas DataFrame df: None (default) is the standard behavior.
+            Pass a df of note and rest strings to calculate the melodic interals
+            in any dataframe. For example, if you want to find the melodic
+            intervals between notes, but don't want to count repetitions of the
+            same note as an interval, first run .getNoteRest(combineUnisons=True)
+            then pass that result as the df parameter for .getMelodic. Results
+            are not cached in this case.
         :returns: `pandas.DataFrame` of melodic intervals in each part
         '''
         kind = kind[0].lower()

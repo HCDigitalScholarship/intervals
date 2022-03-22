@@ -1407,7 +1407,7 @@ class ImportedPiece:
         piece = importScore('path_to_piece')
         mask = piece.getEntryMask()
         df = piece.getNoteRest()
-        df[mask]
+        df[mask].dropna(how='all')
         """
         nr = self.getNoteRest()
         mask = nr.apply(self._entryHelper)

@@ -316,7 +316,6 @@ class ImportedPiece:
     def _getPartSeries(self):
         if 'PartSeries' not in self.analyses:
             part_series = []
-
             for i, flat_part in enumerate(self._getSemiFlatParts()):
                 notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
                 part_name = flat_part.partName or 'Part_' + str(i + 1)
@@ -509,7 +508,7 @@ class ImportedPiece:
         if 'NoteRest' not in self.analyses:
             df = self._getM21ObjsNoTies().applymap(self._noteRestHelper, na_action='ignore')
             self.analyses['NoteRest'] = df
-        ret = self.analyses['NoteRest']
+        ret = self.analyses['NoteRest'].copy()
         if combineRests:
             ret = ret.apply(self._combineRests)
         if combineUnisons:
@@ -633,8 +632,24 @@ class ImportedPiece:
             df = pd.concat(partMeasures, axis=1)
             df.columns = self._getPartNames()
             self.analyses["Measure"] = df
-
         return self.analyses["Measure"]
+
+    def getBarline(self):
+        """
+        This method retrieves some of the barlines. It's not clear how music21
+        picks them, but this seems to get all the double barlines which helps
+        detect section divisions.
+        """
+        if "Barline" not in self.analyses:
+            parts = self._getSemiFlatParts()
+            partBarlines = []
+            for part in parts:
+                partBarlines.append(pd.Series({b.offset: b.type \
+                    for b in part.getElementsByClass(['Barline'])}))
+            df = pd.concat(partBarlines, axis=1)
+            df.columns = self._getPartNames()
+            self.analyses["Barline"] = df
+        return self.analyses["Barline"]
 
     def getSoundingCount(self):
         """
@@ -1378,9 +1393,11 @@ class ImportedPiece:
 
     def _entryHelper(self, col):
         """Return True for cells in column that correspond to notes that either
-        begin a piece, or are immediately preceded by a rest."""
+        begin a piece, or immediately preceded by a rest or a double barline."""
+        barlines = self.getBarline()[col.name]
         _col = col.dropna()
-        mask = ((_col != 'Rest') & (_col.shift().fillna('Rest') == 'Rest'))
+        shifted = _col.shift().fillna('Rest')
+        mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double')))
         return mask
 
     def getEntryMask(self):

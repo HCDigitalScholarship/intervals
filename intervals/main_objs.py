@@ -48,8 +48,7 @@ def importScore(path):
             pathDict[path] = ImportedPiece(score, path, mei_doc)
             print("Successfully imported", path)
         except:
-            print("Import of", str(path), "failed, please check your",
-                  "file path/url. Continuing to next file.")
+            print("Import of", str(path), "failed, please check your file path/url.")
             return None
     
     return pathDict[path]
@@ -280,12 +279,12 @@ class ImportedPiece:
         self.mei_doc = mei_doc
         self.analyses = {'note_list': None}
         if mei_doc:
-            title = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}title')
+            title = mei_doc.find('mei:meiHead//mei:titleStmt/mei:title', namespaces={"mei": MEINSURI})
             if title is None:
                 title = 'Not found'
             else:
                 title = title.text or 'Not found'
-            composer = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}composer')
+            composer = mei_doc.find('mei:meiHead//mei:titleStmt/mei:composer', namespaces={"mei": MEINSURI})
             if composer is None:
                 composer = 'Not found'
             else:

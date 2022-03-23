@@ -14,6 +14,7 @@ cwd = os.path.dirname(intervals.__file__)
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
+suppliedPattern = re.compile("<supplied.*?(<accid.*?\/>).*?<\/supplied>", flags=re.DOTALL)
 
 # An extension of the music21 note class with more information easily accessible
 
@@ -44,6 +45,8 @@ def importScore(path):
             else:
                 mei_doc = None
         try:
+            if mei_doc is not None:
+                to_import = re.sub(suppliedPattern, '\\1', to_import)
             score = converter.parse(to_import)
             pathDict[path] = ImportedPiece(score, path, mei_doc)
             print("Successfully imported", path)

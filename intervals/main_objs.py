@@ -281,17 +281,13 @@ class ImportedPiece:
         self.path = path
         self.mei_doc = mei_doc
         self.analyses = {'note_list': None}
-        if mei_doc:
+        if mei_doc is not None:
             title = mei_doc.find('mei:meiHead//mei:titleStmt/mei:title', namespaces={"mei": MEINSURI})
-            if title is None:
-                title = 'Not found'
-            else:
-                title = title.text or 'Not found'
-            composer = mei_doc.find('mei:meiHead//mei:titleStmt/mei:composer', namespaces={"mei": MEINSURI})
-            if composer is None:
-                composer = 'Not found'
-            else:
-                composer = composer.text or 'Not found'
+            title = title.text if title is not None and hasattr(title, 'text') else 'Not found'
+            composer = mei_doc.find('mei:meiHead//mei:titleStmt//mei:persName[@role="composer"]', namespaces={"mei": MEINSURI})
+            if composer is None:  # for mei 3 files
+                composer = mei_doc.find('mei:meiHead//mei:titleStmt/mei:composer', namespaces={"mei": MEINSURI})
+            composer = composer.text if composer is not None and hasattr(composer, 'text') else 'Not found'
             self.metadata = {'title': title, 'composer': composer}
         else:
             self.metadata = {'title': 'Not found', 'composer': 'Not found'}

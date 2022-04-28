@@ -7,11 +7,14 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
 from itertools import combinations_with_replacement as cwr
+import os 
 import re
-
+import intervals
+cwd = os.path.dirname(intervals.__file__)
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
+suppliedPattern = re.compile("<supplied.*?(<accid.*?\/>).*?<\/supplied>", flags=re.DOTALL)
 
 # An extension of the music21 note class with more information easily accessible
 
@@ -42,12 +45,13 @@ def importScore(path):
             else:
                 mei_doc = None
         try:
+            if mei_doc is not None:
+                to_import = re.sub(suppliedPattern, '\\1', to_import)
             score = converter.parse(to_import)
             pathDict[path] = ImportedPiece(score, path, mei_doc)
             print("Successfully imported", path)
         except:
-            print("Import of", str(path), "failed, please check your",
-                  "file path/url. Continuing to next file.")
+            print("Import of", str(path), "failed, please check your file path/url.")
             return None
     
     return pathDict[path]
@@ -62,7 +66,6 @@ def into_patterns(vectors_list, interval):
         MUST be a list from calling generic_intervals or semitone_intervals on a VectorInterval object
     interval : int
         size of interval to be analyzed
-
     Returns
     -------
     patterns_data : list of tuples
@@ -89,14 +92,12 @@ def into_patterns(vectors_list, interval):
 # Potential fix is reincorporating into_patterns back into this method
 def find_exact_matches(patterns_data, min_matches=5):
     """Takes in a series of vector patterns with data attached and finds exact matches
-
     Parameters
     ----------
     patterns_data : return value from into_patterns
         MUST be return value from into_patterns
     min_matches : int, optional
         Minimum number of matches needed to be deemed relevant, defaults to 5
-
     Returns
     -------
     all_matches_list : list
@@ -131,7 +132,6 @@ def find_exact_matches(patterns_data, min_matches=5):
 # Finds matches based on a cumulative distance difference between two patterns
 def find_close_matches(patterns_data, min_matches, threshold):
     """Takes in a series of vector patterns with data attached and finds close matches
-
     Parameters
     ----------
     patterns_data : return value from into_patterns
@@ -140,7 +140,6 @@ def find_close_matches(patterns_data, min_matches, threshold):
         Minimum number of matches needed to be deemed relevant, defaults to 5
     threshold : int
         Cumulative variance allowed between vector patterns before they are deemed not similar
-
     Returns
     -------
     all_matches_list : list
@@ -282,17 +281,13 @@ class ImportedPiece:
         self.path = path
         self.mei_doc = mei_doc
         self.analyses = {'note_list': None}
-        if mei_doc:
-            title = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}title')
-            if title is None:
-                title = 'Not found'
-            else:
-                title = title.text or 'Not found'
-            composer = mei_doc.find(f'{MEINS}meiHead//{MEINS}titleStmt/{MEINS}composer')
-            if composer is None:
-                composer = 'Not found'
-            else:
-                composer = composer.text or 'Not found'
+        if mei_doc is not None:
+            title = mei_doc.find('mei:meiHead//mei:titleStmt/mei:title', namespaces={"mei": MEINSURI})
+            title = title.text if title is not None and hasattr(title, 'text') else 'Not found'
+            composer = mei_doc.find('mei:meiHead//mei:titleStmt//mei:persName[@role="composer"]', namespaces={"mei": MEINSURI})
+            if composer is None:  # for mei 3 files
+                composer = mei_doc.find('mei:meiHead//mei:titleStmt/mei:composer', namespaces={"mei": MEINSURI})
+            composer = composer.text if composer is not None and hasattr(composer, 'text') else 'Not found'
             self.metadata = {'title': title, 'composer': composer}
         else:
             self.metadata = {'title': 'Not found', 'composer': 'Not found'}
@@ -319,7 +314,6 @@ class ImportedPiece:
     def _getPartSeries(self):
         if 'PartSeries' not in self.analyses:
             part_series = []
-
             for i, flat_part in enumerate(self._getSemiFlatParts()):
                 notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
                 part_name = flat_part.partName or 'Part_' + str(i + 1)
@@ -512,7 +506,7 @@ class ImportedPiece:
         if 'NoteRest' not in self.analyses:
             df = self._getM21ObjsNoTies().applymap(self._noteRestHelper, na_action='ignore')
             self.analyses['NoteRest'] = df
-        ret = self.analyses['NoteRest']
+        ret = self.analyses['NoteRest'].copy()
         if combineRests:
             ret = ret.apply(self._combineRests)
         if combineUnisons:
@@ -636,8 +630,24 @@ class ImportedPiece:
             df = pd.concat(partMeasures, axis=1)
             df.columns = self._getPartNames()
             self.analyses["Measure"] = df
-
         return self.analyses["Measure"]
+
+    def getBarline(self):
+        """
+        This method retrieves some of the barlines. It's not clear how music21
+        picks them, but this seems to get all the double barlines which helps
+        detect section divisions.
+        """
+        if "Barline" not in self.analyses:
+            parts = self._getSemiFlatParts()
+            partBarlines = []
+            for part in parts:
+                partBarlines.append(pd.Series({b.offset: b.type \
+                    for b in part.getElementsByClass(['Barline'])}))
+            df = pd.concat(partBarlines, axis=1)
+            df.columns = self._getPartNames()
+            self.analyses["Barline"] = df
+        return self.analyses["Barline"]
 
     def getSoundingCount(self):
         """
@@ -684,19 +694,34 @@ class ImportedPiece:
                 return interval.Interval(row[1], row[0])
         return None
 
-    def _melodifyPart(ser):
+    def _melodifyPart(ser, end):
         ser.dropna(inplace=True)
-        shifted = ser.shift(1)
+        shifted = ser.shift(1) if end else ser.shift(-1)
         partDF = pd.concat([ser, shifted], axis=1)
-        res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
+        if end:
+            res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
+        else:  # not a typo, this uses _harmonicIntervalHelper if end == False
+            res = partDF.apply(ImportedPiece._harmonicIntervalHelper, axis=1).dropna()
         return res
 
-    def _getM21MelodicIntervals(self):
-        if 'M21MelodicIntervals' not in self.analyses:
-            m21Objs = self._getM21ObjsNoTies()
-            df = m21Objs.apply(ImportedPiece._melodifyPart)
-            self.analyses['M21MelodicIntervals'] = df
-        return self.analyses['M21MelodicIntervals']
+    def _strToM21Obj(cell):
+        '''Convert a df cell from a string to a music21 note or rest. NAs are ignored.'''
+        if cell == 'Rest':
+            return note.Rest()
+        return note.Note(cell)
+
+    def _getM21MelodicIntervals(self, end, df):
+        key = 'M21MelodicIntervals' + 'End' if end else 'Start'
+        if key not in self.analyses or df is not None:
+            if df is None:
+                m21Objs = self._getM21ObjsNoTies()
+            else:
+                m21Objs = df.applymap(ImportedPiece._strToM21Obj, na_action='ignore')
+            _df = m21Objs.apply(ImportedPiece._melodifyPart, args=(end,))
+            if df is not None:
+                return _df
+            self.analyses[key] = _df
+        return self.analyses[key]
 
     def _getRegularM21MelodicIntervals(self, unit):
         m21Objs = self._getM21ObjsNoTies()
@@ -801,14 +826,15 @@ class ImportedPiece:
         dist.index = uni
         return dist
 
-    def getMelodic(self, kind='q', directed=True, compound=True, unit=0):
+    def getMelodic(self, kind='q', directed=True, compound=True, unit=0, end=True, df=None):
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
-        interval. If you want melodic intervals measured at a regular duration,
-        do not pipe this methods result to the `unit` method. Instead,
-        pass the desired regular durational interval as an integer or float as
-        the `unit` parameter.
+        interval. To associate intervals with the offset of the first notes, 
+        pass end=False. If you want melodic intervals measured at a regular
+        duration, do not pipe this method's result to the `regularize` method.
+        Instead, pass the desired regular durational interval as an integer or
+        float as the `unit` parameter.
 
         :param str kind: use "q" (default) for diatonic intervals with quality,
             "d" for diatonic intervals without quality, "z" for zero-indexed
@@ -824,24 +850,34 @@ class ImportedPiece:
             unisons. But for semitonal intervals, an interval of an octave
             (12 semitones) would does get simplified to a unison (0).
         :param int/float unit: regular durational interval at which to measure
-            melodic intervals. See the documentation of the `unit` method for
-            more about this.
+            melodic intervals. See the documentation of the `regularize` method
+            for more about this.
+        :param bool end: True (default) associates each melodic interval with 
+            the offset of the second note in the interval. Pass False to 
+            change this to the first note in each interval.
+        :param pandas DataFrame df: None (default) is the standard behavior.
+            Pass a df of note and rest strings to calculate the melodic interals
+            in any dataframe. For example, if you want to find the melodic
+            intervals between notes, but don't want to count repetitions of the
+            same note as an interval, first run .getNoteRest(combineUnisons=True)
+            then pass that result as the df parameter for .getMelodic. Results
+            are not cached in this case.
         :returns: `pandas.DataFrame` of melodic intervals in each part
         '''
         kind = kind[0].lower()
         kind = {'s': 'c'}.get(kind, kind)
         _kind = {'z': 'd'}.get(kind, kind)
         settings = (_kind, directed, compound)
-        key = ('MelodicIntervals', kind, directed, compound)
-        if key not in self.analyses or unit:
-            df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals()
-            df = df.applymap(self._intervalMethods[settings])
+        key = ('MelodicIntervals', kind, directed, compound, end)
+        if key not in self.analyses or unit or df is not None:
+            _df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals(end, df)
+            _df = _df.applymap(self._intervalMethods[settings])
             if kind == 'z':
-                df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
-            if unit:
-                return df
+                _df = _df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+            if unit or df is not None:
+                return _df
             else:
-                self.analyses[key] = df
+                self.analyses[key] = _df
         return self.analyses[key]
 
     def _getM21HarmonicIntervals(self):
@@ -932,7 +968,10 @@ class ImportedPiece:
         for excl in exclude:
             chains = chains[(chains != excl).all(1)]
         chains.dropna(inplace=True)
-        chains = chains.apply(lambda row: ', '.join(row), axis=1)
+        if col.dtype.name in ('float64', 'int64'):
+            chains = chains.apply(tuple, axis=1)
+        else:
+            chains = chains.apply(lambda row: ', '.join(row), axis=1)
         return chains
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
@@ -1238,7 +1277,7 @@ class ImportedPiece:
         returned. You can also set it to "functions" (or just "f") if you want 
         to get a table of just the cadential voice functions.
 
-        In 'cadences' mode, the SinceLast and ToNext columns are the time in 
+        In 'cadence' mode, the SinceLast and ToNext columns are the time in 
         quarter notes since the last or to the next cadence. The first cadence's
         SinceLast time and the last cadence's ToNext time are the time since/to
         the beginning/end of the piece. The "Low" and "Tone" columns give the
@@ -1248,11 +1287,18 @@ class ImportedPiece:
         "Rel" is short for relative, so "RelLow" is the lowest pitch of each
         cadence shown as an interval measured against the last pitch in the
         "Low" column. Likewise, "RelTone" is the cadential tone shown as an
-        interval measured against the last pitch in the "Tone" column.
+        interval measured against the last pitch in the "Tone" column. If
+        `keep_keys` is set to True in cadence mode, the "Key" column will be
+        kept in the cadence results table. This corresponds to the combination
+        of cadential voice functions and chromatic intervals used as a key to
+        lookup the cadence information in the cadenceLabels.csv file.
 
         When return_type is set to 'functions' (or just 'f' for short), a table
-        of the cadential voice functions (CVF) is returned. Each CVF is
-        represented with a single-character label with the meanings as follows:
+        of the cadential voice functions (CVF) is returned. In CVF mode, if
+        `keep_keys` is set to True, the ngrams that triggered each CVF pair
+        will be shown in additional columns in the table.
+
+        Each CVF is represented with a single-character label as follows:
 
         "C": cantizans motion up a step (can also be ornamented e.g. Landini)
         "T": tenorizans motion down a step (can be ornamented with anticipations)
@@ -1276,12 +1322,13 @@ class ImportedPiece:
         The way these CVFs combine determines which cadence labels are assigned
         when return_type='cadences'.
         '''
+        rType = return_type[0].lower()
         if 'Cadences' in self.analyses:
-            if return_type[0].lower() == 'c':
+            if rType == 'c':
                 return self.analyses['Cadences']
-            elif return_type[0].lower() == 'f':
+            elif rType == 'f':
                 return self.analyses['CVF']
-        cadences = pd.read_csv('data/cadences/CVFLabels.csv', index_col='Ngram')
+        cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False),
                                     n=n, offsets='last', exclude=[]).stack()
@@ -1289,6 +1336,8 @@ class ImportedPiece:
         hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
         hits = pd.concat(hits)
         hits.sort_index(level=0, inplace=True)
+        if rType == 'f' and keep_keys:
+            ngramKeys = hits.unstack(level=1)
         hits.name = 'Ngram'
         df = pd.DataFrame(hits)
         df = df.join(cadences, on='Ngram')
@@ -1304,6 +1353,8 @@ class ImportedPiece:
         cvfs[(cvfs == 'x') & mel.isin(('5', '-7'))] = 'B'
         cvfs[(cvfs == 'y') & mel.isin(('1', '2'))] = 'C'
         cvfs[(cvfs == 'z') & mel.isin(('-1', '-2'))] = 'T'
+        if rType == 'f' and keep_keys:
+            cvfs = pd.concat([cvfs, ngramKeys], axis=1)
         self.analyses['CVF'] = cvfs
         _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
@@ -1311,7 +1362,7 @@ class ImportedPiece:
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values()), axis=1)
         keys.name = 'Key'
         keys = pd.DataFrame(keys)
-        cadDict = pd.read_csv('./data/cadences/cadenceLabels.csv', index_col=0)
+        cadDict = pd.read_csv(cwd+'/data/cadences/cadenceLabels.csv', index_col=0)
         labels = keys.join(cadDict, on='Key')
         m21 = self._getM21ObjsNoTies().ffill()
         labels['Low'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
@@ -1337,6 +1388,42 @@ class ImportedPiece:
         if return_type[0].lower() == 'f':
             return cvfs
         return labels
+
+    def _entryHelper(self, col):
+        """Return True for cells in column that correspond to notes that either
+        begin a piece, or immediately preceded by a rest or a double barline."""
+        barlines = self.getBarline()[col.name]
+        _col = col.dropna()
+        shifted = _col.shift().fillna('Rest')
+        mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double')))
+        return mask
+
+    def getEntryMask(self):
+        """Return a dataframe of True, False, or NaN values which can be used as
+        a mask (filter). When applied to another dataframe, only the True cells
+        in the mask will be kept. Usage:
+        piece = importScore('path_to_piece')
+        mask = piece.getEntryMask()
+        df = piece.getNoteRest()
+        df[mask].dropna(how='all')
+        """
+        nr = self.getNoteRest()
+        mask = nr.apply(self._entryHelper)
+        return mask
+
+    def getMelodicEntries(self, interval_settings=('d', True, True), n=3):
+        """Return a dataframe of the melodies that either start a piece or come
+        after a silence. The melodies will be shown according to the 
+        interval_settings passed and n melodic intervals long. The offset of 
+        each melodic entry is the starting offset of the first note in the 
+        melody. If you want melodies 4 notes long, for example, note that this
+        would be n=3, because four consecutive notes are constitute 3 melodic
+        intervals.
+        """
+        mel = self.getMelodic(*interval_settings, end=False)  # end=False indexes from first note of each interval
+        melNgrams = self.getNgrams(mel, n)
+        mask = self.getEntryMask()
+        return melNgrams[mask].dropna(how='all')
 
     def getPoints(self, duration_type="real", interval_type="generic", match_type="close", min_exact_matches=2, 
         min_close_matches=3, close_distance=1, vector_size=4, increment_size=4, forward_gap_limit=40,
@@ -1426,20 +1513,19 @@ class ImportedPiece:
 
         # put things back in order by offset and group them again
         classified2.sort_values(by=["start_offset"], inplace=True)
-        # return classified2
+        return classified2
         # Now transform as Pivot Table
-        pivot = classified2.pivot_table(
-            index=["piece_title", "pattern_generating_match", "pattern_matched", "predicted_type", "sub_group_id"],
-            columns="entry_number",
-            values=["part", "start_offset", "start", "sum_durs"],
-            aggfunc=lambda x: x)
-        pivot_sort = pivot.sort_values(by=[("start_offset", 1)])
-        pivot_sort = pivot_sort.fillna("-")
-        pivot_sort.reset_index(inplace=True)
-        # pivot_sort = pivot_sort.drop(columns=["sub_group_id", "start_offset"], level=0)
-        pivot_sort = pivot_sort.drop(columns=["sub_group_id"], level=0)
-        return pivot_sort
-        
+#         pivot = classified2.pivot_table(
+#             index=["piece_title", "pattern_generating_match", "pattern_matched", "predicted_type", "sub_group_id"],
+#             columns="entry_number",
+#             values=["part", "start_offset", "start", "sum_durs"],
+#             aggfunc=lambda x: x)
+#         pivot_sort = pivot.sort_values(by=[("start_offset", 1)])
+#         pivot_sort = pivot_sort.fillna("-")
+#         pivot_sort.reset_index(inplace=True)
+#         # pivot_sort = pivot_sort.drop(columns=["sub_group_id", "start_offset"], level=0)
+#         pivot_sort = pivot_sort.drop(columns=["sub_group_id"], level=0)
+#         return pivot_sort
 
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
@@ -1502,7 +1588,7 @@ class CorpusBase:
         func = ImportedPiece.getNoteRest  # <- NB there are no parentheses here
         list_of_dfs = corpus.batch(func)
 
-        # Example passing some parameters to `func` calls. Note that you only ad
+        # Example passing some parameters to `func` calls. Note that you only add
         # the parameters to kwargs that you need to pass. This example returns a
         # list of dataframes of the melodic intervals of each piece in the corpus,
         # and in this case will be chromatic and undirected intervals because of
@@ -1522,10 +1608,32 @@ class CorpusBase:
         cadTypeCounts = combined_df['CadType'].value_counts()
         # Get the number of cadences per Beat level:
         cadTypeCounts = combined_df['Beat'].value_counts()
+
+        When passing on a parameter that is a dataframe, a different dataframe
+        is needed for each piece in the corpus. This applies to the parameters
+        called "df", "mask_df", and "other". In these cases you should pass a
+        list of dataframes in batch's kwargs for that parameter. This makes it
+        easy to chain uses of the .batch method.
+
+        # Example using .batch to first get the melodic intervals of each piece 
+        # in a corpus, and then pass that list of dataframes on to get melodic 
+        # ngrams for each piece:
+
+        corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+        func1 = ImportedPiece.getMelodic
+        # NB: you would probably want to set metadata to False for most preliminary results
+        list_of_dfs = corpus.batch(func=func1, kwargs={'end': False}, metadata=False)
+        func2 = ImportedPiece.getNgrams
+        list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
         '''
         post = []
-        for score in self.scores:
-            df = func(score, **kwargs)
+        dfs = ('df', 'mask_df', 'other')
+        _kwargs = {key: val for key, val in kwargs.items() if key not in dfs}
+        list_args = {key: val for key, val in kwargs.items() if key in dfs}
+        for i, score in enumerate(self.scores):
+            largs = {key: val[i] for key, val in list_args.items()}
+            df = func(score, **_kwargs, **largs)
             if isinstance(df, pd.DataFrame):
                 if metadata:
                     df[['Composer', 'Title']] = score.metadata['composer'], score.metadata['title']

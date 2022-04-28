@@ -1,4 +1,4 @@
-from main_objs import *
+from intervals.main_objs import *
 from test_constants import *
 
 

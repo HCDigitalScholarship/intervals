@@ -5,10 +5,10 @@ This file contains unit tests for visualizations.
 
 import altair as alt
 import pandas as pd
-import visualizations as viz
+import intervals.visualizations as viz
 
 from fractions import Fraction
-from main_objs import CorpusBase
+from intervals.main_objs import CorpusBase
 from test_constants import EXAMPLE_CRIM_FILE, OBSERVATIONS_DICT_EXAMPLE, RELATIONSHIPS_DICT_EXAMPLE
 
 def ngrams_heatmap_test_helper(model, notes):

@@ -1,4 +1,5 @@
-from main_objs import *
+from .main_objs import * 
+# Potential redesign needed due to unstable nature of having user give over patterns_data
 
 def into_patterns_pd(df: list, interval_size):
     """Takes in a series of vector patterns with data attached and finds close matches

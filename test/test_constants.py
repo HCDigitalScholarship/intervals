@@ -262,7 +262,7 @@ FILES_NOTE_RESTS = [{'Superius': {0.0: 'G4', 4.0: 'D5', 310.0: 'D5', 528.0: 'A4'
                      'PrimusTenor': {0.0: 'Rest', 4.0: np.nan, 310.0: 'D4', 528.0: 'C4', 1072.0: None},
                      'SecundusTenor': {0.0: 'Rest', 4.0: np.nan, 310.0: 'F4', 528.0: 'Rest', 1072.0: 'B3'},
                      'Bassus': {0.0: 'Rest', 4.0: np.nan, 310.0: np.nan, 528.0: 'F3', 1072.0: 'G3'}},
-                    {'Superius': {0.0: 'Rest', 4.0: np.nan, 72.0: None, 116.0: 'F5', 246.0: 'C5'},
+                    {'Superius': {0.0: 'Rest', 4.0: np.nan, 72.0: None, 116.0: 'F5', 246.0: 'C#5'},
                      'Contratenor': {0.0: 'Rest', 4.0: np.nan, 72.0: 'E4', 116.0: 'A4', 246.0: np.nan},
                      'Tenor': {0.0: 'Rest', 4.0: 'A3', 72.0: 'C4', 116.0: 'F4', 246.0: np.nan},
                      'Bassus': {0.0: 'A3', 4.0: 'A3', 72.0: 'A3', 116.0: 'D4', 246.0: np.nan}},

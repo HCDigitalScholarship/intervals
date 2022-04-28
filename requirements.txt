@@ -7,7 +7,7 @@ httpx==0.18.1
 idna==3.1
 ipywidgets==7.6.3
 joblib==1.0.1
-lxml==4.6.3
+lxml==4.7.1
 more-itertools==8.7.0
 music21==7.1.0
 numpy==1.20.2
@@ -21,3 +21,4 @@ sniffio==1.2.0
 textdistance==4.2.1
 xlsxwriter==3.0.2
 webcolors==1.11.1
+requests==2.27.0

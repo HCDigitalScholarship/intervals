@@ -1236,7 +1236,7 @@ class ImportedPiece:
             if len(row.dropna()) > 2:
                 row.replace('h', 'b', inplace=True)
             else:
-                row.replace(('C', 'h'), float('nan'), inplace=True)
+                row.replace(('C', 'h'), np.nan, inplace=True)
         return row
 
     def _cvf_simplifier(self, row):
@@ -1246,9 +1246,9 @@ class ImportedPiece:
         they don't impact the cvf results. This just makes it simpler to write 
         cadenceLabels.'''
         if 't' in row.values and 'T' in row.values:
-            row = row.replace('t', float('nan'))
+            row = row.replace('t', np.nan)
         if 'B' in row.values or 'b' in row.values:
-            row = row.replace({'t': float('nan'), 'T': float('nan'), 'u': float('nan')})
+            row = row.replace(('t', 'T', 'u'), np.nan)
         return row
 
     def _lowest_pitch(self, row, m21):
@@ -1348,8 +1348,9 @@ class ImportedPiece:
         cvfs = pd.DataFrame(columns=self._getPartNames())
         df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
         mel = self.getMelodic('c', True, True)
-        mel = mel[cvfs.notnull()]
+        mel = mel[cvfs.notnull()].dropna(how='all')
         cvfs = cvfs.apply(self._cvf_disambiguate_h, axis=1).dropna(how='all')
+        cvfs = cvfs.astype('object', copy=False)
         cvfs[(cvfs == 'x') & mel.isin(('5', '-7'))] = 'B'
         cvfs[(cvfs == 'y') & mel.isin(('1', '2'))] = 'C'
         cvfs[(cvfs == 'z') & mel.isin(('-1', '-2'))] = 'T'

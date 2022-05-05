@@ -5,6 +5,8 @@ Ngram,LowerCVF,UpperCVF
 "7_Held, 6_Held, 5_-2, 8",T,C
 "7_Held, 6_Held, 5_Held, 6_-2, 8",T,C
 "7_Held, 6_Held, 6_Held, 5_-2, 8",T,C
+"7_Held, 6_Held, 6_Held, 5_Held, 6_-2, 8",T,C
+"7_Held, 6_Held, 6_Held, 5_Held, 6_-2, 1",T,C
 "-7_-2, -6_2, -8",C,T
 "-7_-2, -6_-2, -5_3, -8",C,T
 "-7_-2, -6_-2, -5_2, -6_2, -8",C,T
@@ -13,14 +15,18 @@ Ngram,LowerCVF,UpperCVF
 "2_-2, 3_-2, 4_3, 1",C,T
 "2_-2, 3_1, 3_-2, 4_2, 1",C,T
 "2_-2, 3_-2, 4_2, 3_2, 1",C,T
+"2_-2, 3_1, 3_-2, 4_2, 3_2, 1",C,T
+"2_-2, 3_1, 3_-2, 4_2, 3_2, 8",C,T
 "-2_Held, -3_-2, 1",T,C
 "-2_Held, -3_Held, -4_-2, 1",T,C
 "-2_Held, -3_Held, -3_Held, -4_-2, 1",T,C
 "-2_Held, -3_Held, -4_Held, -3_-2, 1",T,C
 "7_Held, 6_2, 6",t,C
+"7_Held, 6_Held, 6_Held, 5_Held, 6_-2, 6",t,C
 "3_Held, 2_-2, 3_2, 3",C,t
 "1_Held, 2_-2, 3_2, 3",C,t
 "8_Held, 2_-2, 3_2, 3",C,t
+"2_-2, 3_1, 3_-2, 4_2, 3_2, 3",C,t
 "-2_Held, -3_Rest, Rest",z,y
 "2_-2, 3_Rest, Rest",y,z
 "8_5, 4_Held, 3_Rest, Rest",x,y
@@ -43,6 +49,7 @@ Ngram,LowerCVF,UpperCVF
 "4_Held, 3_Held, 2_-5, 8",B,C
 "4_Held, 3_Held, 3_Held, 2_-5, 8",B,C
 "4_Held, 3_Held, 2_Held, 3_-5, 8",B,C
+"4_Held, 3_Held, 3_Held, 2_Held, 3_-5, 8",B,C
 "-4_Held, -3_-5, -8",C,B
 "-4_Held, -3_Held, -2_-5, -8",C,B
 "-4_Held, -3_Held, -3_Held, -2_-5, -8",C,B

@@ -1603,7 +1603,7 @@ def classify_by_offset(offset_diffs):
 
 
 
-def temp_dict_of_details(slist, entry_array, det, matches):
+def temp_dict_of_details(slist, entry_array, det, matches, piece):
     """This helper function is used as part of classify_entries_as_presentation_types.
     This function assembles various features for the presentation types
     into a single temporary dictionary, which in turn is appended to the dataframe of 'points'
@@ -1612,7 +1612,7 @@ def temp_dict_of_details(slist, entry_array, det, matches):
 
     array = entry_array[entry_array.index.get_level_values(0).isin(slist)]
     short_offset_list = array.index.to_list()
-    time_ints = numpy.diff(array.index).tolist()
+    time_ints = np.diff(array.index).tolist()
     voice_list = array['voice'].to_list()
     tone_coordinates =  list(zip(short_offset_list, voice_list))
     mel_ints = find_entry_int_distance(tone_coordinates, piece)
@@ -1634,7 +1634,7 @@ def temp_dict_of_details(slist, entry_array, det, matches):
             'Melodic_Entry_Intervals': mel_ints}
     return temp
 
-def classify_entries_as_presentation_types(piece, dur_ng, mel_ng, include_hidden_types):
+def classify_entries_as_presentation_types(piece, nr, dur_ng, mel_ng, edit_distance_threshold, include_hidden_types):
 
     """This function uses several other functions to classify the entries in a given piece.
     The output is a list, in order of offset, of each presentation type, including information about
@@ -1696,7 +1696,7 @@ def classify_entries_as_presentation_types(piece, dur_ng, mel_ng, include_hidden
             split_list = list(split_by_threshold(offset_list))
             # here is the list of starting offsets of the original set of entries:  slist
             slist = split_list[0]
-            temp = temp_dict_of_details(slist, entry_array, det, matches)
+            temp = temp_dict_of_details(slist, entry_array, det, matches, piece)
 
             points = points.append(temp, ignore_index=True)
             points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)
@@ -1731,7 +1731,7 @@ def classify_entries_as_presentation_types(piece, dur_ng, mel_ng, include_hidden
             split_list = list(split_by_threshold(offset_list))
             # here is the list of starting offsets of the original set of entries:  slist
             slist = split_list[0]
-            temp = temp_dict_of_details(slist, entry_array, det, matches)
+            temp = temp_dict_of_details(slist, entry_array, det, matches, piece)
 
             points = points.append(temp, ignore_index=True)
             points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)

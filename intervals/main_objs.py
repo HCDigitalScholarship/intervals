@@ -1612,7 +1612,7 @@ def temp_dict_of_details(slist, entry_array, det, matches):
 
     array = entry_array[entry_array.index.get_level_values(0).isin(slist)]
     short_offset_list = array.index.to_list()
-    time_ints = numpy.diff(array.index).tolist()
+    time_ints = np.diff(array.index).tolist()
     voice_list = array['voice'].to_list()
     tone_coordinates =  list(zip(short_offset_list, voice_list))
     mel_ints = find_entry_int_distance(tone_coordinates, piece)

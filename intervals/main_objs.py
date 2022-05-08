@@ -1533,8 +1533,7 @@ class ImportedPiece:
 #         return pivot_sort
 def find_entry_int_distance(coordinates, piece: intervals.main_objs.ImportedPiece):
 
-    """
-    This helper function is used as part of classify_entries_as_presentation_types.
+    """This helper function is used as part of classify_entries_as_presentation_types.
     This function finds the melodic intervals between the first notes of
     successive entries in a given presentation type.
     They are represented as intervals with quality and direction, thus P-4, m3, P5, P5, M-9, P-4, P4
@@ -1560,8 +1559,7 @@ def find_entry_int_distance(coordinates, piece: intervals.main_objs.ImportedPiec
 
 def split_by_threshold(seq, max_diff=70):
 
-    """
-    This helper function is used as part of classify_entries_as_presentation_types.
+    """This helper function is used as part of classify_entries_as_presentation_types.
     This function finds gaps between sequences of matching melodic entries.
     The threshold is set to 70 offsets by default--under about 10 measures.
 
@@ -1583,8 +1581,7 @@ def split_by_threshold(seq, max_diff=70):
 
 
 def classify_by_offset(offset_diffs):
-    """
-    This helper function is used as part of classify_entries_as_presentation_types.
+    """This helper function is used as part of classify_entries_as_presentation_types.
     This function predicts the Presentation Types. It relies of the differences between
     the first offsets of successive melodic entries.
 
@@ -1607,8 +1604,7 @@ def classify_by_offset(offset_diffs):
 
 
 def temp_dict_of_details(slist, entry_array, det, matches):
-    """
-    This helper function is used as part of classify_entries_as_presentation_types.
+    """This helper function is used as part of classify_entries_as_presentation_types.
     This function assembles various features for the presentation types
     into a single temporary dictionary, which in turn is appended to the dataframe of 'points'
 
@@ -1640,8 +1636,7 @@ def temp_dict_of_details(slist, entry_array, det, matches):
 
 def classify_entries_as_presentation_types(piece, dur_ng, mel_ng, include_hidden_types):
 
-    """
-    This function uses several other functions to classify the entries in a given piece.
+    """This function uses several other functions to classify the entries in a given piece.
     The output is a list, in order of offset, of each presentation type, including information about
     measures/beats
     starting offset
@@ -1804,8 +1799,7 @@ def offset_joiner(a):
 
 def alpha_only(value):
 
-    """
-    This helper function is used by HR classifier.  It removes non-alphanumberic characters from lyrics
+    """This helper function is used by HR classifier.  It removes non-alphanumberic characters from lyrics
     """
     if isinstance(value, str):
         return re.sub(r'[^a-zA-Z]', '', value)
@@ -1813,8 +1807,7 @@ def alpha_only(value):
         return value
 def find_hr(piece):
 
-    """
-    This function predicts homorhythmic passages in a given piece.
+    """This function predicts homorhythmic passages in a given piece.
     The method follows various stages:
 
     gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets

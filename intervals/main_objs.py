@@ -1531,7 +1531,7 @@ class ImportedPiece:
 #         # pivot_sort = pivot_sort.drop(columns=["sub_group_id", "start_offset"], level=0)
 #         pivot_sort = pivot_sort.drop(columns=["sub_group_id"], level=0)
 #         return pivot_sort
-def find_entry_int_distance(coordinates, piece: intervals.main_objs.ImportedPiece):
+def find_entry_int_distance(coordinates, piece):
 
     """This helper function is used as part of classify_entries_as_presentation_types.
     This function finds the melodic intervals between the first notes of

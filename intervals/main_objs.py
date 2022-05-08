@@ -1603,7 +1603,7 @@ def classify_by_offset(offset_diffs):
 
 
 
-def temp_dict_of_details(slist, entry_array, det, matches):
+def temp_dict_of_details(slist, entry_array, det, matches, piece):
     """This helper function is used as part of classify_entries_as_presentation_types.
     This function assembles various features for the presentation types
     into a single temporary dictionary, which in turn is appended to the dataframe of 'points'

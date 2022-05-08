@@ -7,7 +7,7 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from itertools import combinations
 from itertools import combinations_with_replacement as cwr
-import os 
+import os
 import re
 import intervals
 cwd = os.path.dirname(intervals.__file__)
@@ -53,7 +53,7 @@ def importScore(path):
         except:
             print("Import of", str(path), "failed, please check your file path/url.")
             return None
-    
+
     return pathDict[path]
 
 # Allows for the addition of non-moving-window pattern searching approaches
@@ -416,20 +416,20 @@ class ImportedPiece:
         the duration of notes and rests in each part where 1 = quarternote,
         1.5 = a dotted quarter, 4 = a whole note, etc. If a df is passed, then
         return a df of the same shape giving the duration of each of the cells
-        of this df. This is useful if you want to know what the durations of 
+        of this df. This is useful if you want to know what the durations of
         something other than single notes and rests, such as the durations of
         intervals. E.g.:
 
         har = importedPiece.getHarmonic()
         harDur = importedPiece.getDuration(df=har)
-        
+
         The `n` parameter should be an integer greater than zero, or -1. When
         n is a positive integer, it groups together a sliding window of n
         consecutive non-NaN cells in each column. If you pass a df, it will sum
         the durations 'Rest' and non-Rest cell, provided they are in the same
         n-sized window. For example, set n=3 if you wanted to get the durations
         of all 3-event-long pair-wise harmonic events:
-        
+
         har = importedPiece.getHarmonic()
         dur_3 = importedPiece.getDuration(df=har, n=3)
 
@@ -442,8 +442,8 @@ class ImportedPiece:
 
         You can also pass a `mask_df`, which will serve as a filter, only
         keeping values at the same indecies (i.e. index and columns) as mask_df.
-        This is needed to get the durations of ngrams. To get the durations of 
-        ngrams, pass the same value of n and the samedataframe you passed to 
+        This is needed to get the durations of ngrams. To get the durations of
+        ngrams, pass the same value of n and the samedataframe you passed to
         .getNgrams() as the `n` and `df` parameters, then pass your dataframe of
         ngrams as the `mask_df`. For example:
 
@@ -525,7 +525,7 @@ class ImportedPiece:
 
     def getBeat(self):
         '''
-        Return a table of the beat positions of all the notes and rests. Beats 
+        Return a table of the beat positions of all the notes and rests. Beats
         are expressed as floats.
         '''
         if 'Beat' not in self.analyses:
@@ -555,7 +555,7 @@ class ImportedPiece:
     def detailIndex(self, df, measure=True, beat=True, offset=False):
         '''
         Return the passed dataframe with a multi-index of any combination of the
-        measure, beat, and offset in the index labels. At least one must be 
+        measure, beat, and offset in the index labels. At least one must be
         chosen, and the default is to have measure and beat information, but not
         offset information. Pass offset=True to add offsets to index.
         '''
@@ -830,7 +830,7 @@ class ImportedPiece:
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
-        interval. To associate intervals with the offset of the first notes, 
+        interval. To associate intervals with the offset of the first notes,
         pass end=False. If you want melodic intervals measured at a regular
         duration, do not pipe this method's result to the `regularize` method.
         Instead, pass the desired regular durational interval as an integer or
@@ -852,8 +852,8 @@ class ImportedPiece:
         :param int/float unit: regular durational interval at which to measure
             melodic intervals. See the documentation of the `regularize` method
             for more about this.
-        :param bool end: True (default) associates each melodic interval with 
-            the offset of the second note in the interval. Pass False to 
+        :param bool end: True (default) associates each melodic interval with
+            the offset of the second note in the interval. Pass False to
             change this to the first note in each interval.
         :param pandas DataFrame df: None (default) is the standard behavior.
             Pass a df of note and rest strings to calculate the melodic interals
@@ -1004,15 +1004,15 @@ class ImportedPiece:
         ip = ImportedPiece('path_to_piece')
         ngrams = ip.getNgrams(how='modules')
 
-        There is a special case for "open-ended" module ngrams. Set n=1 and the 
-        module ngrams will show the vertical interval between two voices, 
-        followed by the connecting melodic interal in the lower voice, but not 
-        the next harmonic interval. Open-ended module ngrams can be useful if 
+        There is a special case for "open-ended" module ngrams. Set n=1 and the
+        module ngrams will show the vertical interval between two voices,
+        followed by the connecting melodic interal in the lower voice, but not
+        the next harmonic interval. Open-ended module ngrams can be useful if
         you want to see how long the imitation in two voice parts goes on for.
 
-        Another special case is when `n` is set to -1. This finds the longest 
-        ngrams at all time points excluding subset ngrams. The returned 
-        dataframe will have ngrams of length varying between 1 and the longest 
+        Another special case is when `n` is set to -1. This finds the longest
+        ngrams at all time points excluding subset ngrams. The returned
+        dataframe will have ngrams of length varying between 1 and the longest
         ngram in the piece.
 
         The `offset` setting can have two modes. If "first" is selected (default option),
@@ -1172,7 +1172,7 @@ class ImportedPiece:
         res.sort_index(inplace=True)
 
         return res
-        
+
         # mnrs = mnr.stack()
         # mnrds = mnrDur.stack()
         # nrs = nr.stack()
@@ -1195,7 +1195,7 @@ class ImportedPiece:
         # mtiPitches = pd.concat([firstNote.shift(1), firstNote], axis=1).apply(tuple, axis=1)
         # refs = pd.Series()  # make this an enumeration of the points starting at modrefnum + 1
         # df = pd.concat([mels, pd.Series(), pd.Series(), mtiVoices.shift(1), mtiVoices,
-        #      mtiPitches, mnrds.shift(1), mnrds, repNdx.shift(1), repNdx, lags, 
+        #      mtiPitches, mnrds.shift(1), mnrds, repNdx.shift(1), repNdx, lags,
         #      refs, firstW], axis=1)
         # df.columns = colNames
         # dfs = df.groupby(['Module', 'FirstSyllable'])
@@ -1223,14 +1223,14 @@ class ImportedPiece:
 
     def _cvf_helper(self, row, df):
         '''
-        Assign the cadential voice function of the lower and upper voices in 
+        Assign the cadential voice function of the lower and upper voices in
         each pair to their respective part name columns.'''
         df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, row.UpperCVF)
 
     def _cvf_disambiguate_h(self, row):
         '''
-        The 'h' label is used internally to help reduce the amount of false 
-        positives we get with unprepared 4ths. They are either removed or 
+        The 'h' label is used internally to help reduce the amount of false
+        positives we get with unprepared 4ths. They are either removed or
         replaced with 'b' labels if they seem to be evaded bassizans cvfs.'''
         if 'h' in row.values:  # h is for potential evaded bassizans that gets confused with a chanson idiom
             if len(row.dropna()) > 2:
@@ -1241,9 +1241,9 @@ class ImportedPiece:
 
     def _cvf_simplifier(self, row):
         '''
-        Reduce the cadential voice function labels to only what is needed for 
-        classification. These changes are done on a copy of the cvf table, so 
-        they don't impact the cvf results. This just makes it simpler to write 
+        Reduce the cadential voice function labels to only what is needed for
+        classification. These changes are done on a copy of the cvf table, so
+        they don't impact the cvf results. This just makes it simpler to write
         cadenceLabels.'''
         if 't' in row.values and 'T' in row.values:
             row = row.replace('t', np.nan)
@@ -1253,15 +1253,15 @@ class ImportedPiece:
 
     def _lowest_pitch(self, row, m21):
         '''
-        Return a column of the lowest pitch at each cadence. m21 is a df of 
+        Return a column of the lowest pitch at each cadence. m21 is a df of
         music21 Note or Rest objects for the whole piece.'''
         filtered = [note for note in m21.asof(row.name) if note.isNote]
         return min(filtered).nameWithOctave
 
     def _cadential_pitch(self, row, nr):
         '''
-        Return a column of the pitch cadenced to. This is considered to be the 
-        note the Cantizans cadences to, or if there is no Cantizans, the note 
+        Return a column of the pitch cadenced to. This is considered to be the
+        note the Cantizans cadences to, or if there is no Cantizans, the note
         the Altizans cadences to.'''
         if 'C' in row.values:
             return nr.at[row.name, row.index[np.where(row == 'C')[0][0]]][:-1]
@@ -1270,14 +1270,14 @@ class ImportedPiece:
 
     def classifyCadences(self, return_type='cadences', keep_keys=False):
         '''
-        Return a dataframe of cadence labels in the piece. 
+        Return a dataframe of cadence labels in the piece.
 
-        When return_type is set to "cadences" (default) a table of the cadence 
+        When return_type is set to "cadences" (default) a table of the cadence
         labels, lowest pitch at moment of cadence, and cadential goal tone is
-        returned. You can also set it to "functions" (or just "f") if you want 
+        returned. You can also set it to "functions" (or just "f") if you want
         to get a table of just the cadential voice functions.
 
-        In 'cadence' mode, the SinceLast and ToNext columns are the time in 
+        In 'cadence' mode, the SinceLast and ToNext columns are the time in
         quarter notes since the last or to the next cadence. The first cadence's
         SinceLast time and the last cadence's ToNext time are the time since/to
         the beginning/end of the piece. The "Low" and "Tone" columns give the
@@ -1414,9 +1414,9 @@ class ImportedPiece:
 
     def getMelodicEntries(self, interval_settings=('d', True, True), n=3):
         """Return a dataframe of the melodies that either start a piece or come
-        after a silence. The melodies will be shown according to the 
-        interval_settings passed and n melodic intervals long. The offset of 
-        each melodic entry is the starting offset of the first note in the 
+        after a silence. The melodies will be shown according to the
+        interval_settings passed and n melodic intervals long. The offset of
+        each melodic entry is the starting offset of the first note in the
         melody. If you want melodies 4 notes long, for example, note that this
         would be n=3, because four consecutive notes are constitute 3 melodic
         intervals.
@@ -1425,10 +1425,14 @@ class ImportedPiece:
         melNgrams = self.getNgrams(mel, n)
         mask = self.getEntryMask()
         return melNgrams[mask].dropna(how='all')
-
-    def getPoints(self, duration_type="real", interval_type="generic", match_type="close", min_exact_matches=2, 
+# getPoints is an older approach to finding imitative entries
+# as of 2022 it has been replaced by classify_entries_as_presentation_types
+    def getPoints(self, duration_type="real", interval_type="generic", match_type="close", min_exact_matches=2,
         min_close_matches=3, close_distance=1, vector_size=4, increment_size=4, forward_gap_limit=40,
         backward_gap_limit=40, min_sum_durations=10, max_sum_durations=30, offset_difference_limit=500):
+
+        """getPoints is an older approach to finding imitative entries. As of 2022 it has been replaced by classify_entries_as_presentation_types
+        """
         corpus = CorpusBase([self.path])
         if duration_type == "real":
             vectors = IntervalBase(corpus.note_list)
@@ -1527,7 +1531,348 @@ class ImportedPiece:
 #         # pivot_sort = pivot_sort.drop(columns=["sub_group_id", "start_offset"], level=0)
 #         pivot_sort = pivot_sort.drop(columns=["sub_group_id"], level=0)
 #         return pivot_sort
+def find_entry_int_distance(coordinates, piece):
 
+    """This helper function is used as part of classify_entries_as_presentation_types.
+    This function finds the melodic intervals between the first notes of
+    successive entries in a given presentation type.
+    They are represented as intervals with quality and direction, thus P-4, m3, P5, P5, M-9, P-4, P4
+
+    """
+
+    tone_list = []
+
+    all_tones = piece.getNoteRest()
+
+    for item in coordinates:
+        filtered_tones = all_tones.loc[item]
+        tone_list.append(filtered_tones)
+
+    noteObjects = [note.Note(tone) for tone in tone_list]
+    _ints = [interval.Interval(noteObjects[i], noteObjects[i + 1]) for i in range(len(noteObjects) - 1)]
+    entry_ints = []
+
+    for _int in _ints:
+        entry_ints.append(_int.directedName)
+
+    return entry_ints
+
+def split_by_threshold(seq, max_diff=70):
+
+    """This helper function is used as part of classify_entries_as_presentation_types.
+    This function finds gaps between sequences of matching melodic entries.
+    The threshold is set to 70 offsets by default--under about 10 measures.
+
+    """
+    it = iter(seq)
+    last = next(it)
+    part = [last]
+
+    for curr in it:
+        if curr - last > max_diff:
+            yield part
+            part = []
+
+        part.append(curr)
+        last = curr
+#         print(part)
+
+    yield part
+
+
+def classify_by_offset(offset_diffs):
+    """This helper function is used as part of classify_entries_as_presentation_types.
+    This function predicts the Presentation Types. It relies of the differences between
+    the first offsets of successive melodic entries.
+
+    If the offset differences are identical:  PEN
+    If the odd-numbered offset differences are identical:  ID, since these represent
+    situations in which the entries 1-2 have the same offset difference as entries 3-4
+    If the offset differences are all different:  FUGA
+
+    """
+    alt_list = offset_diffs[::2]
+
+    if len(set(offset_diffs)) == 1 and len(offset_diffs) > 1:
+        return 'PEN'
+    # elif (len(offset_difference_list) %2 != 0) and (len(set(alt_list)) == 1):
+    elif (len(offset_diffs) % 2 != 0) and (len(set(alt_list)) == 1) and (len(offset_diffs) >= 3):
+        return 'ID'
+    elif len(offset_diffs) >= 1:
+        return 'FUGA'
+
+
+
+def temp_dict_of_details(slist, entry_array, det, matches):
+    """This helper function is used as part of classify_entries_as_presentation_types.
+    This function assembles various features for the presentation types
+    into a single temporary dictionary, which in turn is appended to the dataframe of 'points'
+
+    """
+
+    array = entry_array[entry_array.index.get_level_values(0).isin(slist)]
+    short_offset_list = array.index.to_list()
+    time_ints = numpy.diff(array.index).tolist()
+    voice_list = array['voice'].to_list()
+    tone_coordinates =  list(zip(short_offset_list, voice_list))
+    mel_ints = find_entry_int_distance(tone_coordinates, piece)
+    first_offset = short_offset_list[0]
+    meas_beat = det[det.index.get_level_values('Offset').isin(short_offset_list)]
+    mb2 = meas_beat.reset_index()
+    mb2['mb'] = mb2["Measure"].astype(str) + "/" + mb2["Beat"].astype(str)
+    meas_beat_list = mb2['mb'].to_list()
+
+    # temp results for this set
+    temp = {"Composer": piece.metadata["composer"],
+            "Title": piece.metadata["title"],
+            'First_Offset': first_offset,
+            'Offsets': short_offset_list,
+            'Measures_Beats': meas_beat_list,
+            "Soggetti": matches,
+            'Voices': voice_list,
+            'Time_Entry_Intervals': time_ints,
+            'Melodic_Entry_Intervals': mel_ints}
+    return temp
+
+def classify_entries_as_presentation_types(piece, dur_ng, mel_ng, include_hidden_types):
+
+    """This function uses several other functions to classify the entries in a given piece.
+    The output is a list, in order of offset, of each presentation type, including information about
+    measures/beats
+    starting offset
+    soggetti involved
+    melodic intervals of entry
+    time intervals of entry
+
+    set the length of the soggetti with `melodic_ngram_length`
+    set the maximum difference between similar soggetti with `edit_distance_threshold`
+    for chromatic vs diatonic, compound, and directed data in soggetti, see `interval_settings`
+    to include all the hidden PENs and IDS (those found within longer Fugas),
+    use `include_hidden_types == True`.
+    For faster (and simpler) listing of points of imitation without hidden forms, use `include_hidden_types == False`
+
+
+    """
+    # Classifier with Functions
+    points = pd.DataFrame()
+    points2 = pd.DataFrame()
+    # new_offset_list = []
+#     nr = piece.getNoteRest()
+    det = piece.detailIndex(nr, offset=True)
+
+    # The following are now all set in the Notebook as argument
+    # durations and ngrams of durations
+    # dur = piece.getDuration(df=nr)
+    # dur_ng = piece.getNgrams(df=dur, n=3)
+
+    # ngrams of melodic entries
+    # for chromatic, use:
+    # piece.getMelodicEntries(interval_settings=('c', True, True), n=5)
+    #mel_ng = piece.getMelodicEntries(interval_settings=('c', True, True), n=5)
+    mels_stacked = mel_ng.stack().to_frame()
+    mels_stacked.rename(columns =  {0:"pattern"}, inplace = True)
+
+    # edit distance, based on side-by-side comparison of melodic ngrams
+    # gets flexed and other similar soggetti
+    dist = piece.getDistance(mel_ng)
+    dist_stack = dist.stack().to_frame()
+
+
+    # filter distances to threshold.  <2 is good
+    distance_factor = edit_distance_threshold + 1
+    filtered_dist_stack = dist_stack[dist_stack[0] < distance_factor]
+    filtered_dist = filtered_dist_stack.reset_index()
+    filtered_dist.rename(columns =  {'level_0':"source", 'level_1':'match'}, inplace = True)
+
+    # Group the filtered distanced patterns
+    full_list_of_matches = filtered_dist.groupby('source')['match'].apply(list).reset_index()
+
+    if include_hidden_types == False:
+
+        for matches in full_list_of_matches["match"]:
+            related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
+            entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
+            offset_list = entry_array.index.to_list()
+            split_list = list(split_by_threshold(offset_list))
+            # here is the list of starting offsets of the original set of entries:  slist
+            slist = split_list[0]
+            temp = temp_dict_of_details(slist, entry_array, det, matches)
+
+            points = points.append(temp, ignore_index=True)
+            points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)
+            points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
+            points = points[points['Offsets'].apply(len) > 1]
+
+        points["Offsets_Key"] = points["Offsets"].apply(offset_joiner)
+        points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
+        points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
+        points["Number_Entries"] = points["Offsets"].apply(len)
+        col_order = ['Composer',
+                 'Title',
+                 'First_Offset',
+                 'Measures_Beats',
+                 'Melodic_Entry_Intervals',
+                 'Offsets',
+                 'Soggetti',
+                 'Time_Entry_Intervals',
+                 'Voices',
+                 'Presentation_Type',
+                  'Number_Entries',
+                'Flexed_Entries']
+        points = points.reindex(columns=col_order)
+        return points
+
+    elif include_hidden_types == True:
+
+        for matches in full_list_of_matches["match"]:
+            related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
+            entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
+            offset_list = entry_array.index.to_list()
+            split_list = list(split_by_threshold(offset_list))
+            # here is the list of starting offsets of the original set of entries:  slist
+            slist = split_list[0]
+            temp = temp_dict_of_details(slist, entry_array, det, matches)
+
+            points = points.append(temp, ignore_index=True)
+            points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)
+            points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
+            points = points[points['Offsets'].apply(len) > 1]
+
+#   here is where we check for all combinations of types within the longer patterns
+
+
+            l = len(slist)
+            m = l + 1
+            if l > 2:
+                for r in range(3, m):
+                    list_combinations = list(combinations(slist, r))
+                    for tiny_list in list_combinations:
+
+                        temp = temp_dict_of_details(tiny_list, entry_array, det, matches)
+
+                        temp["Presentation_Type"] = classify_by_offset(temp['Time_Entry_Intervals'])
+
+                        if 'PEN' in temp["Presentation_Type"]:
+                            points2 = points2.append(temp, ignore_index=True)#.sort_values("First_Offset")
+
+                        if 'ID' in temp["Presentation_Type"]:
+                            points2 = points2.append(temp, ignore_index=True)#.sort_values("First_Offset"
+
+
+
+        points_combined = points.append(points2, ignore_index=True).sort_values("First_Offset").reset_index(drop=True)
+        points_combined["Offsets_Key"] = points_combined["Offsets"].apply(offset_joiner)
+        points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
+        points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
+        points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
+        col_order = ['Composer',
+                 'Title',
+                 'First_Offset',
+                 'Measures_Beats',
+                 'Melodic_Entry_Intervals',
+                 'Offsets',
+                 'Soggetti',
+                 'Time_Entry_Intervals',
+                 'Voices',
+                 'Presentation_Type',
+                  'Number_Entries',
+                'Flexed_Entries']
+        points_combined = points_combined.reindex(columns=col_order).reset_index()
+        return points_combined
+
+
+# #  the following are used to turn the offset diffs and melodic entry intervals
+# # and melodies into strings for the network
+
+
+def joiner(a):
+    b = '_'.join(map(str, a))
+    return b
+def clean_melody(c):
+    d = (('_').join(c[0].split(","))).replace(" ", "")
+    return d
+def offset_joiner(a):
+    b = '_'.join(map(str, a))
+    return b
+
+#  HR classifier
+
+def alpha_only(value):
+
+    """This helper function is used by HR classifier.  It removes non-alphanumberic characters from lyrics
+    """
+    if isinstance(value, str):
+        return re.sub(r'[^a-zA-Z]', '', value)
+    else:
+        return value
+def find_hr(piece):
+
+    """This function predicts homorhythmic passages in a given piece.
+    The method follows various stages:
+
+    gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets
+    gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr
+    checks the number of active voices (thus eliminating places where some voices have rests)
+
+    """
+    nr = piece.getNoteRest()
+    dur = piece.getDuration(df=nr)
+    ng = piece.getNgrams(df=dur, n=2)
+    dur_ngrams = []
+
+    # find passages with more than 2 active voices
+    for index, rows in ng.iterrows():
+
+        dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
+        dur_ngrams.append(dur_ngrams_no_nan)
+
+    ng['dur_ngrams'] = dur_ngrams
+    # ng['rest_count'] = rests
+    ng['active_voices'] = ng['dur_ngrams'].apply(len)
+    ng['number_dur_ngrams'] = ng['dur_ngrams'].apply(set).apply(len)
+    ng = ng[(ng['number_dur_ngrams'] <2) & (ng['active_voices'] > 2)]
+
+    # check rests in multiple parts
+    nr.ffill(inplace=True)
+    index_of_rests = []
+    rests = []
+    for index, rows in nr.iterrows():
+        rest_test = [y for y in rows if y == "Rest"]
+        rests.append(rest_test)
+
+    #     index_of_rests.append(index)
+    nr["rests"] = rests
+    nr["rests_count"] = nr["rests"].apply(len)
+    full_stop = nr[(nr['rests_count'] > 1) ]
+    rests_with_mb = piece.detailIndex(full_stop)
+    # now get lyric syllables
+    lyrics = piece.getLyric()
+    lyrics = lyrics.applymap(alpha_only)
+    cols = lyrics.columns
+    for col in cols:
+        lyrics[col] = lyrics[col].str.lower()
+    syll_set = []
+    for index2, rows2 in lyrics.iterrows():
+        syll_no_nan = [z for z in rows2 if pd.isnull(z) == False]
+        syll_set.append(syll_no_nan)
+    #     print(syll_no_nan)
+    lyrics['syllable_set'] = syll_set
+
+    # create mask consisting of passages with more than two voices actively singing same syllables
+    lyrics['active_syll_voices'] = lyrics['syllable_set'].apply(len)
+    # count how _many_ syllables at this offset
+    lyrics['number_sylls'] = lyrics['syllable_set'].apply(set).apply(len)
+    # get count of possible hr passages (several voices with same syllable)
+    lyrics_hr = lyrics[(lyrics['active_syll_voices'] > 2) & (lyrics['number_sylls'] < 2)]
+    # piece.detailIndex(lyrics_hr, offset=True)
+    # lyrics['is_hr'] = np.where(lyrics['active_voices'] > 3)
+    hr_sylls_mask = lyrics_hr["active_syll_voices"]
+
+    # combine results to show passages where more than 2 voices have the same syllables and durations
+    ng = ng[['active_voices', "number_dur_ngrams"]]
+    hr = pd.merge(ng, hr_sylls_mask, left_index=True, right_index=True)
+    result = piece.detailIndex(hr, offset=True)
+    return result
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
 class CorpusBase:
@@ -1597,7 +1942,7 @@ class CorpusBase:
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
         func = ImportedPiece.getMelodic  # <- NB there are no parentheses here
-        kwargs = {'kind': 'c', 'directed': False} 
+        kwargs = {'kind': 'c', 'directed': False}
         list_of_dfs = corpus.batch(func, kwargs)
 
         # Example using batch to count the cadence types from multiple pieces:
@@ -1616,8 +1961,8 @@ class CorpusBase:
         list of dataframes in batch's kwargs for that parameter. This makes it
         easy to chain uses of the .batch method.
 
-        # Example using .batch to first get the melodic intervals of each piece 
-        # in a corpus, and then pass that list of dataframes on to get melodic 
+        # Example using .batch to first get the melodic intervals of each piece
+        # in a corpus, and then pass that list of dataframes on to get melodic
         # ngrams for each piece:
 
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',

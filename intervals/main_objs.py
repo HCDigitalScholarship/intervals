@@ -1634,7 +1634,7 @@ def temp_dict_of_details(slist, entry_array, det, matches):
             'Melodic_Entry_Intervals': mel_ints}
     return temp
 
-def classify_entries_as_presentation_types(piece, dur_ng, mel_ng, include_hidden_types):
+def classify_entries_as_presentation_types(piece, nr, dur_ng, mel_ng, include_hidden_types):
 
     """This function uses several other functions to classify the entries in a given piece.
     The output is a list, in order of offset, of each presentation type, including information about

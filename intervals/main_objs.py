@@ -24,7 +24,6 @@ def importScore(path):
     '''
     Import piece and return a music21 score. Return None if there is an error.
     '''
-
     if path in pathDict:
         print('Memoized piece detected.')
     else:
@@ -38,10 +37,10 @@ def importScore(path):
                       'your url and try again. Continuing to next file.')
                 return None
         else:
-            to_import = path
             if path.endswith('.mei'):
                 with open(path, "r") as file:
-                    mei_doc = ET.fromstring(file.read())
+                    to_import = file.read()
+                    mei_doc = ET.fromstring(to_import)
             else:
                 mei_doc = None
         try:

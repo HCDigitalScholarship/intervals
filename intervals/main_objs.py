@@ -1719,7 +1719,7 @@ def classify_entries_as_presentation_types(piece, nr, dur_ng, mel_ng, edit_dista
                  'Presentation_Type',
                   'Number_Entries',
                 'Flexed_Entries']
-        points = points.reindex(columns=col_order)
+        points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
         return points
 
     elif include_hidden_types == True:

@@ -1748,7 +1748,7 @@ def classify_entries_as_presentation_types(piece, nr, dur_ng, mel_ng, edit_dista
                     list_combinations = list(combinations(slist, r))
                     for tiny_list in list_combinations:
 
-                        temp = temp_dict_of_details(tiny_list, entry_array, det, matches)
+                        temp = temp_dict_of_details(tiny_list, entry_array, det, matches, piece)
 
                         temp["Presentation_Type"] = classify_by_offset(temp['Time_Entry_Intervals'])
 

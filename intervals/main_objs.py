@@ -1693,6 +1693,7 @@ def classify_entries_as_presentation_types(piece, nr, dur_ng, mel_ng, edit_dista
             related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
             entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
             offset_list = entry_array.index.to_list()
+            split_list = list(split_by_threshold(offset_list))
             for item in split_list:
             # here is the list of starting offsets of the original set of entries:  slist
 

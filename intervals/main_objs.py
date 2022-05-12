@@ -24,7 +24,6 @@ def importScore(path):
     '''
     Import piece and return a music21 score. Return None if there is an error.
     '''
-
     if path in pathDict:
         print('Memoized piece detected.')
     else:
@@ -38,10 +37,10 @@ def importScore(path):
                       'your url and try again. Continuing to next file.')
                 return None
         else:
-            to_import = path
             if path.endswith('.mei'):
                 with open(path, "r") as file:
-                    mei_doc = ET.fromstring(file.read())
+                    to_import = file.read()
+                    mei_doc = ET.fromstring(to_import)
             else:
                 mei_doc = None
         try:
@@ -1412,19 +1411,28 @@ class ImportedPiece:
         mask = nr.apply(self._entryHelper)
         return mask
 
-    def getMelodicEntries(self, interval_settings=('d', True, True), n=3):
-        """Return a dataframe of the melodies that either start a piece or come
-        after a silence. The melodies will be shown according to the
-        interval_settings passed and n melodic intervals long. The offset of
-        each melodic entry is the starting offset of the first note in the
-        melody. If you want melodies 4 notes long, for example, note that this
-        would be n=3, because four consecutive notes are constitute 3 melodic
-        intervals.
+    def getEntries(self, df=None, n=None):
+        """Return a filtered copy of the passed df that only keeps the events in
+        that df if they either start a piece or come after a silence. If the df 
+        parameter is left as None, it will be replaced with the default melodic 
+        interval results, though with end=False since this is needed specifically
+        for this use case.
+        In these cases, the offset of each melodic entry is the starting offset of
+        the first note in the melody. If you want melodies 4 notes long, for
+        example, note that this would be n=3, because four consecutive notes are
+        constitute 3 melodic intervals.
+        If the n parameter is not None, then the default melodic interval results
+        or passed df argument will be replaced with n-long ngrams of those events.
+        Note that this does not currently work for dataframes where the columns
+        are combinations of voices, e.g. harmonic intervals.
         """
-        mel = self.getMelodic(*interval_settings, end=False)  # end=False indexes from first note of each interval
-        melNgrams = self.getNgrams(mel, n)
+        if df is None:
+            df = self.getMelodic(end=False)
+        if n is not None:
+            df = self.getNgrams(df, n)
         mask = self.getEntryMask()
         return melNgrams[mask].dropna(how='all')
+
 # getPoints is an older approach to finding imitative entries
 # as of 2022 it has been replaced by classify_entries_as_presentation_types
     def getPoints(self, duration_type="real", interval_type="generic", match_type="close", min_exact_matches=2,

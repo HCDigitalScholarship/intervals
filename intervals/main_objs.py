@@ -1431,7 +1431,7 @@ class ImportedPiece:
         if n is not None:
             df = self.getNgrams(df, n)
         mask = self.getEntryMask()
-        return melNgrams[mask].dropna(how='all')
+        return df[mask].dropna(how='all')
 
 # getPoints is an older approach to finding imitative entries
 # as of 2022 it has been replaced by classify_entries_as_presentation_types

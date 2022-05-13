@@ -1357,6 +1357,7 @@ class ImportedPiece:
             cvfs = pd.concat([cvfs, ngramKeys], axis=1)
         self.analyses['CVF'] = cvfs
         _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
+        _cvfs.replace(['Q', 'q', 'S'], np.nan, inplace=True)
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
         cadKeys = _cvfs + mel
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values()), axis=1)

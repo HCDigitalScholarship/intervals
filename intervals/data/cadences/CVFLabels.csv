@@ -90,3 +90,12 @@ Ngram,LowerCVF,UpperCVF
 "4_Held, 3_-5, 3",B,c
 "4_Held, 3_4, 3",B,c
 "7_Held, 6_-2, 3",T,c
+"4_Held, 3_Held, 2_1, 3_-5, 8",Q,A
+"4_Held, 3_Held, 2_1, 3_4, 8",Q,A
+"7_Held, 6_-5, 4",Q,C
+"7_Held, 6_4, 4",Q,C
+"-2_Held, -3_-5, 4",Q,C
+"-2_Held, -3_4, 4",Q,C
+"2_Held, 8_-2, 3",q,
+"2_Held, 8_-3, 4",S,C
+"2_Held, 1_-3, 4",S,C

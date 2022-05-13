@@ -77,6 +77,7 @@ Ngram,LowerCVF,UpperCVF
 "4_Held, 3_Held, 2_-3, 6",u,C
 "4_Held, 3_Held, 3_Held, 2_-3, 6",u,C
 "4_Held, 3_Held, 2_Held, 3_-3, 6",u,C
+"4_Held, 3_Held, 3_Held, 2_Held, 3_-3, 6",u,C
 "-4_-2, -3_2, -6",C,u
 "-5_-2, -3_2, -6",C,u
 "-4_-2, -3_-2, -2_3, -6",C,u

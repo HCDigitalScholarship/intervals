@@ -3,7 +3,8 @@ from intervals.main_objs import *
 
 
 TEST_FILES_CC = [  # confirmed ground truth piece for classifyCadences
-    'https://crimproject.org/mei/CRIM_Model_0012.mei'
+    'https://crimproject.org/mei/CRIM_Model_0012.mei',
+    'https://crimproject.org/mei/CRIM_Model_0023.mei',
 ]
 
 def test_classifyCadences():
@@ -24,7 +25,7 @@ def test_classifyCadences():
         combined = pd.concat((cad, cvf), axis=1)
         combined.reset_index(inplace=True)
         analysisNow.append(combined)
-    analysisNow = pd.concat(analysisNow)
+    analysisNow = pd.concat(analysisNow, ignore_index=True)
     analysisNow = analysisNow.round(3)
     # analysisNow.to_csv('./intervals/data/cadences/groundTruth.csv', index=False)
     groundTruth = pd.read_csv('./intervals/data/cadences/groundTruth.csv')

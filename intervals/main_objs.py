@@ -463,6 +463,8 @@ class ImportedPiece:
                 self.analyses['Duration'] = result
         else:  # n == -1
             result = _df.apply(self._maxnDurationHelper)
+        result = result.astype('float64')
+        result.index = result.index.astype('float64')
         if mask_df is not None:
             mask = mask_df.applymap(lambda cell: True, na_action='ignore')
             result = result[mask]
@@ -967,10 +969,10 @@ class ImportedPiece:
         for excl in exclude:
             chains = chains[(chains != excl).all(1)]
         chains.dropna(inplace=True)
-        if col.dtype.name in ('float64', 'int64'):
-            chains = chains.apply(tuple, axis=1)
-        else:
+        if col.dtype.name == 'str':
             chains = chains.apply(lambda row: ', '.join(row), axis=1)
+        else:
+            chains = chains.apply(tuple, axis=1)
         return chains
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',

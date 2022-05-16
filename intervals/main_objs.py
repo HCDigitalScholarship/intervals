@@ -1646,7 +1646,7 @@ def temp_dict_of_details(slist, entry_array, det, matches, piece):
             'Melodic_Entry_Intervals': mel_ints}
     return temp
 
-def classify_entries_as_presentation_types(piece, nr, entries, edit_distance_threshold, include_hidden_types):
+def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_distance_threshold, include_hidden_types):
 
     """This function uses several other functions to classify the entries in a given piece.
     The output is a list, in order of offset, of each presentation type, including information about
@@ -1691,12 +1691,12 @@ def classify_entries_as_presentation_types(piece, nr, entries, edit_distance_thr
     # for chromatic, use:
     # piece.getMelodicEntries(interval_settings=('c', True, True), n=5)
     #mel_ng = piece.getMelodicEntries(interval_settings=('c', True, True), n=5)
-    mels_stacked = entries.stack().to_frame()
+    mels_stacked = mel_ng.stack().to_frame()
     mels_stacked.rename(columns =  {0:"pattern"}, inplace = True)
 
     # edit distance, based on side-by-side comparison of melodic ngrams
     # gets flexed and other similar soggetti
-    dist = piece.getDistance(entries)
+    dist = piece.getDistance(mel_ng)
     dist_stack = dist.stack().to_frame()
 
 

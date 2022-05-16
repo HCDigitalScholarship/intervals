@@ -1646,7 +1646,7 @@ def temp_dict_of_details(slist, entry_array, det, matches, piece):
             'Melodic_Entry_Intervals': mel_ints}
     return temp
 
-def classify_entries_as_presentation_types(piece, nr, mel_ng, edit_distance_threshold, include_hidden_types):
+def classify_entries_as_presentation_types(piece, nr, entries, edit_distance_threshold, include_hidden_types):
 
     """This function uses several other functions to classify the entries in a given piece.
     The output is a list, in order of offset, of each presentation type, including information about
@@ -1724,7 +1724,7 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, edit_distance_thre
 
                 points = points.append(temp, ignore_index=True)
                 points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)
-                points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
+                # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
                 points = points[points['Offsets'].apply(len) > 1]
 
         points["Offsets_Key"] = points["Offsets"].apply(offset_joiner)
@@ -1762,26 +1762,38 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, edit_distance_thre
 
                 points = points.append(temp, ignore_index=True)
                 points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)
-                points['Offsets_Key'] = points["Offsets"].apply(offset_joiner)
-
+                # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
                 points = points[points['Offsets'].apply(len) > 1]
+        # return(points)
 
 
             for item in split_list:
-            # here is the list of starting offsets of the original set of entries:  slist
+    #         # here is the list of starting offsets of the original set of entries:  slist
 
                 temp = temp_dict_of_details(item, entry_array, det, matches, piece)
                 lto = len(temp["Offsets"])
                 if lto > 2 :
                     for r in range(3, lto + 1):
-                        points2 = points2.append(temp, ignore_index=True)
+                        list_combinations = list(combinations(item, r))
+                        for slist in list_combinations:
 
-        points2['Presentation_Type'] = points2['Time_Entry_Intervals'].apply(classify_by_offset)
-        points2["Offsets_Key"] = points2["Offsets"].apply(offset_joiner)
+                            temp = temp_dict_of_details(slist, entry_array, det, matches, piece)
 
-        points2 = points2[points2["Presentation_Type"].isin(hidden_types_list)]
+                            temp["Presentation_Type"] = classify_by_offset(temp['Time_Entry_Intervals'])
 
-        points_combined = points.append(points2, ignore_index=True).sort_values("First_Offset").reset_index(drop=True)
+                            if 'PEN' in temp["Presentation_Type"]:
+                                points2 = points2.append(temp, ignore_index=True)
+                            if 'ID' in temp["Presentation_Type"]:
+                                points2 = points2.append(temp, ignore_index=True)
+
+
+
+
+    #     # points2 = points2[points2["Presentation_Type"].isin(hidden_types_list)]
+
+
+        points_combined = points.append(points2, ignore_index=True)
+        points_combined["Offsets_Key"] = points_combined["Offsets"].apply(offset_joiner)
         points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
         points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
         points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
@@ -1797,9 +1809,8 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, edit_distance_thre
                  'Presentation_Type',
                   'Number_Entries',
                 'Flexed_Entries']
-        points_combined = points_combined.reindex(columns=col_order)
-        return(points_combined)
-
+        points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+        return points_combined
 
 # #  the following are used to turn the offset diffs and melodic entry intervals
 # # and melodies into strings for the network

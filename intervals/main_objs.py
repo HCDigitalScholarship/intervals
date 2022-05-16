@@ -1688,7 +1688,7 @@ def classify_entries_as_presentation_types(piece, nr, entries, edit_distance_thr
     # for chromatic, use:
     # piece.getMelodicEntries(interval_settings=('c', True, True), n=5)
     #mel_ng = piece.getMelodicEntries(interval_settings=('c', True, True), n=5)
-    mels_stacked = mel_ng.stack().to_frame()
+    mels_stacked = entries.stack().to_frame()
     mels_stacked.rename(columns =  {0:"pattern"}, inplace = True)
 
     # edit distance, based on side-by-side comparison of melodic ngrams

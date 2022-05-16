@@ -7,7 +7,6 @@ import altair as alt
 import pandas as pd
 import intervals.visualizations as viz
 
-from fractions import Fraction
 from intervals.main_objs import CorpusBase
 from test_constants import EXAMPLE_CRIM_FILE, OBSERVATIONS_DICT_EXAMPLE, RELATIONSHIPS_DICT_EXAMPLE
 
@@ -131,7 +130,7 @@ def helper_test_generate_ngrams_and_dur(model, notes, n):
             ngram = ngram.split(', ') if isinstance(ngram, str) else ngram
             dur = ngrams_dur.loc[row, col]
             # check if those within the duration range match the ngrams notes
-            ngram_notes = notes.loc[row:Fraction(row + dur), col].dropna().to_list()
+            ngram_notes = notes.loc[row:row + dur, col].dropna().to_list()
 
             # check all of the notes in the notes dataframe against the ngrams
             assert len(ngram_notes) == len(ngram) or len(ngram_notes) - 1 == len(ngram)

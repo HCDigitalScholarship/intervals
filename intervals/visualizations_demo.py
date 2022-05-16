@@ -356,8 +356,7 @@ def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
     dur_ngrams = dur_ngrams.reindex_like(ngrams)
 
     # sum up durations!
-    dur_ngrams = dur_ngrams.applymap(lambda cell: sum(float(Fraction(item)) for item in cell.split(", ")),
-                                     na_action='ignore')
+    dur_ngrams = dur_ngrams.applymap(sum, na_action='ignore')
 
     return ngrams, dur_ngrams
 

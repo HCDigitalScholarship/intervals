@@ -1414,8 +1414,8 @@ class ImportedPiece:
 
     def getEntries(self, df=None, n=None):
         """Return a filtered copy of the passed df that only keeps the events in
-        that df if they either start a piece or come after a silence. If the df 
-        parameter is left as None, it will be replaced with the default melodic 
+        that df if they either start a piece or come after a silence. If the df
+        parameter is left as None, it will be replaced with the default melodic
         interval results, though with end=False since this is needed specifically
         for this use case.
         In these cases, the offset of each melodic entry is the starting offset of
@@ -1643,7 +1643,7 @@ def temp_dict_of_details(slist, entry_array, det, matches, piece):
             'Melodic_Entry_Intervals': mel_ints}
     return temp
 
-def classify_entries_as_presentation_types(piece, nr, dur_ng, mel_ng, edit_distance_threshold, include_hidden_types):
+def classify_entries_as_presentation_types(piece, nr, mel_ng, edit_distance_threshold, include_hidden_types):
 
     """This function uses several other functions to classify the entries in a given piece.
     The output is a list, in order of offset, of each presentation type, including information about

@@ -1376,6 +1376,7 @@ class ImportedPiece:
         lastTone = note.Note(labels.Tone.dropna().iat[-1])  # last pitch cadenced to
         labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(lastTone, note.Note(x))))
         labels.RelTone = labels.RelTone[labels.Tone.notnull()]
+        labels.Tone = labels.Tone.fillna(np.nan)
         if not keep_keys:
             labels.drop('Key', axis=1, inplace=True)
         labels['Measure'] = self.getMeasure().iloc[:, 0].asof(labels.index).astype(int)

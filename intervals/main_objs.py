@@ -1696,7 +1696,7 @@ def classify_entries_as_presentation_types(piece, nr, entries, edit_distance_thr
 
     # edit distance, based on side-by-side comparison of melodic ngrams
     # gets flexed and other similar soggetti
-    dist = piece.getDistance(mel_ng)
+    dist = piece.getDistance(entries)
     dist_stack = dist.stack().to_frame()
 
 

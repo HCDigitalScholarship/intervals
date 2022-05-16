@@ -17,7 +17,7 @@ index,CadType,Evaded,LeadingTones,Low,RelLow,Tone,RelTone,Measure,Beat,Progress,
 360.0,Authentic,False,1.0,D3,P5,D,-P4,46,1.0,0.909,28.0,20.0,https://crimproject.org/mei/CRIM_Model_0012.mei,T,u,C,B,,
 380.0,Clausula Vera,False,1.0,G2,P1,G,P1,48,3.0,0.96,20.0,16.0,https://crimproject.org/mei/CRIM_Model_0012.mei,t,-,C,T,,
 396.0,Authentic,False,1.0,G2,P1,G,P1,50,3.0,1.0,16.0,16.0,https://crimproject.org/mei/CRIM_Model_0012.mei,C,-,T,B,,
-48.0,Authentic,False,1.0,G3,P5,G,P1,7,1.0,0.059,48.0,12.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,B,C,-,-,-
+48.0,Authentic,False,1.0,G3,P5,G,P1,7,1.0,0.059,48.0,12.0,https://crimproject.org/mei/CRIM_Model_0023.mei,z,B,C,-,-,-
 60.0,Authentic,True,1.0,B2,-m2,G,P1,8,3.0,0.074,12.0,8.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,C,-,-,-,u
 68.0,Clausula Vera,False,1.0,G2,-P4,G,P1,9,3.0,0.084,8.0,12.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,-,-,C,-,T
 80.0,Clausula Vera,False,1.0,G2,-P4,G,P1,11,1.0,0.099,12.0,12.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,-,C,-,T,-
@@ -29,7 +29,7 @@ index,CadType,Evaded,LeadingTones,Low,RelLow,Tone,RelTone,Measure,Beat,Progress,
 152.0,Clausula Vera,False,1.0,G2,-P4,G,P1,20,1.0,0.188,16.0,16.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,-,-,C,-,T
 168.0,Clausula Vera,False,1.0,D3,M2,D,-P4,22,1.0,0.208,16.0,16.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,C,-,-,T,-
 184.0,Authentic,False,1.0,G2,-P4,G,P1,24,1.0,0.228,16.0,8.0,https://crimproject.org/mei/CRIM_Model_0023.mei,C,-,T,t,S,B
-192.0,,,,E3,M3,,,25,1.0,0.238,8.0,24.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,-,-,-,y,x
+192.0,Authentic,True,-1.0,E3,M3,,,25,1.0,0.238,8.0,24.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,-,-,-,y,x
 216.0,Authentic,False,1.0,G2,-P4,G,P1,28,1.0,0.267,24.0,32.0,https://crimproject.org/mei/CRIM_Model_0023.mei,t,C,-,T,-,B
 248.0,Authentic,False,1.0,G2,-P4,G,P1,32,1.0,0.307,32.0,104.0,https://crimproject.org/mei/CRIM_Model_0023.mei,C,-,-,-,-,B
 352.0,Clausula Vera,False,1.0,C3,P1,C,-P5,45,1.0,0.436,104.0,16.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,-,C,-,T,-
@@ -42,17 +42,17 @@ index,CadType,Evaded,LeadingTones,Low,RelLow,Tone,RelTone,Measure,Beat,Progress,
 448.0,,,,G2,-P4,G,P1,57,1.0,0.554,8.0,52.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,C,z,-,-,T
 500.0,Authentic,False,1.0,G2,-P4,G,P1,63,3.0,0.619,52.0,20.0,https://crimproject.org/mei/CRIM_Model_0023.mei,C,T,u,-,-,B
 520.0,Authentic,False,1.0,G2,-P4,G,P1,66,1.0,0.644,20.0,20.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,T,C,-,-,B
-540.0,,,,E3,M3,C,-P5,68,3.0,0.668,20.0,12.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,C,-,z,-,-
+540.0,Clausula Vera,True,1.0,E3,M3,C,-P5,68,3.0,0.668,20.0,12.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,C,-,z,-,-
 552.0,,,,E3,M3,G,P1,70,1.0,0.683,12.0,24.0,https://crimproject.org/mei/CRIM_Model_0023.mei,C,T,u,-,-,-
 576.0,Altizans Only,False,1.0,G2,-P4,D,-P4,73,1.0,0.713,24.0,24.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,A,-,-,Q,T
 600.0,Altizans Only,False,1.0,C3,P1,G,P1,76,1.0,0.743,24.0,12.0,https://crimproject.org/mei/CRIM_Model_0023.mei,A,-,-,-,-,T
-612.0,,,,G3,P5,,,77,3.0,0.757,12.0,56.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,y,z,-,-,-
-668.0,,,,C3,P1,C,-P5,84,3.0,0.827,56.0,20.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,C,z,-,-,B
+612.0,Authentic,True,-1.0,G3,P5,,,77,3.0,0.757,12.0,56.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,y,z,-,-,-
+668.0,Authentic,False,1.0,C3,P1,C,-P5,84,3.0,0.827,56.0,20.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,C,z,-,-,B
 688.0,Authentic,False,1.0,G2,-P4,G,P1,87,1.0,0.851,20.0,24.0,https://crimproject.org/mei/CRIM_Model_0023.mei,C,-,-,T,-,B
 712.0,Clausula Vera,False,1.0,G2,-P4,G,P1,90,1.0,0.881,24.0,8.0,https://crimproject.org/mei/CRIM_Model_0023.mei,t,C,-,Q,T,-
 720.0,Authentic,True,1.0,E3,M3,G,P1,91,1.0,0.891,8.0,16.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,-,-,C,-,b
 736.0,Authentic,False,1.0,G2,-P4,G,P1,93,1.0,0.911,16.0,16.0,https://crimproject.org/mei/CRIM_Model_0023.mei,C,-,-,-,S,B
 752.0,Altizans Only,False,1.0,G2,-P4,D,-P4,95,1.0,0.931,16.0,12.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,A,-,-,-,T
-764.0,,,,C3,P1,,,96,3.0,0.946,12.0,12.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,y,-,-,-,x
+764.0,Authentic,True,-1.0,C3,P1,,,96,3.0,0.946,12.0,12.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,y,-,-,-,x
 776.0,Clausula Vera,False,1.0,C3,P1,C,-P5,98,1.0,0.96,12.0,16.0,https://crimproject.org/mei/CRIM_Model_0023.mei,-,C,Q,-,T,-
 792.0,Altizans Only,False,1.0,C3,P1,G,P1,100,1.0,0.98,16.0,32.0,https://crimproject.org/mei/CRIM_Model_0023.mei,A,-,-,-,-,T

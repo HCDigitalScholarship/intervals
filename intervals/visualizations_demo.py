@@ -7,7 +7,6 @@ import pandas as pd
 import re
 import textdistance
 
-from fractions import Fraction
 from ipywidgets import interact, fixed
 from pyvis.network import Network
 
@@ -356,8 +355,7 @@ def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
     dur_ngrams = dur_ngrams.reindex_like(ngrams)
 
     # sum up durations!
-    dur_ngrams = dur_ngrams.applymap(lambda cell: sum(float(Fraction(item)) for item in cell.split(", ")),
-                                     na_action='ignore')
+    dur_ngrams = dur_ngrams.applymap(lambda cell: sum([float(element) for element in cell]), na_action='ignore')
 
     return ngrams, dur_ngrams
 

@@ -1417,8 +1417,8 @@ class ImportedPiece:
 
     def getEntries(self, df=None, n=None):
         """Return a filtered copy of the passed df that only keeps the events in
-        that df if they either start a piece or come after a silence. If the df 
-        parameter is left as None, it will be replaced with the default melodic 
+        that df if they either start a piece or come after a silence. If the df
+        parameter is left as None, it will be replaced with the default melodic
         interval results, though with end=False since this is needed specifically
         for this use case.
         In these cases, the offset of each melodic entry is the starting offset of
@@ -1646,7 +1646,7 @@ def temp_dict_of_details(slist, entry_array, det, matches, piece):
             'Melodic_Entry_Intervals': mel_ints}
     return temp
 
-def classify_entries_as_presentation_types(piece, nr, dur_ng, mel_ng, edit_distance_threshold, include_hidden_types):
+def classify_entries_as_presentation_types(piece, nr, mel_ng, edit_distance_threshold, include_hidden_types):
 
     """This function uses several other functions to classify the entries in a given piece.
     The output is a list, in order of offset, of each presentation type, including information about
@@ -1666,8 +1666,18 @@ def classify_entries_as_presentation_types(piece, nr, dur_ng, mel_ng, edit_dista
 
     """
     # Classifier with Functions
-    points = pd.DataFrame()
+    points = pd.DataFrame(columns=['Composer',
+                 'Title',
+                 'First_Offset',
+                 'Measures_Beats',
+                 'Melodic_Entry_Intervals',
+                 'Offsets',
+                 'Soggetti',
+                 'Time_Entry_Intervals',
+                 'Voices',
+                 'Presentation_Type'])
     points2 = pd.DataFrame()
+
     # new_offset_list = []
 #     nr = piece.getNoteRest()
     det = piece.detailIndex(nr, offset=True)
@@ -1737,44 +1747,41 @@ def classify_entries_as_presentation_types(piece, nr, dur_ng, mel_ng, edit_dista
         return points
 
     elif include_hidden_types == True:
+        hidden_types_list = ["PEN", "ID"]
 
         for matches in full_list_of_matches["match"]:
             related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
             entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
             offset_list = entry_array.index.to_list()
             split_list = list(split_by_threshold(offset_list))
-            # here is the list of starting offsets of the original set of entries:  slist
-            # here is the list of starting offsets of the original set of entries:  slist
             for item in split_list:
+            # here is the list of starting offsets of the original set of entries:  slist
+
                 temp = temp_dict_of_details(item, entry_array, det, matches, piece)
+
 
                 points = points.append(temp, ignore_index=True)
                 points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)
-                points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
+                points['Offsets_Key'] = points["Offsets"].apply(offset_joiner)
+
                 points = points[points['Offsets'].apply(len) > 1]
 
-    #   here is where we check for all combinations of types within the longer patterns
 
+            for item in split_list:
+            # here is the list of starting offsets of the original set of entries:  slist
 
-                l = len(item)
-                m = l + 1
-                if l > 2:
-                    for r in range(3, m):
-                        list_combinations = list(combinations(item, r))
-                        for tiny_list in list_combinations:
+                temp = temp_dict_of_details(item, entry_array, det, matches, piece)
+                lto = len(temp["Offsets"])
+                if lto > 2 :
+                    for r in range(3, lto + 1):
+                        points2 = points2.append(temp, ignore_index=True)
 
-                            temp = temp_dict_of_details(tiny_list, entry_array, det, matches, piece)
+        points2['Presentation_Type'] = points2['Time_Entry_Intervals'].apply(classify_by_offset)
+        points2["Offsets_Key"] = points2["Offsets"].apply(offset_joiner)
 
-                            temp["Presentation_Type"] = classify_by_offset(temp['Time_Entry_Intervals'])
-
-                            if 'PEN' in temp["Presentation_Type"]:
-                                points2 = points2.append(temp, ignore_index=True)#.sort_values("First_Offset")
-
-                            if 'ID' in temp["Presentation_Type"]:
-                                points2 = points2.append(temp, ignore_index=True)#.sort_values("First_Offset"
+        points2 = points2[points2["Presentation_Type"].isin(hidden_types_list)]
 
         points_combined = points.append(points2, ignore_index=True).sort_values("First_Offset").reset_index(drop=True)
-        points_combined["Offsets_Key"] = points_combined["Offsets"].apply(offset_joiner)
         points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
         points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
         points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
@@ -1790,8 +1797,8 @@ def classify_entries_as_presentation_types(piece, nr, dur_ng, mel_ng, edit_dista
                  'Presentation_Type',
                   'Number_Entries',
                 'Flexed_Entries']
-        points_combined = points_combined.reindex(columns=col_order).reset_index()
-        return points_combined
+        points_combined = points_combined.reindex(columns=col_order)
+        return(points_combined)
 
 
 # #  the following are used to turn the offset diffs and melodic entry intervals

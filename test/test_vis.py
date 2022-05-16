@@ -128,7 +128,7 @@ def helper_test_generate_ngrams_and_dur(model, notes, n):
             ngram = ngrams.loc[row, col]
             if pd.isnull(ngram):
                 continue
-            ngram = ngram.split(', ') if isinstance(ngram, str), else ngram
+            ngram = ngram.split(', ') if isinstance(ngram, str) else ngram
             dur = ngrams_dur.loc[row, col]
             # check if those within the duration range match the ngrams notes
             ngram_notes = notes.loc[row:Fraction(row + dur), col].dropna().to_list()

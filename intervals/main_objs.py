@@ -820,7 +820,10 @@ class ImportedPiece:
             df = self.getNgrams(df=df, n=n, exclude=['Rest'])
         uni = df.stack().unique()
         ser = pd.Series(uni)
-        df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
+        if isinstance(uni[0], str):
+            df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
+        else:
+            df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
         cols = [(df - df.loc[i]).abs().apply(sum, axis=1) for i in df.index]
         dist = pd.concat(cols, axis=1)
         dist.columns = uni

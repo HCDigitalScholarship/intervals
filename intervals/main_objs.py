@@ -1720,26 +1720,15 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
             offset_list = entry_array.index.to_list()
             split_list = list(split_by_threshold(offset_list))
             for item in split_list:
-
-                # print(item)
-
-                offset_gap_limit = 40.0
-
-
             # here is the list of starting offsets of the original set of entries:  slist
-#
+
                 temp = temp_dict_of_details(item, entry_array, det, matches, piece)
-                a = temp["Time_Entry_Intervals"]
-                if (all(x < offset_gap_limit for x in a)):
 
 
-
-
-
-                    points = points.append(temp, ignore_index=True)
-                    points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)
-                    # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-                    points = points[points['Offsets'].apply(len) > 1]
+                points = points.append(temp, ignore_index=True)
+                points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)
+                # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
+                points = points[points['Offsets'].apply(len) > 1]
 
         points["Offsets_Key"] = points["Offsets"].apply(offset_joiner)
         points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
@@ -1758,7 +1747,7 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
                   'Number_Entries',
                 'Flexed_Entries']
         points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-        # return points
+        return points
 
     elif include_hidden_types == True:
         hidden_types_list = ["PEN", "ID"]
@@ -1771,45 +1760,35 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
             for item in split_list:
             # here is the list of starting offsets of the original set of entries:  slist
 
-                offset_gap_limit = 40.0
-
                 temp = temp_dict_of_details(item, entry_array, det, matches, piece)
 
-                b = temp["Time_Entry_Intervals"]
-                if (all(x < offset_gap_limit for x in b)):
 
-
-                    points = points.append(temp, ignore_index=True)
-                    points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)
-                    # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-                    points = points[points['Offsets'].apply(len) > 1]
+                points = points.append(temp, ignore_index=True)
+                points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(classify_by_offset)
+                # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
+                points = points[points['Offsets'].apply(len) > 1]
         # return(points)
 
 
             for item in split_list:
     # #         # here is the list of starting offsets of the original set of entries:  slist
-                offset_gap_limit = 40.0
 
                 temp = temp_dict_of_details(item, entry_array, det, matches, piece)
+                lto = len(temp["Offsets"])
+                if lto > 2 :
+                    for r in range(3, 6):
+                        list_combinations = list(combinations(item, r))
+                        for slist in list_combinations:
 
-                c = temp["Time_Entry_Intervals"]
-                if (all(x < offset_gap_limit for x in c)):
+                            temp = temp_dict_of_details(slist, entry_array, det, matches, piece)
 
-                    lto = len(temp["Offsets"])
-                    if lto > 2 :
-                        for r in range(3, 6):
-                            list_combinations = list(combinations(item, r))
-                            for slist in list_combinations:
+                            temp["Presentation_Type"] = classify_by_offset(temp['Time_Entry_Intervals'])
+                            # print(temp)
 
-                                temp = temp_dict_of_details(slist, entry_array, det, matches, piece)
-
-                                temp["Presentation_Type"] = classify_by_offset(temp['Time_Entry_Intervals'])
-                                # print(temp)
-
-                                if 'PEN' in temp["Presentation_Type"]:
-                                    points2 = points2.append(temp, ignore_index=True)
-                                if 'ID' in temp["Presentation_Type"]:
-                                    points2 = points2.append(temp, ignore_index=True)
+                            if 'PEN' in temp["Presentation_Type"]:
+                                points2 = points2.append(temp, ignore_index=True)
+                            if 'ID' in temp["Presentation_Type"]:
+                                points2 = points2.append(temp, ignore_index=True)
 
 
 

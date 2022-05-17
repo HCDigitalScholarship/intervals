@@ -1793,7 +1793,7 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
 
 
 
-        points2 = points2[points2["Presentation_Type"].isin(hidden_types_list)]
+        # points2 = points2[points2["Presentation_Type"].isin(hidden_types_list)]
         # return(points2)
 
 

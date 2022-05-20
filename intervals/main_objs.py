@@ -553,7 +553,7 @@ class ImportedPiece:
             self.analyses['BeatIndex'] = ser
         return self.analyses['BeatIndex']
 
-    def detailIndex(self, df, measure=True, beat=True, offset=False):
+    def detailIndex(self, df, measure=True, beat=True, offset=False, t_sig=False):
         '''
         Return the passed dataframe with a multi-index of any combination of the
         measure, beat, and offset in the index labels. At least one must be
@@ -571,9 +571,13 @@ class ImportedPiece:
         if offset:
             cols.append(df.index.to_series())
             names.append('Offset')
+        if t_sig:
+            cols.append(self.getTimeSignature().iloc[:, 0])
+            names.append('TSig')
         temp = pd.concat(cols, axis=1)
         temp2 = temp.iloc[:, len(df.columns):].ffill()
-        temp2.iloc[:, 0] = temp2.iloc[:, 0].astype(int)
+        if measure:
+            temp2.iloc[:, 0] = temp2.iloc[:, 0].astype(int)
         mi = pd.MultiIndex.from_frame(temp2, names=names)
         ret = temp.iloc[:, :len(df.columns)]
         ret.index = mi
@@ -1329,8 +1333,11 @@ class ImportedPiece:
         rType = return_type[0].lower()
         if 'Cadences' in self.analyses:
             if rType == 'c':
-                return self.analyses['Cadences']
-            elif rType == 'f':
+                if keep_keys:
+                    return self.analyses['Cadences']
+                else:
+                    return self.analyses['Cadences'].drop('Key', axis=1)
+            elif rType == 'f' and not keep_keys:
                 return self.analyses['CVF']
         cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
@@ -1358,9 +1365,9 @@ class ImportedPiece:
         cvfs[(cvfs == 'x') & mel.isin(('5', '-7'))] = 'B'
         cvfs[(cvfs == 'y') & mel.isin(('1', '2'))] = 'C'
         cvfs[(cvfs == 'z') & mel.isin(('-1', '-2'))] = 'T'
+        self.analyses['CVF'] = cvfs
         if rType == 'f' and keep_keys:
             cvfs = pd.concat([cvfs, ngramKeys], axis=1)
-        self.analyses['CVF'] = cvfs
         _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
         _cvfs.replace(['Q', 'q', 'S'], np.nan, inplace=True)
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
@@ -1380,8 +1387,11 @@ class ImportedPiece:
         labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(lastTone, note.Note(x))))
         labels.RelTone = labels.RelTone[labels.Tone.notnull()]
         labels.Tone = labels.Tone.fillna(np.nan)
-        if not keep_keys:
-            labels.drop('Key', axis=1, inplace=True)
+        tsig = self.getTimeSignature().iloc[:, 0]
+        tsig.name = 'TSig'
+        temp = pd.concat([labels, tsig], axis=1)
+        temp['TSig'].ffill(inplace=True)
+        labels = temp.loc[labels.index, :]
         labels['Measure'] = self.getMeasure().iloc[:, 0].asof(labels.index).astype(int)
         beat = self.getBeat().loc[labels.index, :]
         labels['Beat'] = beat.bfill(axis=1).iloc[:, 0]
@@ -1394,6 +1404,8 @@ class ImportedPiece:
         self.analyses['Cadences'] = labels
         if return_type[0].lower() == 'f':
             return cvfs
+        if not keep_keys:
+            labels.drop('Key', axis=1, inplace=True)
         return labels
 
     def _entryHelper(self, col):

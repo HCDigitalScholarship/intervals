@@ -1706,12 +1706,12 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
     # for chromatic, use:
     # piece.getMelodicEntries(interval_settings=('c', True, True), n=5)
     #mel_ng = piece.getMelodicEntries(interval_settings=('c', True, True), n=5)
-    mels_stacked = mel_ng.stack().to_frame()
+    mels_stacked = entries.stack().to_frame()
     mels_stacked.rename(columns =  {0:"pattern"}, inplace = True)
 
     # edit distance, based on side-by-side comparison of melodic ngrams
     # gets flexed and other similar soggetti
-    dist = piece.getDistance(mel_ng)
+    dist = piece.getDistance(entries)
     dist_stack = dist.stack().to_frame()
 
 
@@ -1783,18 +1783,19 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
 
 
             for item in split_list:
-    #         # here is the list of starting offsets of the original set of entries:  slist
+    # #         # here is the list of starting offsets of the original set of entries:  slist
 
                 temp = temp_dict_of_details(item, entry_array, det, matches, piece)
                 lto = len(temp["Offsets"])
                 if lto > 2 :
-                    for r in range(3, lto + 1):
+                    for r in range(3, 6):
                         list_combinations = list(combinations(item, r))
                         for slist in list_combinations:
 
                             temp = temp_dict_of_details(slist, entry_array, det, matches, piece)
 
                             temp["Presentation_Type"] = classify_by_offset(temp['Time_Entry_Intervals'])
+                            # print(temp)
 
                             if 'PEN' in temp["Presentation_Type"]:
                                 points2 = points2.append(temp, ignore_index=True)
@@ -1804,7 +1805,8 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
 
 
 
-    #     # points2 = points2[points2["Presentation_Type"].isin(hidden_types_list)]
+        # points2 = points2[points2["Presentation_Type"].isin(hidden_types_list)]
+        # return(points2)
 
 
         points_combined = points.append(points2, ignore_index=True)
@@ -1824,6 +1826,7 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
                  'Presentation_Type',
                   'Number_Entries',
                 'Flexed_Entries']
+        # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
         points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
         return points_combined
 

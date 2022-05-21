@@ -29,6 +29,7 @@ A3C3T-1,Phrygian,False,1
 A2C3T-1,Phrygian,False,1
 A1T-2,Altizans Only,False,1
 A2T-2,Altizans Only,False,0
+A1B,Altizans Only,False,0
 A2T-1,Phrygian Altizans,False,1
 C2PT-1,Plagal,False,1
 BC1,Authentic,False,1
@@ -37,6 +38,8 @@ C1u-3,Authentic,True,1
 C2u-3,Authentic,True,0
 C1u-4,Authentic,True,1
 C2u-4,Authentic,True,0
+C1T-2u-3,Clausula Vera,False,1
+C1T-2u-3x,Authentic,True,1
 C1b,Authentic,True,1
 BC1u-4,Authentic,False,1
 BC2u-4,Authentic,False,0
@@ -49,6 +52,13 @@ yz,Authentic,True,-1
 C1z,Clausula Vera,True,1
 xy,Authentic,True,-1
 BC1z,Authentic,False,1
+C1T-2z,Clausula Vera,False,1
+c-2z,Clausula Vera,True,-1
 T-2y,Clausula Vera,True,-1
 Bc5,Authentic,True,-1
+c-1x,Authentic,True,-1
+c-2x,Authentic,True,-1
+T-2c-1x,Authentic,True,-1
 T-2c5,Clausula Vera,True,-1
+T-2c-1,Clausula Vera,True,-1
+T-2c-2,Clausula Vera,True,-1

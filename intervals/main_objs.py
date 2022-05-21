@@ -984,7 +984,7 @@ class ImportedPiece:
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True), unit=0,
-                  offsets='first'):
+                  offsets='first', clarify_rests=True):
         '''
         Group sequences of observations in a sliding window "n" events long
         (default n=3). If the `exclude` parameter is passed and any item in that
@@ -1045,6 +1045,13 @@ class ImportedPiece:
         between held notes and reiterated notes in the lower voice, but if this
         distinction is not wanted for your query, you may want to pass way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
+
+        The `clarify_rests` parameter controls whether the melodic motion of the 
+        upper voice will be shown when the lower voice has a 'Rest' as its 
+        melodic motion. This only applies to module ngrams. If True, the upper
+        voice's melodic motions will appear after the lower voice's 'Rest' and
+        after a '|' character, e.g. "3_Rest|2, Rest_Held, 5". This is needed for
+        the detection of cadential voice function evasion by dropout.
         '''
         if how == 'columnwise':
             return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, offsets))
@@ -1055,10 +1062,13 @@ class ImportedPiece:
         if other is None:
             other = self.getMelodic(*interval_settings, unit=unit)
         cols = []
+        other = other.fillna(held)
         for pair in df.columns:
-            lowerVoice = pair.split('_')[0]
-            combo = pd.concat([other[lowerVoice], df[pair]], axis=1)
-            combo.fillna({lowerVoice: held}, inplace=True)
+            lowerVoice, upperVoice = pair.split('_')
+            lowerMel = other[lowerVoice].copy()
+            if clarify_rests and 'Rest' not in exclude:
+                lowerMel[lowerMel == 'Rest'] += '|' + other[upperVoice]
+            combo = pd.concat([lowerMel, df[pair]], axis=1)
             combo.dropna(subset=(pair,), inplace=True)
             combo.insert(loc=1, column='Joiner', value=', ')
             combo['_'] = '_'
@@ -1070,9 +1080,8 @@ class ImportedPiece:
                 ends.dropna(inplace=True)
                 si = tuple(har.index.get_loc(i) for i in starts.index)
                 ei = tuple(har.index.get_loc(i) + 1 for i in ends.index)
-                col = [''.join([cell
-                                for row in combo.iloc[si[i]: ei[i]].values  # second loop
-                                for cell in row][2:-1])  # innermost loop
+                col = [''.join([cell for row in combo.iloc[si[i]: ei[i]].values  # second loop
+                                         for cell in row][2:-1])  # innermost loop
                        for i in range(len(si))]  # outermost loop
                 col = pd.Series(col)
                 if offsets == 'first':
@@ -1351,12 +1360,14 @@ class ImportedPiece:
             ngramKeys = hits.unstack(level=1)
         hits.name = 'Ngram'
         df = pd.DataFrame(hits)
+        import pdb
         df = df.join(cadences, on='Ngram')
         voices = [pair.split('_') for pair in df.index.get_level_values(1)]
         df[['LowerVoice', 'UpperVoice']] = voices
         df.index = df.index.get_level_values(0)
         df.index.names = ('Offset',)
         cvfs = pd.DataFrame(columns=self._getPartNames())
+        # pdb.set_trace()
         df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
         mel = self.getMelodic('c', True, True)
         mel = mel[cvfs.notnull()].dropna(how='all')
@@ -1369,10 +1380,10 @@ class ImportedPiece:
         if rType == 'f' and keep_keys:
             cvfs = pd.concat([cvfs, ngramKeys], axis=1)
         _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
-        _cvfs.replace(['Q', 'q', 'S'], np.nan, inplace=True)
+        _cvfs.replace(['Q', 's', 'S'], np.nan, inplace=True)
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
         cadKeys = _cvfs + mel
-        keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values()), axis=1)
+        keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values().unique()), axis=1)
         keys.name = 'Key'
         keys = pd.DataFrame(keys)
         cadDict = pd.read_csv(cwd+'/data/cadences/cadenceLabels.csv', index_col=0)

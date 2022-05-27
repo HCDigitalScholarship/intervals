@@ -1825,9 +1825,10 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
 def joiner(a):
     b = '_'.join(map(str, a))
     return b
-def clean_melody(c):
-    d = (('_').join(c[0].split(","))).replace(" ", "")
-    return d
+def clean_melody_new(c):
+    first_soggetto = list(c[0])
+    soggetto_as_word = joiner(first_soggetto)
+    return soggetto_as_word
 def offset_joiner(a):
     b = '_'.join(map(str, a))
     return b

@@ -409,7 +409,7 @@ class ImportedPiece:
         starts[:] = colDurs
         return starts
 
-    def getDuration(self, df=None, n=1, mask_df=None):
+    def durations(self, df=None, n=1, mask_df=None):
         '''
         If no arguments are passed, return a `pandas.DataFrame` of floats giving
         the duration of notes and rests in each part where 1 = quarternote,
@@ -420,7 +420,7 @@ class ImportedPiece:
         intervals. E.g.:
 
         har = importedPiece.getHarmonic()
-        harDur = importedPiece.getDuration(df=har)
+        harDur = importedPiece.durations(df=har)
 
         The `n` parameter should be an integer greater than zero, or -1. When
         n is a positive integer, it groups together a sliding window of n
@@ -430,14 +430,14 @@ class ImportedPiece:
         of all 3-event-long pair-wise harmonic events:
 
         har = importedPiece.getHarmonic()
-        dur_3 = importedPiece.getDuration(df=har, n=3)
+        dur_3 = importedPiece.durations(df=har, n=3)
 
         Setting n to -1 sums the durations of all adjacent non-rest events,
         excluding NaNs. You could use this to find the durations of all melodies
-        in a piece. Note that the results of .getNoteRest() will be used for the
+        in a piece. Note that the results of .notes() will be used for the
         `df` parameter if none is provided:
 
-        dur = importedPiece.getDuration(n=-1)
+        dur = importedPiece.durations(n=-1)
 
         You can also pass a `mask_df`, which will serve as a filter, only
         keeping values at the same indecies (i.e. index and columns) as mask_df.
@@ -450,11 +450,11 @@ class ImportedPiece:
         mel = importedPiece.getMelodic()
         _n = 5
         ngrams = importedPiece.getNgrams(df=har, other=mel, n=_n)
-        ngramDurations = importedPiece.getDuration(df=har, n=_n, mask_df=ngrams)
+        ngramDurations = importedPiece.durations(df=har, n=_n, mask_df=ngrams)
         '''
         if 'Duration' in self.analyses and df is None and n == 1 and mask_df is None:
             return self.analyses['Duration']
-        _df = self.getNoteRest().copy() if df is None else df.copy()
+        _df = self.notes().copy() if df is None else df.copy()
         highestTime = self.score.highestTime
         _df.loc[highestTime, :] = 'Rest'  # this is just a placeholder
         if n > 0:
@@ -469,6 +469,9 @@ class ImportedPiece:
             mask = mask_df.applymap(lambda cell: True, na_action='ignore')
             result = result[mask]
         return result.dropna(how='all')
+
+    def getDuration(self, df=None, n=1, mask_df=None):
+        return self.durations(df, n, mask_df)
 
     def getLyric(self):
         '''
@@ -494,7 +497,7 @@ class ImportedPiece:
         col = col.dropna()
         return col[(col == 'Rest') | (col != col.shift(1))]
 
-    def getNoteRest(self, combineRests=True, combineUnisons=False):
+    def notes(self, combineRests=True, combineUnisons=False):
         '''
         Return a table of the notes and rests in the piece. Rests are
         designated with the string "Rest". Notes are shown such that middle C
@@ -504,15 +507,18 @@ class ImportedPiece:
         `combineUnisons` works the same way for consecutive attacks on the same
         pitch in a given voice, however, `combineUnisons` defaults to False.
         '''
-        if 'NoteRest' not in self.analyses:
+        if 'Notes' not in self.analyses:
             df = self._getM21ObjsNoTies().applymap(self._noteRestHelper, na_action='ignore')
-            self.analyses['NoteRest'] = df
-        ret = self.analyses['NoteRest'].copy()
+            self.analyses['Notes'] = df
+        ret = self.analyses['Notes'].copy()
         if combineRests:
             ret = ret.apply(self._combineRests)
         if combineUnisons:
             ret = ret.apply(self._combineUnisons)
         return ret
+
+    def getNoteRest(self, combineRests=True, combineUnisons=False):
+        return self.notes(combineRests, combineUnisons)
 
     def _getBeatUnit(self):
         '''
@@ -530,7 +536,7 @@ class ImportedPiece:
         are expressed as floats.
         '''
         if 'Beat' not in self.analyses:
-            nr = self.getNoteRest()
+            nr = self.notes()
             nrOffs = nr.apply(lambda row: row.index)
             ms = self.getMeasure().apply(lambda row: row.index)
             temp = pd.concat([ms, nr], axis=1)
@@ -662,7 +668,7 @@ class ImportedPiece:
 
         if not 'SoundingCount' in self.analyses:
 
-            nr = self.getNoteRest().ffill()
+            nr = self.notes().ffill()
             df = nr[nr != 'Rest']
             ser = df.count(axis=1)
             ser.name = 'Sounding'
@@ -776,10 +782,10 @@ class ImportedPiece:
         Return durational ratios of each item in each column compared to the
         previous item in the same column. If a df is passed, it should be of
         float or integer values. If no df is passed, the default results from
-        .getDuration will be used as input (durations of notes and rests).
+        .durations will be used as input (durations of notes and rests).
         '''
         if df is None:
-            df = self.getDuration()
+            df = self.durations()
         return df.apply(self._durationalRatioHelper).dropna(how='all')
 
     def getDistance(self, df=None, n=3):
@@ -867,7 +873,7 @@ class ImportedPiece:
             Pass a df of note and rest strings to calculate the melodic interals
             in any dataframe. For example, if you want to find the melodic
             intervals between notes, but don't want to count repetitions of the
-            same note as an interval, first run .getNoteRest(combineUnisons=True)
+            same note as an interval, first run .notes(combineUnisons=True)
             then pass that result as the df parameter for .getMelodic. Results
             are not cached in this case.
         :returns: `pandas.DataFrame` of melodic intervals in each part
@@ -1113,15 +1119,15 @@ class ImportedPiece:
         points of imitation according the nature of their repeating harmonic and
         melodic counterpoint.
         '''
-        nr = self.getNoteRest()
+        nr = self.notes()
         mnr = self.getNgrams(df=nr, n=-1)
-        mnrDur = self.getDuration(df=nr, n=-1, mask_df=mnr)
+        mnrDur = self.durations(df=nr, n=-1, mask_df=mnr)
         lyr = self.getLyric()
         mel = self.getMelodic('d')
         har = self.getHarmonic('d', True, 'simple')
         maxMel = self.getNgrams(df=mel, n=-1)
         n4 = self.getNgrams(df=har, how='modules', n=4)
-        d4 = self.getDuration(df=har, n=4, mask_df=n4)
+        d4 = self.durations(df=har, n=4, mask_df=n4)
         maxn = self.getNgrams(how='modules', interval_settings=('d', True, 'simple'), n=-1)
         stack = maxn.stack()
         vc = stack.value_counts()
@@ -1392,7 +1398,7 @@ class ImportedPiece:
         labels['Low'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
         final = note.Note(labels.Low.dropna().iat[-1])  # lowest pitch of last cadence
         labels['RelLow'] = labels.Low.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(final, note.Note(x))))
-        nr = self.getNoteRest()
+        nr = self.notes()
         labels['Tone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
         lastTone = note.Note(labels.Tone.dropna().iat[-1])  # last pitch cadenced to
         labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(lastTone, note.Note(x))))
@@ -1434,10 +1440,10 @@ class ImportedPiece:
         in the mask will be kept. Usage:
         piece = importScore('path_to_piece')
         mask = piece.getEntryMask()
-        df = piece.getNoteRest()
+        df = piece.notes()
         df[mask].dropna(how='all')
         """
-        nr = self.getNoteRest()
+        nr = self.notes()
         mask = nr.apply(self._entryHelper)
         return mask
 
@@ -1580,7 +1586,7 @@ def find_entry_int_distance(coordinates, piece):
 
     tone_list = []
 
-    all_tones = piece.getNoteRest()
+    all_tones = piece.notes()
 
     for item in coordinates:
         filtered_tones = all_tones.loc[item]
@@ -1705,12 +1711,12 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
     points2 = pd.DataFrame()
 
     # new_offset_list = []
-#     nr = piece.getNoteRest()
+#     nr = piece.notes()
     det = piece.detailIndex(nr, offset=True)
 
     # The following are now all set in the Notebook as argument
     # durations and ngrams of durations
-    # dur = piece.getDuration(df=nr)
+    # dur = piece.durations(df=nr)
     # dur_ng = piece.getNgrams(df=dur, n=3)
 
     # ngrams of melodic entries
@@ -1875,8 +1881,8 @@ def find_hr(piece):
     checks the number of active voices (thus eliminating places where some voices have rests)
 
     """
-    nr = piece.getNoteRest()
-    dur = piece.getDuration(df=nr)
+    nr = piece.notes()
+    dur = piece.durations(df=nr)
     ng = piece.getNgrams(df=dur, n=2)
     dur_ngrams = []
 
@@ -1991,7 +1997,7 @@ class CorpusBase:
         # Example of basic analysis with no added parameters:
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
-        func = ImportedPiece.getNoteRest  # <- NB there are no parentheses here
+        func = ImportedPiece.notes  # <- NB there are no parentheses here
         list_of_dfs = corpus.batch(func)
 
         # Example passing some parameters to `func` calls. Note that you only add

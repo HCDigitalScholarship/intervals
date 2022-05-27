@@ -559,15 +559,19 @@ class ImportedPiece:
             self.analyses['BeatIndex'] = ser
         return self.analyses['BeatIndex']
 
-    def detailIndex(self, df, measure=True, beat=True, offset=False, t_sig=False):
+    def detailIndex(self, df, measure=True, beat=True, offset=False, t_sig=False, progress=False, _all=False):
         '''
         Return the passed dataframe with a multi-index of any combination of the
-        measure, beat, and offset in the index labels. At least one must be
-        chosen, and the default is to have measure and beat information, but not
-        offset information. Pass offset=True to add offsets to index.
+        measure, beat, offset, prevailing time signature, and progress towards
+        the end of the piece (0-1) in the index labels. At least one must be
+        chosen, and the default is to have measure and beat information, but no
+        other information. Pass offset=True to add offsets to index. You can 
+        also pass _all=True to include all five types of index information.
         '''
         cols = [df]
         names = []
+        if _all:
+            measure, beat, offset, t_sig, progress = True, True, True, True, True
         if measure:
             cols.append(self.getMeasure().iloc[:, 0])
             names.append('Measure')
@@ -580,6 +584,11 @@ class ImportedPiece:
         if t_sig:
             cols.append(self.getTimeSignature().iloc[:, 0])
             names.append('TSig')
+        if progress:
+            prog = (df.index / self.notes().index[-1]).to_series()
+            prog.index = df.index
+            cols.append(prog)
+            names.append('Progress')
         temp = pd.concat(cols, axis=1)
         temp2 = temp.iloc[:, len(df.columns):].ffill()
         if measure:
@@ -1290,6 +1299,69 @@ class ImportedPiece:
             return nr.at[row.name, row.index[np.where(row == 'C')[0][0]]][:-1]
         elif 'A' in row.values:
             return nr.at[row.name, row.index[np.where(row == 'A')[0][0]]][:-1]
+
+    def cvfs(self, keep_keys=False):
+        '''
+        Return a dataframe of cadential voice functions in the piece. If
+        `keep_keys` is set to True, the ngrams that triggered each CVF pair
+        will be shown in additional columns in the table.
+
+        Each CVF is represented with a single-character label as follows:
+
+        "C": cantizans motion up a step (can also be ornamented e.g. Landini)
+        "T": tenorizans motion down a step (can be ornamented with anticipations)
+        "B": bassizans motion up a fourth or down a fifth
+        "A": altizans motion, similar to cantizans, but cadences to a fifth
+            above a tenorizans instead of an octave
+        "L": leaping contratenor motion up an octave at the perfection
+        "P": plagal bassizans motion up a fifth or down a fourth
+        "Q": quintizans, like a tenorizans, but resolves down by fifth or up by
+            fourth to a fourth below the goal tone of the cantizans
+        "S": sestizans, occurring in some thicker 16th centurytextures, this is
+            where the agent against the cantizans is already the cantizan's note
+            of resolution (often results in a simultaneous false relation); the
+            melodic motion is down by third at the moment of perfection
+
+        "c": evaded cantizans when it moves to an unexpected note at the perfection
+        "t": evaded tenorizans when it goes up by step at the perfection
+        "b": evaded bassizans when it goes up by step at the perfection
+        "u": evaded bassizans when it goes down by third at the perfection
+        (there are no evaded labels for the altizans, plagal bassizans leaping
+        contratenor CVFs)
+        "s": evaded sestizans when it resolves down by second
+
+        "x": evaded bassizans motion where the voice drops out at the perfection
+        "y": evaded cantizans motion where the voice drops out at the perfection
+        "z": evaded tenorizans motion where the voice drops out at the perfection
+
+        The way these CVFs combine determines which cadence labels are assigned
+        when return_type='cadences'.
+        '''
+        return self.classifyCadences(return_type='f', keep_keys=keep_keys)
+
+    def cadences(self, keep_keys=False):
+        '''
+        Return a dataframe of cadences in the piece along with metadata about
+        these cadence points such as the lowest pitch at moment of cadence, and 
+        the cadential goal tone is returned. The SinceLast and ToNext columns
+        are the time in quarter notes since the last or to the next cadence. The
+        first cadence's SinceLast time and the last cadence's ToNext time are
+        the time since/to the beginning/end of the piece. The "Low" and "Tone"
+        columns give the pitches of the lowest sounding pitch at the perfection,
+        and the goal tone of the cantizans (or altizans if there is no cantizans)
+        respectively. These are usually the same pitch class, but not always.
+        "Rel" is short for relative, so "RelLow" is the lowest pitch of each
+        cadence shown as an interval measured against the last pitch in the
+        "Low" column. Likewise, "RelTone" is the cadential tone shown as an
+        interval measured against the last pitch in the "Tone" column. If
+        `keep_keys` is set to True, the "Key" column will be kept in the cadence
+        results table. This corresponds to the combination of cadential voice
+        functions and chromatic intervals used as a key to lookup the cadence
+        information in the cadenceLabels.csv file. The "Progress" column gives
+        the progress toward the end of the piece measured 0-1 where 1 is the 
+        time point of the last attack in the piece.        
+        '''
+        return self.classifyCadences(return_type='c', keep_keys=keep_keys)
 
     def classifyCadences(self, return_type='cadences', keep_keys=False):
         '''
@@ -2015,7 +2087,7 @@ class CorpusBase:
         # Example using batch to count the cadence types from multiple pieces:
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
-        list_of_dfs = corpus.batch(ImportedPiece.classifyCadences, metadata=False)
+        list_of_dfs = corpus.batch(ImportedPiece.cadences, metadata=False)
         combined_df = pd.concat(list_of_dfs, ignore_index=True)
         # Get the number of each type of cadence observed:
         cadTypeCounts = combined_df['CadType'].value_counts()

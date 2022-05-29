@@ -1349,8 +1349,6 @@ class ImportedPiece:
         hits.sort_index(level=0, inplace=True)
         hits = hits[~hits.index.duplicated('last')]
         if keep_keys:
-            import pdb
-            pdb.set_trace()
             ngramKeys = hits.unstack(level=1)
         hits.name = 'Ngram'
         df = pd.DataFrame(hits)

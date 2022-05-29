@@ -1337,7 +1337,41 @@ class ImportedPiece:
         The way these CVFs combine determines which cadence labels are assigned
         when return_type='cadences'.
         '''
-        return self.classifyCadences(return_type='f', keep_keys=keep_keys)
+        if not keep_keys and 'CVF' in self.analyses:
+            return self.analyses['CVF']
+        cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
+        cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
+        ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False),
+                                    n=n, offsets='last', exclude=[]).stack()
+                  for n in cadences.N.unique()}
+        hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
+        hits = pd.concat(hits)
+        hits.sort_index(level=0, inplace=True)
+        hits = hits[~hits.index.duplicated('last')]
+        if keep_keys:
+            import pdb
+            pdb.set_trace()
+            ngramKeys = hits.unstack(level=1)
+        hits.name = 'Ngram'
+        df = pd.DataFrame(hits)
+        df = df.join(cadences, on='Ngram')
+        voices = [pair.split('_') for pair in df.index.get_level_values(1)]
+        df[['LowerVoice', 'UpperVoice']] = voices
+        df.index = df.index.get_level_values(0)
+        df.index.names = ('Offset',)
+        cvfs = pd.DataFrame(columns=self._getPartNames())
+        df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
+        mel = self.getMelodic('c', True, True)
+        mel = mel[cvfs.notnull()].dropna(how='all')
+        cvfs = cvfs.apply(self._cvf_disambiguate_h, axis=1).dropna(how='all')
+        cvfs = cvfs.astype('object', copy=False)
+        cvfs[(cvfs == 'x') & mel.isin(('5', '-7'))] = 'B'
+        cvfs[(cvfs == 'y') & mel.isin(('1', '2'))] = 'C'
+        cvfs[(cvfs == 'z') & mel.isin(('-1', '-2'))] = 'T'
+        self.analyses['CVF'] = cvfs
+        if keep_keys:
+            cvfs = pd.concat([cvfs, ngramKeys], axis=1)
+        return cvfs
 
     def cadences(self, keep_keys=False):
         '''
@@ -1361,102 +1395,15 @@ class ImportedPiece:
         the progress toward the end of the piece measured 0-1 where 1 is the 
         time point of the last attack in the piece.        
         '''
-        return self.classifyCadences(return_type='c', keep_keys=keep_keys)
-
-    def classifyCadences(self, return_type='cadences', keep_keys=False):
-        '''
-        Return a dataframe of cadence labels in the piece.
-
-        When return_type is set to "cadences" (default) a table of the cadence
-        labels, lowest pitch at moment of cadence, and cadential goal tone is
-        returned. You can also set it to "functions" (or just "f") if you want
-        to get a table of just the cadential voice functions.
-
-        In 'cadence' mode, the SinceLast and ToNext columns are the time in
-        quarter notes since the last or to the next cadence. The first cadence's
-        SinceLast time and the last cadence's ToNext time are the time since/to
-        the beginning/end of the piece. The "Low" and "Tone" columns give the
-        pitches of the lowest sounding pitch at the perfection, and the goal
-        tone of the cantizans (or altizans if there is no cantizans)
-        respectively. These are usually the same pitch class, but not always.
-        "Rel" is short for relative, so "RelLow" is the lowest pitch of each
-        cadence shown as an interval measured against the last pitch in the
-        "Low" column. Likewise, "RelTone" is the cadential tone shown as an
-        interval measured against the last pitch in the "Tone" column. If
-        `keep_keys` is set to True in cadence mode, the "Key" column will be
-        kept in the cadence results table. This corresponds to the combination
-        of cadential voice functions and chromatic intervals used as a key to
-        lookup the cadence information in the cadenceLabels.csv file.
-
-        When return_type is set to 'functions' (or just 'f' for short), a table
-        of the cadential voice functions (CVF) is returned. In CVF mode, if
-        `keep_keys` is set to True, the ngrams that triggered each CVF pair
-        will be shown in additional columns in the table.
-
-        Each CVF is represented with a single-character label as follows:
-
-        "C": cantizans motion up a step (can also be ornamented e.g. Landini)
-        "T": tenorizans motion down a step (can be ornamented with anticipations)
-        "B": bassizans motion up a fourth or down a fifth
-        "A": altizans motion, similar to cantizans, but cadences to a fifth
-            above a tenorizans instead of an octave
-        "L": leaping contratenor motion up an octave at the perfection
-        "P": plagal bassizans motion up a fifth or down a fourth
-
-        "c": evaded cantizans when it moves to an unexpected note at the perfection
-        "t": evaded tenorizans when it goes up by step at the perfection
-        "b": evaded bassizans when it goes up by step at the perfection
-        "u": evaded bassizans when it goes down by third at the perfection
-        (there are no evaded labels for the altizans, plagal bassizans leaping
-        contratenor CVFs)
-
-        "x": evaded bassizans motion where the voice drops out at the perfection
-        "y": evaded cantizans motion where the voice drops out at the perfection
-        "z": evaded tenorizans motion where the voice drops out at the perfection
-
-        The way these CVFs combine determines which cadence labels are assigned
-        when return_type='cadences'.
-        '''
-        rType = return_type[0].lower()
         if 'Cadences' in self.analyses:
-            if rType == 'c':
-                if keep_keys:
-                    return self.analyses['Cadences']
-                else:
-                    return self.analyses['Cadences'].drop('Key', axis=1)
-            elif rType == 'f' and not keep_keys:
-                return self.analyses['CVF']
-        cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
-        cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
-        ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False),
-                                    n=n, offsets='last', exclude=[]).stack()
-                  for n in cadences.N.unique()}
-        hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
-        hits = pd.concat(hits)
-        hits.sort_index(level=0, inplace=True)
-        if rType == 'f' and keep_keys:
-            ngramKeys = hits.unstack(level=1)
-        hits.name = 'Ngram'
-        df = pd.DataFrame(hits)
-        import pdb
-        df = df.join(cadences, on='Ngram')
-        voices = [pair.split('_') for pair in df.index.get_level_values(1)]
-        df[['LowerVoice', 'UpperVoice']] = voices
-        df.index = df.index.get_level_values(0)
-        df.index.names = ('Offset',)
-        cvfs = pd.DataFrame(columns=self._getPartNames())
-        # pdb.set_trace()
-        df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
+            if keep_keys:
+                return self.analyses['Cadences']
+            else:
+                return self.analyses['Cadences'].drop('Key', axis=1)
+
+        cvfs = self.cvfs()
         mel = self.getMelodic('c', True, True)
         mel = mel[cvfs.notnull()].dropna(how='all')
-        cvfs = cvfs.apply(self._cvf_disambiguate_h, axis=1).dropna(how='all')
-        cvfs = cvfs.astype('object', copy=False)
-        cvfs[(cvfs == 'x') & mel.isin(('5', '-7'))] = 'B'
-        cvfs[(cvfs == 'y') & mel.isin(('1', '2'))] = 'C'
-        cvfs[(cvfs == 'z') & mel.isin(('-1', '-2'))] = 'T'
-        self.analyses['CVF'] = cvfs
-        if rType == 'f' and keep_keys:
-            cvfs = pd.concat([cvfs, ngramKeys], axis=1)
         _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
         _cvfs.replace(['Q', 's', 'S'], np.nan, inplace=True)
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
@@ -1464,7 +1411,7 @@ class ImportedPiece:
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values().unique()), axis=1)
         keys.name = 'Key'
         keys = pd.DataFrame(keys)
-        cadDict = pd.read_csv(cwd+'/data/cadences/cadenceLabels.csv', index_col=0)
+        cadDict = pd.read_csv(cwd + '/data/cadences/cadenceLabels.csv', index_col=0)
         labels = keys.join(cadDict, on='Key')
         m21 = self._getM21ObjsNoTies().ffill()
         labels['Low'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
@@ -1491,11 +1438,20 @@ class ImportedPiece:
         labels['ToNext'] = labels['SinceLast'].shift(-1)
         labels.iat[-1, -1] = self.score.highestTime - labels.index[-1]
         self.analyses['Cadences'] = labels
-        if return_type[0].lower() == 'f':
-            return cvfs
         if not keep_keys:
             labels.drop('Key', axis=1, inplace=True)
         return labels
+
+    def classifyCadences(self, return_type='cadences', keep_keys=False):
+        '''This method has been deprecated. Please use .cvfs() for cadential
+        voice function analysis or .cadences() for cadential analysis. In both cases,
+        you no longer need the `return_type` parameter and should not pass it.
+        The `keep_keys` parameter works the same in those two functions.'''
+        print(self.classifyCadences.__doc__)
+        if return_type[0].lower() == 'f':
+            return self.cvfs(keep_keys=keep_keys)
+        else:
+            return self.cadences(keep_keys=keep_keys)
 
     def _entryHelper(self, col):
         """Return True for cells in column that correspond to notes that either

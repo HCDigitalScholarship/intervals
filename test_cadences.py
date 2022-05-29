@@ -14,8 +14,8 @@ def test_classifyCadences():
     analysis results have been stored to a table and this test reruns their analyses
     to verify that nothing has changed."""
     corpus = CorpusBase(TEST_FILES_CC)
-    cvfs = corpus.batch(ImportedPiece.classifyCadences, {'return_type': 'f'}, metadata=False)
-    cads = corpus.batch(ImportedPiece.classifyCadences, metadata=False)
+    cvfs = corpus.batch(ImportedPiece.cvfs, metadata=False)
+    cads = corpus.batch(ImportedPiece.cadences, metadata=False)
     analysisNow = []
     for i, cad in enumerate(cads):
         cad['URL'] = TEST_FILES_CC[i]

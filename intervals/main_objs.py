@@ -1333,6 +1333,82 @@ class ImportedPiece:
         else:
             return self.cadences(keep_keys=keep_keys)
 
+    def _alpha_only(value):
+        """This helper function is used by HR classifier.  It removes non-alphanumberic characters from lyrics
+        """
+        if isinstance(value, str):
+            return re.sub(r'[^a-zA-Z]', '', value)
+        else:
+            return value
+
+    def homorhythm(self):
+        """This function predicts homorhythmic passages in a given piece.
+        The method follows various stages:
+
+        gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets
+        gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr
+        checks the number of active voices (thus eliminating places where some voices have rests)
+        """
+        nr = self.notes()
+        dur = self.durations(df=nr)
+        ng = self.ngrams(df=dur, n=2)
+        dur_ngrams = []
+
+        # find passages with more than 2 active voices
+        for index, rows in ng.iterrows():
+
+            dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
+            dur_ngrams.append(dur_ngrams_no_nan)
+
+        ng['dur_ngrams'] = dur_ngrams
+        # ng['rest_count'] = rests
+        ng['active_voices'] = ng['dur_ngrams'].apply(len)
+        ng['number_dur_ngrams'] = ng['dur_ngrams'].apply(set).apply(len)
+        ng = ng[(ng['number_dur_ngrams'] <2) & (ng['active_voices'] > 2)]
+
+        # check rests in multiple parts
+        nr.ffill(inplace=True)
+        index_of_rests = []
+        rests = []
+        for index, rows in nr.iterrows():
+            rest_test = [y for y in rows if y == "Rest"]
+            rests.append(rest_test)
+
+        #     index_of_rests.append(index)
+        nr["rests"] = rests
+        nr["rests_count"] = nr["rests"].apply(len)
+        full_stop = nr[(nr['rests_count'] > 1) ]
+        rests_with_mb = self.detailIndex(full_stop)
+        # now get lyric syllables
+        lyrics = self.getLyric()
+        lyrics = lyrics.applymap(ImportedPiece._alpha_only)
+        cols = lyrics.columns
+        for col in cols:
+            lyrics[col] = lyrics[col].str.lower()
+        syll_set = []
+        for index2, rows2 in lyrics.iterrows():
+            syll_no_nan = [z for z in rows2 if pd.isnull(z) == False]
+            syll_set.append(syll_no_nan)
+        #     print(syll_no_nan)
+        lyrics['syllable_set'] = syll_set
+
+        # create mask consisting of passages with more than two voices actively singing same syllables
+        lyrics['active_syll_voices'] = lyrics['syllable_set'].apply(len)
+        # count how _many_ syllables at this offset
+        lyrics['number_sylls'] = lyrics['syllable_set'].apply(set).apply(len)
+        # get count of possible hr passages (several voices with same syllable)
+        lyrics_hr = lyrics[(lyrics['active_syll_voices'] > 2) & (lyrics['number_sylls'] < 2)]
+        # self.detailIndex(lyrics_hr, offset=True)
+        # lyrics['is_hr'] = np.where(lyrics['active_voices'] > 3)
+        hr_sylls_mask = lyrics_hr["active_syll_voices"]
+
+        # combine results to show passages where more than 2 voices have the same syllables and durations
+        ng = ng[['active_voices', "number_dur_ngrams"]]
+        hr = pd.merge(ng, hr_sylls_mask, left_index=True, right_index=True)
+        result = self.detailIndex(hr, offset=True)
+        return result
+
+
     def _entryHelper(self, col):
         """Return True for cells in column that correspond to notes that either
         begin a piece, or immediately preceded by a rest or a double barline."""
@@ -1524,14 +1600,8 @@ class ImportedPiece:
 
         col_order = list(points.columns) + ['Number_Entries', 'Flexed_Entries']
 
-        # new_offset_list = []
-        # nr = self.notes()
         det = self.detailIndex(nr, offset=True)
 
-        # The following are now all set in the Notebook as argument
-        # durations and ngrams of durations
-        # dur = self.durations(df=nr)
-        # dur_ng = self.getNgrams(df=dur, n=3)
         # ngrams of melodic entries
         # for chromatic, use:
         # self.getMelodicEntries(interval_settings=('c', True, True), n=5)
@@ -1568,8 +1638,6 @@ class ImportedPiece:
                     points = points[points['Offsets'].apply(len) > 1]
 
             points["Offsets_Key"] = points["Offsets"].apply(ImportedPiece._offset_joiner)
-            # import pdb
-            # pdb.set_trace()
             points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
             points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
             points["Number_Entries"] = points["Offsets"].apply(len)
@@ -1796,14 +1864,6 @@ def clean_melody_new(c):
     return soggetto_as_word
 
 #  HR classifier
-def alpha_only(value):
-
-    """This helper function is used by HR classifier.  It removes non-alphanumberic characters from lyrics
-    """
-    if isinstance(value, str):
-        return re.sub(r'[^a-zA-Z]', '', value)
-    else:
-        return value
 def find_hr(piece):
 
     """This function predicts homorhythmic passages in a given piece.
@@ -1814,64 +1874,7 @@ def find_hr(piece):
     checks the number of active voices (thus eliminating places where some voices have rests)
 
     """
-    nr = piece.notes()
-    dur = piece.durations(df=nr)
-    ng = piece.getNgrams(df=dur, n=2)
-    dur_ngrams = []
-
-    # find passages with more than 2 active voices
-    for index, rows in ng.iterrows():
-
-        dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
-        dur_ngrams.append(dur_ngrams_no_nan)
-
-    ng['dur_ngrams'] = dur_ngrams
-    # ng['rest_count'] = rests
-    ng['active_voices'] = ng['dur_ngrams'].apply(len)
-    ng['number_dur_ngrams'] = ng['dur_ngrams'].apply(set).apply(len)
-    ng = ng[(ng['number_dur_ngrams'] <2) & (ng['active_voices'] > 2)]
-
-    # check rests in multiple parts
-    nr.ffill(inplace=True)
-    index_of_rests = []
-    rests = []
-    for index, rows in nr.iterrows():
-        rest_test = [y for y in rows if y == "Rest"]
-        rests.append(rest_test)
-
-    #     index_of_rests.append(index)
-    nr["rests"] = rests
-    nr["rests_count"] = nr["rests"].apply(len)
-    full_stop = nr[(nr['rests_count'] > 1) ]
-    rests_with_mb = piece.detailIndex(full_stop)
-    # now get lyric syllables
-    lyrics = piece.getLyric()
-    lyrics = lyrics.applymap(alpha_only)
-    cols = lyrics.columns
-    for col in cols:
-        lyrics[col] = lyrics[col].str.lower()
-    syll_set = []
-    for index2, rows2 in lyrics.iterrows():
-        syll_no_nan = [z for z in rows2 if pd.isnull(z) == False]
-        syll_set.append(syll_no_nan)
-    #     print(syll_no_nan)
-    lyrics['syllable_set'] = syll_set
-
-    # create mask consisting of passages with more than two voices actively singing same syllables
-    lyrics['active_syll_voices'] = lyrics['syllable_set'].apply(len)
-    # count how _many_ syllables at this offset
-    lyrics['number_sylls'] = lyrics['syllable_set'].apply(set).apply(len)
-    # get count of possible hr passages (several voices with same syllable)
-    lyrics_hr = lyrics[(lyrics['active_syll_voices'] > 2) & (lyrics['number_sylls'] < 2)]
-    # piece.detailIndex(lyrics_hr, offset=True)
-    # lyrics['is_hr'] = np.where(lyrics['active_voices'] > 3)
-    hr_sylls_mask = lyrics_hr["active_syll_voices"]
-
-    # combine results to show passages where more than 2 voices have the same syllables and durations
-    ng = ng[['active_voices', "number_dur_ngrams"]]
-    hr = pd.merge(ng, hr_sylls_mask, left_index=True, right_index=True)
-    result = piece.detailIndex(hr, offset=True)
-    return result
+    return piece.homorhythm()
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
 class CorpusBase:

@@ -997,7 +997,7 @@ class ImportedPiece:
             chains = chains.apply(tuple, axis=1)
         return chains
 
-    def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
+    def ngrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True), unit=0,
                   offsets='first', clarify_rests=True):
         '''
@@ -1007,16 +1007,19 @@ class ImportedPiece:
         DataFrame. Since `exclude` defaults to `['Rest']`, pass an empty list if
         you want to allow rests in your ngrams.
 
-        There are two primary modes for the `how` parameter. When set to
-        "columnwise" (default), this is the simple case where the events in each
-        column of the `df` DataFrame has its events grouped at the offset of the
-        first event in the window. For example, to get 4-grams of melodic
-        intervals:
+        There are two primary modes for this method. They were controlled by the
+        `how` parameter, but this parameter is now deprecated and the mode is
+        determined by what is or is not passed as the `df` and `other` parameters.
+        When a dataframe is passed as `df` and nothing is given for `other`, this
+        is the simple case where the events in each
+        column of the `df` DataFrame are grouped at the offset of the first event
+        in the window. For example, to get 4-grams of melodic intervals:
 
         ip = ImportedPiece('path_to_piece')
         ngrams = ip.getNgrams(df=ip.getMelodic(), n=4)
 
-        If `how` is set to 'modules' this will return contrapuntal modules. In
+        For the "module" mode (interval successions) you must either pass dataframes
+        to both `df` and `other`, or leave both as None (default). In
         this case, if the `df` or `other` parameters are left as None, they will
         be replaced with the current piece's harmonic and melodic intervals
         respectfully. These intervals will be formed according to the
@@ -1025,7 +1028,7 @@ class ImportedPiece:
         settings). This makes it easy to make contrapuntal-module ngrams, e.g.:
 
         ip = ImportedPiece('path_to_piece')
-        ngrams = ip.getNgrams(how='modules')
+        ngrams = ip.getNgrams()
 
         There is a special case for "open-ended" module ngrams. Set n=1 and the
         module ngrams will show the vertical interval between two voices,
@@ -1051,14 +1054,14 @@ class ImportedPiece:
         ngrams at regular minim (half-note) intervals.
 
         ip = ImportedPiece('path_to_piece')
-        ngrams = ip.getNgrams(how='modules', unit=2)
+        ngrams = ip.getNgrams(unit=2)
 
         Otherwise, you can give specific `df` and/or `other` DataFrames in which
         case the `interval_settings` parameter will be ignored. Also, you can
         use the `held` parameter to be used for when the lower voice sustains a
-        note while the upper voice moves. This defaults to 'Held' to distinguish
+        note while the upper voice moves. This defaults to "Held" to distinguish
         between held notes and reiterated notes in the lower voice, but if this
-        distinction is not wanted for your query, you may want to pass way a
+        distinction is not wanted for your query, you may want to pass the way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
 
         The `clarify_rests` parameter controls whether the melodic motion of the 
@@ -1068,6 +1071,10 @@ class ImportedPiece:
         after a '|' character, e.g. "3_Rest|2, Rest_Held, 5". This is needed for
         the detection of cadential voice function evasion by dropout.
         '''
+        if df is not None and other is None:
+            how = 'columnwise'
+        elif (df is not None and other is not None) or (df is None and other is None):
+            how = 'modules'
         if how == 'columnwise':
             return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, offsets))
         if df is None:
@@ -1121,6 +1128,13 @@ class ImportedPiece:
             return pd.concat(cols, axis=1)
         else:
             return pd.DataFrame()
+
+    def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
+                  exclude=['Rest'], interval_settings=('d', True, True), unit=0,
+                  offsets='first', clarify_rests=True):
+        return self.ngrams(df=df, n=n, other=other, held=held, exclude=exclude,
+            interval_settings=interval_settings, unit=unit, offsets=offsets,
+            clarify_rests=clarify_rests)
 
     def classifyModules(self):
         '''

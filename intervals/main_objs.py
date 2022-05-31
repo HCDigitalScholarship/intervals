@@ -1451,7 +1451,7 @@ class ImportedPiece:
         labels.iat[-1, -1] = self.score.highestTime - labels.index[-1]
         self.analyses['Cadences'] = labels
         if not keep_keys:
-            labels.drop('Key', axis=1, inplace=True)
+            labels = labels.drop('Key', axis=1)
         return labels
 
     def classifyCadences(self, return_type='cadences', keep_keys=False):

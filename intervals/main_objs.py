@@ -418,7 +418,7 @@ class ImportedPiece:
         something other than single notes and rests, such as the durations of
         intervals. E.g.:
 
-        har = importedPiece.getHarmonic()
+        har = importedPiece.harmonic()
         harDur = importedPiece.durations(df=har)
 
         The `n` parameter should be an integer greater than zero, or -1. When
@@ -428,7 +428,7 @@ class ImportedPiece:
         n-sized window. For example, set n=3 if you wanted to get the durations
         of all 3-event-long pair-wise harmonic events:
 
-        har = importedPiece.getHarmonic()
+        har = importedPiece.harmonic()
         dur_3 = importedPiece.durations(df=har, n=3)
 
         Setting n to -1 sums the durations of all adjacent non-rest events,
@@ -442,13 +442,13 @@ class ImportedPiece:
         keeping values at the same indecies (i.e. index and columns) as mask_df.
         This is needed to get the durations of ngrams. To get the durations of
         ngrams, pass the same value of n and the samedataframe you passed to
-        .getNgrams() as the `n` and `df` parameters, then pass your dataframe of
+        .ngrams() as the `n` and `df` parameters, then pass your dataframe of
         ngrams as the `mask_df`. For example:
 
-        har = importedPiece.getHarmonic()
-        mel = importedPiece.getMelodic()
+        har = importedPiece.harmonic()
+        mel = importedPiece.melodic()
         _n = 5
-        ngrams = importedPiece.getNgrams(df=har, other=mel, n=_n)
+        ngrams = importedPiece.ngrams(df=har, other=mel, n=_n)
         ngramDurations = importedPiece.durations(df=har, n=_n, mask_df=ngrams)
         '''
         if 'Duration' in self.analyses and df is None and n == 1 and mask_df is None:
@@ -472,7 +472,7 @@ class ImportedPiece:
     def getDuration(self, df=None, n=1, mask_df=None):
         return self.durations(df, n, mask_df)
 
-    def getLyric(self):
+    def lyrics(self):
         '''
         Return a dataframe of the lyrics associated with each note in the piece.
         '''
@@ -482,6 +482,9 @@ class ImportedPiece:
             df.fillna(np.nan, inplace=True)
             self.analyses['Lyric'] = df
         return self.analyses['Lyric']
+    
+    def getLyric(self):
+        return self.lyrics()
 
     def _noteRestHelper(self, noteOrRest):
         if noteOrRest.isRest:
@@ -537,7 +540,7 @@ class ImportedPiece:
         if 'Beat' not in self.analyses:
             nr = self.notes()
             nrOffs = nr.apply(lambda row: row.index)
-            ms = self.getMeasure().apply(lambda row: row.index)
+            ms = self.measures().apply(lambda row: row.index)
             temp = pd.concat([ms, nr], axis=1)
             ms = temp.iloc[:, :len(ms.columns)].ffill()
             ms = ms[nr.notnull()]
@@ -572,7 +575,7 @@ class ImportedPiece:
         if _all:
             measure, beat, offset, t_sig, progress = True, True, True, True, True
         if measure:
-            cols.append(self.getMeasure().iloc[:, 0])
+            cols.append(self.measures().iloc[:, 0])
             names.append('Measure')
         if beat:
             cols.append(self._getBeatIndex())
@@ -581,7 +584,7 @@ class ImportedPiece:
             cols.append(df.index.to_series())
             names.append('Offset')
         if t_sig:
-            cols.append(self.getTimeSignature().iloc[:, 0])
+            cols.append(self.timeSignatures().iloc[:, 0])
             names.append('TSig')
         if progress:
             prog = (df.index / self.notes().index[-1]).to_series()
@@ -604,7 +607,7 @@ class ImportedPiece:
             return noteOrRest.beatStrength
         return noteOrRest
 
-    def getBeatStrength(self):
+    def beatStrengths(self):
         ''' Returns a table of the beat strengths of all the notes and rests in
         the piece. This follows the music21 conventions where the downbeat is
         equal to 1, and all other metric positions in a measure are given
@@ -616,6 +619,9 @@ class ImportedPiece:
             self.analyses['BeatStrength'] = df
         return self.analyses['BeatStrength']
 
+    def getBeatStrength(self):
+        return self.beatStrengths()
+
     def _getM21TSigObjs(self):
         if 'M21TSigObjs' not in self.analyses:
             tsigs = []
@@ -625,7 +631,7 @@ class ImportedPiece:
             self.analyses['M21TSigObjs'] = df
         return self.analyses['M21TSigObjs']
 
-    def getTimeSignature(self):
+    def timeSignatures(self):
         """
         Return a data frame containing the time signatures and their offsets.
         """
@@ -636,7 +642,10 @@ class ImportedPiece:
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
 
-    def getMeasure(self):
+    def getTimeSignature(self):
+        return self.timeSignatures()
+
+    def measures(self):
         """
         This method retrieves the offsets of each measure in each voices.
         """
@@ -651,7 +660,10 @@ class ImportedPiece:
             self.analyses["Measure"] = df
         return self.analyses["Measure"]
 
-    def getBarline(self):
+    def getMeasure(self):
+        return self.measures()
+
+    def barlines(self):
         """
         This method retrieves some of the barlines. It's not clear how music21
         picks them, but this seems to get all the double barlines which helps
@@ -668,7 +680,10 @@ class ImportedPiece:
             self.analyses["Barline"] = df
         return self.analyses["Barline"]
 
-    def getSoundingCount(self):
+    def getBarline(self):
+        return self.barlines()
+
+    def soundingCount(self):
         """
         This would return a series with the number of parts that currently have
         a note sounding.
@@ -685,6 +700,9 @@ class ImportedPiece:
 
         return self.analyses['SoundingCount']
 
+    def getSoundingCount(self):
+        return self.soundingCount()
+  
     def _zeroIndexIntervals(ntrvl):
         '''
         Change diatonic intervals so that they count the number of steps, i.e.
@@ -785,7 +803,7 @@ class ImportedPiece:
         _row = row.dropna()
         return _row / _row.shift(1)
 
-    def getDurationalRatio(self, df=None):
+    def durationalRatios(self, df=None):
         '''
         Return durational ratios of each item in each column compared to the
         previous item in the same column. If a df is passed, it should be of
@@ -796,7 +814,10 @@ class ImportedPiece:
             df = self.durations()
         return df.apply(self._durationalRatioHelper).dropna(how='all')
 
-    def getDistance(self, df=None, n=3):
+    def getDurationalRatio(self, df=None):
+        return self.durationalRatios(df)
+
+    def distance(self, df=None, n=3):
         '''
         Return the distances between all the values in df which should be a
         dataframe of strings of integer ngrams. Specifically, this is meant for
@@ -807,25 +828,25 @@ class ImportedPiece:
         Usage:
 
         # Call like this:
-        importedPiece.getDistance()
+        importedPiece.distance()
 
         # If you don't pass a value for df, you can specify a different value
         # for n to change from the default of 3:
-        importedPiece.getDistance(n=5)
+        importedPiece.distance(n=5)
 
         # If you already have the melodic ngrams calculated for a different
         # aspect of your query, you can pass that as df to save a little
         # runtime on a large query. Note that if you pass something for df,
         # the n parameter will be ignored:
-        mel = importedPiece.getMelodic('z', True, True)
-        ngrams = importedPiece.getNgrams(df=mel, n=4, exclude=['Rest'])
-        importedPiece.getDistance(df=ngrams)
+        mel = importedPiece.melodic('z', True, True)
+        ngrams = importedPiece.ngrams(df=mel, n=4, exclude=['Rest'])
+        importedPiece.distance(df=ngrams)
 
         # To search the table for the distances from a given pattern, just get
         # the column of that name. This is example looks for distances
         # involving a melodic pattern that goes up a step, down a third, up a
         # step, down a third:
-        dist = importedPiece.getDistance(n=4)
+        dist = importedPiece.distance(n=4)
         target = '1, -2, 1, -2'
         col = dist[target]
 
@@ -834,8 +855,8 @@ class ImportedPiece:
         col[col <= 2]
         '''
         if df is None:
-            df = self.getMelodic('z', True, True)
-            df = self.getNgrams(df=df, n=n, exclude=['Rest'])
+            df = self.melodic('z', True, True)
+            df = self.ngrams(df=df, n=n, exclude=['Rest'])
         uni = df.stack().unique()
         ser = pd.Series(uni)
         if isinstance(uni[0], str):
@@ -848,7 +869,10 @@ class ImportedPiece:
         dist.index = uni
         return dist
 
-    def getMelodic(self, kind='q', directed=True, compound=True, unit=0, end=True, df=None):
+    def getDistance(self, df=None, n=3):
+        return self.distance(df, n)
+
+    def melodic(self, kind='q', directed=True, compound=True, unit=0, end=True, df=None):
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
@@ -882,7 +906,7 @@ class ImportedPiece:
             in any dataframe. For example, if you want to find the melodic
             intervals between notes, but don't want to count repetitions of the
             same note as an interval, first run .notes(combineUnisons=True)
-            then pass that result as the df parameter for .getMelodic. Results
+            then pass that result as the df parameter for .melodic. Results
             are not cached in this case.
         :returns: `pandas.DataFrame` of melodic intervals in each part
         '''
@@ -902,6 +926,9 @@ class ImportedPiece:
                 self.analyses[key] = _df
         return self.analyses[key]
 
+    def getMelodic(self, kind='q', directed=True, compound=True, unit=0, end=True, df=None):
+        return self.melodic(kind, directed, compound, unit, end, df)
+
     def _getM21HarmonicIntervals(self):
         if 'M21HarmonicIntervals' not in self.analyses:
             m21Objs = self._getM21ObjsNoTies()
@@ -920,7 +947,7 @@ class ImportedPiece:
             self.analyses['M21HarmonicIntervals'] = ret
         return self.analyses['M21HarmonicIntervals']
 
-    def getHarmonic(self, kind='q', directed=True, compound=True):
+    def harmonic(self, kind='q', directed=True, compound=True):
         '''
         Return harmonic intervals for all voice pairs. The voice pairs are
         named with the voice that's lower on the staff given first, and the two
@@ -952,6 +979,9 @@ class ImportedPiece:
                 df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
             self.analyses[key] = df
         return self.analyses[key]
+
+    def getHarmonic(self, kind='q', directed=True, compound=True):
+        return self.harmonic(kind, directed, compound)
 
     def _ngrams_offsets_helper(col, n, offsets):
         """
@@ -1015,7 +1045,7 @@ class ImportedPiece:
         in the window. For example, to get 4-grams of melodic intervals:
 
         ip = ImportedPiece('path_to_piece')
-        ngrams = ip.getNgrams(df=ip.getMelodic(), n=4)
+        ngrams = ip.ngrams(df=ip.melodic(), n=4)
 
         For the "module" mode (interval successions) you must either pass dataframes
         to both `df` and `other`, or leave both as None (default). In
@@ -1027,7 +1057,7 @@ class ImportedPiece:
         settings). This makes it easy to make contrapuntal-module ngrams, e.g.:
 
         ip = ImportedPiece('path_to_piece')
-        ngrams = ip.getNgrams()
+        ngrams = ip.ngrams()
 
         There is a special case for "open-ended" module ngrams. Set n=1 and the
         module ngrams will show the vertical interval between two voices,
@@ -1053,7 +1083,7 @@ class ImportedPiece:
         ngrams at regular minim (half-note) intervals.
 
         ip = ImportedPiece('path_to_piece')
-        ngrams = ip.getNgrams(unit=2)
+        ngrams = ip.ngrams(unit=2)
 
         Otherwise, you can give specific `df` and/or `other` DataFrames in which
         case the `interval_settings` parameter will be ignored. Also, you can
@@ -1077,11 +1107,11 @@ class ImportedPiece:
         if how == 'columnwise':
             return df.apply(ImportedPiece._ngramHelper, args=(n, exclude, offsets))
         if df is None:
-            df = self.getHarmonic(*interval_settings)
+            df = self.harmonic(*interval_settings)
             if unit:
                 df = self.regularize(df, unit)
         if other is None:
-            other = self.getMelodic(*interval_settings, unit=unit)
+            other = self.melodic(*interval_settings, unit=unit)
         cols = []
         other = other.fillna(held)
         for pair in df.columns:
@@ -1223,7 +1253,7 @@ class ImportedPiece:
             return self.analyses['CVF']
         cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
-        ngrams = {n: self.getNgrams(how='modules', interval_settings=('d', True, False),
+        ngrams = {n: self.ngrams(how='modules', interval_settings=('d', True, False),
                                     n=n, offsets='last', exclude=[]).stack()
                   for n in cadences.N.unique()}
         hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
@@ -1241,7 +1271,7 @@ class ImportedPiece:
         df.index.names = ('Offset',)
         cvfs = pd.DataFrame(columns=self._getPartNames())
         df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
-        mel = self.getMelodic('c', True, True)
+        mel = self.melodic('c', True, True)
         mel = mel[cvfs.notnull()].dropna(how='all')
         cvfs = cvfs.apply(self._cvf_disambiguate_h, axis=1).dropna(how='all')
         cvfs = cvfs.astype('object', copy=False)
@@ -1282,7 +1312,7 @@ class ImportedPiece:
                 return self.analyses['Cadences'].drop('Key', axis=1)
 
         cvfs = self.cvfs()
-        mel = self.getMelodic('c', True, True)
+        mel = self.melodic('c', True, True)
         mel = mel[cvfs.notnull()].dropna(how='all')
         _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
         _cvfs.replace(['Q', 's', 'S'], np.nan, inplace=True)
@@ -1303,12 +1333,12 @@ class ImportedPiece:
         labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(lastTone, note.Note(x))))
         labels.RelTone = labels.RelTone[labels.Tone.notnull()]
         labels.Tone = labels.Tone.fillna(np.nan)
-        tsig = self.getTimeSignature().iloc[:, 0]
+        tsig = self.timeSignatures().iloc[:, 0]
         tsig.name = 'TSig'
         temp = pd.concat([labels, tsig], axis=1)
         temp['TSig'].ffill(inplace=True)
         labels = temp.loc[labels.index, :]
-        labels['Measure'] = self.getMeasure().iloc[:, 0].asof(labels.index).astype(int)
+        labels['Measure'] = self.measures().iloc[:, 0].asof(labels.index).astype(int)
         beat = self.getBeat().loc[labels.index, :]
         labels['Beat'] = beat.bfill(axis=1).iloc[:, 0]
         labels['Progress'] = labels.index / nr.index[-1]
@@ -1380,7 +1410,7 @@ class ImportedPiece:
         full_stop = nr[(nr['rests_count'] > 1) ]
         rests_with_mb = self.detailIndex(full_stop)
         # now get lyric syllables
-        lyrics = self.getLyric()
+        lyrics = self.lyrics()
         lyrics = lyrics.applymap(ImportedPiece._alpha_only)
         cols = lyrics.columns
         for col in cols:
@@ -1412,18 +1442,18 @@ class ImportedPiece:
     def _entryHelper(self, col):
         """Return True for cells in column that correspond to notes that either
         begin a piece, or immediately preceded by a rest or a double barline."""
-        barlines = self.getBarline()[col.name]
+        barlines = self.barlines()[col.name]
         _col = col.dropna()
         shifted = _col.shift().fillna('Rest')
         mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double')))
         return mask
 
-    def getEntryMask(self):
+    def entryMask(self):
         """Return a dataframe of True, False, or NaN values which can be used as
         a mask (filter). When applied to another dataframe, only the True cells
         in the mask will be kept. Usage:
         piece = importScore('path_to_piece')
-        mask = piece.getEntryMask()
+        mask = piece.entryMask()
         df = piece.notes()
         df[mask].dropna(how='all')
         """
@@ -1431,7 +1461,10 @@ class ImportedPiece:
         mask = nr.apply(self._entryHelper)
         return mask
 
-    def getEntries(self, df=None, n=None):
+    def getEntryMask(self):
+        return self.entryMask()
+
+    def entries(self, df=None, n=None):
         """Return a filtered copy of the passed df that only keeps the events in
         that df if they either start a piece or come after a silence. If the df
         parameter is left as None, it will be replaced with the default melodic
@@ -1447,12 +1480,14 @@ class ImportedPiece:
         are combinations of voices, e.g. harmonic intervals.
         """
         if df is None:
-            df = self.getMelodic(end=False)
+            df = self.melodic(end=False)
         if n is not None:
             df = self.ngrams(df, n)
-        mask = self.getEntryMask()
+        mask = self.entryMask()
         return df[mask].dropna(how='all')
 
+    def getEntries(self, df=None, n=None):
+        return self.entries(df, n)
 
     def _find_entry_int_distance(self, coordinates):
         """This helper function is used as part of classify_entries_as_presentation_types.
@@ -1577,14 +1612,14 @@ class ImportedPiece:
         piece.presentationTypes(edit_distance_threshold=2)
         """
         nr = self.notes(combineUnisons=combine_unisons)
-        mel = self.getMelodic(df=nr, kind='d', end=False)
+        mel = self.melodic(df=nr, kind='d', end=False)
         mel_ng = self.ngrams(df=mel, n=melodic_ngram_length)
         if limit_to_entries:
-            entries = self.getEntries(mel_ng)
+            entries = self.entries(mel_ng)
         else:
             entries = self.ngrams(df=mel, n=melodic_ngram_length)
         
-        # entries = self.getEntries(df=mel_ng, n=n)
+        # entries = self.entries(df=mel_ng, n=n)
         # Classifier with Functions
         points = pd.DataFrame(columns=['Composer',
                     'Title',
@@ -1611,7 +1646,7 @@ class ImportedPiece:
 
         # edit distance, based on side-by-side comparison of melodic ngrams
         # gets flexed and other similar soggetti
-        dist = self.getDistance(entries)
+        dist = self.distance(entries)
         dist_stack = dist.stack().to_frame()
 
         # filter distances to threshold.  <2 is good
@@ -1723,7 +1758,7 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
     # The following are now all set in the Notebook as argument
     # durations and ngrams of durations
     # dur = piece.durations(df=nr)
-    # dur_ng = piece.getNgrams(df=dur, n=3)
+    # dur_ng = piece.ngrams(df=dur, n=3)
 
     # ngrams of melodic entries
     # for chromatic, use:
@@ -1734,7 +1769,7 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
 
     # edit distance, based on side-by-side comparison of melodic ngrams
     # gets flexed and other similar soggetti
-    dist = piece.getDistance(entries)
+    dist = piece.distance(entries)
     dist_stack = dist.stack().to_frame()
 
 
@@ -1943,7 +1978,7 @@ class CorpusBase:
         # parameters passed in kwargs.
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
-        func = ImportedPiece.getMelodic  # <- NB there are no parentheses here
+        func = ImportedPiece.melodic  # <- NB there are no parentheses here
         kwargs = {'kind': 'c', 'directed': False}
         list_of_dfs = corpus.batch(func, kwargs)
 
@@ -1969,10 +2004,10 @@ class CorpusBase:
 
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
-        func1 = ImportedPiece.getMelodic
+        func1 = ImportedPiece.melodic
         # NB: you would probably want to set metadata to False for most preliminary results
         list_of_dfs = corpus.batch(func=func1, kwargs={'end': False}, metadata=False)
-        func2 = ImportedPiece.getNgrams
+        func2 = ImportedPiece.ngrams
         list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
         '''
         post = []

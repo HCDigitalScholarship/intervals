@@ -282,11 +282,13 @@ class ImportedPiece:
         if mei_doc is not None:
             title = mei_doc.find('mei:meiHead//mei:titleStmt/mei:title', namespaces={"mei": MEINSURI})
             title = title.text if title is not None and hasattr(title, 'text') else 'Not found'
+            title_cleaned = re.sub(r'\n', '', title).strip()
             composer = mei_doc.find('mei:meiHead//mei:titleStmt//mei:persName[@role="composer"]', namespaces={"mei": MEINSURI})
             if composer is None:  # for mei 3 files
                 composer = mei_doc.find('mei:meiHead//mei:titleStmt/mei:composer', namespaces={"mei": MEINSURI})
             composer = composer.text if composer is not None and hasattr(composer, 'text') else 'Not found'
-            self.metadata = {'title': title, 'composer': composer}
+            composer_cleaned = re.sub(r'\n', '', composer).strip()
+            self.metadata = {'title': title_cleaned, 'composer': composer_cleaned}
         else:
             self.metadata = {'title': 'Not found', 'composer': 'Not found'}
         self._intervalMethods = {

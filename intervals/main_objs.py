@@ -282,14 +282,14 @@ class ImportedPiece:
         if mei_doc is not None:
             title = mei_doc.find('mei:meiHead//mei:titleStmt/mei:title', namespaces={"mei": MEINSURI})
             if title is not None and hasattr(title, 'text'):
-                title = re.sub(r'\n', '', title.text).strip()  
+                title = re.sub(r'\n', '', title.text).strip()
             if title is None:
                 title = 'Not found'
             composer = mei_doc.find('mei:meiHead//mei:titleStmt//mei:persName[@role="composer"]', namespaces={"mei": MEINSURI})
             if composer is None:  # for mei 3 files
                 composer = mei_doc.find('mei:meiHead//mei:titleStmt/mei:composer', namespaces={"mei": MEINSURI})
             if composer is not None and hasattr(composer, 'text'):
-                composer = re.sub(r'\n', '', composer.text).strip()  
+                composer = re.sub(r'\n', '', composer.text).strip()
             if composer is None:
                 composer = 'Not found'
             self.metadata = {'title': title, 'composer': composer}
@@ -488,7 +488,7 @@ class ImportedPiece:
             df.fillna(np.nan, inplace=True)
             self.analyses['Lyric'] = df
         return self.analyses['Lyric']
-    
+
     def getLyric(self):
         return self.lyrics()
 
@@ -573,7 +573,7 @@ class ImportedPiece:
         measure, beat, offset, prevailing time signature, and progress towards
         the end of the piece (0-1) in the index labels. At least one must be
         chosen, and the default is to have measure and beat information, but no
-        other information. Pass offset=True to add offsets to index. You can 
+        other information. Pass offset=True to add offsets to index. You can
         also pass _all=True to include all five types of index information.
         '''
         cols = [df]
@@ -708,7 +708,7 @@ class ImportedPiece:
 
     def getSoundingCount(self):
         return self.soundingCount()
-  
+
     def _zeroIndexIntervals(ntrvl):
         '''
         Change diatonic intervals so that they count the number of steps, i.e.
@@ -1099,8 +1099,8 @@ class ImportedPiece:
         distinction is not wanted for your query, you may want to pass the way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
 
-        The `clarify_rests` parameter controls whether the melodic motion of the 
-        upper voice will be shown when the lower voice has a 'Rest' as its 
+        The `clarify_rests` parameter controls whether the melodic motion of the
+        upper voice will be shown when the lower voice has a 'Rest' as its
         melodic motion. This only applies to module ngrams. If True, the upper
         voice's melodic motions will appear after the lower voice's 'Rest' and
         after a '|' character, e.g. "3_Rest|2, Rest_Held, 5". This is needed for
@@ -1292,7 +1292,7 @@ class ImportedPiece:
     def cadences(self, keep_keys=False):
         '''
         Return a dataframe of cadences in the piece along with metadata about
-        these cadence points such as the lowest pitch at moment of cadence, and 
+        these cadence points such as the lowest pitch at moment of cadence, and
         the cadential goal tone is returned. The SinceLast and ToNext columns
         are the time in quarter notes since the last or to the next cadence. The
         first cadence's SinceLast time and the last cadence's ToNext time are
@@ -1308,8 +1308,8 @@ class ImportedPiece:
         results table. This corresponds to the combination of cadential voice
         functions and chromatic intervals used as a key to lookup the cadence
         information in the cadenceLabels.csv file. The "Progress" column gives
-        the progress toward the end of the piece measured 0-1 where 1 is the 
-        time point of the last attack in the piece.        
+        the progress toward the end of the piece measured 0-1 where 1 is the
+        time point of the last attack in the piece.
         '''
         if 'Cadences' in self.analyses:
             if keep_keys:
@@ -1624,7 +1624,7 @@ class ImportedPiece:
             entries = self.entries(mel_ng)
         else:
             entries = self.ngrams(df=mel, n=melodic_ngram_length)
-        
+
         # entries = self.entries(df=mel_ng, n=n)
         # Classifier with Functions
         points = pd.DataFrame(columns=['Composer',
@@ -1901,7 +1901,7 @@ def joiner(a):
 def clean_melody_new(c):
     """This gets used for visualization routines."""
     first_soggetto = list(c[0])
-    soggetto_as_word = ImportedPiece._joiner(first_soggetto)
+    soggetto_as_word = joiner(first_soggetto)
     return soggetto_as_word
 
 #  HR classifier

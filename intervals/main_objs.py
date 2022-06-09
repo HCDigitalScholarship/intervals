@@ -41,6 +41,7 @@ def importScore(path):
                     to_import = file.read()
                     mei_doc = ET.fromstring(to_import)
             else:
+                to_import = path
                 mei_doc = None
         try:
             if mei_doc is not None:
@@ -279,22 +280,23 @@ class ImportedPiece:
         self.path = path
         self.mei_doc = mei_doc
         self.analyses = {'note_list': None}
+        title, composer = path, 'Not found'
         if mei_doc is not None:
             title = mei_doc.find('mei:meiHead//mei:titleStmt/mei:title', namespaces={"mei": MEINSURI})
             if title is not None and hasattr(title, 'text'):
                 title = re.sub(r'\n', '', title.text).strip()  
-            if title is None:
-                title = 'Not found'
             composer = mei_doc.find('mei:meiHead//mei:titleStmt//mei:persName[@role="composer"]', namespaces={"mei": MEINSURI})
             if composer is None:  # for mei 3 files
                 composer = mei_doc.find('mei:meiHead//mei:titleStmt/mei:composer', namespaces={"mei": MEINSURI})
             if composer is not None and hasattr(composer, 'text'):
                 composer = re.sub(r'\n', '', composer.text).strip()  
-            if composer is None:
-                composer = 'Not found'
-            self.metadata = {'title': title, 'composer': composer}
         else:
-            self.metadata = {'title': 'Not found', 'composer': 'Not found'}
+            if self.score.metadata.title is not None:
+                title = self.score.metadata.title
+            if self.score.metadata.composer is not None:
+                composer = self.score.metadata.composer
+        self.metadata = {'title': title, 'composer': composer}
+
         self._intervalMethods = {
             # (quality, directed, compound):   function returning the specified type of interval
             # diatonic with quality

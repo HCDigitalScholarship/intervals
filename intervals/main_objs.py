@@ -1903,7 +1903,7 @@ def joiner(a):
 def clean_melody_new(c):
     """This gets used for visualization routines."""
     first_soggetto = list(c[0])
-    soggetto_as_word = ImportedPiece._joiner(first_soggetto)
+    soggetto_as_word = joiner(first_soggetto)
     return soggetto_as_word
 
 #  HR classifier

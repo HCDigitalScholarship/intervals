@@ -1262,7 +1262,7 @@ class ImportedPiece:
         cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         ngrams = {n: self.ngrams(how='modules', interval_settings=('d', True, False),
-                                    n=n, offsets='last', exclude=[]).stack()
+                                    n=n, offsets='last', held='1', exclude=[]).stack()
                   for n in cadences.N.unique()}
         hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
         hits = pd.concat(hits)

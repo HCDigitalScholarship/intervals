@@ -1176,8 +1176,18 @@ class ImportedPiece:
     def _cvf_helper(self, row, df):
         '''
         Assign the cadential voice function of the lower and upper voices in
-        each pair to their respective part name columns.'''
-        df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, row.UpperCVF)
+        each pair to their respective part name columns. This allows any label from
+        any pair to overwrite the label from a previous pair. The one exception is
+        that a Cantizans can't overwrite an Altizans, and if it tries to, the
+        accompanying Bassizans gets rewritten to be a Qunitizans.'''
+        if (row.name in df.index and df.at[row.name, row.UpperVoice] == 'A'
+            and row.LowerCVF == 'B' and row.UpperCVF == 'C'):
+            df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = ('Q', 'A')
+        elif (row.name in df.index and df.at[row.name, row.LowerVoice] == 'A'
+            and row.LowerCVF == 'C' and row.UpperCVF == 'B'):
+            df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = ('A', 'Q')
+        else:
+            df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, row.UpperCVF)
 
     def _cvf_disambiguate_h(self, row):
         '''
@@ -1228,6 +1238,7 @@ class ImportedPiece:
 
         Each CVF is represented with a single-character label as follows:
 
+        Realized Cadential Voice Functions:
         "C": cantizans motion up a step (can also be ornamented e.g. Landini)
         "T": tenorizans motion down a step (can be ornamented with anticipations)
         "B": bassizans motion up a fourth or down a fifth
@@ -1236,12 +1247,14 @@ class ImportedPiece:
         "L": leaping contratenor motion up an octave at the perfection
         "P": plagal bassizans motion up a fifth or down a fourth
         "Q": quintizans, like a tenorizans, but resolves down by fifth or up by
-            fourth to a fourth below the goal tone of the cantizans
+            fourth to a fourth below the goal tone of a cantizans or an octave
+            below the goal tone of an altizans
         "S": sestizans, occurring in some thicker 16th centurytextures, this is
             where the agent against the cantizans is already the cantizan's note
             of resolution (often results in a simultaneous false relation); the
             melodic motion is down by third at the moment of perfection
 
+        Evaded Cadential Voice Functions:
         "c": evaded cantizans when it moves to an unexpected note at the perfection
         "t": evaded tenorizans when it goes up by step at the perfection
         "b": evaded bassizans when it goes up by step at the perfection
@@ -1250,12 +1263,13 @@ class ImportedPiece:
         contratenor CVFs)
         "s": evaded sestizans when it resolves down by second
 
+        Abandoned Cadential Voice Functions:
         "x": evaded bassizans motion where the voice drops out at the perfection
         "y": evaded cantizans motion where the voice drops out at the perfection
         "z": evaded tenorizans motion where the voice drops out at the perfection
 
         The way these CVFs combine determines which cadence labels are assigned
-        when return_type='cadences'.
+        in the .cadences() method.
         '''
         if not keep_keys and 'CVF' in self.analyses:
             return self.analyses['CVF']

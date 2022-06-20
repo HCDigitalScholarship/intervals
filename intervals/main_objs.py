@@ -1132,7 +1132,7 @@ class ImportedPiece:
             combo.insert(loc=1, column='Joiner', value=', ')
             combo['_'] = '_'
             if n == -1:
-                har = df[pair]
+                har = df[pair].dropna()
                 starts = har[(har != 'Rest') & (har.shift(1).isin(('Rest', np.nan)))]
                 ends = har[(har != 'Rest') & (har.shift(-1).isin(('Rest', np.nan)))]
                 starts.dropna(inplace=True)

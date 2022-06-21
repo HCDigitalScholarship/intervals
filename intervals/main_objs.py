@@ -771,7 +771,7 @@ class ImportedPiece:
     def _getRegularM21MelodicIntervals(self, unit):
         m21Objs = self._getM21ObjsNoTies()
         m21Objs = self.regularize(m21Objs, unit=unit)
-        return m21Objs.apply(ImportedPiece._melodifyPart)
+        return m21Objs.apply(ImportedPiece._melodifyPart, args=(True,))
 
     def _qualityDirectedCompound(cell):
         if hasattr(cell, 'direction'):

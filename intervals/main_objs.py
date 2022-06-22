@@ -1105,7 +1105,7 @@ class ImportedPiece:
         upper voice will be shown when the lower voice has a 'Rest' as its 
         melodic motion. This only applies to module ngrams. If True, the upper
         voice's melodic motions will appear after the lower voice's 'Rest' and
-        after a '|' character, e.g. "3_Rest|2, Rest_Held, 5". This is needed for
+        after a ':' character, e.g. "3_Rest:2, Rest_Held, 5". This is needed for
         the detection of cadential voice function evasion by dropout.
         '''
         if df is not None and other is None:
@@ -1126,7 +1126,7 @@ class ImportedPiece:
             lowerVoice, upperVoice = pair.split('_')
             lowerMel = other[lowerVoice].copy()
             if clarify_rests and 'Rest' not in exclude:
-                lowerMel[lowerMel == 'Rest'] += '|' + other[upperVoice]
+                lowerMel[lowerMel == 'Rest'] += ':' + other[upperVoice]
             combo = pd.concat([lowerMel, df[pair]], axis=1)
             combo.dropna(subset=(pair,), inplace=True)
             combo.insert(loc=1, column='Joiner', value=', ')
@@ -1276,9 +1276,8 @@ class ImportedPiece:
         cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         ngrams = {n: self.ngrams(how='modules', interval_settings=('d', True, False),
-                                    n=n, offsets='last', held='1', exclude=[]).stack()
-                  for n in cadences.N.unique()}
-        hits = [df[df.isin(cadences[cadences.N == n].index)] for n, df in ngrams.items()]
+                    n=n, offsets='last', held='1', exclude=[]).stack() for n in cadences.N.unique()}
+        hits = [ser[ser.str.contains('|'.join(cadences[cadences.N == n].index), regex=True)] for n, ser in ngrams.items()]
         hits = pd.concat(hits)
         hits.sort_index(level=0, inplace=True)
         hits = hits[~hits.index.duplicated('last')]
@@ -1286,7 +1285,8 @@ class ImportedPiece:
             ngramKeys = hits.unstack(level=1)
         hits.name = 'Ngram'
         df = pd.DataFrame(hits)
-        df = df.join(cadences, on='Ngram')
+        df['Pattern'] = df.Ngram.replace(cadences.index, cadences.index, regex=True)
+        df = df.join(cadences, on='Pattern')
         voices = [pair.split('_') for pair in df.index.get_level_values(1)]
         df[['LowerVoice', 'UpperVoice']] = voices
         df.index = df.index.get_level_values(0)

@@ -1,6 +1,7 @@
 import intervals
 from intervals.main_objs import *
 import numpy as np
+import pdb
 
 
 TEST_FILES_CC = [  # confirmed ground truth piece for the .cvfs and .cadences methods
@@ -36,7 +37,8 @@ def test_classifyCadences():
     # Uncomment the next two lines if you're running this test with local files
     # analysisNow.drop(columns='URL', inplace=True)
     # groundTruth.drop(columns='URL', inplace=True)
-
+    an = analysisNow.copy()
+    gt = groundTruth.copy()
     isEqual = analysisNow.equals(groundTruth)
     # Try to give feedback if the test fails
     if not isEqual:

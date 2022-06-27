@@ -1,14 +1,14 @@
 import intervals
 from intervals.main_objs import *
 import numpy as np
-import pdb
+# import pdb
 
 
 TEST_FILES_CC = [  # confirmed ground truth piece for the .cvfs and .cadences methods
-    # 'https://crimproject.org/mei/CRIM_Model_0012.mei',
-    # 'https://crimproject.org/mei/CRIM_Model_0023.mei',
-    "/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei",
-    "/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei",
+    'https://crimproject.org/mei/CRIM_Model_0012.mei',
+    'https://crimproject.org/mei/CRIM_Model_0023.mei',
+    # "/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei",
+    # "/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei",
 ]
 
 def test_classifyCadences():

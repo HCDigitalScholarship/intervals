@@ -1350,7 +1350,7 @@ class ImportedPiece:
         mel = self.melodic('c', True, True)
         mel = mel[cvfs.notnull()].dropna(how='all')
         _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
-        _cvfs.replace(['Q', 'S'], np.nan, inplace=True)
+        _cvfs.replace(['Q', 's', 'S'], np.nan, inplace=True)
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
         cadKeys = _cvfs + mel
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values().unique()), axis=1)

@@ -55,7 +55,7 @@ def test_classifyCadences():
         for col in analysisNow.columns:
             colsEqual = analysisNow[col].equals(groundTruth[col])
             if not colsEqual:
-                print('\n*********\nThere is a discrepancy in the {} columns.\n*********\n'.format(col))
+                print('\n*********\nThere is a discrepancy in the {} column.\n*********\n'.format(col))
 
     print('Comparing current cadential analysis and ground truth...')
     assert(isEqual)

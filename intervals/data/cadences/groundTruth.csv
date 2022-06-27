@@ -34,7 +34,7 @@ index,CadType,Evaded,LeadingTones,Low,RelLow,Tone,RelTone,TSig,Measure,Beat,Prog
 216.0,Authentic,False,1.0,G2,-P4,G,P1,4/2,28,1.0,0.267,24.0,32.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,t,C,x,T,-,B
 248.0,Authentic,False,1.0,G2,-P4,G,P1,4/2,32,1.0,0.307,32.0,104.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,C,-,-,-,-,B
 352.0,Clausula Vera,False,1.0,C3,P1,C,-P5,4/2,45,1.0,0.436,104.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,C,-,T,-
-368.0,Reinterpreted,True,1.0,C3,P1,G,P1,4/2,47,1.0,0.455,16.0,8.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,A,-,B,T,-,s
+368.0,Reinterpreted,False,1.0,C3,P1,G,P1,4/2,47,1.0,0.455,16.0,8.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,A,-,B,T,-,s
 376.0,Authentic,False,1.0,G2,-P4,G,P1,4/2,48,1.0,0.465,8.0,8.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,-,-,B,C
 384.0,Clausula Vera,False,1.0,G2,-P4,G,P1,4/2,49,1.0,0.475,8.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,C,-,T,-
 400.0,Clausula Vera,False,1.0,G2,-P4,G,P1,4/2,51,1.0,0.495,16.0,24.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,t,C,-,T,-,-

@@ -609,6 +609,12 @@ class ImportedPiece:
         ret.dropna(inplace=True, how='all')
         ret.sort_index(inplace=True)
         return ret
+    
+    def di(self, df, measure=True, beat=True, offset=False, t_sig=False, progress=False, _all=False):
+        """
+        Convenience shortcut for .detailIndex. See that method's documentation for instructions."""
+        return self.detailIndex(df=df, measure=measure, beat=beat, offset=offset,
+                                t_sig=t_sig, progress=progress, _all=_all)
 
     def _beatStrengthHelper(self, noteOrRest):
         if hasattr(noteOrRest, 'beatStrength'):
@@ -616,7 +622,8 @@ class ImportedPiece:
         return noteOrRest
 
     def beatStrengths(self):
-        ''' Returns a table of the beat strengths of all the notes and rests in
+        '''
+        Returns a table of the beat strengths of all the notes and rests in
         the piece. This follows the music21 conventions where the downbeat is
         equal to 1, and all other metric positions in a measure are given
         smaller numbers approaching zero as their metric weight decreases.
@@ -750,7 +757,8 @@ class ImportedPiece:
         return res
 
     def _strToM21Obj(cell):
-        '''Convert a df cell from a string to a music21 note or rest. NAs are ignored.'''
+        '''
+        Convert a df cell from a string to a music21 note or rest. NAs are ignored.'''
         if cell == 'Rest':
             return note.Rest()
         return note.Note(cell)
@@ -1036,7 +1044,7 @@ class ImportedPiece:
 
     def ngrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True), unit=0,
-                  offsets='first', clarify_rests=True):
+                  offsets='first', show_both=False):
         '''
         Group sequences of observations in a sliding window "n" events long
         (default n=3). If the `exclude` parameter is passed and any item in that
@@ -1101,12 +1109,12 @@ class ImportedPiece:
         distinction is not wanted for your query, you may want to pass the way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
 
-        The `clarify_rests` parameter controls whether the melodic motion of the 
-        upper voice will be shown when the lower voice has a 'Rest' as its 
-        melodic motion. This only applies to module ngrams. If True, the upper
-        voice's melodic motions will appear after the lower voice's 'Rest' and
-        after a ':' character, e.g. "3_Rest:2, Rest_Held, 5". This is needed for
-        the detection of cadential voice function evasion by dropout.
+        The `show_both` parameter controls whether the melodic motion of both 
+        voices in contrapuntal modules are shown. If True, the melodic motions of 
+        the two voices appear with a colon between them in the format lower:upper 
+        e.g. "3_-2:1, 4_1:-2, 3_-5:2, 8". This is needed for the detection of 
+        cadential voice function evasion by dropout and also to be able to detect 
+        which voice attacks at a dissonance.
         '''
         if df is not None and other is None:
             how = 'columnwise'
@@ -1125,10 +1133,12 @@ class ImportedPiece:
         for pair in df.columns:
             lowerVoice, upperVoice = pair.split('_')
             lowerMel = other[lowerVoice].copy()
-            if clarify_rests and 'Rest' not in exclude:
-                lowerMel[lowerMel == 'Rest'] += ':' + other[upperVoice]
+            if show_both and 'Rest' not in exclude:
+                lowerMel += ':' + other[upperVoice]
             combo = pd.concat([lowerMel, df[pair]], axis=1)
             combo.dropna(subset=(pair,), inplace=True)
+            filler = held + ':' + held if show_both else held
+            combo[lowerVoice].fillna(filler, inplace=True)
             combo.insert(loc=1, column='Joiner', value=', ')
             combo['_'] = '_'
             if n == -1:
@@ -1168,10 +1178,10 @@ class ImportedPiece:
 
     def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True), unit=0,
-                  offsets='first', clarify_rests=True):
+                  offsets='first', show_both=True):
         return self.ngrams(df=df, n=n, other=other, held=held, exclude=exclude,
             interval_settings=interval_settings, unit=unit, offsets=offsets,
-            clarify_rests=clarify_rests)
+            show_both=show_both)
 
     def _cvf_helper(self, row, df):
         '''
@@ -1186,6 +1196,9 @@ class ImportedPiece:
         elif (row.name in df.index and df.at[row.name, row.LowerVoice] == 'A'
             and row.LowerCVF == 'C' and row.UpperCVF == 'B'):
             df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = ('A', 'Q')
+        elif (row.name in df.index and df.at[row.name, row.UpperVoice] == 'A'
+            and row.UpperCVF == 'C'):
+            df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, 'A')
         else:
             df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, row.UpperCVF)
 
@@ -1210,7 +1223,7 @@ class ImportedPiece:
         if 't' in row.values and 'T' in row.values:
             row = row.replace('t', np.nan)
         if 'B' in row.values or 'b' in row.values:
-            row = row.replace(('t', 'T', 'u'), np.nan)
+            row = row.replace(('t', 'T', 'u', 'x', 'z'), np.nan)
         return row
 
     def _lowest_pitch(self, row, m21):
@@ -1276,7 +1289,7 @@ class ImportedPiece:
         cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         ngrams = {n: self.ngrams(how='modules', interval_settings=('d', True, False),
-                    n=n, offsets='last', held='1', exclude=[]).stack() for n in cadences.N.unique()}
+                    n=n, offsets='last', held='1', exclude=[], show_both=True).stack() for n in cadences.N.unique()}
         hits = [ser[ser.str.contains('|'.join(cadences[cadences.N == n].index), regex=True)] for n, ser in ngrams.items()]
         hits = pd.concat(hits)
         hits.sort_index(level=0, inplace=True)
@@ -1337,7 +1350,7 @@ class ImportedPiece:
         mel = self.melodic('c', True, True)
         mel = mel[cvfs.notnull()].dropna(how='all')
         _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
-        _cvfs.replace(['Q', 's', 'S'], np.nan, inplace=True)
+        _cvfs.replace(['Q', 'S'], np.nan, inplace=True)
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
         cadKeys = _cvfs + mel
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values().unique()), axis=1)
@@ -1375,7 +1388,8 @@ class ImportedPiece:
         return labels
 
     def classifyCadences(self, return_type='cadences', keep_keys=False):
-        '''This method has been deprecated. Please use .cvfs() for cadential
+        '''
+        This method has been deprecated. Please use .cvfs() for cadential
         voice function analysis or .cadences() for cadential analysis. In both cases,
         you no longer need the `return_type` parameter and should not pass it.
         The `keep_keys` parameter works the same in those two functions.'''
@@ -1386,7 +1400,8 @@ class ImportedPiece:
             return self.cadences(keep_keys=keep_keys)
 
     def _alpha_only(value):
-        """This helper function is used by HR classifier.  It removes non-alphanumberic characters from lyrics
+        """
+        This helper function is used by HR classifier.  It removes non-alphanumberic characters from lyrics
         """
         if isinstance(value, str):
             return re.sub(r'[^a-zA-Z]', '', value)
@@ -1394,7 +1409,8 @@ class ImportedPiece:
             return value
 
     def homorhythm(self):
-        """This function predicts homorhythmic passages in a given piece.
+        """
+        This function predicts homorhythmic passages in a given piece.
         The method follows various stages:
 
         gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets
@@ -1462,7 +1478,8 @@ class ImportedPiece:
 
 
     def _entryHelper(self, col):
-        """Return True for cells in column that correspond to notes that either
+        """
+        Return True for cells in column that correspond to notes that either
         begin a piece, or immediately preceded by a rest or a double barline."""
         barlines = self.barlines()[col.name]
         _col = col.dropna()
@@ -1471,7 +1488,8 @@ class ImportedPiece:
         return mask
 
     def entryMask(self):
-        """Return a dataframe of True, False, or NaN values which can be used as
+        """
+        Return a dataframe of True, False, or NaN values which can be used as
         a mask (filter). When applied to another dataframe, only the True cells
         in the mask will be kept. Usage:
         piece = importScore('path_to_piece')
@@ -1487,7 +1505,8 @@ class ImportedPiece:
         return self.entryMask()
 
     def entries(self, df=None, n=None):
-        """Return a filtered copy of the passed df that only keeps the events in
+        """
+        Return a filtered copy of the passed df that only keeps the events in
         that df if they either start a piece or come after a silence. If the df
         parameter is left as None, it will be replaced with the default melodic
         interval results, though with end=False since this is needed specifically
@@ -1512,7 +1531,8 @@ class ImportedPiece:
         return self.entries(df, n)
 
     def _find_entry_int_distance(self, coordinates):
-        """This helper function is used as part of classify_entries_as_presentation_types.
+        """
+        This helper function is used as part of classify_entries_as_presentation_types.
         This function finds the melodic intervals between the first notes of
         successive entries in a given presentation type.
         They are represented as intervals with quality and direction, thus P-4, m3, P5, P5, M-9, P-4, P4
@@ -1536,7 +1556,8 @@ class ImportedPiece:
         return entry_ints
 
     def _split_by_threshold(seq, max_diff=70):
-        """This helper function is used as part of classify_entries_as_presentation_types.
+        """
+        This helper function is used as part of classify_entries_as_presentation_types.
         This function finds gaps between sequences of matching melodic entries.
         The threshold is set to 70 offsets by default--under about 10 measures.
         """
@@ -1556,7 +1577,8 @@ class ImportedPiece:
         yield part
 
     def _classify_by_offset(offset_diffs):
-        """This helper function is used as part of classify_entries_as_presentation_types.
+        """
+        This helper function is used as part of classify_entries_as_presentation_types.
         This function predicts the Presentation Types. It relies of the differences between
         the first offsets of successive melodic entries.
 
@@ -1576,7 +1598,8 @@ class ImportedPiece:
             return 'FUGA'
 
     def _temp_dict_of_details(self, slist, entry_array, det, matches):
-        """This helper function is used as part of classify_entries_as_presentation_types.
+        """
+        This helper function is used as part of classify_entries_as_presentation_types.
         This function assembles various features for the presentation types
         into a single temporary dictionary, which in turn is appended to the dataframe of 'points'
         """
@@ -1614,7 +1637,8 @@ class ImportedPiece:
     def presentationTypes(self, melodic_ngram_length=4, limit_to_entries=True,
                           edit_distance_threshold=1, include_hidden_types=False,
                           combine_unisons=False):
-        """This function uses several other functions to classify the entries in a given piece.
+        """
+        This function uses several other functions to classify the entries in a given piece.
         The output is a list, in order of offset, of each presentation type, including information about
         measures/beats
         starting offset

@@ -5,8 +5,10 @@ import pdb
 
 
 TEST_FILES_CC = [  # confirmed ground truth piece for the .cvfs and .cadences methods
-    'https://crimproject.org/mei/CRIM_Model_0012.mei',
-    'https://crimproject.org/mei/CRIM_Model_0023.mei',
+    # 'https://crimproject.org/mei/CRIM_Model_0012.mei',
+    # 'https://crimproject.org/mei/CRIM_Model_0023.mei',
+    "/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei",
+    "/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei",
 ]
 
 def test_classifyCadences():
@@ -34,11 +36,11 @@ def test_classifyCadences():
     # analysisNow.to_csv('./intervals/data/cadences/groundTruth.csv', index=False)
     groundTruth = pd.read_csv('./intervals/data/cadences/groundTruth.csv')
     groundTruth = groundTruth.astype(analysisNow.dtypes, copy=False)
-    # Uncomment the next two lines if you're running this test with local files
-    # analysisNow.drop(columns='URL', inplace=True)
-    # groundTruth.drop(columns='URL', inplace=True)
-    an = analysisNow.copy()
-    gt = groundTruth.copy()
+    # Ignore the url columns in case the test is being run with local files
+    analysisNow.drop(columns='URL', inplace=True)
+    groundTruth.drop(columns='URL', inplace=True)
+    # an = analysisNow.copy()
+    # gt = groundTruth.copy()
     isEqual = analysisNow.equals(groundTruth)
     # Try to give feedback if the test fails
     if not isEqual:

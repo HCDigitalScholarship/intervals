@@ -284,12 +284,12 @@ class ImportedPiece:
         if mei_doc is not None:
             title = mei_doc.find('mei:meiHead//mei:titleStmt/mei:title', namespaces={"mei": MEINSURI})
             if title is not None and hasattr(title, 'text'):
-                title = re.sub(r'\n', '', title.text).strip()  
+                title = re.sub(r'\n', '', title.text).strip()
             composer = mei_doc.find('mei:meiHead//mei:titleStmt//mei:persName[@role="composer"]', namespaces={"mei": MEINSURI})
             if composer is None:  # for mei 3 files
                 composer = mei_doc.find('mei:meiHead//mei:titleStmt/mei:composer', namespaces={"mei": MEINSURI})
             if composer is not None and hasattr(composer, 'text'):
-                composer = re.sub(r'\n', '', composer.text).strip()  
+                composer = re.sub(r'\n', '', composer.text).strip()
         else:
             if self.score.metadata.title is not None:
                 title = self.score.metadata.title
@@ -490,7 +490,7 @@ class ImportedPiece:
             df.fillna(np.nan, inplace=True)
             self.analyses['Lyric'] = df
         return self.analyses['Lyric']
-    
+
     def getLyric(self):
         return self.lyrics()
 
@@ -575,7 +575,7 @@ class ImportedPiece:
         measure, beat, offset, prevailing time signature, and progress towards
         the end of the piece (0-1) in the index labels. At least one must be
         chosen, and the default is to have measure and beat information, but no
-        other information. Pass offset=True to add offsets to index. You can 
+        other information. Pass offset=True to add offsets to index. You can
         also pass _all=True to include all five types of index information.
         '''
         cols = [df]
@@ -609,7 +609,7 @@ class ImportedPiece:
         ret.dropna(inplace=True, how='all')
         ret.sort_index(inplace=True)
         return ret
-    
+
     def di(self, df, measure=True, beat=True, offset=False, t_sig=False, progress=False, _all=False):
         """
         Convenience shortcut for .detailIndex. See that method's documentation for instructions."""
@@ -717,7 +717,7 @@ class ImportedPiece:
 
     def getSoundingCount(self):
         return self.soundingCount()
-  
+
     def _zeroIndexIntervals(ntrvl):
         '''
         Change diatonic intervals so that they count the number of steps, i.e.
@@ -887,6 +887,75 @@ class ImportedPiece:
 
     def getDistance(self, df=None, n=3):
         return self.distance(df, n)
+
+    def _flexed_sum(item):
+        if item[0] <= flex_threshold:
+            item[0] = 0
+        return sum(item)
+
+    def flexed_distance(self, df=None, n=3, flex_threshold=1):
+          '''
+          Return the distances between all the values in df which should be a
+          dataframe of strings of integer ngrams. Specifically, this is meant for
+          0-indexed, directed, and compound melodic ngrams. If nothing is passed
+          for df, melodic ngrams of this type will be provided at the value of n
+          passed. An alternative that would make sense would be to use chromatic
+          melodic intervals instead.
+
+          This function differs from "distance" in that it treats the first item in
+          each ngram differently from the others.  That is, the first item can "flex"
+          differently from the remainder.  Thus users can choose a overal edit_distance_threshold
+          of "0" while still allowing flexing only at the head of the ngram.
+
+          The default flex is up to "1" unit of difference, but passing the "flex_threshold"
+          argument allows users to set their own threshold.
+
+          This function is meant mainly for melodic ngrams, but it can also be used
+          for durational ngrams.
+
+          Usage:
+
+          # Call like this:
+          importedPiece.flexed_distance()
+
+          # If you don't pass a value for df, you can specify a different value
+          # for n to change from the default of 3:
+          importedPiece.flexed_distance(n=5)
+
+          # If you already have the melodic ngrams calculated for a different
+          # aspect of your query, you can pass that as df to save a little
+          # runtime on a large query. Note that if you pass something for df,
+          # the n parameter will be ignored:
+          mel = importedPiece.melodic('z', True, True)
+          ngrams = importedPiece.ngrams(df=mel, n=4, exclude=['Rest'])
+          importedPiece.flexed_distance(df=ngrams)
+
+          # To search the table for the distances from a given pattern, just get
+          # the column of that name. This is example looks for distances
+          # involving a melodic pattern that goes up a step, down a third, up a
+          # step, down a third:
+          dist = importedPiece.flexed_distance(n=4)
+          target = '1, -2, 1, -2'
+          col = dist[target]
+
+          # If you then want to filter that column, say to flexed distances less than or
+          # equal to 2, do this:
+          col[col <= 2]
+          '''
+          if df is None:
+              df = self.melodic('z', True, True)
+              df = self.ngrams(df=df, n=n, exclude=['Rest'])
+          uni = df.stack().unique()
+          ser = pd.Series(uni)
+          if isinstance(uni[0], str):
+              df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
+          else:
+              df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
+          cols = [(df - df.loc[i]).abs().apply(_flexed_sum, axis=1, args=(flex_threshold,)) for i in df.index]
+          dist = pd.concat(cols, axis=1)
+          dist.columns = uni
+          dist.index = uni
+          return dist
 
     def melodic(self, kind='q', directed=True, compound=True, unit=0, end=True, df=None):
         '''
@@ -1109,11 +1178,11 @@ class ImportedPiece:
         distinction is not wanted for your query, you may want to pass the way a
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
 
-        The `show_both` parameter controls whether the melodic motion of both 
-        voices in contrapuntal modules are shown. If True, the melodic motions of 
-        the two voices appear with a colon between them in the format lower:upper 
-        e.g. "3_-2:1, 4_1:-2, 3_-5:2, 8". This is needed for the detection of 
-        cadential voice function evasion by dropout and also to be able to detect 
+        The `show_both` parameter controls whether the melodic motion of both
+        voices in contrapuntal modules are shown. If True, the melodic motions of
+        the two voices appear with a colon between them in the format lower:upper
+        e.g. "3_-2:1, 4_1:-2, 3_-5:2, 8". This is needed for the detection of
+        cadential voice function evasion by dropout and also to be able to detect
         which voice attacks at a dissonance.
         '''
         if df is not None and other is None:
@@ -1321,7 +1390,7 @@ class ImportedPiece:
     def cadences(self, keep_keys=False):
         '''
         Return a dataframe of cadences in the piece along with metadata about
-        these cadence points such as the lowest pitch at moment of cadence, and 
+        these cadence points such as the lowest pitch at moment of cadence, and
         the cadential goal tone is returned. The SinceLast and ToNext columns
         are the time in quarter notes since the last or to the next cadence. The
         first cadence's SinceLast time and the last cadence's ToNext time are
@@ -1337,8 +1406,8 @@ class ImportedPiece:
         results table. This corresponds to the combination of cadential voice
         functions and chromatic intervals used as a key to lookup the cadence
         information in the cadenceLabels.csv file. The "Progress" column gives
-        the progress toward the end of the piece measured 0-1 where 1 is the 
-        time point of the last attack in the piece.        
+        the progress toward the end of the piece measured 0-1 where 1 is the
+        time point of the last attack in the piece.
         '''
         if 'Cadences' in self.analyses:
             if keep_keys:
@@ -1664,7 +1733,7 @@ class ImportedPiece:
             entries = self.entries(mel_ng)
         else:
             entries = self.ngrams(df=mel, n=melodic_ngram_length)
-        
+
         # entries = self.entries(df=mel_ng, n=n)
         # Classifier with Functions
         points = pd.DataFrame(columns=['Composer',

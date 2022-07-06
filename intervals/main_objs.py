@@ -888,12 +888,12 @@ class ImportedPiece:
     def getDistance(self, df=None, n=3):
         return self.distance(df, n)
 
-    def _flexed_sum(self, item, flex_threshold=1):
+    def _flexed_sum(self, item, flex_threshold):
         if item[0] <= flex_threshold:
             item[0] = 0
         return sum(item)
 
-    def flexed_distance(self, df=None, n=3, flex_threshold=1):
+    def flexed_distance(self, df=None, n=3, flex_threshold):
           '''
           Return the distances between all the values in df which should be a
           dataframe of strings of integer ngrams. Specifically, this is meant for
@@ -1704,7 +1704,7 @@ class ImportedPiece:
         return b
 
     def presentationTypes(self, melodic_ngram_length=4, limit_to_entries=True,
-                          edit_distance_threshold=1, flex_threshold=1, include_hidden_types=False,
+                          edit_distance_threshold=1, flex_threshold, include_hidden_types=False,
                           combine_unisons=False):
         """
         This function uses several other functions to classify the entries in a given piece.

@@ -888,7 +888,7 @@ class ImportedPiece:
     def getDistance(self, df=None, n=3):
         return self.distance(df, n)
 
-    def _flexed_sum(item):
+    def _flexed_sum(item, flex_threshold=1):
         if item[0] <= flex_threshold:
             item[0] = 0
         return sum(item)

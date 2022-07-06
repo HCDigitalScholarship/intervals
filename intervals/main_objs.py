@@ -1704,7 +1704,7 @@ class ImportedPiece:
         return b
 
     def presentationTypes(self, melodic_ngram_length=4, limit_to_entries=True,
-                          edit_distance_threshold=1, flex_threshold=1, include_hidden_types=False,
+                          edit_distance_threshold=1, flex_threshold=0, include_hidden_types=False,
                           combine_unisons=False):
         """
         This function uses several other functions to classify the entries in a given piece.

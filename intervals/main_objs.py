@@ -1696,7 +1696,6 @@ class ImportedPiece:
                 'Time_Entry_Intervals': time_ints,
                 'Melodic_Entry_Intervals': mel_ints}
         return temp
-
     # #  the following are used to turn the offset diffs and melodic entry intervals
     # # and melodies into strings for the network
     def _offset_joiner(a):

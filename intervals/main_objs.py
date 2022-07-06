@@ -1704,7 +1704,7 @@ class ImportedPiece:
         return b
 
     def presentationTypes(self, melodic_ngram_length=4, limit_to_entries=True,
-                          edit_distance_threshold=1, include_hidden_types=False,
+                          edit_distance_threshold=1, flex_threshold=1, include_hidden_types=False,
                           combine_unisons=False):
         """
         This function uses several other functions to classify the entries in a given piece.
@@ -1761,7 +1761,7 @@ class ImportedPiece:
 
         # edit distance, based on side-by-side comparison of melodic ngrams
         # gets flexed and other similar soggetti
-        dist = self.flexed_distance(entries)
+        dist = self.flexed_distance(entries, flex_threshold)
         dist_stack = dist.stack().to_frame()
 
         # filter distances to threshold.  <2 is good

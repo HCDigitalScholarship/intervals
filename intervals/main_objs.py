@@ -893,7 +893,7 @@ class ImportedPiece:
             item[0] = 0
         return sum(item)
 
-    def flexed_distance(self, df=None, n=3, flex_threshold):
+    def flexed_distance(self, df=None, n=3, flex_threshold=1):
           '''
           Return the distances between all the values in df which should be a
           dataframe of strings of integer ngrams. Specifically, this is meant for

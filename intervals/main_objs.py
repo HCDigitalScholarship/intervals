@@ -1761,7 +1761,7 @@ class ImportedPiece:
 
         # edit distance, based on side-by-side comparison of melodic ngrams
         # gets flexed and other similar soggetti
-        dist = self.flexed_distance(entries, flex_threshold)
+        dist = self.flexed_distance(flex_threshold, entries)
         dist_stack = dist.stack().to_frame()
 
         # filter distances to threshold.  <2 is good

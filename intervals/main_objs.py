@@ -893,7 +893,7 @@ class ImportedPiece:
             item[0] = 0
         return sum(item)
 
-    def flexed_distance(self, df=None, n=3, flex_threshold=0):
+    def flexed_distance(self, flex_threshold, df=None, n=3):
           '''
           Return the distances between all the values in df which should be a
           dataframe of strings of integer ngrams. Specifically, this is meant for
@@ -1761,7 +1761,7 @@ class ImportedPiece:
 
         # edit distance, based on side-by-side comparison of melodic ngrams
         # gets flexed and other similar soggetti
-        dist = self.flexed_distance(entries)
+        dist = self.flexed_distance(entries, flex_threshold)
         dist_stack = dist.stack().to_frame()
 
         # filter distances to threshold.  <2 is good

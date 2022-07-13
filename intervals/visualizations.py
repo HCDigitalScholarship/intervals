@@ -26,7 +26,7 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
     return observer_chart
 
 
-def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip):
+def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip, voices=None):
     # if type(data.iloc[0, :][y]) != str:
     #     raise Exception("Label difficult to see!")
 
@@ -38,6 +38,7 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
         x=x,
         x2=x2,
         y=y,
+        sort=voices,
         color=color,
         opacity=alt.condition(selector_condition, alt.value(1), alt.value(0.2)),
         tooltip=tooltip
@@ -316,7 +317,7 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
                                     bind=slider, init={'cutoff': 50})
     return create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
-                          alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
+                          alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'], voices)
 
 
 def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],

@@ -317,7 +317,11 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
     slider = alt.binding_range(min=0, max=100, step=1, name='cutoff:')
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
                                     bind=slider, init={'cutoff': 50})
-    return create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
+    if voices != None:
+        if len(voices) == 0:
+            voices = None
+    y = alt.Y("value:Q", title=None, sort=voices)
+    return create_heatmap('start', 'end', y, 'score', score_ngrams, heatmap_width, heatmap_height,
                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
 
 

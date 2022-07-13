@@ -31,7 +31,9 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     #     raise Exception("Label difficult to see!")
 
     print("\n \n \n PRINT: \n ")
-    print(data.to_string())
+    print(voices)
+    print("\n \n \n ")
+    print(type(voices))
     print("\n \n \n ")
 
     if voices != None:

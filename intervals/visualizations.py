@@ -36,10 +36,6 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     print(x2)
     print("\n \n \n ")
 
-    if voices != None:
-        if len(voices) == 0:
-            voices = None
-
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,
         x2=x2,

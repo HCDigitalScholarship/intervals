@@ -30,8 +30,12 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     # if type(data.iloc[0, :][y]) != str:
     #     raise Exception("Label difficult to see!")
 
+    print("\n \n \n PRINT: \n ")
+    print(type(data))
+    print("\n \n \n ")
+
     heatmap = alt.Chart(data).mark_bar().encode(
-        x=x2,
+        x=x,
         x2=x2,
         y=y,
         color=color,

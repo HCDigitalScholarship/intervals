@@ -29,6 +29,9 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
 def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip):
     # if type(data.iloc[0, :][y]) != str:
     #     raise Exception("Label difficult to see!")
+    print("\n \n \n DATATYPE: \n ")
+    print(type(data))
+    print("\n \n \n ")
 
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,

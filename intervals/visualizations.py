@@ -34,6 +34,10 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     print(data.to_string())
     print("\n \n \n ")
 
+    if voices != None:
+        if len(voices) == 0:
+            voices = None
+
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,
         x2=x2,
@@ -132,7 +136,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
 
     patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', processed_ngrams_df, selector, selector)
     heatmap = create_heatmap('start', 'end', 'voice', 'pattern', processed_ngrams_df, heatmap_width, heatmap_height,
-                             selector, selector, tooltip=['start', 'end', 'pattern'])
+                             selector, None, selector, tooltip=['start', 'end', 'pattern'])
     return alt.vconcat(patterns_bar, heatmap)
 
 

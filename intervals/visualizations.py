@@ -320,7 +320,7 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
     if voices != None:
         if len(voices) == 0:
             voices = None
-    y = alt.Y("value:Q", title=None, sort=voices)
+    y = alt.Y(title="Voice", sort=voices)
     return create_heatmap('start', 'end', y, 'score', score_ngrams, heatmap_width, heatmap_height,
                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
 

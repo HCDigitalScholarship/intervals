@@ -888,6 +888,77 @@ class ImportedPiece:
     def getDistance(self, df=None, n=3):
         return self.distance(df, n)
 
+    # July 2022 helper for flexed entries
+    def _flexed_sum(self, item, flex_threshold):
+        if item[0] <= flex_threshold:
+            item[0] = 0
+        return sum(item)
+
+    # July 2022 helper for flexed entries updated
+    def flexed_distance(self, flex_threshold, df=None, n=3):
+          '''
+          Return the distances between all the values in df which should be a
+          dataframe of strings of integer ngrams. Specifically, this is meant for
+          0-indexed, directed, and compound melodic ngrams. If nothing is passed
+          for df, melodic ngrams of this type will be provided at the value of n
+          passed. An alternative that would make sense would be to use chromatic
+          melodic intervals instead.
+
+          This function differs from "distance" in that it treats the first item in
+          each ngram differently from the others.  That is, the first item can "flex"
+          differently from the remainder.  Thus users can choose a overal edit_distance_threshold
+          of "0" while still allowing flexing only at the head of the ngram.
+
+          The default flex is up to "1" unit of difference, but passing the "flex_threshold"
+          argument allows users to set their own threshold.
+
+          This function is meant mainly for melodic ngrams, but it can also be used
+          for durational ngrams.
+
+          Usage:
+
+          # Call like this:
+          importedPiece.flexed_distance()
+
+          # If you don't pass a value for df, you can specify a different value
+          # for n to change from the default of 3:
+          importedPiece.flexed_distance(n=5)
+
+          # If you already have the melodic ngrams calculated for a different
+          # aspect of your query, you can pass that as df to save a little
+          # runtime on a large query. Note that if you pass something for df,
+          # the n parameter will be ignored:
+          mel = importedPiece.melodic('z', True, True)
+          ngrams = importedPiece.ngrams(df=mel, n=4, exclude=['Rest'])
+          importedPiece.flexed_distance(df=ngrams)
+
+          # To search the table for the distances from a given pattern, just get
+          # the column of that name. This is example looks for distances
+          # involving a melodic pattern that goes up a step, down a third, up a
+          # step, down a third:
+          dist = importedPiece.flexed_distance(n=4)
+          target = '1, -2, 1, -2'
+          col = dist[target]
+
+          # If you then want to filter that column, say to flexed distances less than or
+          # equal to 2, do this:
+          col[col <= 2]
+          '''
+          if df is None:
+              df = self.melodic('z', True, True)
+              df = self.ngrams(df=df, n=n, exclude=['Rest'])
+          uni = df.stack().unique()
+          ser = pd.Series(uni)
+          if isinstance(uni[0], str):
+              df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
+          else:
+              df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
+          cols = [(df - df.loc[i]).abs().apply(self._flexed_sum, axis=1, args=(flex_threshold,)) for i in df.index]
+          dist = pd.concat(cols, axis=1)
+          dist.columns = uni
+          dist.index = uni
+          return dist
+
     def _flexed_sum(self, item, flex_threshold):
         if item[0] <= flex_threshold:
             item[0] = 0
@@ -1645,6 +1716,52 @@ class ImportedPiece:
 
         yield part
 
+    # July 2022 added to check for overlap
+    def _dur_ngram_helper(df, ng_durs):
+        """
+        This helper is used by the presentation type classifier to check
+        total duration of each ngram in a given set of soggetti for a
+        presentation type.
+
+        Note that it relies on the ng_dur dataframe that appears in the
+        presentation type classifier itself:
+
+        ng_durs = self.durations(df=entries)
+
+        These in turn are saved as a string to check for overlaps among entries.
+        """
+        dur_list = []
+        l = list(zip(df["Offsets"], df["Voices"]))
+        for pair in l:
+            dur_of_ng = ng_durs.loc[pair[0], pair[1]]
+            dur_list.append(dur_of_ng)
+        return dur_list
+
+    # July 2022 added to check for overlap
+    def _entry_overlap_helper(df):
+        """
+        This private function is used as part of the last stage of the Presentation
+        Type classifier.  It reports the overlap (in offsets) between successive entries
+        in a given point of imitation.
+        """
+        endpoints = [x + y for x, y in zip(df["Entry_Durs"], df["Offsets"])]
+        endpoints.pop(-1)
+        startpoints = df["Offsets"].copy()
+        startpoints.pop(0)
+
+        overlaps = [w - z for w, z in zip(endpoints, startpoints)]
+        return overlaps
+
+    # July 2022 added to check for overlap
+    def _non_overlap_count(list_overlaps):
+        """
+        This private function calculates the number of non-overlapping entries
+        in a given point of imitation.  It is used by the Presentation Type
+        classifier.
+        """
+        res = sum(i < 1 for i in list_overlaps)
+        return res
+
     def _classify_by_offset(offset_diffs):
         """
         This helper function is used as part of classify_entries_as_presentation_types.
@@ -1695,6 +1812,155 @@ class ImportedPiece:
                 'Voices': voice_list,
                 'Time_Entry_Intervals': time_ints,
                 'Melodic_Entry_Intervals': mel_ints}
+        return temp
+
+    # July 2022:  This Replaces the Previous helper
+    def _temp_dict_of_details_rev(self, slist, entry_array, det, matches):
+
+        """
+        This helper function is used as part of classify_entries_as_presentation_types.
+        This function assembles various features for the presentation types
+        into a single temporary dictionary, which in turn is appended to the dataframe of 'points'
+
+        In this revision, we also check for parallel entries in various combinations, then remove
+        the parallel entry based on preferred intervals of imitation (normally P1, P4, P5, P8), considered
+        in relation to the previous (or following) non-parallel voice.  The
+        other parallel entry is marked and noted in a separate field.
+
+        """
+        array = entry_array[entry_array.index.get_level_values(0).isin(slist)]
+        short_offset_list = array.index.to_list()
+        voice_list = array['voice'].to_list()
+
+        # check length vs set to know whether there are repeating offsets
+        if len(short_offset_list) > 2 and len(short_offset_list) > len(set(short_offset_list)):
+            # print(short_offset_list)
+            parallel_entries = True
+            # if yes, then get the offsets that repeat
+            repeating_offsets = ([offset for offset, count in collections.Counter(short_offset_list).items() if count > 1])
+            # find the index position of each repeating offset
+            # then look ahead and back to get the next voice and the 'referring' entry
+            # check that the duplicate is not the first entry!
+            # if the dups are in the first position, check to make sure they are not the last too!
+            # this is the last pair, then we leave, as this is not even a three-voice pattern
+            for repeated_offset in repeating_offsets:
+                # print(reptead)
+                first_dup_index = short_offset_list.index(repeated_offset)
+                second_dup_index = first_dup_index + 1
+
+                # assuming more than two voices, then resume testing
+                if first_dup_index == 0 and second_dup_index != len(short_offset_list)-1:
+                    # next voice details:
+                    next_real_entry_index = first_dup_index + 2
+                    next_real_entry_offset = short_offset_list[next_real_entry_index]
+                    next_real_entry_voice = voice_list[next_real_entry_index]
+                    # first voice details
+                    first_dup_voice = voice_list[first_dup_index]
+                    first_dup_voices_list = [first_dup_voice, next_real_entry_voice]
+                    # first pair coordinates
+                    first_dup_offset_list = [repeated_offset, next_real_entry_offset]
+                    first_dup_tone_coordinates =  list(zip(first_dup_offset_list, first_dup_voices_list))
+                    # second voice details and coordinates
+                    second_dup_voice = voice_list[second_dup_index]
+                    second_dup_voices_list = [second_dup_voice, next_real_entry_voice]
+                    second_dup_offset_list = [repeated_offset, next_real_entry_offset]
+                    second_dup_tone_coordinates = list(zip(second_dup_offset_list, second_dup_voices_list))
+                    # get the intervals
+                    first_mel_ints = self._find_entry_int_distance(first_dup_tone_coordinates)
+                    second_mel_ints = self._find_entry_int_distance(second_dup_tone_coordinates)
+                    #  print("First Pair: ", first_mel_ints, "Second Pair:", second_mel_ints)
+
+                # As long as the dups are not in the first position in the list:
+                if first_dup_index != 0:
+                    prior_entry_index = first_dup_index - 1
+                    # prior voice details
+                    prior_voice_offset = short_offset_list[prior_entry_index]
+                    prior_entry_voice = voice_list[prior_entry_index]
+                    # first voice details
+                    first_dup_voice = voice_list[first_dup_index]
+                    first_dup_voices_list = [prior_entry_voice, first_dup_voice]
+                    # first pair coordinates
+                    first_dup_offset_list = [prior_voice_offset, repeated_offset]
+                    first_dup_tone_coordinates =  list(zip(first_dup_offset_list, first_dup_voices_list))
+                    # second voice details and coordinates
+                    second_dup_voice = voice_list[second_dup_index]
+                    second_dup_voices_list = [prior_entry_voice, second_dup_voice]
+                    second_dup_offset_list = [prior_voice_offset, repeated_offset]
+                    second_dup_tone_coordinates = list(zip(second_dup_offset_list, second_dup_voices_list))
+                    # get the intervals
+                    first_mel_ints = self._find_entry_int_distance(first_dup_tone_coordinates)
+                    second_mel_ints = self._find_entry_int_distance(second_dup_tone_coordinates)
+                    # print("First Pair: ", first_mel_ints, "Second Pair:", second_mel_ints)
+
+                # list of preferred intervals for selecting entry (the other will become 'parallel')
+                preferred_list = ["P1", "P4", "P-4", "P5", "P-5", "P8", "P-8", "P12", "P-12"]
+                # if both entries are preferred intervals, take the first (top) one
+                if first_mel_ints[0] and second_mel_ints[0] in preferred_list:
+                    #  print("First Pair")
+                    short_offset_list.pop(second_dup_index)
+                    time_intervals = np.diff(short_offset_list).tolist()
+                    parallel_voice = voice_list[second_dup_index]
+                    voice_list.pop(second_dup_index)
+                    tone_coordinates = list(zip(short_offset_list, voice_list))
+                    melodic_intervals = self._find_entry_int_distance(tone_coordinates)
+
+                # if the first is preferred, take it
+                elif first_mel_ints[0] in preferred_list:
+                    # print("First Pair")
+                    short_offset_list.pop(second_dup_index)
+                    time_intervals = np.diff(short_offset_list).tolist()
+                    parallel_voice = voice_list[second_dup_index]
+                    voice_list.pop(second_dup_index)
+                    tone_coordinates = list(zip(short_offset_list, voice_list))
+                    melodic_intervals = self._find_entry_int_distance(tone_coordinates)
+
+                # if the second is preferred, take it
+                elif second_mel_ints[0] in preferred_list:
+                    short_offset_list.pop(first_dup_index)
+                    time_intervals = np.diff(short_offset_list).tolist()
+                    parallel_voice = voice_list[first_dup_index]
+                    voice_list.pop(first_dup_index)
+                    tone_coordinates = list(zip(short_offset_list, voice_list))
+                    melodic_intervals = self._find_entry_int_distance(tone_coordinates)
+                    #  print("Second Pair")
+
+                # if neither is preferred, take the first
+                else:
+                    short_offset_list.pop(second_dup_index)
+                    time_intervals = np.diff(short_offset_list).tolist()
+                    parallel_voice = voice_list[second_dup_index]
+                    voice_list.pop(second_dup_index)
+                    tone_coordinates = list(zip(short_offset_list, voice_list))
+                    melodic_intervals = self._find_entry_int_distance(tone_coordinates)
+        # if there are no parallel entries, simply find the time intervals and melodic intervals
+        # between entries
+        else:
+            parallel_entries = False
+            parallel_voice = None
+            array = entry_array[entry_array.index.get_level_values(0).isin(slist)]
+            short_offset_list = array.index.to_list()
+            time_intervals = np.diff(array.index).tolist()
+            voice_list = array['voice'].to_list()
+            tone_coordinates =  list(zip(short_offset_list, voice_list))
+            melodic_intervals = self._find_entry_int_distance(tone_coordinates)
+
+        meas_beat = det[det.index.get_level_values('Offset').isin(short_offset_list)]
+        mb2 = meas_beat.reset_index()
+        mb2['mb'] = mb2["Measure"].astype(str) + "/" + mb2["Beat"].astype(str)
+        meas_beat_list = mb2['mb'].to_list()
+
+        # temp results for this set
+        temp = {"Composer": self.metadata["composer"],
+                "Title": self.metadata["title"],
+                'First_Offset': short_offset_list[0],
+                'Offsets': short_offset_list,
+                'Measures_Beats': meas_beat_list,
+                "Soggetti": matches,
+                'Voices': voice_list,
+                'Time_Entry_Intervals': time_intervals,
+                'Melodic_Entry_Intervals': melodic_intervals,
+                "Parallel_Entries": parallel_entries,
+                "Parallel_Voice": parallel_voice}
         return temp
     # #  the following are used to turn the offset diffs and melodic entry intervals
     # # and melodies into strings for the network
@@ -1780,17 +2046,24 @@ class ImportedPiece:
                 split_list = list(ImportedPiece._split_by_threshold(offset_list))
                 for item in split_list:
                 # here is the list of starting offsets of the original set of entries:  slist
-                    temp = self._temp_dict_of_details(item, entry_array, det, matches)
+                    temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
                     points = points.append(temp, ignore_index=True)
                     points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
                     # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
                     points = points[points['Offsets'].apply(len) > 1]
 
             points["Offsets_Key"] = points["Offsets"].apply(ImportedPiece._offset_joiner)
-            points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
             points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
             points["Number_Entries"] = points["Offsets"].apply(len)
+            points["Count_Offsets"] = points["Offsets"].apply(set).apply(len)
+            points = points[points["Count_Offsets"] > 1]
             points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+            # applying various private functions for overlapping entry tests.
+            # note that ng_durs must be passed to the first of these, via args
+            points["Entry_Durs"] = points[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
+            points["Overlaps"] = points[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
+            points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
+
             return points
 
         elif include_hidden_types == True:
@@ -1802,7 +2075,7 @@ class ImportedPiece:
                 split_list = list(ImportedPiece._split_by_threshold(offset_list))
                 for item in split_list:
                 # here is the list of starting offsets of the original set of entries:  slist
-                    temp = self._temp_dict_of_details(item, entry_array, det, matches)
+                    temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
                     points = points.append(temp, ignore_index=True)
                     points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
                     # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
@@ -1811,13 +2084,13 @@ class ImportedPiece:
 
                 for item in split_list:
                     # here is the list of starting offsets of the original set of entries:  slist
-                    temp = self._temp_dict_of_details(item, entry_array, det, matches)
+                    temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
                     lto = len(temp["Offsets"])
                     if lto > 2 :
                         for r in range(3, 6):
                             list_combinations = list(combinations(item, r))
                             for slist in list_combinations:
-                                temp = self._temp_dict_of_details(slist, entry_array, det, matches)
+                                temp = self._temp_dict_of_details_rev(slist, entry_array, det, matches)
                                 temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
                                 # print(temp)
                                 if 'PEN' in temp["Presentation_Type"]:
@@ -1825,15 +2098,21 @@ class ImportedPiece:
                                 if 'ID' in temp["Presentation_Type"]:
                                     points2 = points2.append(temp, ignore_index=True)
 
-            # points2 = points2[points2["Presentation_Type"].isin(hidden_types_list)]
-            # return(points2)
+
             points_combined = points.append(points2, ignore_index=True)
             points_combined["Offsets_Key"] = points_combined["Offsets"].apply(ImportedPiece._offset_joiner)
-            points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
             points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
             points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
+            points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
+            points_combined = points_combined[points_combined["Count_Offsets"] > 1]
             # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
             points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+            points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
+            # applying various private functions for overlapping entry tests.
+            # note that ng_durs must be passed to the first of these, via args
+            points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
+            points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
+            points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
             return points_combined
 
 def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_distance_threshold, include_hidden_types):
@@ -1865,27 +2144,13 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
                  'Presentation_Type'])
     points2 = pd.DataFrame()
 
-    # new_offset_list = []
-#     nr = piece.notes()
     det = piece.detailIndex(nr, offset=True)
-
-    # The following are now all set in the Notebook as argument
-    # durations and ngrams of durations
-    # dur = piece.durations(df=nr)
-    # dur_ng = piece.ngrams(df=dur, n=3)
-
-    # ngrams of melodic entries
-    # for chromatic, use:
-    # piece.getMelodicEntries(interval_settings=('c', True, True), n=5)
-    #mel_ng = piece.getMelodicEntries(interval_settings=('c', True, True), n=5)
     mels_stacked = entries.stack().to_frame()
     mels_stacked.rename(columns =  {0:"pattern"}, inplace = True)
-
     # edit distance, based on side-by-side comparison of melodic ngrams
     # gets flexed and other similar soggetti
     dist = piece.distance(entries)
     dist_stack = dist.stack().to_frame()
-
 
     # filter distances to threshold.  <2 is good
     distance_factor = edit_distance_threshold + 1
@@ -1906,7 +2171,7 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
             for item in split_list:
             # here is the list of starting offsets of the original set of entries:  slist
 
-                temp = temp_dict_of_details(item, entry_array, det, matches, piece)
+                temp = _temp_dict_of_details_rev(item, entry_array, det, matches, piece)
 
 
                 points = points.append(temp, ignore_index=True)
@@ -1944,7 +2209,7 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
             for item in split_list:
             # here is the list of starting offsets of the original set of entries:  slist
 
-                temp = temp_dict_of_details(item, entry_array, det, matches, piece)
+                temp = _temp_dict_of_details_rev(item, entry_array, det, matches, piece)
 
 
                 points = points.append(temp, ignore_index=True)
@@ -1955,16 +2220,16 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
 
 
             for item in split_list:
-    # #         # here is the list of starting offsets of the original set of entries:  slist
+                # here is the list of starting offsets of the original set of entries:  slist
 
-                temp = temp_dict_of_details(item, entry_array, det, matches, piece)
+                temp = _temp_dict_of_details_rev(item, entry_array, det, matches, piece)
                 lto = len(temp["Offsets"])
                 if lto > 2 :
                     for r in range(3, 6):
                         list_combinations = list(combinations(item, r))
                         for slist in list_combinations:
 
-                            temp = temp_dict_of_details(slist, entry_array, det, matches, piece)
+                            temp = _temp_dict_of_details_rev(slist, entry_array, det, matches, piece)
 
                             temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
                             # print(temp)
@@ -1973,13 +2238,6 @@ def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_dist
                                 points2 = points2.append(temp, ignore_index=True)
                             if 'ID' in temp["Presentation_Type"]:
                                 points2 = points2.append(temp, ignore_index=True)
-
-
-
-
-        # points2 = points2[points2["Presentation_Type"].isin(hidden_types_list)]
-        # return(points2)
-
 
         points_combined = points.append(points2, ignore_index=True)
         points_combined["Offsets_Key"] = points_combined["Offsets"].apply(offset_joiner)

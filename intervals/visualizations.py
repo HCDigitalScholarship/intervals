@@ -120,6 +120,10 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
 
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
 
+    print("\n \n \n PROCESSED PRINTING: \n")
+    print(processed_ngrams_df.to_string())
+    print("\n \n \n")
+
     selector = alt.selection_multi(fields=['pattern'])
 
     # # turns patterns into string to make it easier to see

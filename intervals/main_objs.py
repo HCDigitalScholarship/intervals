@@ -1999,9 +1999,10 @@ class ImportedPiece:
             entries = self.entries(mel_ng)
         else:
             entries = self.ngrams(df=mel, n=melodic_ngram_length)
+        # return entries
+        # get ngram durs to use for overlap check as part of _temp files
+        ng_durs = self.durations(df=entries)
 
-        # entries = self.entries(df=mel_ng, n=n)
-        # Classifier with Functions
         points = pd.DataFrame(columns=['Composer',
                     'Title',
                     'First_Offset',
@@ -2013,15 +2014,18 @@ class ImportedPiece:
                     'Voices',
                     'Presentation_Type'])
         points2 = pd.DataFrame()
+        # defines column order in final df
+        # others are at the end for the overlapping entries
+        col_order = list(points.columns) + ['Number_Entries',
+                                            'Flexed_Entries',
+                                            'Parallel_Entries',
+                                            'Parallel_Voice',
+                                            'Count_Offsets',
+                                            'Offsets_Key']
 
-        col_order = list(points.columns) + ['Number_Entries', 'Flexed_Entries']
-
-        det = self.detailIndex(nr, offset=True)
+        det = self.detailIndex(nr, offset=True, progress=True)
 
         # ngrams of melodic entries
-        # for chromatic, use:
-        # self.getMelodicEntries(interval_settings=('c', True, True), n=5)
-        #mel_ng = self.getMelodicEntries(interval_settings=('c', True, True), n=5)
         mels_stacked = entries.stack().to_frame()
         mels_stacked.rename(columns =  {0:"pattern"}, inplace = True)
 
@@ -2038,19 +2042,19 @@ class ImportedPiece:
 
         # Group the filtered distanced patterns
         full_list_of_matches = filtered_dist.groupby('source')['match'].apply(list).reset_index()
-
+        # classification without hidden types
         if include_hidden_types == False:
             for matches in full_list_of_matches["match"]:
                 related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
                 entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
                 offset_list = entry_array.index.to_list()
                 split_list = list(ImportedPiece._split_by_threshold(offset_list))
+                # classification of the full set
                 for item in split_list:
-                # here is the list of starting offsets of the original set of entries:  slist
                     temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
                     points = points.append(temp, ignore_index=True)
                     points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-                    # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
+                    points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
                     points = points[points['Offsets'].apply(len) > 1]
 
             points["Offsets_Key"] = points["Offsets"].apply(ImportedPiece._offset_joiner)
@@ -2066,6 +2070,54 @@ class ImportedPiece:
             points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
 
             return points
+
+        # classification with hidden types
+        elif include_hidden_types == True:
+            # hidden_types_list = ["PEN", "ID"]
+            for matches in full_list_of_matches["match"]:
+                related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
+                entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
+                offset_list = entry_array.index.to_list()
+                split_list = list(ImportedPiece._split_by_threshold(offset_list))
+                # the initial classification of the full set
+                for item in split_list:
+                    temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
+                    points = points.append(temp, ignore_index=True)
+                    points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
+                    # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
+                    points = points[points['Offsets'].apply(len) > 1]
+            # this return is just for testing
+            # return(points)
+                # now the test for hidden types via 'combinations' of all entries in the full set
+                for item in split_list:
+                    temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
+                    lto = len(temp["Offsets"])
+                    if lto > 2 :
+                        for r in range(3, 6):
+                            list_combinations = list(combinations(item, r))
+                            for slist in list_combinations:
+                                temp = self._temp_dict_of_details_rev(slist, entry_array, det, matches)
+                                temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
+                                if 'PEN' in temp["Presentation_Type"]:
+                                    points2 = points2.append(temp, ignore_index=True)
+                                if 'ID' in temp["Presentation_Type"]:
+                                    points2 = points2.append(temp, ignore_index=True)
+
+            points_combined = points.append(points2, ignore_index=True)
+            points_combined["Offsets_Key"] = points_combined["Offsets"].apply(ImportedPiece._offset_joiner)
+            points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
+            points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
+            points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
+            points_combined = points_combined[points_combined["Count_Offsets"] > 1]
+            # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
+            points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+            points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
+            # applying various private functions for overlapping entry tests.
+            # note that ng_durs must be passed to the first of these, via args
+            points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
+            points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
+            points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
+            return points_combined
 
         elif include_hidden_types == True:
             hidden_types_list = ["PEN", "ID"]

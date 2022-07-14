@@ -148,6 +148,9 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
                                             selected_pattern=selected_patterns,
                                             voices=voices)
+    print("\n \n \n PRINT: \n")
+    print(processed_ngrams_df.to_string())
+    print("\n \n \n ")
     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height)
 
 

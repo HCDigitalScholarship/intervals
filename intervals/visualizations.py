@@ -30,12 +30,6 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     # if type(data.iloc[0, :][y]) != str:
     #     raise Exception("Label difficult to see!")
 
-    print("\n \n \n PRINT: \n ")
-    print(x)
-    print("\n \n \n ")
-    print(x2)
-    print("\n \n \n ")
-
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,
         x2=x2,
@@ -320,7 +314,7 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
     if voices != None:
         if len(voices) == 0:
             voices = None
-            
+
     y = alt.Y("voice", sort=voices)
     return create_heatmap('start', 'end', y, 'score', score_ngrams, heatmap_width, heatmap_height,
                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])

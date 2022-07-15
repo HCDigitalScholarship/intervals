@@ -2357,7 +2357,7 @@ def verovio_print_cadences(piece, cadences, url, mei_file):
             print("Cadence Tone: ", c_tone)
             print("Cadence Type: ", c_type)
             print("Evaded Cadence: ", evaded_c)
-            display(HTML(music))
+            display(SVG(music))
 
 # July 2022 Addition for printing presentation types with Verovio
 def verovio_print_ptypes(piece, p_types, url, mei_file):
@@ -2422,7 +2422,7 @@ def verovio_print_ptypes(piece, p_types, url, mei_file):
         # print the music
         for c in range(1, count + 1):
             music = tk.renderToSVG(c)
-            display(HTML(music))
+            display(SVG(music))
 
 def joiner(a):
     """This is used for visualization routines."""

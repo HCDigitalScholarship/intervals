@@ -131,7 +131,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
 
     patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', processed_ngrams_df, selector, selector)
     heatmap = create_heatmap('start', 'end', 'voice', 'pattern', processed_ngrams_df, heatmap_width, heatmap_height,
-                             selector != None, selector, tooltip=['start', 'end', 'pattern'])
+                             selector, selector, tooltip=['start', 'end', 'pattern'])
     return alt.vconcat(patterns_bar, heatmap)
 
 

@@ -12,6 +12,7 @@ import re
 import requests
 import intervals
 import collections
+import verovio
 cwd = os.path.dirname(intervals.__file__)
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -2320,7 +2321,7 @@ class ImportedPiece:
             points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
             return points_combined
 
-def verovio_print_cadences(piece, cadences):
+def verovio_print_cadences(piece, cadences, url):
     response = requests.get(url)
     fetched_mei_string = response.text
     tk = verovio.toolkit()
@@ -2359,7 +2360,7 @@ def verovio_print_cadences(piece, cadences):
             display(HTML(music))
 
 # July 2022 Addition for printing presentation types with Verovio
-def verovio_print_ptypes(piece, p_types):
+def verovio_print_ptypes(piece, p_types, url):
     """
     This function is used to display the results of the Presentation Type
     classifier in the Notebook with Verovio.  Each excerpt begins with

@@ -13,7 +13,7 @@ import requests
 import intervals
 import collections
 import verovio
-from ipython.display import SVG, HTML
+from IPython.display import SVG, HTML
 cwd = os.path.dirname(intervals.__file__)
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'

@@ -2127,56 +2127,6 @@ class ImportedPiece:
             points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
             return points_combined
 
-        # elif include_hidden_types == True:
-        #     hidden_types_list = ["PEN", "ID"]
-        #     for matches in full_list_of_matches["match"]:
-        #         related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
-        #         entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
-        #         offset_list = entry_array.index.to_list()
-        #         split_list = list(ImportedPiece._split_by_threshold(offset_list))
-        #         for item in split_list:
-        #         # here is the list of starting offsets of the original set of entries:  slist
-        #             temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
-        #             points = points.append(temp, ignore_index=True)
-        #             points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-        #             # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-        #             points = points[points['Offsets'].apply(len) > 1]
-        #     # return(points)
-        #
-        #         for item in split_list:
-        #             # here is the list of starting offsets of the original set of entries:  slist
-        #             temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
-        #             lto = len(temp["Offsets"])
-        #             if lto > 2 :
-        #                 for r in range(3, 6):
-        #                     list_combinations = list(combinations(item, r))
-        #                     for slist in list_combinations:
-        #                         temp = self._temp_dict_of_details_rev(slist, entry_array, det, matches)
-        #                         temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
-        #                         # print(temp)
-        #                         if 'PEN' in temp["Presentation_Type"]:
-        #                             points2 = points2.append(temp, ignore_index=True)
-        #                         if 'ID' in temp["Presentation_Type"]:
-        #                             points2 = points2.append(temp, ignore_index=True)
-        #
-        #
-        #     points_combined = points.append(points2, ignore_index=True)
-        #     points_combined["Offsets_Key"] = points_combined["Offsets"].apply(ImportedPiece._offset_joiner)
-        #     points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
-        #     points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
-        #     points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
-        #     points_combined = points_combined[points_combined["Count_Offsets"] > 1]
-        #     # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
-        #     points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-        #     points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
-        #     # applying various private functions for overlapping entry tests.
-        #     # note that ng_durs must be passed to the first of these, via args
-        #     points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
-        #     points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
-        #     points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
-        #     points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1).copy()
-        #     return points_combined
-
     def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_distance_threshold, include_hidden_types):
 
         """This function uses several other functions to classify the entries in a given piece.
@@ -2323,6 +2273,17 @@ class ImportedPiece:
             return points_combined
 
 def verovio_print_cadences(piece, cadences, url, mei_file):
+    """
+    This function is used to display the results of the Cadence
+    classifier in the Notebook with Verovio.  Each excerpt is
+    two measures long:  the measure of the final tone of the cadence
+    and the previous measure.
+
+    The function also displays metadata about each excerpt, drawn from the
+    cadence results dataframe:  piece ID, composer, title, measures, type of
+    cadence, beat of the bar in which the final tone is heard, and evaded
+    status.
+    """
     response = requests.get(url)
     fetched_mei_string = response.text
     tk = verovio.toolkit()

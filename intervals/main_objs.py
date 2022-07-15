@@ -2320,7 +2320,7 @@ class ImportedPiece:
             return points_combined
 
 def verovio_print_cadences(piece, cadences):
-    response = requests.get(url)
+    response = re.get(url)
     fetched_mei_string = response.text
     tk = verovio.toolkit()
     tk.loadData(fetched_mei_string)
@@ -2370,7 +2370,7 @@ def verovio_print_ptypes(piece, p_types):
     presentation type, voices in order of entry, number of entries, the main
     soggetto, melodic entry intervals, time entry intervals
     """
-    response = requests.get(url)
+    response = re.get(url)
     fetched_mei_string = response.text
     tk = verovio.toolkit()
     tk.loadData(fetched_mei_string)

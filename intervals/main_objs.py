@@ -235,6 +235,8 @@ def predict_type(group, offset_difference_limit):
     return group
 
 
+
+
 class NoteListElement:
     """
     An extension of the music21 note class
@@ -2068,6 +2070,8 @@ class ImportedPiece:
             points["Entry_Durs"] = points[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
             points["Overlaps"] = points[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
             points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
+            points.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1).copy()
+
 
             return points
 
@@ -2117,204 +2121,309 @@ class ImportedPiece:
             points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
             points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
             points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
+            points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1).copy()
             return points_combined
 
-        elif include_hidden_types == True:
-            hidden_types_list = ["PEN", "ID"]
+        # elif include_hidden_types == True:
+        #     hidden_types_list = ["PEN", "ID"]
+        #     for matches in full_list_of_matches["match"]:
+        #         related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
+        #         entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
+        #         offset_list = entry_array.index.to_list()
+        #         split_list = list(ImportedPiece._split_by_threshold(offset_list))
+        #         for item in split_list:
+        #         # here is the list of starting offsets of the original set of entries:  slist
+        #             temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
+        #             points = points.append(temp, ignore_index=True)
+        #             points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
+        #             # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
+        #             points = points[points['Offsets'].apply(len) > 1]
+        #     # return(points)
+        #
+        #         for item in split_list:
+        #             # here is the list of starting offsets of the original set of entries:  slist
+        #             temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
+        #             lto = len(temp["Offsets"])
+        #             if lto > 2 :
+        #                 for r in range(3, 6):
+        #                     list_combinations = list(combinations(item, r))
+        #                     for slist in list_combinations:
+        #                         temp = self._temp_dict_of_details_rev(slist, entry_array, det, matches)
+        #                         temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
+        #                         # print(temp)
+        #                         if 'PEN' in temp["Presentation_Type"]:
+        #                             points2 = points2.append(temp, ignore_index=True)
+        #                         if 'ID' in temp["Presentation_Type"]:
+        #                             points2 = points2.append(temp, ignore_index=True)
+        #
+        #
+        #     points_combined = points.append(points2, ignore_index=True)
+        #     points_combined["Offsets_Key"] = points_combined["Offsets"].apply(ImportedPiece._offset_joiner)
+        #     points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
+        #     points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
+        #     points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
+        #     points_combined = points_combined[points_combined["Count_Offsets"] > 1]
+        #     # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
+        #     points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+        #     points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
+        #     # applying various private functions for overlapping entry tests.
+        #     # note that ng_durs must be passed to the first of these, via args
+        #     points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
+        #     points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
+        #     points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
+        #     points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1).copy()
+        #     return points_combined
+
+    def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_distance_threshold, include_hidden_types):
+
+        """This function uses several other functions to classify the entries in a given piece.
+        The output is a list, in order of offset, of each presentation type, including information about
+        measures/beats
+        starting offset
+        soggetti involved
+        melodic intervals of entry
+        time intervals of entry
+        set the length of the soggetti with `melodic_ngram_length`
+        set the maximum difference between similar soggetti with `edit_distance_threshold`
+        for chromatic vs diatonic, compound, and directed data in soggetti, see `interval_settings`
+        to include all the hidden PENs and IDS (those found within longer Fugas),
+        use `include_hidden_types == True`.
+        For faster (and simpler) listing of points of imitation without hidden forms, use `include_hidden_types == False`
+        """
+        # Classifier with Functions
+        points = pd.DataFrame(columns=['Composer',
+                     'Title',
+                     'First_Offset',
+                     'Measures_Beats',
+                     'Melodic_Entry_Intervals',
+                     'Offsets',
+                     'Soggetti',
+                     'Time_Entry_Intervals',
+                     'Voices',
+                     'Presentation_Type'])
+        points2 = pd.DataFrame()
+
+        det = piece.detailIndex(nr, offset=True)
+        mels_stacked = entries.stack().to_frame()
+        mels_stacked.rename(columns =  {0:"pattern"}, inplace = True)
+        # edit distance, based on side-by-side comparison of melodic ngrams
+        # gets flexed and other similar soggetti
+        dist = piece.distance(entries)
+        dist_stack = dist.stack().to_frame()
+
+        # filter distances to threshold.  <2 is good
+        distance_factor = edit_distance_threshold + 1
+        filtered_dist_stack = dist_stack[dist_stack[0] < distance_factor]
+        filtered_dist = filtered_dist_stack.reset_index()
+        filtered_dist.rename(columns =  {'level_0':"source", 'level_1':'match'}, inplace = True)
+
+        # Group the filtered distanced patterns
+        full_list_of_matches = filtered_dist.groupby('source')['match'].apply(list).reset_index()
+
+        if include_hidden_types == False:
+
             for matches in full_list_of_matches["match"]:
                 related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
                 entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
                 offset_list = entry_array.index.to_list()
-                split_list = list(ImportedPiece._split_by_threshold(offset_list))
+                split_list = list(split_by_threshold(offset_list))
                 for item in split_list:
                 # here is the list of starting offsets of the original set of entries:  slist
-                    temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
+
+                    temp = _temp_dict_of_details_rev(item, entry_array, det, matches, piece)
+
+
+                    points = points.append(temp, ignore_index=True)
+                    points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
+                    # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
+                    points = points[points['Offsets'].apply(len) > 1]
+
+            points["Offsets_Key"] = points["Offsets"].apply(offset_joiner)
+            points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
+            points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
+            points["Number_Entries"] = points["Offsets"].apply(len)
+            col_order = ['Composer',
+                     'Title',
+                     'First_Offset',
+                     'Measures_Beats',
+                     'Melodic_Entry_Intervals',
+                     'Offsets',
+                     'Soggetti',
+                     'Time_Entry_Intervals',
+                     'Voices',
+                     'Presentation_Type',
+                      'Number_Entries',
+                    'Flexed_Entries']
+            points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+            return points
+
+        elif include_hidden_types == True:
+            hidden_types_list = ["PEN", "ID"]
+
+            for matches in full_list_of_matches["match"]:
+                related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
+                entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
+                offset_list = entry_array.index.to_list()
+                split_list = list(split_by_threshold(offset_list))
+                for item in split_list:
+                # here is the list of starting offsets of the original set of entries:  slist
+
+                    temp = _temp_dict_of_details_rev(item, entry_array, det, matches, piece)
+
+
                     points = points.append(temp, ignore_index=True)
                     points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
                     # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
                     points = points[points['Offsets'].apply(len) > 1]
             # return(points)
 
+
                 for item in split_list:
                     # here is the list of starting offsets of the original set of entries:  slist
-                    temp = self._temp_dict_of_details_rev(item, entry_array, det, matches)
+
+                    temp = _temp_dict_of_details_rev(item, entry_array, det, matches, piece)
                     lto = len(temp["Offsets"])
                     if lto > 2 :
                         for r in range(3, 6):
                             list_combinations = list(combinations(item, r))
                             for slist in list_combinations:
-                                temp = self._temp_dict_of_details_rev(slist, entry_array, det, matches)
+
+                                temp = _temp_dict_of_details_rev(slist, entry_array, det, matches, piece)
+
                                 temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
                                 # print(temp)
+
                                 if 'PEN' in temp["Presentation_Type"]:
                                     points2 = points2.append(temp, ignore_index=True)
                                 if 'ID' in temp["Presentation_Type"]:
                                     points2 = points2.append(temp, ignore_index=True)
 
-
             points_combined = points.append(points2, ignore_index=True)
-            points_combined["Offsets_Key"] = points_combined["Offsets"].apply(ImportedPiece._offset_joiner)
+            points_combined["Offsets_Key"] = points_combined["Offsets"].apply(offset_joiner)
+            points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
             points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
             points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
-            points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
-            points_combined = points_combined[points_combined["Count_Offsets"] > 1]
+            col_order = ['Composer',
+                     'Title',
+                     'First_Offset',
+                     'Measures_Beats',
+                     'Melodic_Entry_Intervals',
+                     'Offsets',
+                     'Soggetti',
+                     'Time_Entry_Intervals',
+                     'Voices',
+                     'Presentation_Type',
+                      'Number_Entries',
+                    'Flexed_Entries']
             # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
             points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-            points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
-            # applying various private functions for overlapping entry tests.
-            # note that ng_durs must be passed to the first of these, via args
-            points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
-            points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
-            points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
             return points_combined
 
-def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_distance_threshold, include_hidden_types):
+def verovio_print_cadences(piece, cadences):
+    response = requests.get(url)
+    fetched_mei_string = response.text
+    tk = verovio.toolkit()
+    tk.loadData(fetched_mei_string)
+    tk.setScale(30)
+    tk.setOption( "pageHeight", "1000" )
+    tk.setOption( "pageWidth", "3000" )
+    for cad in cadences.index:
+        c_meas = cadences.loc[cad]["Measure"]
+        c_tone = cadences.loc[cad]["Tone"]
+        c_type = cadences.loc[cad]["CadType"]
+        c_beat = cadences.loc[cad]["Beat"]
+        evaded_c = cadences.loc[cad]['Evaded']
+        low = c_meas-1
+        high = c_meas
+        mr = str(low) + "-" + str(high)
+        mdict = {'measureRange': mr}
 
-    """This function uses several other functions to classify the entries in a given piece.
-    The output is a list, in order of offset, of each presentation type, including information about
-    measures/beats
-    starting offset
-    soggetti involved
-    melodic intervals of entry
-    time intervals of entry
-    set the length of the soggetti with `melodic_ngram_length`
-    set the maximum difference between similar soggetti with `edit_distance_threshold`
-    for chromatic vs diatonic, compound, and directed data in soggetti, see `interval_settings`
-    to include all the hidden PENs and IDS (those found within longer Fugas),
-    use `include_hidden_types == True`.
-    For faster (and simpler) listing of points of imitation without hidden forms, use `include_hidden_types == False`
+        # select verovio measures and redo layout
+        tk.select(str(mdict))
+        tk.redoLayout()
+
+        # get the number of pages and display the music
+        print("Results:")
+        count = tk.getPageCount()
+        for c in range(1, count + 1):
+            music = tk.renderToSVG(c)
+            print("MEI File: ", mei_file)
+            print(piece.metadata['composer'])
+            print(piece.metadata['title'])
+            print("Cadence End Measure:", c_meas)
+            print("Beat: ", c_beat)
+            print("Cadence Tone: ", c_tone)
+            print("Cadence Type: ", c_type)
+            print("Evaded Cadence: ", evaded_c)
+            display(HTML(music))
+
+# July 2022 Addition for printing presentation types with Verovio
+def verovio_print_ptypes(piece, p_types):
     """
-    # Classifier with Functions
-    points = pd.DataFrame(columns=['Composer',
-                 'Title',
-                 'First_Offset',
-                 'Measures_Beats',
-                 'Melodic_Entry_Intervals',
-                 'Offsets',
-                 'Soggetti',
-                 'Time_Entry_Intervals',
-                 'Voices',
-                 'Presentation_Type'])
-    points2 = pd.DataFrame()
+    This function is used to display the results of the Presentation Type
+    classifier in the Notebook with Verovio.  Each excerpt begins with
+    the first measure of the given presentation type and continues through four
+    measures after the last entry.
 
-    det = piece.detailIndex(nr, offset=True)
-    mels_stacked = entries.stack().to_frame()
-    mels_stacked.rename(columns =  {0:"pattern"}, inplace = True)
-    # edit distance, based on side-by-side comparison of melodic ngrams
-    # gets flexed and other similar soggetti
-    dist = piece.distance(entries)
-    dist_stack = dist.stack().to_frame()
+    The function also displays metadata about each excerpt, drawn from the
+    presentation type dataframe:  piece ID, composer, title, measure range,
+    presentation type, voices in order of entry, number of entries, the main
+    soggetto, melodic entry intervals, time entry intervals
+    """
+    response = requests.get(url)
+    fetched_mei_string = response.text
+    tk = verovio.toolkit()
+    tk.loadData(fetched_mei_string)
+    tk.setScale(30)
+    tk.setOption( "pageHeight", "1000" )
+    tk.setOption( "pageWidth", "3000" )
+    print("Results:")
+    # collect the metadata
+    for p_type in p_types.index:
+        this_p_type = p_types.loc[p_type]["Presentation_Type"]
+        p_voices = p_types.loc[p_type]["Voices"]
+        n_voices = p_types.loc[p_type]["Number_Entries"]
+        soggetto = p_types.loc[p_type]["Soggetti"][0]
+        mint = p_types.loc[p_type]["Melodic_Entry_Intervals"]
+        tint = p_types.loc[p_type]["Time_Entry_Intervals"]
+        flexed = p_types.loc[p_type]["Flexed_Entries"]
+        ml = p_types.loc[p_type]["Measures_Beats"]
+        parallel = p_types.loc[p_type]["Parallel_Voice"]
+        non_overlaps = p_types.loc[p_type]["Count_Non_Overlaps"]
 
-    # filter distances to threshold.  <2 is good
-    distance_factor = edit_distance_threshold + 1
-    filtered_dist_stack = dist_stack[dist_stack[0] < distance_factor]
-    filtered_dist = filtered_dist_stack.reset_index()
-    filtered_dist.rename(columns =  {'level_0':"source", 'level_1':'match'}, inplace = True)
+        # build the measure range dictionary
+        first = ml[0].split('/')[0]
+        last = str(int(ml[-1].split('/')[0]) + 4)
+        mr = str(first) + "-" + str(last)
+        mdict = {'measureRange': mr}
 
-    # Group the filtered distanced patterns
-    full_list_of_matches = filtered_dist.groupby('source')['match'].apply(list).reset_index()
+        # select measures in verovio and redo the layout
+        tk.select(str(mdict))
+        tk.redoLayout()
+        # get the number of pages
+        count = tk.getPageCount()
 
-    if include_hidden_types == False:
-
-        for matches in full_list_of_matches["match"]:
-            related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
-            entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
-            offset_list = entry_array.index.to_list()
-            split_list = list(split_by_threshold(offset_list))
-            for item in split_list:
-            # here is the list of starting offsets of the original set of entries:  slist
-
-                temp = _temp_dict_of_details_rev(item, entry_array, det, matches, piece)
-
-
-                points = points.append(temp, ignore_index=True)
-                points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-                # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-                points = points[points['Offsets'].apply(len) > 1]
-
-        points["Offsets_Key"] = points["Offsets"].apply(offset_joiner)
-        points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
-        points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
-        points["Number_Entries"] = points["Offsets"].apply(len)
-        col_order = ['Composer',
-                 'Title',
-                 'First_Offset',
-                 'Measures_Beats',
-                 'Melodic_Entry_Intervals',
-                 'Offsets',
-                 'Soggetti',
-                 'Time_Entry_Intervals',
-                 'Voices',
-                 'Presentation_Type',
-                  'Number_Entries',
-                'Flexed_Entries']
-        points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-        return points
-
-    elif include_hidden_types == True:
-        hidden_types_list = ["PEN", "ID"]
-
-        for matches in full_list_of_matches["match"]:
-            related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
-            entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
-            offset_list = entry_array.index.to_list()
-            split_list = list(split_by_threshold(offset_list))
-            for item in split_list:
-            # here is the list of starting offsets of the original set of entries:  slist
-
-                temp = _temp_dict_of_details_rev(item, entry_array, det, matches, piece)
-
-
-                points = points.append(temp, ignore_index=True)
-                points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-                # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-                points = points[points['Offsets'].apply(len) > 1]
-        # return(points)
-
-
-            for item in split_list:
-                # here is the list of starting offsets of the original set of entries:  slist
-
-                temp = _temp_dict_of_details_rev(item, entry_array, det, matches, piece)
-                lto = len(temp["Offsets"])
-                if lto > 2 :
-                    for r in range(3, 6):
-                        list_combinations = list(combinations(item, r))
-                        for slist in list_combinations:
-
-                            temp = _temp_dict_of_details_rev(slist, entry_array, det, matches, piece)
-
-                            temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
-                            # print(temp)
-
-                            if 'PEN' in temp["Presentation_Type"]:
-                                points2 = points2.append(temp, ignore_index=True)
-                            if 'ID' in temp["Presentation_Type"]:
-                                points2 = points2.append(temp, ignore_index=True)
-
-        points_combined = points.append(points2, ignore_index=True)
-        points_combined["Offsets_Key"] = points_combined["Offsets"].apply(offset_joiner)
-        points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
-        points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
-        points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
-        col_order = ['Composer',
-                 'Title',
-                 'First_Offset',
-                 'Measures_Beats',
-                 'Melodic_Entry_Intervals',
-                 'Offsets',
-                 'Soggetti',
-                 'Time_Entry_Intervals',
-                 'Voices',
-                 'Presentation_Type',
-                  'Number_Entries',
-                'Flexed_Entries']
-        # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
-        points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-        return points_combined
+        # print caption
+        print("MEI File: ", mei_file)
+        print(piece.metadata['composer'])
+        print(piece.metadata['title'])
+        print("Measures:", mr)
+        print("Presentation Type: ", this_p_type)
+        print("Voices: ", p_voices)
+        print("Number of Entries: ", n_voices)
+        print("Main Soggetto: ", soggetto)
+        print("Melodic Entry Intervals: ", mint)
+        print("Time Entry Intervals: ", tint )
+        print("Flexed: ", flexed)
+        print("Parallel Entries:", parallel)
+        print("Number of Non-Overlapping Voices:", non_overlaps)
+        # print the music
+        for c in range(1, count + 1):
+            music = tk.renderToSVG(c)
+            display(HTML(music))
 
 def joiner(a):
-    """This gets used for visualization routines."""
+    """This is used for visualization routines."""
     b = '_'.join(map(str, a))
     return b
 def clean_melody_new(c):

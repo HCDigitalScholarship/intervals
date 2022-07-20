@@ -2440,7 +2440,7 @@ def verovio_print_ptypes(piece, p_types, url, mei_file):
             display(SVG(music))
 
 # July 2022 Addition for printing hr types with Verovio
-def verovio_print_hr(piece, hr, url, mei_file):
+def verovio_print_homorhythm(piece, result, url, mei_file):
    response = requests.get(url)
    fetched_mei_string = response.text
    tk = verovio.toolkit()
@@ -2450,9 +2450,9 @@ def verovio_print_hr(piece, hr, url, mei_file):
    tk.setOption( "pageWidth", "2500" )
 
    # Now get meas ranges and number of active voices
-   hr = list(result.index.get_level_values('Measure').tolist())
+   hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
    #Get the groupings of consecutive items
-   li = [list(item) for item in consecutive_groups(hr)]
+   li = [list(item) for item in consecutive_groups(hr_list)]
    final_list = []
    new_final = []
 
@@ -2488,8 +2488,8 @@ def verovio_print_hr(piece, hr, url, mei_file):
    for span in final_final:
     mr = str(span[0]) + "-" + str(span[-1])
     mdict = {'measureRange': mr}
-    min_hr_count = int(result.loc[span]["active_syll_voices"].values.min())
-    max_hr_count = int(result.loc[span]["active_syll_voices"].values.max())
+    min_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.min())
+    max_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.max())
 
     # select verovio measures and redo layout
     tk.select(str(mdict))

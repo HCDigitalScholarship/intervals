@@ -1676,7 +1676,7 @@ class ImportedPiece:
         return result
 
     def _entryHelper(self, col):
-           """
+        """
         Return True for cells in column that correspond to notes that either
         begin a piece, or immediately preceded by a rest or a double barline."""
         barlines = self.barlines()[col.name]

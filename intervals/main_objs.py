@@ -2440,7 +2440,7 @@ def verovio_print_ptypes(piece, p_types, url, mei_file):
             display(SVG(music))
 
 # July 2022 Addition for printing hr types with Verovio
-def verovio_print_homorhythm(piece, result, url, mei_file):
+def verovio_print_homorhythm(piece, homorhythm, url, mei_file):
    response = requests.get(url)
    fetched_mei_string = response.text
    tk = verovio.toolkit()

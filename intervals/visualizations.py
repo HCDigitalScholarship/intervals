@@ -35,7 +35,7 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
         x2=x2,
         y=y,
         color=color,
-        opacity=alt.condition(selector_condition, alt.value(1), alt.value(0.2)),
+        # opacity=alt.condition(selector_condition, alt.value(1), alt.value(0.2)),
         tooltip=tooltip
     ).properties(
         width=heat_map_width,

@@ -119,22 +119,12 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     """
 
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
-
-    print("\n \n \n PROCESSED PRINTING: \n")
-    print(processed_ngrams_df.to_string())
-    print("\n \n \n")
-
     selector = alt.selection_multi(fields=['pattern'])
 
     # # turns patterns into string to make it easier to see
     # processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore').copy()
 
     patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', processed_ngrams_df, selector, selector)
-    
-    print("\n \n \n Data Just before PRINT: \n")
-    print(processed_ngrams_df.to_string())
-    print("\n \n \n")
-    
     heatmap = create_heatmap('start', 'end', 'voice', 'pattern', processed_ngrams_df, heatmap_width, heatmap_height,
                              selector, selector, tooltip=['start', 'end', 'pattern'])
     return alt.vconcat(patterns_bar, heatmap)
@@ -157,11 +147,35 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
                                             selected_pattern=selected_patterns,
                                             voices=voices)
-    print("\n \n \n PRINT: \n")
-    print(processed_ngrams_df.to_string())
-    print("\n \n \n ")
     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height)
 
+# new temporary functions:
+
+def create_heatmap_no_selection(x, x2, y, color, data, heat_map_width=800, heat_map_height=400):
+
+    heatmap = alt.Chart(data).mark_bar().encode(
+        x=x,
+        x2=x2,
+        y=y,
+        color=color,
+    ).properties(
+        width=heat_map_width,
+        height=heat_map_height
+    )
+
+    return heatmap
+
+def _plot_ngrams_df_heatmap_no_selection(processed_ngrams_df, heatmap_width=800, heatmap_height=300):
+    processed_ngrams_df = processed_ngrams_df.dropna(how='any')
+    heatmap = create_heatmap_no_selection('start', 'end', 'voice', 'pattern', processed_ngrams_df)
+    return heatmap
+
+def plot_ngrams_heatmap_no_selection(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,
+                        heatmap_height=300):
+    processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
+                                            selected_pattern=selected_patterns,
+                                            voices=voices)
+    return _plot_ngrams_df_heatmap_no_selection(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height)
 
 def _from_ema_to_offsets(df, ema_column):
     """

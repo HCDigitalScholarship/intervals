@@ -156,7 +156,8 @@ def create_heatmap_no_selection(x, x2, y, color, data, heat_map_width=800, heat_
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,
         x2=x2,
-        y=y
+        y=y,
+        color=alt.Color(field="pattern", type='quantitative')
     ).properties(
         width=heat_map_width,
         height=heat_map_height
@@ -166,7 +167,8 @@ def create_heatmap_no_selection(x, x2, y, color, data, heat_map_width=800, heat_
 
 def _plot_ngrams_df_heatmap_no_selection(processed_ngrams_df, heatmap_width=800, heatmap_height=300):
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
-    heatmap = create_heatmap_no_selection('start', 'end', 'voice', 'pattern', processed_ngrams_df)
+    y = alt.Y("voice", sort=None)
+    heatmap = create_heatmap_no_selection('start', 'end', y, 'pattern', processed_ngrams_df)
     return heatmap
 
 def plot_ngrams_heatmap_no_selection(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,

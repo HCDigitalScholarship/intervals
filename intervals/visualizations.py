@@ -35,7 +35,7 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
         x2=x2,
         y=y,
         color=color,
-        # opacity=alt.condition(selector_condition, alt.value(1), alt.value(0.2)),
+        opacity=alt.condition(selector_condition, alt.value(1), alt.value(0.2)),
         tooltip=tooltip
     ).properties(
         width=heat_map_width,
@@ -122,7 +122,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     selector = alt.selection_multi(fields=['pattern'])
 
     # # turns patterns into string to make it easier to see
-    # processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore').copy()
+    processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore').copy()
 
     patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', processed_ngrams_df, selector, selector)
     heatmap = create_heatmap('start', 'end', 'voice', 'pattern', processed_ngrams_df, heatmap_width, heatmap_height,
@@ -157,7 +157,7 @@ def create_heatmap_no_selection(x, x2, y, color, data, heat_map_width=800, heat_
         x=x,
         x2=x2,
         y=y,
-        color=alt.Color('pattern', scale=alt.Scale(scheme='turbo'))
+        color=alt.Color('score', scale=alt.Scale(scheme='turbo'))
     ).properties(
         width=heat_map_width,
         height=heat_map_height

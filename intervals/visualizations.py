@@ -157,7 +157,7 @@ def create_heatmap_no_selection(x, x2, y, color, data, heat_map_width=800, heat_
         x=x,
         x2=x2,
         y=y,
-        color=alt.Color(field="pattern", type='quantitative')
+        color=alt.Color(field="pattern")
     ).properties(
         width=heat_map_width,
         height=heat_map_height

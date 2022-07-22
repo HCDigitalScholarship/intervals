@@ -156,8 +156,7 @@ def create_heatmap_no_selection(x, x2, y, color, data, heat_map_width=800, heat_
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,
         x2=x2,
-        y=y,
-        color=color,
+        y=y
     ).properties(
         width=heat_map_width,
         height=heat_map_height

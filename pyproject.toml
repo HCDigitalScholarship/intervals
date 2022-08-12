@@ -29,7 +29,7 @@ python-dateutil = "^2.8.2"
 pytz = "2021.1"
 requests = "2.27.0"
 rfc3986 = "1.4.0"
-seaborn==0.11.2
+seaborn = "0.11.2"
 six = "1.15.0"
 sniffio = "^1.2.0"
 textdistance = "4.2.1"

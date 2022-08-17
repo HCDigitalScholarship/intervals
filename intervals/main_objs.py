@@ -834,7 +834,10 @@ class ImportedPiece:
         .durations will be used as input (durations of notes and rests).
         '''
         if df is None:
-            df = self.durations()
+            if 'DurationalRatios' not in self.analyses:
+                df = self.durations()
+                self.analyses['DurationalRatios'] = df.apply(self._durationalRatioHelper).dropna(how='all')
+            return self.analyses['DurationalRatios']
         return df.apply(self._durationalRatioHelper).dropna(how='all')
 
     def getDurationalRatio(self, df=None):
@@ -1633,6 +1636,8 @@ class ImportedPiece:
         gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr
         checks the number of active voices (thus eliminating places where some voices have rests)
         """
+        if 'Homorhythm2' in self.analyses:
+            return self.analyses['Homorhythm2']
         # active version with lyric ngs
         nr = self.notes()
         dur = self.durations(df=nr)
@@ -1673,6 +1678,7 @@ class ImportedPiece:
          # the intersection of coordinated durations and coordinate lyrics
         hr['voice_match'] = hr['active_voices'] == hr['active_syll_voices']
         result = self.detailIndex(hr, offset=True)
+        self.analyses['Homorhythm2'] = result
         return result
 
     def _entryHelper(self, col):
@@ -1695,9 +1701,10 @@ class ImportedPiece:
         df = piece.notes()
         df[mask].dropna(how='all')
         """
-        nr = self.notes()
-        mask = nr.apply(self._entryHelper)
-        return mask
+        if 'EntryMask' not in self.analyses:
+            nr = self.notes()
+            self.analyses['EntryMask'] = nr.apply(self._entryHelper)
+        return self.analyses['EntryMask']
 
     def getEntryMask(self):
         return self.entryMask()
@@ -2049,6 +2056,10 @@ class ImportedPiece:
         piece = importScore('url')
         piece.presentationTypes(edit_distance_threshold=2)
         """
+        memo_key = ('PresentationTypes', melodic_ngram_length, limit_to_entries,
+                    edit_distance_threshold, flex_threshold, include_hidden_types, combine_unisons)
+        if memo_key in self.analyses:
+            return self.analyses[memo_key]
         nr = self.notes(combineUnisons=combine_unisons)
         mel = self.melodic(df=nr, kind='d', end=False)
         mel_ng = self.ngrams(df=mel, n=melodic_ngram_length)
@@ -2127,7 +2138,7 @@ class ImportedPiece:
             points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
             points.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
 
-
+            self.analyses[memo_key] = points
             return points
 
         # classification with hidden types
@@ -2177,6 +2188,7 @@ class ImportedPiece:
             points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
             points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
             points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
+            self.analyses[memo_key] = points_combined
             return points_combined
 
     def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, edit_distance_threshold, include_hidden_types):

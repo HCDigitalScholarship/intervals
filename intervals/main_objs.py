@@ -10,6 +10,7 @@ from itertools import combinations_with_replacement as cwr
 import os
 import re
 import intervals
+import pdb
 cwd = os.path.dirname(intervals.__file__)
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -529,6 +530,42 @@ class ImportedPiece:
 
     def getNoteRest(self, combineRests=True, combineUnisons=False):
         return self.notes(combineRests, combineUnisons)
+
+    def lowLine(self):
+        '''
+        Return a series that corresponds to the lowest sounding note of the piece at
+        any given moment. Attack information cannot be reliably preserved so
+        consecutive repeated notes and rests are combined. If all parts have a rest,
+        then "Rest" is shown for that stretch of the piece.'''
+        # use m21 objects so that you can do comparison with min
+        notes = self._getM21ObjsNoTies()
+        # you can't compare notes and rests, so replace rests with a really high note
+        highNote = note.Note('C9')
+        notes = notes.applymap(lambda n: highNote if n.isRest else n, na_action='ignore')
+        notes.ffill(inplace=True)
+        lowLine = notes.apply(min, axis=1)
+        lowLine = lowLine.apply(lambda n: n.nameWithOctave)
+        lowLine.replace('C9', 'Rest', inplace=True)
+        lowLine.name = 'Low Line'
+        return lowLine[lowLine != lowLine.shift()]
+
+    def highLine(self):
+        '''
+        Return a series that corresponds to the highest sounding note of the piece at
+        any given moment. Attack information cannot be reliably preserved so
+        consecutive repeated notes and rests are combined. If all parts have a rest,
+        then "Rest" is shown for that stretch of the piece.'''
+        # use m21 objects so that you can do comparison with min
+        notes = self._getM21ObjsNoTies()
+        # you can't compare notes and rests, so replace rests with a really high note
+        lowNote = note.Note('C', octave=-9)
+        notes = notes.applymap(lambda n: lowNote if n.isRest else n, na_action='ignore')
+        notes.ffill(inplace=True)
+        highLine = notes.apply(max, axis=1)
+        highLine = highLine.apply(lambda n: n.nameWithOctave)
+        highLine.replace('C-9', 'Rest', inplace=True)
+        highLine.name = 'High Line'
+        return highLine[highLine != highLine.shift()]
 
     def _getBeatUnit(self):
         '''

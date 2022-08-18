@@ -2388,23 +2388,23 @@ def verovio_print_homorhythm(piece, homorhythm, url, mei_file):
 
 
 
-   response = requests.get(url)
-   fetched_mei_string = response.text
-   tk = verovio.toolkit()
-   tk.loadData(fetched_mei_string)
-   tk.setScale(30)
-   tk.setOption( "pageHeight", "1000" )
-   tk.setOption( "pageWidth", "2500" )
+    response = requests.get(url)
+    fetched_mei_string = response.text
+    tk = verovio.toolkit()
+    tk.loadData(fetched_mei_string)
+    tk.setScale(30)
+    tk.setOption( "pageHeight", "1000" )
+    tk.setOption( "pageWidth", "2500" )
 
-   # Now get meas ranges and number of active voices
-   hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
-   #Get the groupings of consecutive items
-   li = [list(item) for item in consecutive_groups(hr_list)]
-   final_list = []
-   new_final = []
+    # Now get meas ranges and number of active voices
+    hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
+    #Get the groupings of consecutive items
+    li = [list(item) for item in consecutive_groups(hr_list)]
+    final_list = []
+    new_final = []
 
-   # Look ahead and combine overlaps
-   for l in range(len(li)):
+    # Look ahead and combine overlaps
+    for l in range(len(li)):
     # look ahead
     if l < len(li) - 1:
         overlap_check = any(item in li[l] for item in li[l+1])
@@ -2414,8 +2414,8 @@ def verovio_print_homorhythm(piece, homorhythm, url, mei_file):
         if overlap_check==True:
             combined = sorted(list(set(li[l] + li[l+1])))
             final_list.append(combined)
-   # Look back and combine overlaps
-   for l in range(len(final_list)):
+    # Look back and combine overlaps
+    for l in range(len(final_list)):
     new_final.append(final_list[0])
     if l > 0:
         overlap_check = any(item in final_list[l] for item in final_list[l-1])
@@ -2425,14 +2425,14 @@ def verovio_print_homorhythm(piece, homorhythm, url, mei_file):
             combined = sorted(list(set(final_list[l] + final_list[l-1])))
             new_final.append(combined)
 
-   # ensure final list is only unique lists
-   final_final = []
-   for elem in new_final:
+    # ensure final list is only unique lists
+    final_final = []
+    for elem in new_final:
     if elem not in final_final:
         final_final.append(elem)
 
-   #Use the result to get range groupings
-   for span in final_final:
+    #Use the result to get range groupings
+    for span in final_final:
     mr = str(span[0]) + "-" + str(span[-1])
     mdict = {'measureRange': mr}
     min_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.min())

@@ -1,74 +1,75 @@
-Key,CadType,Evaded,LeadingTones
-C1T-2,Clausula Vera,False,1
-C2T-2,Clausula Vera,False,0
-C3T-2,Clausula Vera,False,1
-C1T-2x,Clausula Vera,False,1
-C2T-2x,Clausula Vera,False,0
-C3T-2x,Clausula Vera,False,1
-A1C1T-2,Double Leading Tone,False,1
-A2C1T-2,Clausula Vera,False,1
-A2C2T-2,Clausula Vera,False,0
-A2C3T-2,Clausula Vera,False,1
-A3C3T-2,Double Leading Tone,False,1
-C1t2,Clausula Vera,True,1
-C1t1,Clausula Vera,True,1
-C2t1,Clausula Vera,True,1
-C2t2,Clausula Vera,True,1
-C3t2,Clausula Vera,True,1
-C3t1,Clausula Vera,True,1
-A1C1t2,Clausula Vera,True,1
-A1C1t1,Clausula Vera,True,1
-A1C3t2,Clausula Vera,True,1
-A1C3t1,Clausula Vera,True,1
-A2C1t2,Clausula Vera,True,1
-A2C1t1,Clausula Vera,True,1
-A2C3t2,Clausula Vera,True,1
-A2C3t1,Clausula Vera,True,1
-A3C3t2,Clausula Vera,True,1
-A3C3t1,Clausula Vera,True,1
-C2T-1,Phrygian,False,1
-A2C2T-1,Phrygian,False,1
-A3C3T-1,Phrygian,False,1
-A2C3T-1,Phrygian,False,1
-A1T-2,Altizans Only,False,1
-A1T-2x,Altizans Only,False,1
-A2T-2,Altizans Only,False,0
-A1B,Reinterpreted,False,1
-T-2a,Altizans Only,True,-1
-A2T-1,Phrygian Altizans,False,1
-C2PT-1,Plagal,False,1
-BC1,Authentic,False,1
-BC2,Authentic,False,0
-BC1a,Authentic,False,1
-BC2a,Authentic,False,0
-C1u-3,Authentic,True,1
-C2u-3,Authentic,True,0
-C1u-4,Authentic,True,1
-C2u-4,Authentic,True,0
-C1T-2u-3,Clausula Vera,False,1
-C1T-2u-3x,Authentic,True,1
-C1b,Authentic,True,1
-BC1u-4,Authentic,False,1
-BC2u-4,Authentic,False,0
-BC1u-3,Authentic,False,1
-BC2u-3,Authentic,False,0
-C1LT-2,Leaping Contratenor,False,1
-C2LT-2,Leaping Contratenor,False,0
-xyz,Authentic,True,-1
-yz,Authentic,True,-1
-C1z,Clausula Vera,True,1
-xy,Authentic,True,-1
-BC1z,Authentic,False,1
-C1T-2z,Clausula Vera,False,1
-c-2z,Clausula Vera,True,-1
-T-2y,Clausula Vera,True,-1
-Bc5,Authentic,True,-1
-Bc-1,Authentic,True,-1
-c-1x,Authentic,True,-1
-c-2x,Authentic,True,-1
-c-1xz,Authentic,True,-1
-c-2xz,Authentic,True,-1
-T-2c-1x,Authentic,True,-1
-T-2c5,Clausula Vera,True,-1
-T-2c-1,Clausula Vera,True,-1
-T-2c-2,Clausula Vera,True,-1
+Key,CadType,LeadingTones
+C1T-2,Clausula Vera,1
+C2T-2,Clausula Vera,0
+C3T-2,Clausula Vera,1
+C1T-2x,Clausula Vera,1
+C2T-2x,Clausula Vera,0
+C3T-2x,Clausula Vera,1
+A1C1T-2,Double Leading Tone,2
+A2C1T-2,Clausula Vera,1
+A2C2T-2,Clausula Vera,0
+A2C3T-2,Clausula Vera,1
+A3C3T-2,Double Leading Tone,2
+C1t2,Evaded Clausula Vera,1
+C1t1,Evaded Clausula Vera,1
+C2t1,Evaded Clausula Vera,1
+C2t2,Evaded Clausula Vera,1
+C3t2,Evaded Clausula Vera,1
+C3t1,Evaded Clausula Vera,1
+A1C1t2,Evaded Clausula Vera,1
+A1C1t1,Evaded Clausula Vera,1
+A1C3t2,Evaded Clausula Vera,1
+A1C3t1,Evaded Clausula Vera,1
+A2C1t2,Evaded Clausula Vera,1
+A2C1t1,Evaded Clausula Vera,1
+A2C3t2,Evaded Clausula Vera,1
+A2C3t1,Evaded Clausula Vera,1
+A3C3t2,Evaded Clausula Vera,1
+A3C3t1,Evaded Clausula Vera,1
+C2T-1,Phrygian,1
+A2C2T-1,Phrygian,1
+A3C3T-1,Phrygian,1
+A2C3T-1,Phrygian,1
+A1T-2,Altizans Only,1
+A1T-2x,Altizans Only,1
+A2T-2,Altizans Only,0
+A1B,Reinterpreted,1
+A1b,Altizans Only,1
+T-2a,Evaded Altizans Only,-1
+A2T-1,Phrygian Altizans,1
+C2PT-1,Plagal,1
+BC1,Authentic,1
+BC2,Authentic,0
+BC1a,Authentic,1
+BC2a,Authentic,0
+C1u-3,Evaded Authentic,1
+C2u-3,Evaded Authentic,0
+C1u-4,Evaded Authentic,1
+C2u-4,Evaded Authentic,0
+C1T-2u-3,Clausula Vera,1
+C1T-2u-3x,Evaded Authentic,1
+C1b,Evaded Authentic,1
+BC1u-4,Authentic,1
+BC2u-4,Authentic,0
+BC1u-3,Authentic,1
+BC2u-3,Authentic,0
+C1LT-2,Leaping Contratenor,1
+C2LT-2,Leaping Contratenor,0
+xyz,Evaded Authentic,-1
+yz,Evaded Authentic,-1
+C1z,Evaded Clausula Vera,1
+xy,Evaded Authentic,-1
+BC1z,Authentic,1
+C1T-2z,Clausula Vera,1
+c-2z,Evaded Clausula Vera,-1
+T-2y,Evaded Clausula Vera,-1
+Bc5,Evaded Authentic,-1
+Bc-1,Evaded Authentic,-1
+c-1x,Evaded Authentic,-1
+c-2x,Evaded Authentic,-1
+c-1xz,Evaded Authentic,-1
+c-2xz,Evaded Authentic,-1
+T-2c-1x,Evaded Authentic,-1
+T-2c5,Evaded Clausula Vera,-1
+T-2c-1,Evaded Clausula Vera,-1
+T-2c-2,Evaded Clausula Vera,-1

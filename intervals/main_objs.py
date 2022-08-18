@@ -24,7 +24,7 @@ def importScore(path):
     Import piece and return a music21 score. Return None if there is an error.
     '''
     if path in pathDict:
-        print('Memoized piece detected.')
+        print('Previously imported piece detected.')
     else:
         if path.startswith('http'):
             print('Downloading remote score...')
@@ -1336,8 +1336,10 @@ class ImportedPiece:
             return self.analyses['CVF']
         cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
-        ngrams = {n: self.ngrams(how='modules', interval_settings=('d', True, False),
-                    n=n, offsets='last', held='1', exclude=[], show_both=True).stack() for n in cadences.N.unique()}
+        harmonic = self.markFourths()
+        melodic = self.melodic('d', True, False)
+        ngrams = {n: self.ngrams(how='modules', df=harmonic, other=melodic, n=n, offsets='last',
+                  held='1', exclude=[], show_both=True).stack() for n in cadences.N.unique()}
         hits = [ser[ser.str.contains('|'.join(cadences[cadences.N == n].index), regex=True)] for n, ser in ngrams.items()]
         hits = pd.concat(hits)
         hits.sort_index(level=0, inplace=True)
@@ -1370,7 +1372,8 @@ class ImportedPiece:
         '''
         Return a dataframe of cadences in the piece along with metadata about
         these cadence points such as the lowest pitch at moment of cadence, and 
-        the cadential goal tone is returned. The SinceLast and ToNext columns
+        the cadential goal tone is returned. The CVFs column shows the cadential
+        voice functions condensed into one string. The SinceLast and ToNext columns
         are the time in quarter notes since the last or to the next cadence. The
         first cadence's SinceLast time and the last cadence's ToNext time are
         the time since/to the beginning/end of the piece. The "Low" and "Tone"
@@ -1378,11 +1381,10 @@ class ImportedPiece:
         and the goal tone of the cantizans (or altizans if there is no cantizans)
         respectively. These are usually the same pitch class, but not always.
         "Rel" is short for relative, so "RelLow" is the lowest pitch of each
-        cadence shown as an interval measured against the last pitch in the
-        "Low" column. Likewise, "RelTone" is the cadential tone shown as an
-        interval measured against the last pitch in the "Tone" column. If
-        `keep_keys` is set to True, the "Key" column will be kept in the cadence
-        results table. This corresponds to the combination of cadential voice
+        cadence shown as an interval measured against the final. Likewise,
+        "RelTone" is the cadential tone shown as an interval measured against the
+        final. If `keep_keys` is set to True, the "Key" column will be kept in the
+        cadence results table. This corresponds to the combination of cadential voice
         functions and chromatic intervals used as a key to lookup the cadence
         information in the cadenceLabels.csv file. The "Progress" column gives
         the progress toward the end of the piece measured 0-1 where 1 is the 
@@ -1406,14 +1408,14 @@ class ImportedPiece:
         keys = pd.DataFrame(keys)
         cadDict = pd.read_csv(cwd + '/data/cadences/cadenceLabels.csv', index_col=0)
         labels = keys.join(cadDict, on='Key')
+        labels['CVFs'] = cvfs.apply(lambda row: ''.join(row.dropna()), axis=1)
         m21 = self._getM21ObjsNoTies().ffill()
         labels['Low'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
-        final = note.Note(labels.Low.dropna().iat[-1])  # lowest pitch of last cadence
+        final = note.Note(self.final())
         labels['RelLow'] = labels.Low.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(final, note.Note(x))))
         nr = self.notes()
         labels['Tone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
-        lastTone = note.Note(labels.Tone.dropna().iat[-1])  # last pitch cadenced to
-        labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(lastTone, note.Note(x))))
+        labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(final, note.Note(x))))
         labels.RelTone = labels.RelTone[labels.Tone.notnull()]
         labels.Tone = labels.Tone.fillna(np.nan)
         tsig = self.timeSignatures().iloc[:, 0]
@@ -1435,18 +1437,41 @@ class ImportedPiece:
             labels = labels.drop('Key', axis=1)
         return labels
 
-    def analyzeFourths(self, interval_settings=('d', True, False)):
+    def markFourths(self):
         '''
-        Distinguish between consonant and dissonant fourths. Returns a df of the harmonic
-        intervals of the piece according to the interval_settings passed. The difference is
-        that the consonant fourths have an "H" prepended to them, as in H4. Dissonant fourths
-        just appear as "4". A fourth is considered to be dissonant if the fourth is against
-        the same pitch class as the lowest sounding note.'''
-        memo_key = ('AnalyzeFourths', *interval_settings)
-        if memo_key in self.analyses:
+        Distinguish between consonant and dissonant fourths. Returns a df of the diatonic,
+        directed, and simple intervals of the piece with a "D" appended to dissonant fourths.
+        Consonant fourths and all other intervals remain unchanged. A fourth is considered 
+        dissonant if it is against the same pitch class as the lowest sounding note.'''
+        if 'AnalyzeFourths' in self.analyses:
             return self.analyses['AnalyzeFourths']
-        har = self.harmonic(*interval_settings)
+        har = self.harmonic('d', True, False).copy()
+        nr = self.notes().ffill()
+        lowLine = self.lowLine()
+        label = 'D'  # the label to use for fourths against the lowest note
+        for col in har.columns:
+            for i in har.index:
+                if har.at[i, col] == '4':
+                    lowerVoice = col.split('_')[0]
+                    lowerNote = nr.at[i, lowerVoice]
+                    lowest = lowLine.asof(i)
+                    if lowerNote[0] == lowest[0]:
+                        har.at[i, col] += label
+                elif har.at[i, col] == '-4':
+                    upperVoice = col.split('_')[1]
+                    upperNote = nr.at[i, upperVoice]
+                    lowest = lowLine.asof(i)
+                    if upperNote[0] == lowest[0]:
+                        har.at[i, col] += label
+        self.analyses['AnalyzeFourths'] = har
+        return har
+                    
 
+    def supplementum(self):
+        '''
+        Return the portion of the piece that corresponds to the supplementum. This is defined as
+        the part after the last cadence.'''
+        pass
 
     def classifyCadences(self, return_type='cadences', keep_keys=False):
         '''

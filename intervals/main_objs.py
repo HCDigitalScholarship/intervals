@@ -557,7 +557,7 @@ class ImportedPiece:
             final = lowLine.iat[-1]
             if final == 'Rest':
                 final = lowLine.iat[-2]
-        self.analyses['Final'] = final
+            self.analyses['Final'] = final
         return self.analyses['Final']
 
     def highLine(self):

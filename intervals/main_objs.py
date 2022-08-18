@@ -2406,37 +2406,37 @@ def verovio_print_homorhythm(piece, homorhythm, url, mei_file):
     # Look ahead and combine overlaps
     for l in range(len(li)):
     # look ahead
-    if l < len(li) - 1:
-        overlap_check = any(item in li[l] for item in li[l+1])
-        if overlap_check==False:
-            sorted(li[l])
-            final_list.append(li[l])
-        if overlap_check==True:
-            combined = sorted(list(set(li[l] + li[l+1])))
-            final_list.append(combined)
+        if l < len(li) - 1:
+            overlap_check = any(item in li[l] for item in li[l+1])
+            if overlap_check==False:
+                sorted(li[l])
+                final_list.append(li[l])
+            if overlap_check==True:
+                combined = sorted(list(set(li[l] + li[l+1])))
+                final_list.append(combined)
     # Look back and combine overlaps
     for l in range(len(final_list)):
-    new_final.append(final_list[0])
-    if l > 0:
-        overlap_check = any(item in final_list[l] for item in final_list[l-1])
-        if overlap_check==False:
-            new_final.append(final_list[l])
-        if overlap_check==True:
-            combined = sorted(list(set(final_list[l] + final_list[l-1])))
-            new_final.append(combined)
+        new_final.append(final_list[0])
+        if l > 0:
+            overlap_check = any(item in final_list[l] for item in final_list[l-1])
+            if overlap_check==False:
+                new_final.append(final_list[l])
+            if overlap_check==True:
+                combined = sorted(list(set(final_list[l] + final_list[l-1])))
+                new_final.append(combined)
 
     # ensure final list is only unique lists
     final_final = []
     for elem in new_final:
-    if elem not in final_final:
-        final_final.append(elem)
+        if elem not in final_final:
+            final_final.append(elem)
 
     #Use the result to get range groupings
     for span in final_final:
-    mr = str(span[0]) + "-" + str(span[-1])
-    mdict = {'measureRange': mr}
-    min_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.min())
-    max_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.max())
+        mr = str(span[0]) + "-" + str(span[-1])
+        mdict = {'measureRange': mr}
+        min_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.min())
+        max_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.max())
 
     # select verovio measures and redo layout
     tk.select(str(mdict))

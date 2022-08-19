@@ -118,7 +118,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     selector = alt.selection_multi(fields=['pattern'])
     y = alt.Y("voice", sort=None)
 
-    # # turns patterns into string to make it easier to see
+    # make a copy of the processed n_grams and turn them into Strings
     new_processed_ngrams_df = processed_ngrams_df.copy()
     new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
 
@@ -308,11 +308,13 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
     slider = alt.binding_range(min=0, max=100, step=1, name='cutoff:')
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
                                     bind=slider, init={'cutoff': 50})
+
+    # sort voices
     if voices != None:
         if len(voices) == 0:
             voices = None
-
     y = alt.Y("voice", sort=voices)
+    
     return create_heatmap('start', 'end', y, 'score', score_ngrams, heatmap_width, heatmap_height,
                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
 

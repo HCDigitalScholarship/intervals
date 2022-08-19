@@ -433,7 +433,7 @@ def _gatherNgram(row):
     if len(excerpt.columns) != 2 or len(excerpt) == 0:
         return (False,)*4
     n = len(excerpt)
-    ngrams = piece.getNgrams(n=n, how='modules', offsets='last')
+    ngrams = piece.ngrams(n=n, how='modules', offsets='last')
     pair = '_'.join(excerpt.columns)
     if pair not in ngrams.columns:
         pair = '_'.join(reversed(excerpt.columns))

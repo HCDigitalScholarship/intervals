@@ -1427,7 +1427,7 @@ class ImportedPiece:
         labels['RelLow'] = labels.Low.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(final, note.Note(x))))
         nr = self.notes()
         labels['Tone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
-        labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(final, note.Note(x))))
+        labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedSimple(interval.Interval(final, note.Note(x))))
         labels.RelTone = labels.RelTone[labels.Tone.notnull()]
         labels.Tone = labels.Tone.fillna(np.nan)
         detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, sounding=True, progress=True)

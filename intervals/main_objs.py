@@ -738,16 +738,12 @@ class ImportedPiece:
         This would return a series with the number of parts that currently have
         a note sounding.
         """
-
         if not 'SoundingCount' in self.analyses:
-
             nr = self.notes().ffill()
             df = nr[nr != 'Rest']
             ser = df.count(axis=1)
             ser.name = 'Sounding'
-
             self.analyses['SoundingCount'] = ser
-
         return self.analyses['SoundingCount']
 
     def _zeroIndexIntervals(ntrvl):
@@ -1161,8 +1157,8 @@ class ImportedPiece:
         this case, if the `df` or `other` parameters are left as None, they will
         be replaced with the current piece's harmonic and melodic intervals
         respectfully. These intervals will be formed according to the
-        interval_settings argument, which gets passed to the getMelodic and
-        getHarmonic methods (see those methods for an explanation of those
+        interval_settings argument, which gets passed to the melodic and
+        harmonic methods (see those methods for an explanation of those
         settings). This makes it easy to make contrapuntal-module ngrams, e.g.:
 
         ip = ImportedPiece('path_to_piece')
@@ -1473,17 +1469,34 @@ class ImportedPiece:
             labels = labels.drop('Key', axis=1)
         return labels
 
-    def analyzeFourths(self, interval_settings=('d', True, False)):
+    def markFourths(self):
         '''
-        Distinguish between consonant and dissonant fourths. Returns a df of the harmonic
-        intervals of the piece according to the interval_settings passed. The difference is
-        that the consonant fourths have an "H" prepended to them, as in H4. Dissonant fourths
-        just appear as "4". A fourth is considered to be dissonant if the fourth is against
-        the same pitch class as the lowest sounding note.'''
-        memo_key = ('AnalyzeFourths', *interval_settings)
-        if memo_key in self.analyses:
-            return self.analyses['AnalyzeFourths']
-        har = self.harmonic(*interval_settings)
+        Distinguish between consonant and dissonant fourths. Returns a df of the diatonic,
+        directed, and simple intervals of the piece with a "D" appended to dissonant fourths.
+        Consonant fourths and all other intervals remain unchanged. A fourth is considered 
+        dissonant if it is against the same pitch class as the lowest sounding note.'''
+        if 'MarkFourths' in self.analyses:
+            return self.analyses['MarkFourths']
+        har = self.harmonic('d', True, False).copy()
+        nr = self.notes().ffill()
+        lowLine = self.lowLine()
+        label = 'D'  # the label to use for fourths against the lowest note
+        for col in har.columns:
+            for i in har.index:
+                if har.at[i, col] == '4':
+                    lowerVoice = col.split('_')[0]
+                    lowerNote = nr.at[i, lowerVoice]
+                    lowest = lowLine.asof(i)
+                    if lowerNote[0] == lowest[0]:
+                        har.at[i, col] += label
+                elif har.at[i, col] == '-4':
+                    upperVoice = col.split('_')[1]
+                    upperNote = nr.at[i, upperVoice]
+                    lowest = lowLine.asof(i)
+                    if upperNote[0] == lowest[0]:
+                        har.at[i, col] += label
+        self.analyses['MarkFourths'] = har
+        return har
 
     def _alpha_only(self, value):
         """
@@ -1498,7 +1511,6 @@ class ImportedPiece:
         """
         This function predicts homorhythmic passages in a given piece.
         The method follows various stages:
-
         gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets
         gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr
         checks the number of active voices (thus eliminating places where some voices have rests)
@@ -1638,7 +1650,6 @@ class ImportedPiece:
 
             part.append(curr)
             last = curr
-            # print(part)
 
         yield part
 
@@ -1863,6 +1874,7 @@ class ImportedPiece:
         b = '_'.join(map(str, a))
         return b
 
+
     def presentationTypes(self, melodic_ngram_length=4, limit_to_entries=True,
                           body_flex=0, head_flex=1, include_hidden_types=False,
                           combine_unisons=False):
@@ -1880,7 +1892,6 @@ class ImportedPiece:
         ["P1", "P4", "P-4", "P5", "P-5", "P8", "P-8", "P12", "P-12"] and can be adjusted via the code
         for _temp_dict_of_details
         - how many of the entries fail to overlap with each others
-
         It is also possible to find PEns and IDs that are 'hidden' within longer Fugas.
         Note that this method finds both PEns and IDs that can be found among all combinations
         of voices in a longer fuga (thus between entries 1, 2, 4; 2, 4, 5, etc) as well as those
@@ -2274,7 +2285,6 @@ def clean_melody_new(c):
     first_soggetto = list(c[0])
     soggetto_as_word = joiner(first_soggetto)
     return soggetto_as_word
-
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
 class CorpusBase:

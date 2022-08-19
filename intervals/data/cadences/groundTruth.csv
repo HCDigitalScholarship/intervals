@@ -8,7 +8,7 @@ index,CadType,LeadingTones,CVFs,Low,RelLow,Tone,RelTone,TSig,Measure,Beat,Progre
 140.0,Clausula Vera,1.0,tCT,G2,P1,G,P15,4/2,18,3.0,0.354,20.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei,t,-,C,T,,
 156.0,Authentic,1.0,CuTB,G2,P1,G,P15,4/2,20,3.0,0.394,16.0,36.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei,C,u,T,B,,
 192.0,Authentic,1.0,CuTB,B-2,m3,B-,m17,4/2,25,1.0,0.485,36.0,36.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei,C,u,T,B,,
-228.0,Plagal,1.0,CTP,D3,P5,A,M16,4/2,29,3.0,0.576,36.0,20.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei,C,-,T,P,,
+228.0,Phrygian,1.0,CTP,D3,P5,A,M16,4/2,29,3.0,0.576,36.0,20.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei,C,-,T,P,,
 248.0,Authentic,1.0,tCB,B-2,m3,B-,m17,4/2,32,1.0,0.626,20.0,28.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei,t,-,C,B,,
 276.0,Authentic,1.0,TuCB,D3,P5,D,P12,4/2,35,3.0,0.697,28.0,20.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei,T,u,C,B,,
 296.0,Clausula Vera,1.0,tCT,G2,P1,G,P15,4/2,38,1.0,0.747,20.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0012.mei,t,-,C,T,,

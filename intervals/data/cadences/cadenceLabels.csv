@@ -26,10 +26,10 @@ A2C3t2,Evaded Clausula Vera,1
 A2C3t1,Evaded Clausula Vera,1
 A3C3t2,Evaded Clausula Vera,1
 A3C3t1,Evaded Clausula Vera,1
-C2T-1,Phrygian,1
-A2C2T-1,Phrygian,1
-A3C3T-1,Phrygian,1
-A2C3T-1,Phrygian,1
+C2T-1,Phrygian Clausula Vera,1
+A2C2T-1,Phrygian Clausula Vera,1
+A3C3T-1,Phrygian Clausula Vera,1
+A2C3T-1,Phrygian Clausula Vera,1
 A1T-2,Altizans Only,1
 A1T-2x,Altizans Only,1
 A2T-2,Altizans Only,0
@@ -37,7 +37,7 @@ A1B,Reinterpreted,1
 A1b,Altizans Only,1
 T-2a,Evaded Altizans Only,-1
 A2T-1,Phrygian Altizans,1
-C2PT-1,Plagal,1
+C2PT-1,Phrygian,1
 BC1,Authentic,1
 BC2,Authentic,0
 BC1a,Authentic,1

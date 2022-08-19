@@ -642,9 +642,6 @@ class ImportedPiece:
             self.analyses['BeatStrength'] = df
         return self.analyses['BeatStrength']
 
-    def getBeatStrength(self):
-        return self.beatStrengths()
-
     def _getM21TSigObjs(self):
         if 'M21TSigObjs' not in self.analyses:
             tsigs = []
@@ -665,9 +662,6 @@ class ImportedPiece:
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
 
-    def getTimeSignature(self):
-        return self.timeSignatures()
-
     def measures(self):
         """
         This method retrieves the offsets of each measure in each voices.
@@ -682,9 +676,6 @@ class ImportedPiece:
             df.columns = self._getPartNames()
             self.analyses["Measure"] = df
         return self.analyses["Measure"]
-
-    def getMeasure(self):
-        return self.measures()
 
     def barlines(self):
         """
@@ -703,9 +694,6 @@ class ImportedPiece:
             self.analyses["Barline"] = df
         return self.analyses["Barline"]
 
-    def getBarline(self):
-        return self.barlines()
-
     def soundingCount(self):
         """
         This would return a series with the number of parts that currently have
@@ -722,9 +710,6 @@ class ImportedPiece:
             self.analyses['SoundingCount'] = ser
 
         return self.analyses['SoundingCount']
-
-    def getSoundingCount(self):
-        return self.soundingCount()
 
     def _zeroIndexIntervals(ntrvl):
         '''
@@ -838,9 +823,6 @@ class ImportedPiece:
             df = self.durations()
         return df.apply(self._durationalRatioHelper).dropna(how='all')
 
-    def getDurationalRatio(self, df=None):
-        return self.durationalRatios(df)
-
     def distance(self, df=None, n=3):
         '''
         Return the distances between all the values in df which should be a
@@ -892,9 +874,6 @@ class ImportedPiece:
         dist.columns = uni
         dist.index = uni
         return dist
-
-    def getDistance(self, df=None, n=3):
-        return self.distance(df, n)
 
     # July 2022 helper for flexed entries
     def _flexed_sum(self, item, head_flex):
@@ -972,70 +951,6 @@ class ImportedPiece:
             item[0] = 0
         return sum(item)
 
-    def flexed_distance(self, head_flex, df=None, n=3):
-          '''
-          Return the distances between all the values in df which should be a
-          dataframe of strings of integer ngrams. Specifically, this is meant for
-          0-indexed, directed, and compound melodic ngrams. If nothing is passed
-          for df, melodic ngrams of this type will be provided at the value of n
-          passed. An alternative that would make sense would be to use chromatic
-          melodic intervals instead.
-
-          This function differs from "distance" in that it treats the first item in
-          each ngram differently from the others.  That is, the first item can "flex"
-          differently from the remainder.  Thus users can choose a overal body_flex
-          of "0" while still allowing flexing only at the head of the ngram.
-
-          The default flex is up to "1" unit of difference, but passing the "head_flex"
-          argument allows users to set their own threshold.
-
-          This function is meant mainly for melodic ngrams, but it can also be used
-          for durational ngrams.
-
-          Usage:
-
-          # Call like this:
-          importedPiece.flexed_distance()
-
-          # If you don't pass a value for df, you can specify a different value
-          # for n to change from the default of 3:
-          importedPiece.flexed_distance(n=5)
-
-          # If you already have the melodic ngrams calculated for a different
-          # aspect of your query, you can pass that as df to save a little
-          # runtime on a large query. Note that if you pass something for df,
-          # the n parameter will be ignored:
-          mel = importedPiece.melodic('z', True, True)
-          ngrams = importedPiece.ngrams(df=mel, n=4, exclude=['Rest'])
-          importedPiece.flexed_distance(df=ngrams)
-
-          # To search the table for the distances from a given pattern, just get
-          # the column of that name. This is example looks for distances
-          # involving a melodic pattern that goes up a step, down a third, up a
-          # step, down a third:
-          dist = importedPiece.flexed_distance(n=4)
-          target = '1, -2, 1, -2'
-          col = dist[target]
-
-          # If you then want to filter that column, say to flexed distances less than or
-          # equal to 2, do this:
-          col[col <= 2]
-          '''
-          if df is None:
-              df = self.melodic('z', True, True)
-              df = self.ngrams(df=df, n=n, exclude=['Rest'])
-          uni = df.stack().unique()
-          ser = pd.Series(uni)
-          if isinstance(uni[0], str):
-              df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
-          else:
-              df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
-          cols = [(df - df.loc[i]).abs().apply(self._flexed_sum, axis=1, args=(head_flex,)) for i in df.index]
-          dist = pd.concat(cols, axis=1)
-          dist.columns = uni
-          dist.index = uni
-          return dist
-
     def melodic(self, kind='q', directed=True, compound=True, unit=0, end=True, df=None):
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
@@ -1090,9 +1005,6 @@ class ImportedPiece:
                 self.analyses[key] = _df
         return self.analyses[key]
 
-    def getMelodic(self, kind='q', directed=True, compound=True, unit=0, end=True, df=None):
-        return self.melodic(kind, directed, compound, unit, end, df)
-
     def _getM21HarmonicIntervals(self):
         if 'M21HarmonicIntervals' not in self.analyses:
             m21Objs = self._getM21ObjsNoTies()
@@ -1143,9 +1055,6 @@ class ImportedPiece:
                 df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
             self.analyses[key] = df
         return self.analyses[key]
-
-    def getHarmonic(self, kind='q', directed=True, compound=True):
-        return self.harmonic(kind, directed, compound)
 
     def _ngrams_offsets_helper(col, n, offsets):
         """
@@ -1323,13 +1232,6 @@ class ImportedPiece:
             return pd.concat(cols, axis=1)
         else:
             return pd.DataFrame()
-
-    def getNgrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
-                  exclude=['Rest'], interval_settings=('d', True, True), unit=0,
-                  offsets='first', show_both=True):
-        return self.ngrams(df=df, n=n, other=other, held=held, exclude=exclude,
-            interval_settings=interval_settings, unit=unit, offsets=offsets,
-            show_both=show_both)
 
     def _cvf_helper(self, row, df):
         '''
@@ -1535,18 +1437,6 @@ class ImportedPiece:
             labels = labels.drop('Key', axis=1)
         return labels
 
-    def classifyCadences(self, return_type='cadences', keep_keys=False):
-        '''
-        This method has been deprecated. Please use .cvfs() for cadential
-        voice function analysis or .cadences() for cadential analysis. In both cases,
-        you no longer need the `return_type` parameter and should not pass it.
-        The `keep_keys` parameter works the same in those two functions.'''
-        print(self.classifyCadences.__doc__)
-        if return_type[0].lower() == 'f':
-            return self.cvfs(keep_keys=keep_keys)
-        else:
-            return self.cadences(keep_keys=keep_keys)
-
     def _alpha_only(self, value):
         """
         This helper function is used by HR classifier.  It removes non-alphanumberic characters from lyrics
@@ -1631,8 +1521,6 @@ class ImportedPiece:
         mask = nr.apply(self._entryHelper)
         return mask
 
-    def getEntryMask(self):
-        return self.entryMask()
 
     def entries(self, df=None, n=None):
         """
@@ -1656,9 +1544,6 @@ class ImportedPiece:
             df = self.ngrams(df, n)
         mask = self.entryMask()
         return df[mask].dropna(how='all')
-
-    def getEntries(self, df=None, n=None):
-        return self.entries(df, n)
 
     def _find_entry_int_distance(self, coordinates):
         """
@@ -2097,140 +1982,6 @@ class ImportedPiece:
             points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
             points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
             points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
-            return points_combined
-
-    def classify_entries_as_presentation_types(piece, nr, mel_ng, entries, body_flex, include_hidden_types):
-
-        """
-        This is the older name of the presentationTypes function, and shoul no longer be used.
-        """
-        # Classifier with Functions
-        points = pd.DataFrame(columns=['Composer',
-                     'Title',
-                     'First_Offset',
-                     'Measures_Beats',
-                     'Melodic_Entry_Intervals',
-                     'Offsets',
-                     'Soggetti',
-                     'Time_Entry_Intervals',
-                     'Voices',
-                     'Presentation_Type'])
-        points2 = pd.DataFrame()
-
-        det = piece.detailIndex(nr, offset=True)
-        mels_stacked = entries.stack().to_frame()
-        mels_stacked.rename(columns =  {0:"pattern"}, inplace = True)
-        # edit distance, based on side-by-side comparison of melodic ngrams
-        # gets flexed and other similar soggetti
-        dist = piece.distance(entries)
-        dist_stack = dist.stack().to_frame()
-
-        # filter distances to threshold.  <2 is good
-        distance_factor = body_flex + 1
-        filtered_dist_stack = dist_stack[dist_stack[0] < distance_factor]
-        filtered_dist = filtered_dist_stack.reset_index()
-        filtered_dist.rename(columns =  {'level_0':"source", 'level_1':'match'}, inplace = True)
-
-        # Group the filtered distanced patterns
-        full_list_of_matches = filtered_dist.groupby('source')['match'].apply(list).reset_index()
-
-        if include_hidden_types == False:
-
-            for matches in full_list_of_matches["match"]:
-                related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
-                entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
-                offset_list = entry_array.index.to_list()
-                split_list = list(split_by_threshold(offset_list))
-                for item in split_list:
-                # here is the list of starting offsets of the original set of entries:  slist
-
-                    temp = _temp_dict_of_details(item, entry_array, det, matches, piece)
-
-
-                    points = points.append(temp, ignore_index=True)
-                    points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-                    # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-                    points = points[points['Offsets'].apply(len) > 1]
-
-            points["Offsets_Key"] = points["Offsets"].apply(offset_joiner)
-            points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
-            points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
-            points["Number_Entries"] = points["Offsets"].apply(len)
-            col_order = ['Composer',
-                     'Title',
-                     'First_Offset',
-                     'Measures_Beats',
-                     'Melodic_Entry_Intervals',
-                     'Offsets',
-                     'Soggetti',
-                     'Time_Entry_Intervals',
-                     'Voices',
-                     'Presentation_Type',
-                      'Number_Entries',
-                    'Flexed_Entries']
-            points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-            return points
-
-        elif include_hidden_types == True:
-            hidden_types_list = ["PEN", "ID"]
-
-            for matches in full_list_of_matches["match"]:
-                related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
-                entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
-                offset_list = entry_array.index.to_list()
-                split_list = list(split_by_threshold(offset_list))
-                for item in split_list:
-                # here is the list of starting offsets of the original set of entries:  slist
-
-                    temp = _temp_dict_of_details(item, entry_array, det, matches, piece)
-
-
-                    points = points.append(temp, ignore_index=True)
-                    points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-                    # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-                    points = points[points['Offsets'].apply(len) > 1]
-            # return(points)
-
-
-                for item in split_list:
-                    # here is the list of starting offsets of the original set of entries:  slist
-
-                    temp = _temp_dict_of_details(item, entry_array, det, matches, piece)
-                    lto = len(temp["Offsets"])
-                    if lto > 2 :
-                        for r in range(3, 6):
-                            list_combinations = list(combinations(item, r))
-                            for slist in list_combinations:
-
-                                temp = _temp_dict_of_details(slist, entry_array, det, matches, piece)
-
-                                temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
-                                # print(temp)
-
-                                if 'PEN' in temp["Presentation_Type"]:
-                                    points2 = points2.append(temp, ignore_index=True)
-                                if 'ID' in temp["Presentation_Type"]:
-                                    points2 = points2.append(temp, ignore_index=True)
-
-            points_combined = points.append(points2, ignore_index=True)
-            points_combined["Offsets_Key"] = points_combined["Offsets"].apply(offset_joiner)
-            points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace = True)
-            points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
-            points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
-            col_order = ['Composer',
-                     'Title',
-                     'First_Offset',
-                     'Measures_Beats',
-                     'Melodic_Entry_Intervals',
-                     'Offsets',
-                     'Soggetti',
-                     'Time_Entry_Intervals',
-                     'Voices',
-                     'Presentation_Type',
-                      'Number_Entries',
-                    'Flexed_Entries']
-            # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
-            points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
             return points_combined
 
 # July 2022 Addition for printing cadence types with Verovio

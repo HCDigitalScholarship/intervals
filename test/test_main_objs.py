@@ -24,7 +24,7 @@ def test_get_note_rests():
         hardcoded_nr = pd.DataFrame(FILES_NOTE_RESTS[i])
         file = TEST_FILES[i]
         model = get_crim_model(file)
-        nr = model.getNoteRest()
+        nr = model.notes()
 
         for row in hardcoded_nr.index:
             for col in hardcoded_nr.columns:

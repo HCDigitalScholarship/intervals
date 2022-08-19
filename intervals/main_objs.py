@@ -485,9 +485,6 @@ class ImportedPiece:
             result = result[mask]
         return result.dropna(how='all')
 
-    def getDuration(self, df=None, n=1, mask_df=None):
-        return self.durations(df, n, mask_df)
-
     def lyrics(self):
         '''
         Return a dataframe of the lyrics associated with each note in the piece.
@@ -498,9 +495,6 @@ class ImportedPiece:
             df.fillna(np.nan, inplace=True)
             self.analyses['Lyric'] = df
         return self.analyses['Lyric']
-
-    def getLyric(self):
-        return self.lyrics()
 
     def _noteRestHelper(self, noteOrRest):
         if noteOrRest.isRest:
@@ -534,9 +528,6 @@ class ImportedPiece:
         if combineUnisons:
             ret = ret.apply(self._combineUnisons)
         return ret
-
-    def getNoteRest(self, combineRests=True, combineUnisons=False):
-        return self.notes(combineRests, combineUnisons)
 
     def _getBeatUnit(self):
         '''
@@ -1453,7 +1444,7 @@ class ImportedPiece:
         checks the number of active voices (thus eliminating places where some voices have rests)
         """
         if 'Homorhythm' in self.analyses:
-            return self.analyses['Homorhythm2']
+            return self.analyses['Homorhythm']
         # active version with lyric ngs
         nr = self.notes()
         dur = self.durations(df=nr)

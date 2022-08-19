@@ -946,11 +946,6 @@ class ImportedPiece:
           dist.index = uni
           return dist
 
-    def _flexed_sum(self, item, head_flex):
-        if item[0] <= head_flex:
-            item[0] = 0
-        return sum(item)
-
     def melodic(self, kind='q', directed=True, compound=True, unit=0, end=True, df=None):
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
@@ -2219,14 +2214,6 @@ def clean_melody_new(c):
     soggetto_as_word = joiner(first_soggetto)
     return soggetto_as_word
 
-#  HR classifier
-def find_hr(piece):
-
-    """
-    This is the old name of the homorhythm function.
-
-    """
-    return piece.homorhythm()
 
 # For mass file uploads, only compatible for whole piece analysis, more specific tuning to come
 class CorpusBase:

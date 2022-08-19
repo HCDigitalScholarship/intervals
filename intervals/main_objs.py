@@ -529,6 +529,54 @@ class ImportedPiece:
             ret = ret.apply(self._combineUnisons)
         return ret
 
+    def lowLine(self):
+        '''
+        Return a series that corresponds to the lowest sounding note of the piece at
+        any given moment. Attack information cannot be reliably preserved so
+        consecutive repeated notes and rests are combined. If all parts have a rest,
+        then "Rest" is shown for that stretch of the piece.'''
+        # use m21 objects so that you can do comparison with min
+        notes = self._getM21ObjsNoTies()
+        # you can't compare notes and rests, so replace rests with a really high note
+        highNote = note.Note('C9')
+        notes = notes.applymap(lambda n: highNote if n.isRest else n, na_action='ignore')
+        notes.ffill(inplace=True)
+        lowLine = notes.apply(min, axis=1)
+        lowLine = lowLine.apply(lambda n: n.nameWithOctave)
+        lowLine.replace('C9', 'Rest', inplace=True)
+        lowLine.name = 'Low Line'
+        return lowLine[lowLine != lowLine.shift()]
+
+    def final(self):
+        '''
+        Return the final of the piece, defined as the lowest sounding note at
+        the end of the piece.'''
+        if 'Final' not in self.analyses:
+            lowLine = self.lowLine()
+            final = lowLine.iat[-1]
+            if final == 'Rest':
+                final = lowLine.iat[-2]
+        self.analyses['Final'] = final
+        return self.analyses['Final']
+
+    def highLine(self):
+        '''
+        Return a series that corresponds to the highest sounding note of the piece at
+        any given moment. Attack information cannot be reliably preserved so
+        consecutive repeated notes and rests are combined. If all parts have a rest,
+        then "Rest" is shown for that stretch of the piece.'''
+        # use m21 objects so that you can do comparison with min
+        notes = self._getM21ObjsNoTies()
+        # you can't compare notes and rests, so replace rests with a really high note
+        lowNote = note.Note('C', octave=-9)
+        notes = notes.applymap(lambda n: lowNote if n.isRest else n, na_action='ignore')
+        notes.ffill(inplace=True)
+        highLine = notes.apply(max, axis=1)
+        highLine = highLine.apply(lambda n: n.nameWithOctave)
+        highLine.replace('C-9', 'Rest', inplace=True)
+        highLine.name = 'High Line'
+        return highLine[highLine != highLine.shift()]
+
     def _getBeatUnit(self):
         '''
         Return a dataframe of the duration of the beat for each time signature
@@ -1424,6 +1472,18 @@ class ImportedPiece:
         if not keep_keys:
             labels = labels.drop('Key', axis=1)
         return labels
+
+    def analyzeFourths(self, interval_settings=('d', True, False)):
+        '''
+        Distinguish between consonant and dissonant fourths. Returns a df of the harmonic
+        intervals of the piece according to the interval_settings passed. The difference is
+        that the consonant fourths have an "H" prepended to them, as in H4. Dissonant fourths
+        just appear as "4". A fourth is considered to be dissonant if the fourth is against
+        the same pitch class as the lowest sounding note.'''
+        memo_key = ('AnalyzeFourths', *interval_settings)
+        if memo_key in self.analyses:
+            return self.analyses['AnalyzeFourths']
+        har = self.harmonic(*interval_settings)
 
     def _alpha_only(self, value):
         """

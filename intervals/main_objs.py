@@ -617,7 +617,8 @@ class ImportedPiece:
             self.analyses['BeatIndex'] = ser
         return self.analyses['BeatIndex']
 
-    def detailIndex(self, df, measure=True, beat=True, offset=False, t_sig=False, progress=False, _all=False):
+    def detailIndex(self, df, measure=True, beat=True, offset=False, t_sig=False,
+        sounding=False, progress=False, _all=False):
         '''
         Return the passed dataframe with a multi-index of any combination of the
         measure, beat, offset, prevailing time signature, and progress towards
@@ -629,7 +630,7 @@ class ImportedPiece:
         cols = [df]
         names = []
         if _all:
-            measure, beat, offset, t_sig, progress = True, True, True, True, True
+            measure, beat, offset, t_sig, sounding, progress = [True] * 6
         if measure:
             cols.append(self.measures().iloc[:, 0])
             names.append('Measure')
@@ -642,6 +643,9 @@ class ImportedPiece:
         if t_sig:
             cols.append(self.timeSignatures().iloc[:, 0])
             names.append('TSig')
+        if sounding:
+            cols.append(self.soundingCount())
+            names.append('Sounding')
         if progress:
             prog = (df.index / self.notes().index[-1]).to_series()
             prog.index = df.index
@@ -658,11 +662,11 @@ class ImportedPiece:
         ret.sort_index(inplace=True)
         return ret
     
-    def di(self, df, measure=True, beat=True, offset=False, t_sig=False, progress=False, _all=False):
+    def di(self, df, measure=True, beat=True, offset=False, t_sig=False, progress=False, sounding=False, _all=False):
         """
         Convenience shortcut for .detailIndex. See that method's documentation for instructions."""
         return self.detailIndex(df=df, measure=measure, beat=beat, offset=offset,
-                                t_sig=t_sig, progress=progress, _all=_all)
+                                t_sig=t_sig, progress=progress, sounding=sounding, _all=_all)
 
     def _beatStrengthHelper(self, noteOrRest):
         if hasattr(noteOrRest, 'beatStrength'):
@@ -1383,12 +1387,20 @@ class ImportedPiece:
         "Rel" is short for relative, so "RelLow" is the lowest pitch of each
         cadence shown as an interval measured against the final. Likewise,
         "RelTone" is the cadential tone shown as an interval measured against the
-        final. If `keep_keys` is set to True, the "Key" column will be kept in the
+        final.
+        If `keep_keys` is set to True, the "Key" column will be kept in the
         cadence results table. This corresponds to the combination of cadential voice
         functions and chromatic intervals used as a key to lookup the cadence
-        information in the cadenceLabels.csv file. The "Progress" column gives
-        the progress toward the end of the piece measured 0-1 where 1 is the 
-        time point of the last attack in the piece.        
+        information in the cadenceLabels.csv file.
+        The "Sounding" column shows how many voices were sounding at the moment of
+        the cadence. Note that this count includes voices that did not have a CVF
+        role in the cadence, and ones that only started at the perfection. The
+        "Progress" column gives the progress toward the end of the piece measured 0-1
+        where 1 is the time point of the last attack in the piece.
+        Usage:
+
+        piece = importScore('url_to_piece')
+        piece.cadences()
         '''
         if 'Cadences' in self.analyses:
             if keep_keys:
@@ -1418,15 +1430,14 @@ class ImportedPiece:
         labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(final, note.Note(x))))
         labels.RelTone = labels.RelTone[labels.Tone.notnull()]
         labels.Tone = labels.Tone.fillna(np.nan)
-        tsig = self.timeSignatures().iloc[:, 0]
-        tsig.name = 'TSig'
-        temp = pd.concat([labels, tsig], axis=1)
-        temp['TSig'].ffill(inplace=True)
-        labels = temp.loc[labels.index, :]
-        labels['Measure'] = self.measures().iloc[:, 0].asof(labels.index).astype(int)
-        beat = self.getBeat().loc[labels.index, :]
-        labels['Beat'] = beat.bfill(axis=1).iloc[:, 0]
-        labels['Progress'] = labels.index / nr.index[-1]
+        detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, sounding=True, progress=True)
+        # import pdb
+        # pdb.set_trace()
+        labels['TSig'] = detailed.index.get_level_values(2).values
+        labels['Measure'] = detailed.index.get_level_values(0).values
+        labels['Beat'] = detailed.index.get_level_values(1).values
+        labels['Sounding'] = detailed.index.get_level_values(3).values
+        labels['Progress'] = detailed.index.get_level_values(4).values
         ndx = labels.index.to_series()
         labels['SinceLast'] = ndx - ndx.shift(1)
         labels.iat[0, -1] = labels.index[0]

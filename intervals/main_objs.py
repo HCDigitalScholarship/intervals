@@ -1431,8 +1431,6 @@ class ImportedPiece:
         labels.RelTone = labels.RelTone[labels.Tone.notnull()]
         labels.Tone = labels.Tone.fillna(np.nan)
         detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, sounding=True, progress=True)
-        # import pdb
-        # pdb.set_trace()
         labels['TSig'] = detailed.index.get_level_values(2).values
         labels['Measure'] = detailed.index.get_level_values(0).values
         labels['Beat'] = detailed.index.get_level_values(1).values

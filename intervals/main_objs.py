@@ -1471,7 +1471,16 @@ class ImportedPiece:
         '''
         Return the portion of the piece that corresponds to the supplementum. This is defined as
         the part after the last cadence.'''
-        pass
+        if 'Supplementum' not in self.analyses:
+            cads = self.cadences()
+            if cads['Progress'].iat[-1] == 1:
+                supp = None
+            else:
+                lastCad = cads.index[-1]
+                supp = self.notes().loc[lastCad:]
+            self.analyses['Supplementum'] = supp
+        return self.analyses['Supplementum']
+
 
     def classifyCadences(self, return_type='cadences', keep_keys=False):
         '''

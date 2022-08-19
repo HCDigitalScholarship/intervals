@@ -103,7 +103,7 @@ def test_get_measure():
 
 def test_get_time_signature():
     """
-    Validate getTimeSignature by making sure that the time signature are the same
+    Validate timeSignatures by making sure that the time signature are the same
     as the hardcoded values for each files
     """
 
@@ -111,7 +111,7 @@ def test_get_time_signature():
         model = get_crim_model(TEST_FILES[i])
 
         # check measures
-        ts = model.getTimeSignature()
+        ts = model.timeSignatures()
         hardcoded_ts = pd.DataFrame(TEST_FILES_TS[i])
 
         for row in hardcoded_ts.index:

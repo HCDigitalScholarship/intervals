@@ -121,7 +121,7 @@ def test_get_time_signature():
 
 def test_get_sounding_count():
     """
-    Validate getSoundingCount() by making sure that the sounding count are the same
+    Validate soundingCount() by making sure that the sounding count are the same
     as the hardcoded values for each files
     """
 
@@ -129,7 +129,7 @@ def test_get_sounding_count():
         model = get_crim_model(TEST_FILES[i])
 
         # check measures
-        sc = model.getSoundingCount()
+        sc = model.soundingCount()
         hardcoded_sc = pd.Series(TEST_FILES_SC[i])
 
         for row in hardcoded_sc.index:

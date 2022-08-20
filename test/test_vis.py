@@ -21,7 +21,7 @@ def ngrams_heatmap_test_helper(model, notes):
     :return: a chart
     """
     # test no durations
-    ngrams = model.getNgrams(df=notes, n=5)
+    ngrams = model.ngrams(df=notes, n=5)
     chart = viz.plot_ngrams_heatmap(ngrams_df=ngrams)
 
     # retrieved two charts: one pattern bar chart
@@ -30,7 +30,7 @@ def ngrams_heatmap_test_helper(model, notes):
     assert len(chart.vconcat) == 2
 
     # test no durations
-    ngrams_multiple = model.getNgrams(df=notes, n=-1)
+    ngrams_multiple = model.ngrams(df=notes, n=-1)
     chart_multiple = viz.plot_ngrams_heatmap(ngrams_df=ngrams_multiple)
 
     # retrieved two charts: one pattern bar chart
@@ -91,15 +91,15 @@ def test_plot_ngrams_heatmap():
     model = corpus.scores[0]
 
     # mel
-    mel_notes = model.getMelodic(kind='q', directed=True, compound=True, unit=0)
+    mel_notes = model.melodic(kind='q', directed=True, compound=True, unit=0)
     ngrams_heatmap_test_helper(model, mel_notes)
     # diatonic
-    mel_diatonic = model.getMelodic(kind='d', directed=True, compound=True, unit=0)
+    mel_diatonic = model.melodic(kind='d', directed=True, compound=True, unit=0)
     ngrams_heatmap_test_helper(model, mel_diatonic)
 
 
 def helper_test_close_match_(model, notes):
-    ngrams = model.getNgrams(df=notes, n=5)
+    ngrams = model.ngrams(df=notes, n=5)
     popular_patterns = ngrams.stack().dropna().value_counts().head(5).index.to_list()
 
     for i in range(5):
@@ -111,15 +111,15 @@ def test_plot_close_match_heatmap():
     model = corpus.scores[0]
 
     # detailed diatonic
-    mel_notes = model.getMelodic(kind='q', directed=True, compound=True, unit=0)
+    mel_notes = model.melodic(kind='q', directed=True, compound=True, unit=0)
     helper_test_close_match_(model, mel_notes)
 
     # ngrams in diatonics
-    mel_diatonic = model.getMelodic(kind='d', directed=True, compound=True, unit=0)
+    mel_diatonic = model.melodic(kind='d', directed=True, compound=True, unit=0)
     helper_test_close_match_(model, mel_diatonic)
 
 
-# Turned off because of fraction issues with old getDuration results
+# Turned off because of fraction issues with old durations results
 # def helper_test_generate_ngrams_and_dur(model, notes, n):
 #     # throw things into get ngrams and duration
 #     ngrams, ngrams_dur = viz.generate_ngrams_and_duration(model, df=notes, n=n)
@@ -141,7 +141,7 @@ def test_plot_close_match_heatmap():
 #                 assert (ngram_notes[i] == ngram[i])
 
 
-# Turned off because of fraction issues with old getDuration results
+# Turned off because of fraction issues with old durations results
 # def test_generate_ngrams_and_dur():
 #     corpus = CorpusBase([EXAMPLE_CRIM_FILE])
 #     model = corpus.scores[0]
@@ -150,17 +150,17 @@ def test_plot_close_match_heatmap():
 #     # works for this case
 
 #     # mel
-#     mel_notes = model.getMelodic(kind='q', directed=True, compound=True, unit=0)
+#     mel_notes = model.melodic(kind='q', directed=True, compound=True, unit=0)
 #     helper_test_generate_ngrams_and_dur(model, mel_notes, 5)
 #     # helper_test_generate_ngrams_and_dur(model, mel_notes, -1)
 
 #     # diatonic
-#     mel_diatonic = model.getMelodic(kind='d', directed=True, compound=True, unit=0)
+#     mel_diatonic = model.melodic(kind='d', directed=True, compound=True, unit=0)
 #     helper_test_generate_ngrams_and_dur(model, mel_diatonic, 5)
 #     # helper_test_generate_ngrams_and_dur(model, mel_diatonic, -1)
 
 #     # chromatic
-#     mel_chromatic = model.getMelodic(kind='c', directed=True, compound=True, unit=0)
+#     mel_chromatic = model.melodic(kind='c', directed=True, compound=True, unit=0)
 #     helper_test_generate_ngrams_and_dur(model, mel_chromatic, 5)
 #     # helper_test_generate_ngrams_and_dur(model, mel_chromatic, -1)
 

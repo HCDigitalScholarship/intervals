@@ -427,13 +427,13 @@ def ema2ex(emaStr, df):
 def _gatherNgram(row):
     ema, url, cz, tz = row  # cz/tz are for cantizans/tenorizans
     piece = importScore(url)
-    nr = piece.getNoteRest()
+    nr = piece.notes()
     di = piece.detailIndex(nr, offset=True)
     excerpt = ema2ex(ema, di)
     if len(excerpt.columns) != 2 or len(excerpt) == 0:
         return (False,)*4
     n = len(excerpt)
-    ngrams = piece.getNgrams(n=n, how='modules', offsets='last')
+    ngrams = piece.ngrams(n=n, how='modules', offsets='last')
     pair = '_'.join(excerpt.columns)
     if pair not in ngrams.columns:
         pair = '_'.join(reversed(excerpt.columns))

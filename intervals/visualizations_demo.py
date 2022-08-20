@@ -63,11 +63,11 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
 
 def _process_ngrams_df_helper(ngrams_df, main_col):
     """
-    The output from the getNgram is usually a table with
+    The output from the ngrams is usually a table with
     four voices and ngram of notes properties (duration or
     pitch). This method stack this property onto one column
     and mark which voices they are from.
-    :param ngrams_df: direct output from getNgram with 1 columns
+    :param ngrams_df: direct output from ngrams with 1 columns
     for each voices and ngrams of notes' properties.
     :param main_col: the name of the property
     :return: a dataframe with ['start', main_col, 'voice'] as columns
@@ -89,7 +89,7 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
     patterns. It could also filter out specific voices or patterns
     for the users to analyze.
 
-    :param ngrams_df: dataframe we got from getNgram in crim-interval
+    :param ngrams_df: dataframe we got from ngram in crim-interval
     :param ngrams_duration: if not None, simply output the offsets of the
     ngrams. If we have durations, calculate the end by adding the offsets and
     the durations.
@@ -120,8 +120,8 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
 
 def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300):
     """
-    Plot a heatmap for crim-intervals getNgram's processed output.
-    :param ngrams_df: processed crim-intervals getNgram's output.
+    Plot a heatmap for crim-intervals ngram's processed output.
+    :param ngrams_df: processed crim-intervals ngram's output.
     :param selected_pattern: list of specific patterns the users want (optional)
     :param voices: list of specific voices the users want (optional)
     :param heatmap_width: the width of the final heatmap (optional)
@@ -145,8 +145,8 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
 def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,
                         heatmap_height=300):
     """
-    Plot a heatmap for crim-intervals getNgram's output.
-    :param ngrams_df: crim-intervals getNgram's output
+    Plot a heatmap for crim-intervals ngram's output.
+    :param ngrams_df: crim-intervals ngram's output
     :param ngrams_duration: if not None, rely on durations in the
     df to calculate the durations of the ngrams.
     :param selected_patterns: list of specific patterns the users want (optional)
@@ -298,7 +298,7 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
     """
     Plot how closely the other vectors match a selected vector.
     Uses the Levenshtein distance.
-    :param ngrams_df: crim-intervals getNgram's output
+    :param ngrams_df: crim-intervals ngram's output
     :param key_pattern: a pattern the users selected to compare other patterns with (tuple of floats)
     :param selected_pattern: the specific other vectors the users selected
     :param ngrams_duration: if None, simply output the offsets. If the users input a
@@ -334,23 +334,23 @@ def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
     :param model: an Imported Piece object.
     :param df: dataframe containing consecutive notes.
     :param n: accept any positive integers and would output ngrams of the corresponding sizes
-    can't handle the n=-1 option (refer to getNgrams documentation for more)
-    :param exclude: (refer to getNgrams documentation)
-    :param interval_settings: (refer to getNgrams documentation)
-    :param offsets: (refer to getNgrams documentation)
+    can't handle the n=-1 option (refer to ngrams documentation for more)
+    :param exclude: (refer to ngrams documentation)
+    :param interval_settings: (refer to ngrams documentation)
+    :param offsets: (refer to ngrams documentation)
     :return: ngram and corresponding duration dataframe!
     """
     if n==-1:
         raise Exception("Cannot calculate the duration for this type of ngrams")
 
     # compute dur for the ngrams
-    dur = model.getDuration(df)
+    dur = model.durations(df)
     dur = dur.reindex_like(df).applymap(str, na_action='ignore')
     # combine them and generate ngrams and duration at the same time
     notes_dur = pd.concat([df, dur])
-    ngrams = model.getNgrams(df=df, n=n, exclude=exclude,
+    ngrams = model.ngrams(df=df, n=n, exclude=exclude,
                              interval_settings=interval_settings, unit=0, offsets=offsets)
-    dur_ngrams = model.getNgrams(df=dur, n=n, exclude=exclude,
+    dur_ngrams = model.ngrams(df=dur, n=n, exclude=exclude,
                                  interval_settings=interval_settings, unit=0, offsets=offsets)
     dur_ngrams = dur_ngrams.reindex_like(ngrams)
 

@@ -2133,7 +2133,7 @@ def verovio_print_cadences(piece, cadences, url, mei_file):
             print("Beat: ", c_beat)
             print("Cadence Tone: ", c_tone)
             print("Cadence Type: ", c_type)
-            print("Evaded Cadence: ", evaded_c)
+            print("Cadential Voice Functions: ", cvfs)
             display(SVG(music))
 
 # July 2022 Addition for printing presentation types with Verovio

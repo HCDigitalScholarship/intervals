@@ -660,7 +660,7 @@ class ImportedPiece:
         ret.dropna(inplace=True, how='all')
         ret.sort_index(inplace=True)
         return ret
-    
+
     def di(self, df, measure=True, beat=True, offset=False, t_sig=False, sounding=False, progress=False, _all=False):
         """
         Convenience shortcut for .detailIndex. See that method's documentation for instructions."""
@@ -1484,7 +1484,7 @@ class ImportedPiece:
         '''
         Distinguish between consonant and dissonant fourths. Returns a df of the diatonic,
         directed, and simple intervals of the piece with a "D" appended to dissonant fourths.
-        Consonant fourths and all other intervals remain unchanged. A fourth is considered 
+        Consonant fourths and all other intervals remain unchanged. A fourth is considered
         dissonant if it is against the same pitch class as the lowest sounding note.'''
         if 'AnalyzeFourths' in self.analyses:
             return self.analyses['AnalyzeFourths']
@@ -1508,7 +1508,7 @@ class ImportedPiece:
                         har.at[i, col] += label
         self.analyses['AnalyzeFourths'] = har
         return har
-                    
+
 
     def supplementum(self):
         '''
@@ -2110,7 +2110,7 @@ def verovio_print_cadences(piece, cadences, url, mei_file):
         c_tone = cadences.loc[cad]["Tone"]
         c_type = cadences.loc[cad]["CadType"]
         c_beat = cadences.loc[cad]["Beat"]
-        evaded_c = cadences.loc[cad]['Evaded']
+        cvfs = cadences.loc[cad]['CVFs']
         low = c_meas-1
         high = c_meas
         mr = str(low) + "-" + str(high)

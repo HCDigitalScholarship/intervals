@@ -1943,7 +1943,7 @@ class ImportedPiece:
         piece.presentationTypes(head_flex=1)
         """
         memo_key = ('PresentationTypes', melodic_ngram_length, limit_to_entries,
-            edit_distance_threshold, flex_threshold, include_hidden_types, combine_unisons)
+            body_flex, head_flex, include_hidden_types, combine_unisons)
         if memo_key in self.analyses:
             return self.analyses[memo_key]
         nr = self.notes(combineUnisons=combine_unisons)

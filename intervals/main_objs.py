@@ -2357,7 +2357,7 @@ class CorpusBase:
         self.note_list = self.note_list_whole_piece()
         self.no_unisons = self.note_list_no_unisons()
 
-    def batch(self, func, kwargs={}, metadata=True):
+    def batch(self, func, kwargs={}, metadata=True, verbose=False):
         '''
         Run the `func` on each of the scores in this CorpusBase object and
         return a list of the results. `func` should be a method from the
@@ -2410,12 +2410,20 @@ class CorpusBase:
         list_of_dfs = corpus.batch(func=func1, kwargs={'end': False}, metadata=False)
         func2 = ImportedPiece.ngrams
         list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
+
+        You can also set verbose=True if you want to print out the function that you're calling
+        and the piece you're analyzing during the analysis. This can be useful to pinpoint a
+        piece that is triggering a bug.
         '''
         post = []
         dfs = ('df', 'mask_df', 'other')
         _kwargs = {key: val for key, val in kwargs.items() if key not in dfs}
         list_args = {key: val for key, val in kwargs.items() if key in dfs}
+        if verbose:
+            print('\nRunning {} analysis on {} pieces:'.format(func.__name__, len(self.scores)))
         for i, score in enumerate(self.scores):
+            if verbose:
+                print('\t{}: {}'.format(i + 1, score.metadata['title']))
             largs = {key: val[i] for key, val in list_args.items()}
             df = func(score, **_kwargs, **largs)
             if isinstance(df, pd.DataFrame):

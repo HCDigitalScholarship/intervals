@@ -358,6 +358,26 @@ class ImportedPiece:
             self.analyses['PartNames'] = part_names
         return self.analyses['PartNames']
 
+    def _getPartNumberDict(self):
+        '''
+        Return a dictionary mapping part names to their numerical position on the staff,
+        starting at 1 and counting from the highest voice.'''
+        if 'PartNumberDict' not in self.analyses:
+            parts = self._getPartNames()
+            names2nums = {part: str(i + 1) for i, part in enumerate(parts)}
+            self.analyses['PartNumberDict'] = names2nums
+        return self.analyses['PartNumberDict']
+
+    def numberParts(self, df):
+        '''
+        Return the passed df with the part names in the columns replaced with numbers
+        where 1 is the highest staff.'''
+        _dict = self._getPartNumberDict()
+        cols = ['_'.join(_dict.get(part, part) for part in col.split('_')) for col in df.columns]
+        res = df.copy()
+        res.columns = cols
+        return res
+
     def _getM21Objs(self):
         if 'M21Objs' not in self.analyses:
             part_names = self._getPartNames()

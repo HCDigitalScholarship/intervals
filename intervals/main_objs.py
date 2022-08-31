@@ -2377,7 +2377,7 @@ class CorpusBase:
         self.note_list = self.note_list_whole_piece()
         self.no_unisons = self.note_list_no_unisons()
 
-    def batch(self, func, kwargs={}, metadata=True, verbose=False):
+    def batch(self, func, kwargs={}, metadata=True, numberParts=True, verbose=False):
         '''
         Run the `func` on each of the scores in this CorpusBase object and
         return a list of the results. `func` should be a method from the
@@ -2431,6 +2431,16 @@ class CorpusBase:
         func2 = ImportedPiece.ngrams
         list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
 
+        By default, .batch will replace columns that consist of part names (like .melodic() results)
+        or combinations of part names (like .harmonic() results) with numbers starting with "1" for
+        the highest part on the staff, "2" for the second highest, etc. This is useful when combining
+        results from pieces with parts that have different names. You can override this and keep the
+        original part names in the columns by setting the `numberParts` parameter to False.
+        For example:
+
+        list_of_dfs_with_numbers_for_part_names = corpus.batch(ImportedPiece.melodic)
+        list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, numberParts=False)
+
         You can also set verbose=True if you want to print out the function that you're calling
         and the piece you're analyzing during the analysis. This can be useful to pinpoint a
         piece that is triggering a bug.
@@ -2441,11 +2451,15 @@ class CorpusBase:
         list_args = {key: val for key, val in kwargs.items() if key in dfs}
         if verbose:
             print('\nRunning {} analysis on {} pieces:'.format(func.__name__, len(self.scores)))
+        if numberParts and func.__name__ in ('cadences', 'presentationTypes', 'lowLine', 'highLine', 'final'):
+            numberParts = False
         for i, score in enumerate(self.scores):
             if verbose:
                 print('\t{}: {}'.format(i + 1, score.metadata['title']))
             largs = {key: val[i] for key, val in list_args.items()}
             df = func(score, **_kwargs, **largs)
+            if numberParts:
+                df = score.numberParts(df)
             if isinstance(df, pd.DataFrame):
                 if metadata:
                     df[['Composer', 'Title']] = score.metadata['composer'], score.metadata['title']

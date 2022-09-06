@@ -637,19 +637,29 @@ class ImportedPiece:
         return self.analyses['BeatIndex']
 
     def detailIndex(self, df, measure=True, beat=True, offset=False, t_sig=False,
-        sounding=False, progress=False, _all=False):
+        sounding=False, progress=False, lowest=False, highest=False, _all=False):
         '''
         Return the passed dataframe with a multi-index of any combination of the
         measure, beat, offset, prevailing time signature, and progress towards
         the end of the piece (0-1) in the index labels. At least one must be
         chosen, and the default is to have measure and beat information, but no
-        other information. Pass offset=True to add offsets to index. You can
+        other information. Here are all the boolean parameters that default to False,
+        but that you can set to true if you also want to see them:
+        
+        offset: row's offset (distance in quarter notes from beginning, 1.0 = one quarter note)
+        t_sig: the prevailing time signature
+        sounding: how many voices are sounding (i.e. not resting) at this point
+        progress: 0-1 how far along in the piece this moment is, 0 = beginning, 1 = last attack onset
+        lowest: the lowest sounding note at this moment
+        highest: the highest sounding note at this moment
+        
+        You can
         also pass _all=True to include all five types of index information.
         '''
         cols = [df]
         names = []
         if _all:
-            measure, beat, offset, t_sig, sounding, progress = [True] * 6
+            measure, beat, offset, t_sig, sounding, progress, lowest, highest = [True] * 8
         if measure:
             cols.append(self.measures().iloc[:, 0])
             names.append('Measure')
@@ -670,6 +680,12 @@ class ImportedPiece:
             prog.index = df.index
             cols.append(prog)
             names.append('Progress')
+        if lowest:
+            cols.append(self.lowLine())
+            names.append('Lowest')
+        if highest:
+            cols.append(self.highLine())
+            names.append('Highest')
         temp = pd.concat(cols, axis=1)
         temp2 = temp.iloc[:, len(df.columns):].ffill()
         if measure:
@@ -681,11 +697,12 @@ class ImportedPiece:
         ret.sort_index(inplace=True)
         return ret
 
-    def di(self, df, measure=True, beat=True, offset=False, t_sig=False, sounding=False, progress=False, _all=False):
+    def di(self, df, measure=True, beat=True, offset=False, t_sig=False, sounding=False,
+        progress=False, lowest=False, highest=False, _all=False):
         """
         Convenience shortcut for .detailIndex. See that method's documentation for instructions."""
-        return self.detailIndex(df=df, measure=measure, beat=beat, offset=offset,
-                                t_sig=t_sig, progress=progress, sounding=sounding, _all=_all)
+        return self.detailIndex(df=df, measure=measure, beat=beat, offset=offset, t_sig=t_sig,
+            sounding=sounding, progress=progress, lowest=lowest, highest=highest, _all=_all)
 
     def _beatStrengthHelper(self, noteOrRest):
         if hasattr(noteOrRest, 'beatStrength'):
@@ -1332,13 +1349,6 @@ class ImportedPiece:
             row = row.replace(('t', 'T', 'u', 'x', 'z'), np.nan)
         return row
 
-    def _lowest_pitch(self, row, m21):
-        '''
-        Return a column of the lowest pitch at each cadence. m21 is a df of
-        music21 Note or Rest objects for the whole piece.'''
-        filtered = [note for note in m21.asof(row.name) if note.isNote]
-        return min(filtered).nameWithOctave
-
     def _cadential_pitch(self, row, nr):
         '''
         Return a column of the pitch cadenced to. This is considered to be the
@@ -1465,8 +1475,11 @@ class ImportedPiece:
         cvfs = self.cvfs()
         mel = self.melodic('c', True, True)
         mel = mel[cvfs.notnull()].dropna(how='all')
-        _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
-        _cvfs.replace(['Q', 's', 'S'], np.nan, inplace=True)
+        if len(cvfs.index):
+            _cvfs = cvfs.apply(self._cvf_simplifier, axis=1)
+            _cvfs.replace(['Q', 's', 'S'], np.nan, inplace=True)
+        else:
+            _cvfs = cvfs.copy()
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
         cadKeys = _cvfs + mel
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values().unique()), axis=1)
@@ -1475,16 +1488,18 @@ class ImportedPiece:
         cadDict = pd.read_csv(cwd + '/data/cadences/cadenceLabels.csv', index_col=0)
         labels = keys.join(cadDict, on='Key')
         labels['CVFs'] = cvfs.apply(lambda row: ''.join(row.dropna()), axis=1)
-        m21 = self._getM21ObjsNoTies().ffill()
-        labels['Low'] = labels.apply(self._lowest_pitch, args=(m21,), axis=1)
+        detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, sounding=True, progress=True, lowest=True)
+        labels['Low'] = detailed.index.get_level_values(5).values
         final = note.Note(self.final())
         labels['RelLow'] = labels.Low.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(final, note.Note(x))))
         nr = self.notes()
-        labels['Tone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
+        if len(labels.index):
+            labels['Tone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
+        else:
+            labels['Tone'] = []
         labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedSimple(interval.Interval(final, note.Note(x))))
         labels.RelTone = labels.RelTone[labels.Tone.notnull()]
         labels.Tone = labels.Tone.fillna(np.nan)
-        detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, sounding=True, progress=True)
         labels['TSig'] = detailed.index.get_level_values(2).values
         labels['Measure'] = detailed.index.get_level_values(0).values
         labels['Beat'] = detailed.index.get_level_values(1).values
@@ -1492,9 +1507,11 @@ class ImportedPiece:
         labels['Progress'] = detailed.index.get_level_values(4).values
         ndx = labels.index.to_series()
         labels['SinceLast'] = ndx - ndx.shift(1)
-        labels.iat[0, -1] = labels.index[0]
+        if len(labels.index):
+            labels.iat[0, -1] = labels.index[0]
         labels['ToNext'] = labels['SinceLast'].shift(-1)
-        labels.iat[-1, -1] = self.score.highestTime - labels.index[-1]
+        if len(labels.index):
+            labels.iat[-1, -1] = self.score.highestTime - labels.index[-1]
         self.analyses['Cadences'] = labels
         if not keep_keys:
             labels = labels.drop('Key', axis=1)

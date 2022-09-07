@@ -619,7 +619,7 @@ class ImportedPiece:
         df = tsigs.applymap(lambda tsig: tsig.beatDuration.quarterLength, na_action='ignore')
         return df
 
-    def getBeat(self):
+    def beats(self):
         '''
         Return a table of the beat positions of all the notes and rests. Beats
         are expressed as floats.
@@ -639,12 +639,12 @@ class ImportedPiece:
             self.analyses['Beat'] = (offFromMeas / beatDur) + 1
         return self.analyses['Beat']
 
-    def _getBeatIndex(self):
+    def beatIndex(self):
         '''
-        Return a series of the first valid value in each row of .getBeat().
+        Return a series of the first valid value in each row of .beats().
         '''
         if 'BeatIndex' not in self.analyses:
-            ser = self.getBeat().dropna(how='all').apply(lambda row: row.dropna()[0], axis=1)
+            ser = self.beats().dropna(how='all').apply(lambda row: row.dropna()[0], axis=1)
             self.analyses['BeatIndex'] = ser
         return self.analyses['BeatIndex']
 
@@ -676,7 +676,7 @@ class ImportedPiece:
             cols.append(self.measures().iloc[:, 0])
             names.append('Measure')
         if beat:
-            cols.append(self._getBeatIndex())
+            cols.append(self.beatIndex())
             names.append('Beat')
         if offset:
             cols.append(df.index.to_series())

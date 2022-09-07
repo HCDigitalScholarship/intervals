@@ -573,8 +573,11 @@ class ImportedPiece:
         the end of the piece.'''
         if 'Final' not in self.analyses:
             lowLine = self.lowLine()
-            final = lowLine.iat[-1]
-            if final == 'Rest':
+            if len(lowLine.index):
+                final = lowLine.iat[-1]
+            else:
+                final = None
+            if final == 'Rest' and len(lowLine.index) > 1:
                 final = lowLine.iat[-2]
             self.analyses['Final'] = final
         return self.analyses['Final']
@@ -1452,10 +1455,12 @@ class ImportedPiece:
         cadence shown as an interval measured against the final. Likewise,
         "RelTone" is the cadential tone shown as an interval measured against the
         final.
-        If `keep_keys` is set to True, the "Key" column will be kept in the
-        cadence results table. This corresponds to the combination of cadential voice
-        functions and chromatic intervals used as a key to lookup the cadence
-        information in the cadenceLabels.csv file.
+
+        If `keep_keys` is set to True, the "Pattern" and "Key" columns will be kept in
+        the cadence results table. "Pattern" refers to the combination of cadential voice
+        functions and chromatic intervals. "Key" is a regex string used to match
+        the Patterns found with those in the cadenceLabels.csv file.
+
         The "Sounding" column shows how many voices were sounding at the moment of
         the cadence. Note that this count includes voices that did not have a CVF
         role in the cadence, and ones that only started at the perfection. The
@@ -1470,7 +1475,7 @@ class ImportedPiece:
             if keep_keys:
                 return self.analyses['Cadences']
             else:
-                return self.analyses['Cadences'].drop('Key', axis=1)
+                return self.analyses['Cadences'].drop(['Pattern', 'Key'], axis=1)
 
         cvfs = self.cvfs()
         mel = self.melodic('c', True, True)
@@ -1483,9 +1488,10 @@ class ImportedPiece:
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
         cadKeys = _cvfs + mel
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values().unique()), axis=1)
-        keys.name = 'Key'
+        keys.name = 'Pattern'
         keys = pd.DataFrame(keys)
         cadDict = pd.read_csv(cwd + '/data/cadences/cadenceLabels.csv', index_col=0)
+        keys['Key'] = keys.Pattern.replace(cadDict.index, cadDict.index, regex=True)
         labels = keys.join(cadDict, on='Key')
         labels['CVFs'] = cvfs.apply(lambda row: ''.join(row.dropna()), axis=1)
         detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, sounding=True, progress=True, lowest=True)
@@ -1514,7 +1520,7 @@ class ImportedPiece:
             labels.iat[-1, -1] = self.score.highestTime - labels.index[-1]
         self.analyses['Cadences'] = labels
         if not keep_keys:
-            labels = labels.drop('Key', axis=1)
+            labels = labels.drop(['Pattern', 'Key'], axis=1)
         return labels
 
     def markFourths(self):

@@ -30,7 +30,7 @@ index,CadType,LeadingTones,CVFs,Low,RelLow,Tone,RelTone,TSig,Measure,Beat,Soundi
 152.0,Clausula Vera,1,CT,G2,P1,G,P8,4/2,20,1.0,5,0.188,16.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,-,C,-,T
 168.0,Clausula Vera,1,CT,D3,P5,D,P5,4/2,22,1.0,4,0.208,16.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,C,-,-,T,-
 184.0,Authentic,1,CTtSB,G2,P1,G,P8,4/2,24,1.0,6,0.228,16.0,8.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,C,-,T,t,S,B
-192.0,Evaded Authentic,-1,cx,E3,M6,,,4/2,25,1.0,4,0.238,8.0,24.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,-,-,c,x
+192.0,Abandoned Authentic,-1,cx,E3,M6,,,4/2,25,1.0,4,0.238,8.0,24.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,-,-,c,x
 216.0,Authentic,1,tCxTB,G2,P1,G,P8,4/2,28,1.0,4,0.267,24.0,32.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,t,C,x,T,-,B
 248.0,Authentic,1,CB,G2,P1,G,P8,4/2,32,1.0,5,0.307,32.0,104.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,C,-,-,-,-,B
 352.0,Clausula Vera,1,CT,C3,P4,C,P4,4/2,45,1.0,5,0.436,104.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,C,-,T,-
@@ -43,25 +43,25 @@ index,CadType,LeadingTones,CVFs,Low,RelLow,Tone,RelTone,TSig,Measure,Beat,Soundi
 448.0,Clausula Vera,1,CzT,G2,P1,G,P8,4/2,57,1.0,4,0.554,8.0,52.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,C,z,-,-,T
 500.0,Authentic,1,CTB,G2,P1,G,P8,4/2,63,3.0,5,0.619,52.0,20.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,C,T,-,-,-,B
 520.0,Authentic,1,TCB,G2,P1,G,P8,4/2,66,1.0,6,0.644,20.0,20.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,T,C,-,-,B
-540.0,Evaded Clausula Vera,1,Cz,E3,M6,C,P4,4/2,68,3.0,4,0.668,20.0,12.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,C,-,z,-,-
+540.0,Abandoned Clausula Vera,1,Cz,E3,M6,C,P4,4/2,68,3.0,4,0.668,20.0,12.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,C,-,z,-,-
 552.0,Clausula Vera,1,CTu,E3,M6,G,P8,4/2,70,1.0,4,0.683,12.0,24.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,C,T,u,-,-,-
 576.0,Altizans Only,1,AQT,G2,P1,D,P5,4/2,73,1.0,5,0.713,24.0,24.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,A,-,-,Q,T
 600.0,Altizans Only,1,AT,C3,P4,G,P8,4/2,76,1.0,6,0.743,24.0,12.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,A,-,-,-,-,T
-612.0,Evaded Authentic,-1,czxx,G3,P8,,,4/2,77,3.0,3,0.757,12.0,4.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,c,z,x,-,x
+612.0,Abandoned Authentic,-1,czxx,G3,P8,,,4/2,77,3.0,3,0.757,12.0,4.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,c,z,x,-,x
 616.0,Evaded Clausula Vera,-1,Tc,E3,M6,,,4/2,78,1.0,4,0.762,4.0,8.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,T,-,-,c,-
 624.0,Evaded Clausula Vera,-1,Tc,A2,M2,,,4/2,79,1.0,4,0.772,8.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,-,-,T,c
 640.0,Evaded Clausula Vera,-1,Tc,E3,M6,,,4/2,81,1.0,4,0.792,16.0,8.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,T,-,-,c,-
 648.0,Evaded Clausula Vera,-1,Tc,A2,M2,,,4/2,82,1.0,4,0.802,8.0,8.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,-,-,T,c
-656.0,Evaded Authentic,-1,czx,D3,P5,,,4/2,83,1.0,4,0.812,8.0,4.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,c,-,-,-,z,x
+656.0,Abandoned Authentic,-1,czx,D3,P5,,,4/2,83,1.0,4,0.812,8.0,4.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,c,-,-,-,z,x
 660.0,Evaded Authentic,-1,TBcx,E3,M6,,,4/2,83,3.0,4,0.817,4.0,8.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,T,B,c,x,-,-
 668.0,Authentic,1,CzB,C3,P4,C,P4,4/2,84,3.0,3,0.827,8.0,8.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,C,z,-,-,B
-676.0,Evaded Authentic,-1,cx,E3,M6,,,4/2,85,3.0,4,0.837,8.0,12.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,-,-,c,x
+676.0,Abandoned Authentic,-1,cx,E3,M6,,,4/2,85,3.0,4,0.837,8.0,12.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,-,-,c,x
 688.0,Authentic,1,CTB,G2,P1,G,P8,4/2,87,1.0,5,0.851,12.0,12.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,C,-,-,T,-,B
 700.0,Evaded Altizans Only,-1,aT,C3,P4,,,4/2,88,3.0,4,0.866,12.0,12.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,a,-,-,T,-
 712.0,Clausula Vera,1,tCQT,G2,P1,G,P8,4/2,90,1.0,5,0.881,12.0,8.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,t,C,-,Q,T,-
 720.0,Evaded Authentic,1,Cb,E3,M6,G,P8,4/2,91,1.0,4,0.891,8.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,-,-,C,-,b
 736.0,Authentic,1,CSB,G2,P1,G,P8,4/2,93,1.0,6,0.911,16.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,C,-,-,-,S,B
 752.0,Altizans Only,1,AxT,G2,P1,D,P5,4/2,95,1.0,5,0.931,16.0,12.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,A,-,x,-,T
-764.0,Evaded Authentic,-1,Tcx,C3,P4,,,4/2,96,3.0,5,0.946,12.0,12.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,T,c,-,-,-,x
+764.0,Evaded Clausula Vera,-1,Tcx,C3,P4,,,4/2,96,3.0,5,0.946,12.0,12.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,T,c,-,-,-,x
 776.0,Clausula Vera,1,CQT,C3,P4,C,P4,4/2,98,1.0,6,0.96,12.0,16.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,-,C,Q,-,T,-
 792.0,Altizans Only,1,AT,C3,P4,G,P8,4/2,100,1.0,6,0.98,16.0,32.0,/Users/amor/Desktop/Code/intervals/CRIM_Model_0023.mei,A,-,-,-,-,T

@@ -325,19 +325,6 @@ class ImportedPiece:
             ('c', False, False): lambda cell: str(abs(cell.semitones) % 12) if hasattr(cell, 'semitones') else cell
         }
 
-    def _getPartSeries(self):
-        if 'PartSeries' not in self.analyses:
-            part_series = []
-            for i, flat_part in enumerate(self._getSemiFlatParts()):
-                notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
-                part_name = flat_part.partName or 'Part_' + str(i + 1)
-                ser = pd.Series(notesAndRests, name=part_name)
-                ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
-                ser = ser[~ser.index.duplicated()]  # remove multiple events at the same offset in a given part
-                part_series.append(ser)
-            self.analyses['PartSeries'] = part_series
-        return self.analyses['PartSeries']
-
     def _getSemiFlatParts(self):
         """
         Return and store flat parts inside a piece using the score attribute.
@@ -353,10 +340,32 @@ class ImportedPiece:
         """
         if 'PartNames' not in self.analyses:
             part_names = []
+            name_set = set()
             for i, part in enumerate(self._getSemiFlatParts()):
-                part_names.append(part.partName or 'Part_' + str(i + 1))
+                name = part.partName or 'Part-' + str(i + 1)
+                if name in name_set:
+                    name = 'Part-' + str(i + 1)
+                elif '_' in name:
+                    print('\n*** Warning: it is problematic to have an underscore in a part name so _ was replaced with -. ***\n')
+                    name = name.replace('_', '-')
+                else:
+                    name_set.add(name)
+                part_names.append(name)
             self.analyses['PartNames'] = part_names
         return self.analyses['PartNames']
+
+    def _getPartSeries(self):
+        if 'PartSeries' not in self.analyses:
+            part_series = []
+            part_names = self._getPartNames()
+            for i, flat_part in enumerate(self._getSemiFlatParts()):
+                notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
+                ser = pd.Series(notesAndRests, name=part_names[i])
+                ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
+                ser = ser[~ser.index.duplicated()]  # remove multiple events at the same offset in a given part
+                part_series.append(ser)
+            self.analyses['PartSeries'] = part_series
+        return self.analyses['PartSeries']
 
     def _getPartNumberDict(self):
         '''

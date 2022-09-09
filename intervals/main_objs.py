@@ -14,6 +14,7 @@ import requests
 import intervals
 import collections
 import verovio
+from glob import glob
 
 from IPython.display import SVG, HTML
 cwd = os.path.dirname(intervals.__file__)
@@ -645,14 +646,14 @@ class ImportedPiece:
         chosen, and the default is to have measure and beat information, but no
         other information. Here are all the boolean parameters that default to False,
         but that you can set to true if you also want to see them:
-        
+
         offset: row's offset (distance in quarter notes from beginning, 1.0 = one quarter note)
         t_sig: the prevailing time signature
         sounding: how many voices are sounding (i.e. not resting) at this point
         progress: 0-1 how far along in the piece this moment is, 0 = beginning, 1 = last attack onset
         lowest: the lowest sounding note at this moment
         highest: the highest sounding note at this moment
-        
+
         You can
         also pass _all=True to include all five types of index information.
         '''
@@ -2135,8 +2136,12 @@ def verovio_print_cadences(piece, cadences, url, mei_file):
     original piece (which is needed for Verovio and metadata reporting).  The 'cadences'
     argument is simply the result of the classifyCadences operation.
     """
-    response = requests.get(url)
-    fetched_mei_string = response.text
+    if prefix == 'Music_Files/':
+        text_file = open(url, "r")
+        fetched_mei_string = text_file.read()
+    else:
+        response = requests.get(url)
+        fetched_mei_string = response.text
     tk = verovio.toolkit()
     tk.loadData(fetched_mei_string)
     tk.setScale(30)
@@ -2194,8 +2199,12 @@ def verovio_print_ptypes(piece, p_types, url, mei_file):
     original piece (which is needed for Verovio and metadata reporting).  The 'p_types'
     argument is simply the result of the presentationTypes operation.
     """
-    response = requests.get(url)
-    fetched_mei_string = response.text
+    if prefix == 'Music_Files/':
+        text_file = open(url, "r")
+        fetched_mei_string = text_file.read()
+    else:
+        response = requests.get(url)
+        fetched_mei_string = response.text
     tk = verovio.toolkit()
     tk.loadData(fetched_mei_string)
     tk.setScale(30)
@@ -2269,8 +2278,12 @@ def verovio_print_homorhythm(piece, homorhythm, url, mei_file):
 
 
 
-    response = requests.get(url)
-    fetched_mei_string = response.text
+    if prefix == 'Music_Files/':
+        text_file = open(url, "r")
+        fetched_mei_string = text_file.read()
+    else:
+        response = requests.get(url)
+        fetched_mei_string = response.text
     tk = verovio.toolkit()
     tk.loadData(fetched_mei_string)
     tk.setScale(30)

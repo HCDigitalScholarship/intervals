@@ -2116,7 +2116,7 @@ class ImportedPiece:
             return points_combined
 
 # July 2022 Addition for printing cadence types with Verovio
-def verovio_print_cadences(piece, cadences, url, mei_file):
+def verovio_print_cadences(piece, cadences, prefix, url, mei_file):
     """
     This function is used to display the results of the Cadence
     classifier in the Notebook with Verovio.  Each excerpt is
@@ -2179,7 +2179,7 @@ def verovio_print_cadences(piece, cadences, url, mei_file):
             display(SVG(music))
 
 # July 2022 Addition for printing presentation types with Verovio
-def verovio_print_ptypes(piece, p_types, url, mei_file):
+def verovio_print_ptypes(piece, p_types, prefix, url, mei_file):
     """
     This function is used to display the results of the presentationTypes function
     in the Notebook with Verovio.  Each excerpt begins with
@@ -2256,7 +2256,7 @@ def verovio_print_ptypes(piece, p_types, url, mei_file):
             display(SVG(music))
 
 # July 2022 Addition for printing hr types with Verovio
-def verovio_print_homorhythm(piece, homorhythm, url, mei_file):
+def verovio_print_homorhythm(piece, homorhythm, prefix, url, mei_file):
 
     '''
     This function is used to display the results of the homorhythm function

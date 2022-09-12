@@ -2176,7 +2176,8 @@ def verovio_print_cadences(piece, cadences, prefix, url, mei_file):
             print("Cadence Tone: ", c_tone)
             print("Cadence Type: ", c_type)
             print("Cadential Voice Functions: ", cvfs)
-            display(SVG(music))
+            # display(SVG(music))
+            display(HTML(music))
 
 # July 2022 Addition for printing presentation types with Verovio
 def verovio_print_ptypes(piece, p_types, prefix, url, mei_file):
@@ -2253,7 +2254,8 @@ def verovio_print_ptypes(piece, p_types, prefix, url, mei_file):
         # print the music
         for c in range(1, count + 1):
             music = tk.renderToSVG(c)
-            display(SVG(music))
+            # display(SVG(music))
+            display(HTML(music))
 
 # July 2022 Addition for printing hr types with Verovio
 def verovio_print_homorhythm(piece, homorhythm, prefix, url, mei_file):
@@ -2350,7 +2352,8 @@ def verovio_print_homorhythm(piece, homorhythm, prefix, url, mei_file):
     for c in range(1, count + 1):
         music = tk.renderToSVG(c)
 
-        display(SVG(music))
+        # display(SVG(music))
+        display(HTML(music))
 
 def joiner(a):
     """This is used for visualization routines."""

@@ -287,6 +287,7 @@ class ImportedPiece:
     def __init__(self, score, path, mei_doc=None):
         self.score = score
         self.path = path
+        self.file_name = path.rsplit('.', 1)[0].rsplit('/')[-1]
         self.mei_doc = mei_doc
         self.analyses = {'note_list': None}
         title, composer = path, 'Not found'
@@ -326,19 +327,6 @@ class ImportedPiece:
             ('c', False, False): lambda cell: str(abs(cell.semitones) % 12) if hasattr(cell, 'semitones') else cell
         }
 
-    def _getPartSeries(self):
-        if 'PartSeries' not in self.analyses:
-            part_series = []
-            for i, flat_part in enumerate(self._getSemiFlatParts()):
-                notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
-                part_name = flat_part.partName or 'Part_' + str(i + 1)
-                ser = pd.Series(notesAndRests, name=part_name)
-                ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
-                ser = ser[~ser.index.duplicated()]  # remove multiple events at the same offset in a given part
-                part_series.append(ser)
-            self.analyses['PartSeries'] = part_series
-        return self.analyses['PartSeries']
-
     def _getSemiFlatParts(self):
         """
         Return and store flat parts inside a piece using the score attribute.
@@ -354,10 +342,32 @@ class ImportedPiece:
         """
         if 'PartNames' not in self.analyses:
             part_names = []
+            name_set = set()
             for i, part in enumerate(self._getSemiFlatParts()):
-                part_names.append(part.partName or 'Part_' + str(i + 1))
+                name = part.partName or 'Part-' + str(i + 1)
+                if name in name_set:
+                    name = 'Part-' + str(i + 1)
+                elif '_' in name:
+                    print('\n*** Warning: it is problematic to have an underscore in a part name so _ was replaced with -. ***\n')
+                    name = name.replace('_', '-')
+                else:
+                    name_set.add(name)
+                part_names.append(name)
             self.analyses['PartNames'] = part_names
         return self.analyses['PartNames']
+
+    def _getPartSeries(self):
+        if 'PartSeries' not in self.analyses:
+            part_series = []
+            part_names = self._getPartNames()
+            for i, flat_part in enumerate(self._getSemiFlatParts()):
+                notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
+                ser = pd.Series(notesAndRests, name=part_names[i])
+                ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
+                ser = ser[~ser.index.duplicated()]  # remove multiple events at the same offset in a given part
+                part_series.append(ser)
+            self.analyses['PartSeries'] = part_series
+        return self.analyses['PartSeries']
 
     def _getPartNumberDict(self):
         '''
@@ -574,8 +584,11 @@ class ImportedPiece:
         the end of the piece.'''
         if 'Final' not in self.analyses:
             lowLine = self.lowLine()
-            final = lowLine.iat[-1]
-            if final == 'Rest':
+            if len(lowLine.index):
+                final = lowLine.iat[-1]
+            else:
+                final = None
+            if final == 'Rest' and len(lowLine.index) > 1:
                 final = lowLine.iat[-2]
             self.analyses['Final'] = final
         return self.analyses['Final']
@@ -608,7 +621,7 @@ class ImportedPiece:
         df = tsigs.applymap(lambda tsig: tsig.beatDuration.quarterLength, na_action='ignore')
         return df
 
-    def getBeat(self):
+    def beats(self):
         '''
         Return a table of the beat positions of all the notes and rests. Beats
         are expressed as floats.
@@ -628,12 +641,12 @@ class ImportedPiece:
             self.analyses['Beat'] = (offFromMeas / beatDur) + 1
         return self.analyses['Beat']
 
-    def _getBeatIndex(self):
+    def beatIndex(self):
         '''
-        Return a series of the first valid value in each row of .getBeat().
+        Return a series of the first valid value in each row of .beats().
         '''
         if 'BeatIndex' not in self.analyses:
-            ser = self.getBeat().dropna(how='all').apply(lambda row: row.dropna()[0], axis=1)
+            ser = self.beats().dropna(how='all').apply(lambda row: row.dropna()[0], axis=1)
             self.analyses['BeatIndex'] = ser
         return self.analyses['BeatIndex']
 
@@ -665,7 +678,7 @@ class ImportedPiece:
             cols.append(self.measures().iloc[:, 0])
             names.append('Measure')
         if beat:
-            cols.append(self._getBeatIndex())
+            cols.append(self.beatIndex())
             names.append('Beat')
         if offset:
             cols.append(df.index.to_series())
@@ -1331,7 +1344,7 @@ class ImportedPiece:
         The 'h' label is used internally to help reduce the amount of false
         positives we get with unprepared 4ths. They are either removed or
         replaced with 'b' labels if they seem to be evaded bassizans cvfs.'''
-        if 'h' in row.values:  # h is for potential evaded bassizans that gets confused with a chanson idiom
+        if not row.empty and 'h' in row.values:  # h is for potential evaded bassizans that gets confused with a chanson idiom
             if len(row.dropna()) > 2:
                 row.replace('h', 'b', inplace=True)
             else:
@@ -1409,7 +1422,8 @@ class ImportedPiece:
         melodic = self.melodic('d', True, False)
         ngrams = {n: self.ngrams(how='modules', df=harmonic, other=melodic, n=n, offsets='last',
                   held='1', exclude=[], show_both=True).stack() for n in cadences.N.unique()}
-        hits = [ser[ser.str.contains('|'.join(cadences[cadences.N == n].index), regex=True)] for n, ser in ngrams.items()]
+        hits = [ser[ser.str.contains('|'.join(cadences[cadences.N == n].index), regex=True)]
+                for n, ser in ngrams.items() if not ser.empty]
         hits = pd.concat(hits)
         hits.sort_index(level=0, inplace=True)
         hits = hits[~hits.index.duplicated('last')]
@@ -1453,10 +1467,12 @@ class ImportedPiece:
         cadence shown as an interval measured against the final. Likewise,
         "RelTone" is the cadential tone shown as an interval measured against the
         final.
-        If `keep_keys` is set to True, the "Key" column will be kept in the
-        cadence results table. This corresponds to the combination of cadential voice
-        functions and chromatic intervals used as a key to lookup the cadence
-        information in the cadenceLabels.csv file.
+
+        If `keep_keys` is set to True, the "Pattern" and "Key" columns will be kept in
+        the cadence results table. "Pattern" refers to the combination of cadential voice
+        functions and chromatic intervals. "Key" is a regex string used to match
+        the Patterns found with those in the cadenceLabels.csv file.
+
         The "Sounding" column shows how many voices were sounding at the moment of
         the cadence. Note that this count includes voices that did not have a CVF
         role in the cadence, and ones that only started at the perfection. The
@@ -1471,7 +1487,7 @@ class ImportedPiece:
             if keep_keys:
                 return self.analyses['Cadences']
             else:
-                return self.analyses['Cadences'].drop('Key', axis=1)
+                return self.analyses['Cadences'].drop(['Pattern', 'Key'], axis=1)
 
         cvfs = self.cvfs()
         mel = self.melodic('c', True, True)
@@ -1484,9 +1500,10 @@ class ImportedPiece:
         mel = mel[_cvfs.isin(list('ACTctu'))].reindex_like(_cvfs).fillna('')
         cadKeys = _cvfs + mel
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values().unique()), axis=1)
-        keys.name = 'Key'
+        keys.name = 'Pattern'
         keys = pd.DataFrame(keys)
         cadDict = pd.read_csv(cwd + '/data/cadences/cadenceLabels.csv', index_col=0)
+        keys['Key'] = keys.Pattern.replace(cadDict.index, cadDict.index, regex=True)
         labels = keys.join(cadDict, on='Key')
         labels['CVFs'] = cvfs.apply(lambda row: ''.join(row.dropna()), axis=1)
         detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, sounding=True, progress=True, lowest=True)
@@ -1515,7 +1532,7 @@ class ImportedPiece:
             labels.iat[-1, -1] = self.score.highestTime - labels.index[-1]
         self.analyses['Cadences'] = labels
         if not keep_keys:
-            labels = labels.drop('Key', axis=1)
+            labels = labels.drop(['Pattern', 'Key'], axis=1)
         return labels
 
     def markFourths(self):
@@ -1649,7 +1666,7 @@ class ImportedPiece:
             self.analyses['EntryMask'] = nr.apply(self._entryHelper)
         return self.analyses['EntryMask']
 
-    def entries(self, df=None, n=None):
+    def entries(self, df=None, n=None, thematic=False):
         """
         Return a filtered copy of the passed df that only keeps the events (soggetti) in
         that df if they either start a piece or come after a silence.
@@ -1668,13 +1685,28 @@ class ImportedPiece:
         or passed df argument will be replaced with n-long ngrams of those events.
         Note that this does not currently work for dataframes where the columns
         are combinations of voices, e.g. harmonic intervals.
+        If `thematic` is set to True, this method will further filter the results
+        to entries that happen at least twice anywhere in the piece. This means
+        that a melody must happen at least once coming from a rest, and at least
+        one more time, though the additional time doesn't have to be after a rest.
         """
         if df is None:
             df = self.melodic(end=False)
         if n is not None:
             df = self.ngrams(df, n)
         mask = self.entryMask()
-        return df[mask].dropna(how='all')
+        num_parts = len(mask.columns)
+        mask.columns = df.columns[:num_parts]
+        ret = df.copy()
+        ret.iloc[:, :num_parts] = ret.iloc[:, :num_parts][mask]
+        if thematic:
+            stack = df.iloc[:, :num_parts].stack()
+            counts = stack.value_counts()
+            two_or_more = counts[counts > 1]
+            recurring = stack[stack.isin(two_or_more.index)].unique()
+            ret = ret[ret.isin(recurring)]
+        ret.dropna(how='all', subset=ret.columns[:num_parts], inplace=True)
+        return ret
 
     def _find_entry_int_distance(self, coordinates):
         """
@@ -2415,7 +2447,7 @@ class CorpusBase:
         self.note_list = self.note_list_whole_piece()
         self.no_unisons = self.note_list_no_unisons()
 
-    def batch(self, func, kwargs={}, metadata=True, numberParts=True, verbose=False):
+    def batch(self, func, kwargs={}, metadata=True, number_parts=True, verbose=False):
         '''
         Run the `func` on each of the scores in this CorpusBase object and
         return a list of the results. `func` should be a method from the
@@ -2473,11 +2505,11 @@ class CorpusBase:
         or combinations of part names (like .harmonic() results) with numbers starting with "1" for
         the highest part on the staff, "2" for the second highest, etc. This is useful when combining
         results from pieces with parts that have different names. You can override this and keep the
-        original part names in the columns by setting the `numberParts` parameter to False.
+        original part names in the columns by setting the `number_parts` parameter to False.
         For example:
 
         list_of_dfs_with_numbers_for_part_names = corpus.batch(ImportedPiece.melodic)
-        list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, numberParts=False)
+        list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, number_parts=False)
 
         You can also set verbose=True if you want to print out the function that you're calling
         and the piece you're analyzing during the analysis. This can be useful to pinpoint a
@@ -2489,20 +2521,78 @@ class CorpusBase:
         list_args = {key: val for key, val in kwargs.items() if key in dfs}
         if verbose:
             print('\nRunning {} analysis on {} pieces:'.format(func.__name__, len(self.scores)))
-        if numberParts and func.__name__ in ('cadences', 'presentationTypes', 'lowLine', 'highLine', 'final'):
-            numberParts = False
+        if number_parts and func.__name__ in ('cadences', 'presentationTypes', 'lowLine', 'highLine', 'final'):
+            number_parts = False
         for i, score in enumerate(self.scores):
             if verbose:
                 print('\t{}: {}'.format(i + 1, score.metadata['title']))
             largs = {key: val[i] for key, val in list_args.items()}
             df = func(score, **_kwargs, **largs)
-            if numberParts:
+            if number_parts:
                 df = score.numberParts(df)
             if isinstance(df, pd.DataFrame):
                 if metadata:
                     df[['Composer', 'Title']] = score.metadata['composer'], score.metadata['title']
             post.append(df)
         return post
+
+    def modelFinder(self, models=None, masses=None, n=4):
+        """
+        Searches for pieces that may be models of one or more masses. This method returns a
+        "driving distance table" showing how likely each model was a source for each mass. This
+        is represented by a score 0-1 where 0 means that this relationship was highly unlikely
+        and 1 means that the the two are highly likely to be related in this way (or that a
+        piece was compared to itself).
+        You can optionally pass a CorpusBase object as the `models` and/or `masses` parameters.
+        If you do, the CorpusBase object you pass will be used as that group of pieces in the
+        analysis. If either or both of these parameters is omitted, the calling CorpusBase
+        object's scores will be used. For clarity, the "calling" CorpusBase object is what goes
+        to the left of the period in:
+
+        calling_corpus.modelFinder(...
+
+        Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
+        parameters are omitted, this means that if you omit both, i.e.
+
+        corpus.modelFinder()
+
+        ... this will compare every score the corpus to every other score in the corpus. You
+        should do this if you want to be able to consider every piece a potential model and
+        a potential mass.
+        """
+        if models is None:
+            models = self
+        if masses is None:
+            masses = self
+
+        # get entries from all the models
+        notes = models.batch(ImportedPiece.notes, number_parts=False, metadata=False, kwargs={'combineUnisons': True})
+        mel = models.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'df': notes, 'kind': 'd', 'end': False})
+        entries = models.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
+
+        # get entries from the masses
+        mass_notes = masses.batch(ImportedPiece.notes, number_parts=False, metadata=False, kwargs={'combineUnisons': True})
+        mass_mel = masses.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'df': mass_notes, 'kind': 'd', 'end': False})
+        mass_entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mass_mel, 'n': n, 'thematic': True})
+
+        res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
+        for i, model in enumerate(models.scores):
+            mod_patterns = entries[i].stack()
+            counts = mod_patterns.value_counts()
+            thematic = counts[counts > 1]
+            for j, mass in enumerate(masses.scores):
+                if mass.file_name == model.file_name:
+                    res.at[mass.file_name, model.file_name] = 1
+                    continue
+                stack = mass_entries[j].stack()
+                mass_counts = stack.value_counts()
+                mass_thematic = mass_counts[mass_counts > 1]
+                stack = stack[stack.isin(mass_thematic.index)]
+                hits = stack[stack.isin(thematic.index)]
+                if len(stack.index):
+                    percent = len(hits.index) / len(stack.dropna().index)
+                res.at[mass.file_name, model.file_name] = percent
+        return res
 
     def note_list_whole_piece(self):
         """ Creates a note list from the whole piece for all scores- default note_list

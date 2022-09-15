@@ -1651,16 +1651,20 @@ class ImportedPiece:
 
     def entries(self, df=None, n=None):
         """
-        Return a filtered copy of the passed df that only keeps the events in
-        that df if they either start a piece or come after a silence. If the df
-        parameter is left as None, it will be replaced with the default melodic
-        interval results, though with end=False since this is needed specifically
-        for this use case.
-        In these cases, the offset of each melodic entry is the starting offset of
+        Return a filtered copy of the passed df that only keeps the events (soggetti) in
+        that df if they either start a piece or come after a silence.
+
+        - If the df parameter is left as 'None', it will be replaced with the
+        default melodic interval results, though with 'end=False', since this is
+        needed specifically for this use case  It is nevertheless possible to
+        use 'entries' with a df of durational ngrams, or some other set of data.
+
+        - In these cases, the offset of each melodic entry is the starting offset of
         the first note in the melody. If you want melodies 4 notes long, for
         example, note that this would be n=3, because four consecutive notes are
         constitute 3 melodic intervals.
-        If the n parameter is not None, then the default melodic interval results
+
+        - If the n parameter is not None, then the default melodic interval results
         or passed df argument will be replaced with n-long ngrams of those events.
         Note that this does not currently work for dataframes where the columns
         are combinations of voices, e.g. harmonic intervals.
@@ -1789,13 +1793,14 @@ class ImportedPiece:
 
         """
         This helper function is used as part of presentationTypes.
-        This function assembles various features for the presentation types
+        It assembles various features for the presentation types
         into a single temporary dictionary, which in turn is appended to the dataframe of 'points'
 
-        In this revision, we also check for parallel entries in various combinations, then remove
+        Here we also check for parallel entries in various combinations, then remove
         the parallel entry based on preferred intervals of imitation (normally P1, P4, P5, P8), considered
-        in relation to the previous (or following) non-parallel voice.  The
-        other parallel entry is marked and noted in a separate field.
+        in relation to the previous (or following) non-parallel voice.
+
+        The other parallel entry is marked and noted in a separate field.
 
         """
         array = entry_array[entry_array.index.get_level_values(0).isin(slist)]
@@ -1945,17 +1950,17 @@ class ImportedPiece:
         """
         This function uses several other functions to classify the entries in a given piece.
         The output is a list, in order of offset, of each presentation type, including information about
-        - measures/beats
-        - starting offset
-        - soggetti involved
-        - melodic intervals of entry
-        - time intervals of entry
-        - presense of flexed entries (either head or body of soggetto)
+        - measures/beats (of each entry)
+        - starting offset (of each entry)
+        - soggetti involved (depending on 'flex' settings, there could be more tha one)
+        - melodic intervals of entry (the melodic distance between the first tones of successive entries)
+        - time intervals of entry (the duration in offets from one entry to the next)
+        - presense of flexed entries (either head or body of soggetto, depending on the settings)
         - presense of parallel entries (the parallel entry is reported separately, and is not included in the
         metadata about Time or Melodic intervals of imitation; the preferred intervals are
         ["P1", "P4", "P-4", "P5", "P-5", "P8", "P-8", "P12", "P-12"] and can be adjusted via the code
         for _temp_dict_of_details
-        - how many of the entries fail to overlap with each others
+        - how many of the entries fail to overlap with another one
         It is also possible to find PEns and IDs that are 'hidden' within longer Fugas.
         Note that this method finds both PEns and IDs that can be found among all combinations
         of voices in a longer fuga (thus between entries 1, 2, 4; 2, 4, 5, etc) as well as those

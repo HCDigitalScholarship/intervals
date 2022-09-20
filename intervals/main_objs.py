@@ -2231,7 +2231,7 @@ def verovio_print_ptypes(piece, p_types, prefix, url, mei_file):
 
     Usage:
 
-    verovio_print_ptypes(piece, p_types,  prefix, url, mei_file)
+    verovio_print_ptypes(piece, p_types, prefix, url, mei_file)
 
     Note that the arguments here are the same ones used for the importing the
     original piece (which is needed for Verovio and metadata reporting).  The 'p_types'
@@ -2308,7 +2308,7 @@ def verovio_print_homorhythm(piece, homorhythm, prefix, url, mei_file):
 
     Usage:
 
-    verovio_print_homorhythm(piece, homorhythm, url, mei_file)
+    verovio_print_homorhythm(piece, homorhythm, prefix, url, mei_file)
 
     Note that the arguments here are the same ones used for the importing the
     original piece (which is needed for Verovio and metadata reporting).  The 'homorhythm'

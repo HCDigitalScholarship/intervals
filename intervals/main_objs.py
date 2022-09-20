@@ -2167,7 +2167,7 @@ def verovio_print_cadences(piece, cadences, prefix, url, mei_file):
 
     Usage:
 
-    verovio_print_cadences(piece, cadences, url, mei_file)
+    verovio_print_cadences(piece, cadences, prefix, url, mei_file)
 
     Note that the arguments here are the same ones used for the importing the
     original piece (which is needed for Verovio and metadata reporting).  The 'cadences'
@@ -2231,7 +2231,7 @@ def verovio_print_ptypes(piece, p_types, prefix, url, mei_file):
 
     Usage:
 
-    verovio_print_ptypes(piece, p_types, url, mei_file)
+    verovio_print_ptypes(piece, p_types,  prefix, url, mei_file)
 
     Note that the arguments here are the same ones used for the importing the
     original piece (which is needed for Verovio and metadata reporting).  The 'p_types'
@@ -2371,23 +2371,22 @@ def verovio_print_homorhythm(piece, homorhythm, prefix, url, mei_file):
         min_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.min())
         max_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.max())
 
-    # select verovio measures and redo layout
-    tk.select(str(mdict))
-    tk.redoLayout()
+        # select verovio measures and redo layout for each passage
+        tk.select(str(mdict))
+        tk.redoLayout()
+        # get the number of pages and display the music for each passage
+        print("Results:")
+        count = tk.getPageCount()
+        print("MEI File: ", mei_file)
+        print(piece.metadata['composer'])
+        print(piece.metadata['title'])
+        print("HR Start Measure: ", span[0])
+        print("HR Stop Measure: ", span[-1])
+        print("Minimum Number of HR Voices: ", min_hr_count)
+        print("Maximum Number of HR Voices: ", max_hr_count)
 
-    # get the number of pages and display the music
-    print("Results:")
-    count = tk.getPageCount()
-    print("MEI File: ", mei_file)
-    print(piece.metadata['composer'])
-    print(piece.metadata['title'])
-    print("HR Start Measure: ", span[0])
-    print("HR Stop Measure: ", span[-1])
-    print("Minimum Number of HR Voices: ", min_hr_count)
-    print("Maximum Number of HR Voices: ", max_hr_count)
-
-    for c in range(1, count + 1):
-        music = tk.renderToSVG(c)
+        for c in range(1, count + 1):
+            music = tk.renderToSVG(c)
 
         # display(SVG(music))
         display(HTML(music))

@@ -2391,6 +2391,98 @@ def verovio_print_homorhythm(piece, homorhythm, prefix, url, mei_file):
         # display(SVG(music))
         display(HTML(music))
 
+def verovio_print_homorhythm2(piece, homorhythm, prefix, url, mei_file):
+
+    '''
+    This function is used to display the results of the homorhythm function
+    in the Notebook with Verovio.  Each excerpt follows the full measure
+    span of the homorhythm passage found by that function.
+    The function also displays metadata about each excerpt, drawn from the
+    homorhythm dataframe:  piece ID, composer, title, measure range,
+    and the minimum and maximum number of homorhythmic voices in that passage.
+    Usage:
+    verovio_print_homorhythm(piece, homorhythm, url, mei_file)
+    Note that the arguments here are the same ones used for the importing the
+    original piece (which is needed for Verovio and metadata reporting).  The 'homorhythm'
+    argument is simply the result of the homorhythm operation.
+    '''
+
+
+
+    if prefix == 'Music_Files/':
+        text_file = open(url, "r")
+        fetched_mei_string = text_file.read()
+    else:
+        response = requests.get(url)
+        fetched_mei_string = response.text
+    tk = verovio.toolkit()
+    tk.loadData(fetched_mei_string)
+    tk.setScale(30)
+    tk.setOption( "pageHeight", "1000" )
+    tk.setOption( "pageWidth", "2500" )
+
+    # Now get meas ranges and number of active voices
+    hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
+    #Get the groupings of consecutive items
+    li = [list(item) for item in consecutive_groups(hr_list)]
+    final_list = []
+    new_final = []
+
+    # Look ahead and combine overlaps
+    for l in range(len(li)):
+    # look ahead
+        if l < len(li) - 1:
+            overlap_check = any(item in li[l] for item in li[l+1])
+            if overlap_check==False:
+                sorted(li[l])
+                final_list.append(li[l])
+            if overlap_check==True:
+                combined = sorted(list(set(li[l] + li[l+1])))
+                final_list.append(combined)
+    # Look back and combine overlaps
+    for l in range(len(final_list)):
+        new_final.append(final_list[0])
+        if l > 0:
+            overlap_check = any(item in final_list[l] for item in final_list[l-1])
+            if overlap_check==False:
+                new_final.append(final_list[l])
+            if overlap_check==True:
+                combined = sorted(list(set(final_list[l] + final_list[l-1])))
+                new_final.append(combined)
+
+    # ensure final list is only unique lists
+    final_final = []
+    for elem in new_final:
+        if elem not in final_final:
+            final_final.append(elem)
+
+    #Use the result to get range groupings
+    for span in final_final:
+        mr = str(span[0]) + "-" + str(span[-1])
+        mdict = {'measureRange': mr}
+        min_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.min())
+        max_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.max())
+
+        # select verovio measures and redo layout for each passage
+        tk.select(str(mdict))
+        tk.redoLayout()
+        # get the number of pages and display the music for each passage
+        print("Results:")
+        count = tk.getPageCount()
+        print("MEI File: ", mei_file)
+        print(piece.metadata['composer'])
+        print(piece.metadata['title'])
+        print("HR Start Measure: ", span[0])
+        print("HR Stop Measure: ", span[-1])
+        print("Minimum Number of HR Voices: ", min_hr_count)
+        print("Maximum Number of HR Voices: ", max_hr_count)
+
+        for c in range(1, count + 1):
+            music = tk.renderToSVG(c)
+
+        # display(SVG(music))
+        display(HTML(music))
+
 def joiner(a):
     """This is used for visualization routines."""
     b = '_'.join(map(str, a))

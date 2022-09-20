@@ -12,8 +12,6 @@ from pyvis.network import Network
 
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
-    # if type(data.iloc[0, :][variable]) != str:
-    #     raise Exception("Label difficult to see!")
 
     observer_chart = alt.Chart(data).mark_bar().encode(
         y=variable,
@@ -27,8 +25,6 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
 
 
 def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip):
-    # if type(data.iloc[0, :][y]) != str:
-    #     raise Exception("Label difficult to see!")
 
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,
@@ -49,11 +45,11 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
 
 def _process_ngrams_df_helper(ngrams_df, main_col):
     """
-    The output from the ngrams is usually a table with
+    The output from the getNgram is usually a table with
     four voices and ngram of notes properties (duration or
     pitch). This method stack this property onto one column
     and mark which voices they are from.
-    :param ngrams_df: direct output from ngrams with 1 columns
+    :param ngrams_df: direct output from getNgram with 1 columns
     for each voices and ngrams of notes' properties.
     :param main_col: the name of the property
     :return: a dataframe with ['start', main_col, 'voice'] as columns
@@ -76,7 +72,7 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
     patterns. It could also filter out specific voices or patterns
     for the users to analyze.
 
-    :param ngrams_df: dataframe we got from ngrams in crim-interval
+    :param ngrams_df: dataframe we got from getNgram in crim-interval
     :param ngrams_duration: if not None, simply output the offsets of the
     ngrams. If we have durations, calculate the end by adding the offsets and
     the durations.
@@ -108,8 +104,8 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
 
 def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300):
     """
-    Plot a heatmap for crim-intervals ngrams's processed output.
-    :param ngrams_df: processed crim-intervals ngrams's output.
+    Plot a heatmap for crim-intervals getNgram's processed output.
+    :param ngrams_df: processed crim-intervals getNgram's output.
     :param selected_pattern: list of specific patterns the users want (optional)
     :param voices: list of specific voices the users want (optional)
     :param heatmap_width: the width of the final heatmap (optional)
@@ -119,14 +115,15 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     """
 
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
-
     selector = alt.selection_multi(fields=['pattern'])
+    y = alt.Y("voice", sort=None)
 
-    # # turns patterns into string to make it easier to see
-    # processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore').copy()
+    # make a copy of the processed n_grams and turn them into Strings
+    new_processed_ngrams_df = processed_ngrams_df.copy()
+    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
 
-    patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', processed_ngrams_df, selector, selector)
-    heatmap = create_heatmap('start', 'end', 'voice', 'pattern', processed_ngrams_df, heatmap_width, heatmap_height,
+    patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
+    heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
                              selector, selector, tooltip=['start', 'end', 'pattern'])
     return alt.vconcat(patterns_bar, heatmap)
 
@@ -134,8 +131,8 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
 def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,
                         heatmap_height=300):
     """
-    Plot a heatmap for crim-intervals ngrams's output.
-    :param ngrams_df: crim-intervals ngrams's output
+    Plot a heatmap for crim-intervals getNgram's output.
+    :param ngrams_df: crim-intervals getNgram's output
     :param ngrams_duration: if not None, rely on durations in the
     df to calculate the durations of the ngrams.
     :param selected_patterns: list of specific patterns the users want (optional)
@@ -286,7 +283,7 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
     """
     Plot how closely the other vectors match a selected vector.
     Uses the Levenshtein distance.
-    :param ngrams_df: crim-intervals ngrams's output
+    :param ngrams_df: crim-intervals getNgram's output
     :param key_pattern: a pattern the users selected to compare other patterns with (tuple of floats)
     :param selected_pattern: the specific other vectors the users selected
     :param ngrams_duration: if None, simply output the offsets. If the users input a
@@ -311,7 +308,14 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
     slider = alt.binding_range(min=0, max=100, step=1, name='cutoff:')
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
                                     bind=slider, init={'cutoff': 50})
-    return create_heatmap('start', 'end', 'voice', 'score', score_ngrams, heatmap_width, heatmap_height,
+
+    # sort voices
+    if voices != None:
+        if len(voices) == 0:
+            voices = None
+    y = alt.Y("voice", sort=voices)
+
+    return create_heatmap('start', 'end', y, 'score', score_ngrams, heatmap_width, heatmap_height,
                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
 
 
@@ -324,23 +328,23 @@ def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
     :param model: an Imported Piece object.
     :param df: dataframe containing consecutive notes.
     :param n: accept any positive integers and would output ngrams of the corresponding sizes
-    can't handle the n=-1 option (refer to ngrams documentation for more)
-    :param exclude: (refer to ngrams documentation)
-    :param interval_settings: (refer to ngrams documentation)
-    :param offsets: (refer to ngrams documentation)
+    can't handle the n=-1 option (refer to getNgrams documentation for more)
+    :param exclude: (refer to getNgrams documentation)
+    :param interval_settings: (refer to getNgrams documentation)
+    :param offsets: (refer to getNgrams documentation)
     :return: ngram and corresponding duration dataframe!
     """
     if n == -1:
         raise Exception("Cannot calculate the duration for this type of ngrams")
 
     # compute dur for the ngrams
-    dur = model.durations(df)
+    dur = model.getDuration(df)
     dur = dur.reindex_like(df).applymap(str, na_action='ignore')
     # combine them and generate ngrams and duration at the same time
     notes_dur = pd.concat([df, dur])
-    ngrams = model.ngrams(df=df, n=n, exclude=exclude,
+    ngrams = model.getNgrams(df=df, n=n, exclude=exclude,
                              interval_settings=interval_settings, unit=0, offsets=offsets)
-    dur_ngrams = model.ngrams(df=dur, n=n, exclude=exclude,
+    dur_ngrams = model.getNgrams(df=dur, n=n, exclude=exclude,
                                  interval_settings=interval_settings, unit=0, offsets=offsets)
     dur_ngrams = dur_ngrams.reindex_like(ngrams)
 

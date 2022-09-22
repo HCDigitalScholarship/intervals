@@ -1629,7 +1629,7 @@ class ImportedPiece:
 
         Note that the output of this function can also be used with verovioHomorhythm
         to show the results in score.
-        
+
         """
         if 'Homorhythm' in self.analyses:
             return self.analyses['Homorhythm']
@@ -2223,7 +2223,7 @@ class ImportedPiece:
             text_file = open(url, "r")
             fetched_mei_string = text_file.read()
         else:
-            response = requests.get(url)
+            response = requests.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
@@ -2295,7 +2295,7 @@ class ImportedPiece:
             text_file = open(url, "r")
             fetched_mei_string = text_file.read()
         else:
-            response = requests.get(url)
+            response = requests.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
@@ -2378,7 +2378,7 @@ class ImportedPiece:
             text_file = open(url, "r")
             fetched_mei_string = text_file.read()
         else:
-            response = requests.get(url)
+            response = requests.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)

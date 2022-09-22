@@ -2152,7 +2152,259 @@ class ImportedPiece:
             self.analyses[memo_key] = points_combined
             return points_combined
 
+    # new print methods with verovio
+    def verovioCadences(self, cadences):
+        """
+        This function is used to display the results of the Cadence
+        classifier in the Notebook with Verovio.  Each excerpt is
+        two measures long:  the measure of the final tone of the cadence
+        and the previous measure.
+
+        The function also displays metadata about each excerpt, drawn from the
+        cadence results dataframe:  piece ID, composer, title, measures, type of
+        cadence, beat of the bar in which the final tone is heard, and evaded
+        status.
+
+        Usage:
+
+        You will need to run cadences = piece.cadences() in order to build the
+        initial set of results.
+
+        Then pass these results to the Verovio print function:
+
+        verovioCadences(cadences)
+
+
+        """
+        if self.path.startswith('Music_Files/'):
+            text_file = open(url, "r")
+            fetched_mei_string = text_file.read()
+        else:
+            response = requests.get(url)
+            fetched_mei_string = response.text
+        tk = verovio.toolkit()
+        tk.loadData(fetched_mei_string)
+        tk.setScale(30)
+        tk.setOption( "pageHeight", "1500" )
+        tk.setOption( "pageWidth", "3000" )
+        for cad in cadences.index:
+            c_meas = cadences.loc[cad]["Measure"]
+            c_tone = cadences.loc[cad]["Tone"]
+            c_type = cadences.loc[cad]["CadType"]
+            c_beat = cadences.loc[cad]["Beat"]
+            cvfs = cadences.loc[cad]['CVFs']
+            low = c_meas-1
+            high = c_meas
+            mr = str(low) + "-" + str(high)
+            mdict = {'measureRange': mr}
+
+            # select verovio measures and redo layout
+            tk.select(str(mdict))
+            tk.redoLayout()
+
+            # get the number of pages and display the music
+            print("Results:")
+            count = tk.getPageCount()
+            for c in range(1, count + 1):
+                music = tk.renderToSVG(c)
+                print("File Name: ", self.file_name)
+                print(self.metadata['composer'])
+                print(self.metadata['title'])
+                print("Cadence End Measure:", c_meas)
+                print("Beat: ", c_beat)
+                print("Cadence Tone: ", c_tone)
+                print("Cadence Type: ", c_type)
+                print("Cadential Voice Functions: ", cvfs)
+                display(HTML(music))
+
+    # July 2022 Addition for printing presentation types with Verovio
+    def verovioPtypes(self, p_types):
+        """
+        This function is used to display the results of the presentationTypes function
+        in the Notebook with Verovio.  Each excerpt begins with
+        the first measure of the given presentation type and continues through four
+        measures after the last entry.
+
+        The function also displays metadata about each excerpt, drawn from the
+        presentation type dataframe:  piece ID, composer, title, measure range,
+        presentation type, voices in order of entry, number of entries, the soggetti
+        , melodic entry intervals, time entry intervals.
+
+        Usage:
+
+        You must first run p_types to build the initial list of results and define
+        these as a new variable name "p_types":
+
+        p_types = piece.presentationTypes()
+
+        Note that there are many options in the presentationTypes methods to
+        determine the length of soggetti, degree of head or body flex, status
+        of unisons, whether to use main entries only (or moving window of soggetti)
+        and status of hidden entries.)
+
+        After any additional filtering, pass the results of that work to verovioPtypes:
+
+        piece.verovioPtypes(p_types)
+
+
+        """
+        if self.path.startswith('Music_Files/'):
+            text_file = open(url, "r")
+            fetched_mei_string = text_file.read()
+        else:
+            response = requests.get(url)
+            fetched_mei_string = response.text
+        tk = verovio.toolkit()
+        tk.loadData(fetched_mei_string)
+        tk.setScale(30)
+        tk.setOption( "pageHeight", "1500" )
+        tk.setOption( "pageWidth", "3000" )
+        print("Results:")
+        # collect the metadata
+        for p_type in p_types.index:
+            this_p_type = p_types.loc[p_type]["Presentation_Type"]
+            p_voices = p_types.loc[p_type]["Voices"]
+            n_voices = p_types.loc[p_type]["Number_Entries"]
+            soggetti = p_types.loc[p_type]["Soggetti"]
+            mint = p_types.loc[p_type]["Melodic_Entry_Intervals"]
+            tint = p_types.loc[p_type]["Time_Entry_Intervals"]
+            flexed = p_types.loc[p_type]["Flexed_Entries"]
+            ml = p_types.loc[p_type]["Measures_Beats"]
+            parallel = p_types.loc[p_type]["Parallel_Voice"]
+            non_overlaps = p_types.loc[p_type]["Count_Non_Overlaps"]
+
+            # build the measure range dictionary
+            first = ml[0].split('/')[0]
+            last = str(int(ml[-1].split('/')[0]) + 4)
+            mr = str(first) + "-" + str(last)
+            mdict = {'measureRange': mr}
+
+            # select measures in verovio and redo the layout
+            tk.select(str(mdict))
+            tk.redoLayout()
+            # get the number of pages
+            count = tk.getPageCount()
+
+            # print caption
+            print("File Name: ", self.file_name)
+            print(self.metadata['composer'])
+            print(self.metadata['title'])
+            print("Measures:", mr)
+            print("Presentation Type: ", this_p_type)
+            print("Voices: ", p_voices)
+            print("Number of Entries: ", n_voices)
+            print("Soggetti: ", soggetti)
+            print("Melodic Entry Intervals: ", mint)
+            print("Time Entry Intervals: ", tint )
+            print("Flexed: ", flexed)
+            print("Parallel Entries:", parallel)
+            print("Number of Non-Overlapping Voices:", non_overlaps)
+            # print the music
+            for c in range(1, count + 1):
+                music = tk.renderToSVG(c)
+                # display(SVG(music))
+                display(HTML(music))
+
+    # July 2022 Addition for printing hr types with Verovio
+    def verovioHomorhythm(self, homorhythm):
+
+        '''
+        This function is used to display the results of the homorhythm function
+        in the Notebook with Verovio.  Each excerpt follows the full measure
+        span of the homorhythm passage found by that function.
+
+        The function also displays metadata about each excerpt, drawn from the
+        homorhythm dataframe:  piece ID, composer, title, measure range,
+        and the minimum and maximum number of homorhythmic voices in that passage.
+
+        Usage:
+
+        First run the piece.homorhythm() function and assign it
+        to a new variable:
+
+        homorhythm = piece.homorhythm()
+
+        After any additional filtering, pass that variable to the print function:
+
+        piece.verovioHomorhythm(homorhythm)
+        '''
+
+
+
+        if self.path.startswith('Music_Files/'):
+            text_file = open(url, "r")
+            fetched_mei_string = text_file.read()
+        else:
+            response = requests.get(url)
+            fetched_mei_string = response.text
+        tk = verovio.toolkit()
+        tk.loadData(fetched_mei_string)
+        tk.setScale(30)
+        tk.setOption( "pageHeight", "1500" )
+        tk.setOption( "pageWidth", "2500" )
+
+        # Now get meas ranges and number of active voices
+        hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
+        #Get the groupings of consecutive items
+        li = [list(item) for item in consecutive_groups(hr_list)]
+        final_list = []
+        new_final = []
+
+        # Look ahead and combine overlaps
+        for l in range(len(li)):
+        # look ahead
+            if l < len(li) - 1:
+                overlap_check = any(item in li[l] for item in li[l+1])
+                if overlap_check==False:
+                    sorted(li[l])
+                    final_list.append(li[l])
+                if overlap_check==True:
+                    combined = sorted(list(set(li[l] + li[l+1])))
+                    final_list.append(combined)
+        # Look back and combine overlaps
+        for l in range(len(final_list)):
+            new_final.append(final_list[0])
+            if l > 0:
+                overlap_check = any(item in final_list[l] for item in final_list[l-1])
+                if overlap_check==False:
+                    new_final.append(final_list[l])
+                if overlap_check==True:
+                    combined = sorted(list(set(final_list[l] + final_list[l-1])))
+                    new_final.append(combined)
+
+        # ensure final list is only unique lists
+        final_final = []
+        for elem in new_final:
+            if elem not in final_final:
+                final_final.append(elem)
+
+        #Use the result to get range groupings
+        for span in final_final:
+            mr = str(span[0]) + "-" + str(span[-1])
+            mdict = {'measureRange': mr}
+            min_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.min())
+            max_hr_count = int(homorhythm.loc[span]["active_syll_voices"].values.max())
+
+            # select verovio measures and redo layout for each passage
+            tk.select(str(mdict))
+            tk.redoLayout()
+            # get the number of pages and display the music for each passage
+            print("Results:")
+            count = tk.getPageCount()
+            print("File Name: ", self.file_name)
+            print(self.metadata['composer'])
+            print(self.metadata['title'])
+            print("HR Start Measure: ", span[0])
+            print("HR Stop Measure: ", span[-1])
+            print("Minimum Number of HR Voices: ", min_hr_count)
+            print("Maximum Number of HR Voices: ", max_hr_count)
+
+            for c in range(1, count + 1):
+                music = tk.renderToSVG(c)
+            display(HTML(music))
+
 # July 2022 Addition for printing cadence types with Verovio
+# As of Sept 2022 this available as part of the piece class, and thus simplified!
 def verovio_print_cadences(piece, cadences, prefix, url, mei_file):
     """
     This function is used to display the results of the Cadence
@@ -2390,6 +2642,10 @@ def verovio_print_homorhythm(piece, homorhythm, prefix, url, mei_file):
 
         # display(SVG(music))
         display(HTML(music))
+
+# The following are NOT part of piece or other classes
+# These are used part of visualization routines
+# Do not delete!
 
 def joiner(a):
     """This is used for visualization routines."""

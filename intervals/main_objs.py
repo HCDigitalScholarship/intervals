@@ -2254,7 +2254,7 @@ def verovio_print_ptypes(piece, p_types, prefix, url, mei_file):
         this_p_type = p_types.loc[p_type]["Presentation_Type"]
         p_voices = p_types.loc[p_type]["Voices"]
         n_voices = p_types.loc[p_type]["Number_Entries"]
-        soggetto = p_types.loc[p_type]["Soggetti"][0]
+        soggetti = p_types.loc[p_type]["Soggetti"]
         mint = p_types.loc[p_type]["Melodic_Entry_Intervals"]
         tint = p_types.loc[p_type]["Time_Entry_Intervals"]
         flexed = p_types.loc[p_type]["Flexed_Entries"]
@@ -2282,7 +2282,7 @@ def verovio_print_ptypes(piece, p_types, prefix, url, mei_file):
         print("Presentation Type: ", this_p_type)
         print("Voices: ", p_voices)
         print("Number of Entries: ", n_voices)
-        print("Main Soggetto: ", soggetto)
+        print("Soggetti: ", soggetti)
         print("Melodic Entry Intervals: ", mint)
         print("Time Entry Intervals: ", tint )
         print("Flexed: ", flexed)

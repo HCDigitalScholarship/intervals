@@ -2182,7 +2182,7 @@ def verovio_print_cadences(piece, cadences, prefix, url, mei_file):
     tk = verovio.toolkit()
     tk.loadData(fetched_mei_string)
     tk.setScale(30)
-    tk.setOption( "pageHeight", "1000" )
+    tk.setOption( "pageHeight", "1500" )
     tk.setOption( "pageWidth", "3000" )
     for cad in cadences.index:
         c_meas = cadences.loc[cad]["Measure"]

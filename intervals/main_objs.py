@@ -2246,7 +2246,7 @@ def verovio_print_ptypes(piece, p_types, prefix, url, mei_file):
     tk = verovio.toolkit()
     tk.loadData(fetched_mei_string)
     tk.setScale(30)
-    tk.setOption( "pageHeight", "1000" )
+    tk.setOption( "pageHeight", "1500" )
     tk.setOption( "pageWidth", "3000" )
     print("Results:")
     # collect the metadata
@@ -2326,7 +2326,7 @@ def verovio_print_homorhythm(piece, homorhythm, prefix, url, mei_file):
     tk = verovio.toolkit()
     tk.loadData(fetched_mei_string)
     tk.setScale(30)
-    tk.setOption( "pageHeight", "1000" )
+    tk.setOption( "pageHeight", "1500" )
     tk.setOption( "pageWidth", "2500" )
 
     # Now get meas ranges and number of active voices

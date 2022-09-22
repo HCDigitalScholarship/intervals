@@ -423,6 +423,7 @@ class ImportedPiece:
         rest) at every regular whole note will be kept, and any intervening
         notes or rests will be removed. A breve would get renotated as two
         whole notes.
+
         Regularization also works with non-integer values. So if you wanted to
         regularize at the swung eigth note, for example, you could set:
 
@@ -470,7 +471,9 @@ class ImportedPiece:
 
         The `n` parameter should be an integer greater than zero, or -1. When
         n is a positive integer, it groups together a sliding window of n
-        consecutive non-NaN cells in each column. If you pass a df, it will sum
+        consecutive non-NaN cells in each column.
+
+        If you pass a df, it will sum
         the durations 'Rest' and non-Rest cell, provided they are in the same
         n-sized window. For example, set n=3 if you wanted to get the durations
         of all 3-event-long pair-wise harmonic events:
@@ -487,10 +490,11 @@ class ImportedPiece:
 
         You can also pass a `mask_df`, which will serve as a filter, only
         keeping values at the same indecies (i.e. index and columns) as mask_df.
-        This is needed to get the durations of ngrams. To get the durations of
-        ngrams, pass the same value of n and the samedataframe you passed to
-        .ngrams() as the `n` and `df` parameters, then pass your dataframe of
-        ngrams as the `mask_df`. For example:
+        This is needed to get the durations of ngrams.
+
+        To get the durations of ngrams, pass the same value of n and the same
+        dataframe you passed to .ngrams() as the `n` and `df` parameters,
+        then pass your dataframe of ngrams as the `mask_df`. For example:
 
         har = importedPiece.harmonic()
         mel = importedPiece.melodic()
@@ -660,15 +664,14 @@ class ImportedPiece:
         other information. Here are all the boolean parameters that default to False,
         but that you can set to true if you also want to see them:
 
-        offset: row's offset (distance in quarter notes from beginning, 1.0 = one quarter note)
+        * offset: row's offset (distance in quarter notes from beginning, 1.0 = one quarter note)
         t_sig: the prevailing time signature
-        sounding: how many voices are sounding (i.e. not resting) at this point
-        progress: 0-1 how far along in the piece this moment is, 0 = beginning, 1 = last attack onset
-        lowest: the lowest sounding note at this moment
-        highest: the highest sounding note at this moment
+        * sounding: how many voices are sounding (i.e. not resting) at this point
+        * progress: 0-1 how far along in the piece this moment is, 0 = beginning, 1 = last attack onset
+        * lowest: the lowest sounding note at this moment
+        * highest: the highest sounding note at this moment
 
-        You can
-        also pass _all=True to include all five types of index information.
+        You can also pass _all=True to include all five types of index information.
         '''
         cols = [df]
         names = []
@@ -923,33 +926,39 @@ class ImportedPiece:
         for df, melodic ngrams of this type will be provided at the value of n
         passed. An alternative that would make sense would be to use chromatic
         melodic intervals instead.
+
         Usage:
 
         # Call like this:
         importedPiece.distance()
 
-        # If you don't pass a value for df, you can specify a different value
-        # for n to change from the default of 3:
+        If you don't pass a value for df, you can specify a different value
+        for n to change from the default of 3:
+
         importedPiece.distance(n=5)
 
-        # If you already have the melodic ngrams calculated for a different
-        # aspect of your query, you can pass that as df to save a little
-        # runtime on a large query. Note that if you pass something for df,
-        # the n parameter will be ignored:
+
+        If you already have the melodic ngrams calculated for a different
+        aspect of your query, you can pass that as df to save a little
+        runtime on a large query. Note that if you pass something for df,
+        the n parameter will be ignored:
+
         mel = importedPiece.melodic('z', True, True)
         ngrams = importedPiece.ngrams(df=mel, n=4, exclude=['Rest'])
         importedPiece.distance(df=ngrams)
 
-        # To search the table for the distances from a given pattern, just get
-        # the column of that name. This is example looks for distances
-        # involving a melodic pattern that goes up a step, down a third, up a
-        # step, down a third:
+        To search the table for the distances from a given pattern, just get
+        the column of that name. This is example looks for distances
+        involving a melodic pattern that goes up a step, down a third, up a
+        step, down a third:
+
         dist = importedPiece.distance(n=4)
         target = '1, -2, 1, -2'
         col = dist[target]
 
-        # If you then want to filter that column, say to distances less than or
-        # equal to 2, do this:
+        If you then want to filter that column, say to distances less than or
+        equal to 2, do this:
+
         col[col <= 2]
         '''
         if df is None:
@@ -1042,8 +1051,12 @@ class ImportedPiece:
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
         is associated with the starting offset of the second note in the
-        interval. To associate intervals with the offset of the first notes,
-        pass end=False. If you want melodic intervals measured at a regular
+        interval.
+
+        * To associate intervals with the offset of the first notes,
+        pass end=False.
+
+        * If you want melodic intervals measured at a regular
         duration, do not pipe this method's result to the `regularize` method.
         Instead, pass the desired regular durational interval as an integer or
         float as the `unit` parameter.
@@ -1199,6 +1212,7 @@ class ImportedPiece:
         There are two primary modes for this method. They were controlled by the
         `how` parameter, but this parameter is now deprecated and the mode is
         determined by what is or is not passed as the `df` and `other` parameters.
+
         When a dataframe is passed as `df` and nothing is given for `other`, this
         is the simple case where the events in each
         column of the `df` DataFrame are grouped at the offset of the first event
@@ -1455,33 +1469,50 @@ class ImportedPiece:
         '''
         Return a dataframe of cadences in the piece along with metadata about
         these cadence points such as the lowest pitch at moment of cadence, and
-        the cadential goal tone is returned. The CVFs column shows the cadential
-        voice functions condensed into one string. The SinceLast and ToNext columns
-        are the time in quarter notes since the last or to the next cadence. The
-        first cadence's SinceLast time and the last cadence's ToNext time are
-        the time since/to the beginning/end of the piece. The "Low" and "Tone"
-        columns give the pitches of the lowest sounding pitch at the perfection,
-        and the goal tone of the cantizans (or altizans if there is no cantizans)
-        respectively. These are usually the same pitch class, but not always.
-        "Rel" is short for relative, so "RelLow" is the lowest pitch of each
+        the cadential goal tone is returned.
+
+        * The CVFs column shows the cadential voice functions condensed into
+        one string, following the order in which they appear in the voice parts,
+        starting with the uppermost voice.  Thus CB means the cantizans is above
+        the bassizans, and TC means the tenorizans is above the cantizans (in
+        terms of staff positions). For an explanation of the symbols see cvfs
+        documentation.
+
+        * The SinceLast and ToNext columns are the time in quarter notes since
+        the last or to the next cadence. The first cadence's SinceLast time and
+        the last cadence's ToNext time are the time since/to the beginning/end
+        of the piece.
+
+        * The "Low" and "Tone" columns give the pitches of the lowest sounding
+        pitch at the perfection, and the goal tone of the cantizans (or altizans
+        if there is no cantizans) respectively. These are usually the same
+        pitch class, but not always.
+
+        * "Rel" is short for relative, so "RelLow" is the lowest pitch of each
         cadence shown as an interval measured against the final. Likewise,
         "RelTone" is the cadential tone shown as an interval measured against the
         final.
 
-        If `keep_keys` is set to True, the "Pattern" and "Key" columns will be kept in
+        * If `keep_keys` is set to True, the "Pattern" and "Key" columns will be kept in
         the cadence results table. "Pattern" refers to the combination of cadential voice
         functions and chromatic intervals. "Key" is a regex string used to match
         the Patterns found with those in the cadenceLabels.csv file.
 
-        The "Sounding" column shows how many voices were sounding at the moment of
+        * The "Sounding" column shows how many voices were sounding at the moment of
         the cadence. Note that this count includes voices that did not have a CVF
-        role in the cadence, and ones that only started at the perfection. The
-        "Progress" column gives the progress toward the end of the piece measured 0-1
+        role in the cadence, and ones that only started at the perfection.
+
+        * The "Progress" column gives the progress toward the end of the piece measured 0-1
         where 1 is the time point of the last attack in the piece.
+
         Usage:
 
         piece = importScore('url_to_piece')
         piece.cadences()
+
+        Note that the output of this function can be used with verovioCadences to show
+        each cadence in staff notation.
+
         '''
         if 'Cadences' in self.analyses:
             if keep_keys:
@@ -1595,6 +1626,10 @@ class ImportedPiece:
         gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets
         gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr
         checks the number of active voices (thus eliminating places where some voices have rests)
+
+        Note that the output of this function can also be used with verovioHomorhythm
+        to show the results in score.
+        
         """
         if 'Homorhythm' in self.analyses:
             return self.analyses['Homorhythm']
@@ -1685,7 +1720,8 @@ class ImportedPiece:
         or passed df argument will be replaced with n-long ngrams of those events.
         Note that this does not currently work for dataframes where the columns
         are combinations of voices, e.g. harmonic intervals.
-        If `thematic` is set to True, this method will further filter the results
+
+        - If `thematic` is set to True, this method will further filter the results
         to entries that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
         one more time, though the additional time doesn't have to be after a rest.
@@ -1711,9 +1747,12 @@ class ImportedPiece:
     def _find_entry_int_distance(self, coordinates):
         """
         This helper function is used as part of presentationTypes.
+
         This function finds the melodic intervals between the first notes of
         successive entries in a given presentation type.
-        They are represented as intervals with quality and direction, thus P-4, m3, P5, P5, M-9, P-4, P4
+
+        They are represented as intervals with quality and direction,
+        thus P-4, m3, P5, P5, M-9, P-4, P4
         """
 
         tone_list = []
@@ -1993,10 +2032,11 @@ class ImportedPiece:
         ["P1", "P4", "P-4", "P5", "P-5", "P8", "P-8", "P12", "P-12"] and can be adjusted via the code
         for _temp_dict_of_details
         - how many of the entries fail to overlap with another one
-        It is also possible to find PEns and IDs that are 'hidden' within longer Fugas.
-        Note that this method finds both PEns and IDs that can be found among all combinations
-        of voices in a longer fuga (thus between entries 1, 2, 4; 2, 4, 5, etc) as well as those
-        found between successive entries.
+
+        It is also possible to find PEns and IDs that are 'hidden' within
+        longer Fugas. Note that this method finds both PEns and IDs that can be
+        found among all combinations of voices in a longer fuga (thus between
+        entries 1, 2, 4; 2, 4, 5, etc) as well as thosefound between successive entries.
 
         Arguments include:
 
@@ -2016,6 +2056,9 @@ class ImportedPiece:
         Sample usage:
         piece = importScore('url')
         piece.presentationTypes(head_flex=1)
+
+        Note that the output of this function can be used with verovioPtypes to show
+        each cadence in staff notation.
         """
         memo_key = ('PresentationTypes', melodic_ngram_length, limit_to_entries,
             body_flex, head_flex, include_hidden_types, combine_unisons)

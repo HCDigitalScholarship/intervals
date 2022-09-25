@@ -2308,48 +2308,48 @@ class ImportedPiece:
         if p_types is None:
             p_types = self.presentationTypes()
         for p_type in p_types.index:
-        this_p_type = p_types.loc[p_type]["Presentation_Type"]
-        p_voices = p_types.loc[p_type]["Voices"]
-        n_voices = p_types.loc[p_type]["Number_Entries"]
-        soggetti = p_types.loc[p_type]["Soggetti"]
-        mint = p_types.loc[p_type]["Melodic_Entry_Intervals"]
-        tint = p_types.loc[p_type]["Time_Entry_Intervals"]
-        flexed = p_types.loc[p_type]["Flexed_Entries"]
-        ml = p_types.loc[p_type]["Measures_Beats"]
-        parallel = p_types.loc[p_type]["Parallel_Voice"]
-        non_overlaps = p_types.loc[p_type]["Count_Non_Overlaps"]
+            this_p_type = p_types.loc[p_type]["Presentation_Type"]
+            p_voices = p_types.loc[p_type]["Voices"]
+            n_voices = p_types.loc[p_type]["Number_Entries"]
+            soggetti = p_types.loc[p_type]["Soggetti"]
+            mint = p_types.loc[p_type]["Melodic_Entry_Intervals"]
+            tint = p_types.loc[p_type]["Time_Entry_Intervals"]
+            flexed = p_types.loc[p_type]["Flexed_Entries"]
+            ml = p_types.loc[p_type]["Measures_Beats"]
+            parallel = p_types.loc[p_type]["Parallel_Voice"]
+            non_overlaps = p_types.loc[p_type]["Count_Non_Overlaps"]
 
-        # build the measure range dictionary
-        first = ml[0].split('/')[0]
-        last = str(int(ml[-1].split('/')[0]) + 4)
-        mr = str(first) + "-" + str(last)
-        mdict = {'measureRange': mr}
+            # build the measure range dictionary
+            first = ml[0].split('/')[0]
+            last = str(int(ml[-1].split('/')[0]) + 4)
+            mr = str(first) + "-" + str(last)
+            mdict = {'measureRange': mr}
 
-        # select measures in verovio and redo the layout
-        tk.select(str(mdict))
-        tk.redoLayout()
-        # get the number of pages
-        count = tk.getPageCount()
+            # select measures in verovio and redo the layout
+            tk.select(str(mdict))
+            tk.redoLayout()
+            # get the number of pages
+            count = tk.getPageCount()
 
-        # print caption
-        print("File Name: ", self.file_name)
-        print(self.metadata['composer'])
-        print(self.metadata['title'])
-        print("Measures:", mr)
-        print("Presentation Type: ", this_p_type)
-        print("Voices: ", p_voices)
-        print("Number of Entries: ", n_voices)
-        print("Soggetti: ", soggetti)
-        print("Melodic Entry Intervals: ", mint)
-        print("Time Entry Intervals: ", tint )
-        print("Flexed: ", flexed)
-        print("Parallel Entries:", parallel)
-        print("Number of Non-Overlapping Voices:", non_overlaps)
-        # print the music
-        for c in range(1, count + 1):
-            music = tk.renderToSVG(c)
-            # display(SVG(music))
-            display(HTML(music))
+            # print caption
+            print("File Name: ", self.file_name)
+            print(self.metadata['composer'])
+            print(self.metadata['title'])
+            print("Measures:", mr)
+            print("Presentation Type: ", this_p_type)
+            print("Voices: ", p_voices)
+            print("Number of Entries: ", n_voices)
+            print("Soggetti: ", soggetti)
+            print("Melodic Entry Intervals: ", mint)
+            print("Time Entry Intervals: ", tint )
+            print("Flexed: ", flexed)
+            print("Parallel Entries:", parallel)
+            print("Number of Non-Overlapping Voices:", non_overlaps)
+            # print the music
+            for c in range(1, count + 1):
+                music = tk.renderToSVG(c)
+                # display(SVG(music))
+                display(HTML(music))
 
     # July 2022 Addition for printing hr types with Verovio
     def verovioHomorhythm(self):

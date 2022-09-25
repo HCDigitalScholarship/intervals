@@ -319,7 +319,7 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
 
 
-def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
+def generate_ngrams_and_duration(piece, df, n=3, exclude=['Rest'],
                                  interval_settings=('d', True, True), offsets='first'):
     """
     This method accept a model and a dataframe with the melody or notes
@@ -338,13 +338,13 @@ def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
         raise Exception("Cannot calculate the duration for this type of ngrams")
 
     # compute dur for the ngrams
-    dur = model.getDuration(df)
+    dur = piece.getDuration(df)
     dur = dur.reindex_like(df).applymap(str, na_action='ignore')
     # combine them and generate ngrams and duration at the same time
     notes_dur = pd.concat([df, dur])
-    ngrams = model.getNgrams(df=df, n=n, exclude=exclude,
+    ngrams = piece.ngrams(df=df, n=n, exclude=exclude,
                              interval_settings=interval_settings, unit=0, offsets=offsets)
-    dur_ngrams = model.getNgrams(df=dur, n=n, exclude=exclude,
+    dur_ngrams = piece.ngrams(df=dur, n=n, exclude=exclude,
                                  interval_settings=interval_settings, unit=0, offsets=offsets)
     dur_ngrams = dur_ngrams.reindex_like(ngrams)
 

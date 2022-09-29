@@ -2293,7 +2293,7 @@ class ImportedPiece:
 
         """
         if self.path.startswith('Music_Files/'):
-            text_file = open(url, "r")
+            text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
         else:
             response = requests.get(self.path)
@@ -2378,7 +2378,7 @@ class ImportedPiece:
 
 
         if self.path.startswith('Music_Files/'):
-            text_file = open(url, "r")
+            text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
         else:
             response = requests.get(self.path)

@@ -559,23 +559,44 @@ class ImportedPiece:
             ret = ret.apply(self._combineUnisons)
         return ret
 
+    def _m21Expressions(self):
+        '''
+        Get all the expressions from music21. This includes fermatas, mordents, etc.
+        '''
+        if 'm21Expressions' not in self.analyses:
+            df = self._getM21ObjsNoTies().applymap(lambda noteOrRest: noteOrRest.expressions, na_action='ignore')
+            self.analyses['m21Expressions'] = df
+        return self.analyses['m21Expressions']
+
+    def fermatas(self):
+        '''
+        Get all the fermatas in a piece. A fermata is designated by a True value.
+        '''
+        if 'Fermatas' not in self.analyses:
+            df = self._m21Expressions().applymap(
+                lambda exps: any(isinstance(exp, expressions.Fermata) for exp in exps), na_action='ignore')
+            self.analyses['Fermatas'] = df
+        return self.analyses['Fermatas']
+
     def lowLine(self):
         '''
         Return a series that corresponds to the lowest sounding note of the piece at
         any given moment. Attack information cannot be reliably preserved so
         consecutive repeated notes and rests are combined. If all parts have a rest,
         then "Rest" is shown for that stretch of the piece.'''
-        # use m21 objects so that you can do comparison with min
-        notes = self._getM21ObjsNoTies()
-        # you can't compare notes and rests, so replace rests with a really high note
-        highNote = note.Note('C9')
-        notes = notes.applymap(lambda n: highNote if n.isRest else n, na_action='ignore')
-        notes.ffill(inplace=True)
-        lowLine = notes.apply(min, axis=1)
-        lowLine = lowLine.apply(lambda n: n.nameWithOctave)
-        lowLine.replace('C9', 'Rest', inplace=True)
-        lowLine.name = 'Low Line'
-        return lowLine[lowLine != lowLine.shift()]
+        if 'LowLine' not in self.analyses:
+            # use m21 objects so that you can do comparison with min
+            notes = self._getM21ObjsNoTies()
+            # you can't compare notes and rests, so replace rests with a really high note
+            highNote = note.Note('C9')
+            notes = notes.applymap(lambda n: highNote if n.isRest else n, na_action='ignore')
+            notes.ffill(inplace=True)
+            lowLine = notes.apply(min, axis=1)
+            lowLine = lowLine.apply(lambda n: n.nameWithOctave)
+            lowLine.replace('C9', 'Rest', inplace=True)
+            lowLine.name = 'Low Line'
+            self.analyses['LowLine'] = lowLine[lowLine != lowLine.shift()]
+        return self.analyses['LowLine']
 
     def final(self):
         '''
@@ -598,17 +619,19 @@ class ImportedPiece:
         any given moment. Attack information cannot be reliably preserved so
         consecutive repeated notes and rests are combined. If all parts have a rest,
         then "Rest" is shown for that stretch of the piece.'''
-        # use m21 objects so that you can do comparison with min
-        notes = self._getM21ObjsNoTies()
-        # you can't compare notes and rests, so replace rests with a really high note
-        lowNote = note.Note('C', octave=-9)
-        notes = notes.applymap(lambda n: lowNote if n.isRest else n, na_action='ignore')
-        notes.ffill(inplace=True)
-        highLine = notes.apply(max, axis=1)
-        highLine = highLine.apply(lambda n: n.nameWithOctave)
-        highLine.replace('C-9', 'Rest', inplace=True)
-        highLine.name = 'High Line'
-        return highLine[highLine != highLine.shift()]
+        if 'HighLine' not in self.analyses:
+            # use m21 objects so that you can do comparison with min
+            notes = self._getM21ObjsNoTies()
+            # you can't compare notes and rests, so replace rests with a really high note
+            lowNote = note.Note('C', octave=-9)
+            notes = notes.applymap(lambda n: lowNote if n.isRest else n, na_action='ignore')
+            notes.ffill(inplace=True)
+            highLine = notes.apply(max, axis=1)
+            highLine = highLine.apply(lambda n: n.nameWithOctave)
+            highLine.replace('C-9', 'Rest', inplace=True)
+            highLine.name = 'High Line'
+            self.analyses['HighLine'] = highLine[highLine != highLine.shift()]
+        return self.analyses['HighLine']
 
     def _getBeatUnit(self):
         '''
@@ -1640,32 +1663,38 @@ class ImportedPiece:
         self.analyses['Homorhythm'] = result
         return result
 
-    def _entryHelper(self, col):
+    def _entryHelper(self, col, fermatas=False):
         """
         Return True for cells in column that correspond to notes that either
         begin a piece, or immediately preceded by a rest or a double barline."""
         barlines = self.barlines()[col.name]
+        _fermatas = self.fermatas()[col.name]
         _col = col.dropna()
         shifted = _col.shift().fillna('Rest')
-        mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double')))
+        mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double') | (_fermatas)))
         return mask
 
-    def entryMask(self):
+    def entryMask(self, fermatas=False):
         """
         Return a dataframe of True, False, or NaN values which can be used as
         a mask (filter). When applied to another dataframe, only the True cells
         in the mask will be kept. Usage:
+
         piece = importScore('path_to_piece')
         mask = piece.entryMask()
         df = piece.notes()
         df[mask].dropna(how='all')
-        """
-        if 'EntryMask' not in self.analyses:
-            nr = self.notes()
-            self.analyses['EntryMask'] = nr.apply(self._entryHelper)
-        return self.analyses['EntryMask']
 
-    def entries(self, df=None, n=None, thematic=False):
+        If fermatas is set to True (default False), anything coming
+        immediately after a fermata will also be counted as an entry.
+        """
+        key = ('EntryMask', fermatas)
+        if key not in self.analyses:
+            nr = self.notes()
+            self.analyses[key] = nr.apply(self._entryHelper, args=(fermatas,))
+        return self.analyses[key]
+
+    def entries(self, df=None, n=None, thematic=False, fermatas=False):
         """
         Return a filtered copy of the passed df that only keeps the events in
         that df if they either start a piece or come after a silence. If the df
@@ -1684,12 +1713,14 @@ class ImportedPiece:
         to entries that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
         one more time, though the additional time doesn't have to be after a rest.
+        If `fermatas` is set to True (default False), any melody starting
+        immediately after a fermata will also be counted as an entry.
         """
         if df is None:
             df = self.melodic(end=False)
         if n is not None:
             df = self.ngrams(df, n)
-        mask = self.entryMask()
+        mask = self.entryMask(fermatas)
         num_parts = len(mask.columns)
         mask.columns = df.columns[:num_parts]
         ret = df.copy()

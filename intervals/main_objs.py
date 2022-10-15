@@ -1663,10 +1663,13 @@ class ImportedPiece:
         self.analyses['Homorhythm'] = result
         return result
 
-    def _entryHelper(self, col, fermatas=False):
+    def _entryHelper(self, col, fermatas=True):
         """
         Return True for cells in column that correspond to notes that either
-        begin a piece, or immediately preceded by a rest or a double barline."""
+        begin a piece, or immediately preceded by a rest, double barline, or
+        a fermata. For fermatas, this is included by default but can be
+        switched off by passing False for the fermatas paramter.
+        """
         barlines = self.barlines()[col.name]
         _fermatas = self.fermatas()[col.name]
         _col = col.dropna()
@@ -1674,7 +1677,7 @@ class ImportedPiece:
         mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double') | (_fermatas)))
         return mask
 
-    def entryMask(self, fermatas=False):
+    def entryMask(self, fermatas=True):
         """
         Return a dataframe of True, False, or NaN values which can be used as
         a mask (filter). When applied to another dataframe, only the True cells
@@ -1685,8 +1688,8 @@ class ImportedPiece:
         df = piece.notes()
         df[mask].dropna(how='all')
 
-        If fermatas is set to True (default False), anything coming
-        immediately after a fermata will also be counted as an entry.
+        If fermatas is set to True (default), anything coming immediately after
+        a fermata will also be counted as an entry.
         """
         key = ('EntryMask', fermatas)
         if key not in self.analyses:
@@ -1713,8 +1716,8 @@ class ImportedPiece:
         to entries that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
         one more time, though the additional time doesn't have to be after a rest.
-        If `fermatas` is set to True (default False), any melody starting
-        immediately after a fermata will also be counted as an entry.
+        If `fermatas` is set to True (default), any melody starting immediately
+        after a fermata will also be counted as an entry.
         """
         if df is None:
             df = self.melodic(end=False)

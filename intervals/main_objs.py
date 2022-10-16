@@ -1727,7 +1727,7 @@ class ImportedPiece:
             self.analyses[key] = nr.apply(self._entryHelper, args=(fermatas,))
         return self.analyses[key]
 
-    def entries(self, df=None, n=None, thematic=False, fermatas=False):
+    def entries(self, df=None, n=None, thematic=False, fermatas=True):
         """
         Return a filtered copy of the passed df that only keeps the events in
         that df if they either start a piece or come after a silence. If the df

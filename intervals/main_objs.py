@@ -564,6 +564,25 @@ class ImportedPiece:
             ret = ret.apply(self._combineUnisons)
         return ret
 
+    def _m21Expressions(self):
+        '''
+        Get all the expressions from music21. This includes fermatas, mordents, etc.
+        '''
+        if 'm21Expressions' not in self.analyses:
+            df = self._getM21ObjsNoTies().applymap(lambda noteOrRest: noteOrRest.expressions, na_action='ignore')
+            self.analyses['m21Expressions'] = df
+        return self.analyses['m21Expressions']
+
+    def fermatas(self):
+        '''
+        Get all the fermatas in a piece. A fermata is designated by a True value.
+        '''
+        if 'Fermatas' not in self.analyses:
+            df = self._m21Expressions().applymap(
+                lambda exps: any(isinstance(exp, expressions.Fermata) for exp in exps), na_action='ignore')
+            self.analyses['Fermatas'] = df
+        return self.analyses['Fermatas']
+
     def lowLine(self):
         '''
         Return a series that corresponds to the lowest sounding note of the piece at
@@ -1676,17 +1695,21 @@ class ImportedPiece:
         self.analyses['Homorhythm'] = result
         return result
 
-    def _entryHelper(self, col):
+    def _entryHelper(self, col, fermatas=True):
         """
         Return True for cells in column that correspond to notes that either
-        begin a piece, or immediately preceded by a rest or a double barline."""
+        begin a piece, or immediately preceded by a rest, double barline, or
+        a fermata. For fermatas, this is included by default but can be
+        switched off by passing False for the fermatas paramter.
+        """
         barlines = self.barlines()[col.name]
+        _fermatas = self.fermatas()[col.name]
         _col = col.dropna()
         shifted = _col.shift().fillna('Rest')
-        mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double')))
+        mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double') | (_fermatas)))
         return mask
 
-    def entryMask(self):
+    def entryMask(self, fermatas=True):
         """
         Return a dataframe of True, False, or NaN values which can be used as
         a mask (filter). When applied to another dataframe, only the True cells
@@ -1695,42 +1718,42 @@ class ImportedPiece:
         mask = piece.entryMask()
         df = piece.notes()
         df[mask].dropna(how='all')
+        If fermatas is set to True (default), anything coming immediately after
+        a fermata will also be counted as an entry.
         """
-        if 'EntryMask' not in self.analyses:
+        key = ('EntryMask', fermatas)
+        if key not in self.analyses:
             nr = self.notes()
-            self.analyses['EntryMask'] = nr.apply(self._entryHelper)
-        return self.analyses['EntryMask']
+            self.analyses[key] = nr.apply(self._entryHelper, args=(fermatas,))
+        return self.analyses[key]
 
-    def entries(self, df=None, n=None, thematic=False):
+    def entries(self, df=None, n=None, thematic=False, fermatas=False):
         """
-        Return a filtered copy of the passed df that only keeps the events (soggetti) in
-        that df if they either start a piece or come after a silence.
-
-        - If the df parameter is left as 'None', it will be replaced with the
-        default melodic interval results, though with 'end=False', since this is
-        needed specifically for this use case  It is nevertheless possible to
-        use 'entries' with a df of durational ngrams, or some other set of data.
-
-        - In these cases, the offset of each melodic entry is the starting offset of
+        Return a filtered copy of the passed df that only keeps the events in
+        that df if they either start a piece or come after a silence. If the df
+        parameter is left as None, it will be replaced with the default melodic
+        interval results, though with end=False since this is needed specifically
+        for this use case.
+        In these cases, the offset of each melodic entry is the starting offset of
         the first note in the melody. If you want melodies 4 notes long, for
         example, note that this would be n=3, because four consecutive notes are
         constitute 3 melodic intervals.
-
-        - If the n parameter is not None, then the default melodic interval results
+        If the n parameter is not None, then the default melodic interval results
         or passed df argument will be replaced with n-long ngrams of those events.
         Note that this does not currently work for dataframes where the columns
         are combinations of voices, e.g. harmonic intervals.
-
-        - If `thematic` is set to True, this method will further filter the results
+        If `thematic` is set to True, this method will further filter the results
         to entries that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
         one more time, though the additional time doesn't have to be after a rest.
+        If `fermatas` is set to True (default), any melody starting immediately
+        after a fermata will also be counted as an entry.
         """
         if df is None:
             df = self.melodic(end=False)
         if n is not None:
             df = self.ngrams(df, n)
-        mask = self.entryMask()
+        mask = self.entryMask(fermatas)
         num_parts = len(mask.columns)
         mask.columns = df.columns[:num_parts]
         ret = df.copy()

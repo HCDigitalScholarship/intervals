@@ -1674,8 +1674,6 @@ class ImportedPiece:
         _fermatas = self.fermatas()[col.name].shift()
         _col = col.dropna()
         shifted = _col.shift().fillna('Rest')
-        # import pdb
-        # pdb.set_trace()
         mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double') | (_fermatas)))
         return mask
 

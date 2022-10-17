@@ -1703,7 +1703,7 @@ class ImportedPiece:
         switched off by passing False for the fermatas paramter.
         """
         barlines = self.barlines()[col.name]
-        _fermatas = self.fermatas()[col.name]
+        _fermatas = self.fermatas()[col.name].shift()
         _col = col.dropna()
         shifted = _col.shift().fillna('Rest')
         mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double') | (_fermatas)))

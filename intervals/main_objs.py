@@ -1671,9 +1671,11 @@ class ImportedPiece:
         switched off by passing False for the fermatas paramter.
         """
         barlines = self.barlines()[col.name]
-        _fermatas = self.fermatas()[col.name]
+        _fermatas = self.fermatas()[col.name].shift()
         _col = col.dropna()
         shifted = _col.shift().fillna('Rest')
+        # import pdb
+        # pdb.set_trace()
         mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double') | (_fermatas)))
         return mask
 
@@ -1697,7 +1699,7 @@ class ImportedPiece:
             self.analyses[key] = nr.apply(self._entryHelper, args=(fermatas,))
         return self.analyses[key]
 
-    def entries(self, df=None, n=None, thematic=False, fermatas=False):
+    def entries(self, df=None, n=None, thematic=False, fermatas=True):
         """
         Return a filtered copy of the passed df that only keeps the events in
         that df if they either start a piece or come after a silence. If the df

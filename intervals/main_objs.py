@@ -1342,11 +1342,47 @@ class ImportedPiece:
         else:
             return pd.DataFrame()
 
-    def ICFinder(self, module, generic=False):
+    def _icHelper(self, repetition, module, reference):
+        '''
+        Helper function to calculate the level of invertible counterpoint at which
+        a repetition is found. This only gets used when the `generic` setting of
+        .ic() is set to True.
+        '''
+        last_int = int(repetition.rsplit(' ', 1)[-1])
+        if (module == repetition) or (reference % 7 == last_int % 7 and reference > 0 and last_int > 0):
+            return 'Repeat'
+        if ((last_int > 0 and reference > 0) or (last_int + reference < 0)):
+            val = last_int + reference - 1
+        else:
+            val = last_int + reference + 1
+        return '@{}'.format(val)
+
+    def ic(self, module, generic=False):
+        '''
+        *** Invertible Counterpoint Finder ***
+        This method takes a string of a module and finds all the instances of
+        that module at any level of inversion. The module is an interval
+        succession in the format of what you get from the .ngrams() method.
+        Specifically, you would need to show melodic motion of both voices,
+        which you can do by running the .ngrams() method with these
+        parameters: exclude=[], show_both=True, held=1, interval_settings('d', True, True)
+
+        Usage:
+        piece.ic('7_1:-2, 6_-2:2, 8)
+
+        Notice that the intervals used are diatonic and without quality. Other
+        settings may work but are not supported or recommended.
+
+        The `generic` setting changes the output from the different interval
+        successions observed that are at some level of invertible counterpoint
+        from the passed module, to a generic form where the level of invertible
+        counterpoint is given. This is particularly useful if you want to 
+        compare how invertible counterpoint is used as a technique among
+        different pieces.
+        '''
         har_sub = '[^_]*'
         target1, target2 = [], []
         chunks = module.split(', ')
-        import pdb
         for chunk in chunks:
             if '_' not in chunk:
                 target1.append(har_sub)
@@ -1364,6 +1400,12 @@ class ImportedPiece:
         mask1 = ngrams.apply(lambda row: row.str.contains(target1, regex=True))
         mask2 = ngrams.apply(lambda row: row.str.contains(target2, regex=True))
         result = ngrams[(mask1 | mask2)].dropna(how='all')
+        if generic:
+            # import pdb
+            last_int = int(module.rsplit(' ', 1)[-1])
+            # pdb.set_trace()
+            kwargs = {'module': module, 'reference': last_int}
+            result = result.applymap(self._icHelper, na_action='ignore', **kwargs)
         return result
 
     def _cvf_helper(self, row, df):

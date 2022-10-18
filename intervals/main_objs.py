@@ -1342,6 +1342,30 @@ class ImportedPiece:
         else:
             return pd.DataFrame()
 
+    def ICFinder(self, module, generic=False):
+        har_sub = '[^_]*'
+        target1, target2 = [], []
+        chunks = module.split(', ')
+        import pdb
+        for chunk in chunks:
+            if '_' not in chunk:
+                target1.append(har_sub)
+                target2.append(har_sub)
+                break
+            temp = re.split('_|:', chunk)
+            mel1 = temp[1]
+            mel2 = temp[2]
+            target1.append('{}_{}:{}'.format(har_sub, mel1, mel2))
+            target2.append('{}_{}:{}'.format(har_sub, mel2, mel1))
+        target1 = ', '.join(target1)
+        target2 = ', '.join(target2)
+        _n = 1 + module.count(',')
+        ngrams = self.ngrams(n=_n, held='1', exclude=[], show_both=True)
+        mask1 = ngrams.apply(lambda row: row.str.contains(target1, regex=True))
+        mask2 = ngrams.apply(lambda row: row.str.contains(target2, regex=True))
+        result = ngrams[(mask1 | mask2)].dropna(how='all')
+        return result
+
     def _cvf_helper(self, row, df):
         '''
         Assign the cadential voice function of the lower and upper voices in

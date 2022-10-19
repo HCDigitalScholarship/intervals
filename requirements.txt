@@ -25,3 +25,4 @@ xlsxwriter==3.0.2
 webcolors==1.11.1
 requests==2.27.0
 verovio==3.10.0
+python-louvain

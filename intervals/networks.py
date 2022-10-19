@@ -1,7 +1,3 @@
-import networkx as nx
-from community import community_louvain
-from copy import deepcopy
-
 def add_communities(G):
     G = deepcopy(G)
     partition = community_louvain.best_partition(G)

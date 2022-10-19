@@ -1342,21 +1342,6 @@ class ImportedPiece:
         else:
             return pd.DataFrame()
 
-    def _icHelper(self, repetition, module, reference):
-        '''
-        Helper function to calculate the level of invertible counterpoint at which
-        a repetition is found. This only gets used when the `generic` setting of
-        .ic() is set to True.
-        '''
-        last_int = int(repetition.rsplit(' ', 1)[-1])
-        if (module == repetition) or (reference % 7 == last_int % 7 and reference > 0 and last_int > 0):
-            return 'Repeat'
-        if ((last_int > 0 and reference > 0) or (last_int + reference < 0)):
-            val = last_int + reference - 1
-        else:
-            val = last_int + reference + 1
-        return '@{}'.format(val)
-
     def ic(self, module, generic=False):
         '''
         *** Invertible Counterpoint Finder ***
@@ -1401,11 +1386,22 @@ class ImportedPiece:
         mask2 = ngrams.apply(lambda row: row.str.contains(target2, regex=True))
         result = ngrams[(mask1 | mask2)].dropna(how='all')
         if generic:
-            # import pdb
-            last_int = int(module.rsplit(' ', 1)[-1])
-            # pdb.set_trace()
-            kwargs = {'module': module, 'reference': last_int}
-            result = result.applymap(self._icHelper, na_action='ignore', **kwargs)
+            reference_int = int(module.rsplit(' ', 1)[-1])
+            def _icHelper(repetition):
+                '''
+                Helper function to calculate the level of invertible counterpoint at which
+                a repetition is found. This only gets used when the `generic` setting of
+                .ic() is set to True.
+                '''
+                last_int = int(repetition.rsplit(' ', 1)[-1])
+                if (module == repetition) or (reference_int % 7 == last_int % 7 and reference_int > 0 and last_int > 0):
+                    return 'Repeat'
+                if ((last_int > 0 and reference_int > 0) or (last_int + reference_int < 0)):
+                    val = last_int + reference_int - 1
+                else:
+                    val = last_int + reference_int + 1
+                return '@{}'.format(val)
+            result = result.applymap(_icHelper, na_action='ignore')
         return result
 
     def _cvf_helper(self, row, df):

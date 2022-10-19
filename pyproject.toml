@@ -35,7 +35,6 @@ sniffio = "^1.2.0"
 textdistance = "4.2.1"
 XlsxWriter = "3.0.2"
 webcolors = "1.11.1"
-python-louvain = "^0.16"
 
 [tool.poetry.dev-dependencies]
 

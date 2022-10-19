@@ -1,6 +1,9 @@
 import networkx as nx
 from community import community_louvain
 from copy import deepcopy
+import pandas as pd
+from itertools import combinations
+from pyvis.network import Network
 
 def add_communities(G):
     G = deepcopy(G)

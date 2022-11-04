@@ -589,17 +589,19 @@ class ImportedPiece:
         any given moment. Attack information cannot be reliably preserved so
         consecutive repeated notes and rests are combined. If all parts have a rest,
         then "Rest" is shown for that stretch of the piece.'''
-        # use m21 objects so that you can do comparison with min
-        notes = self._getM21ObjsNoTies()
-        # you can't compare notes and rests, so replace rests with a really high note
-        highNote = note.Note('C9')
-        notes = notes.applymap(lambda n: highNote if n.isRest else n, na_action='ignore')
-        notes.ffill(inplace=True)
-        lowLine = notes.apply(min, axis=1)
-        lowLine = lowLine.apply(lambda n: n.nameWithOctave)
-        lowLine.replace('C9', 'Rest', inplace=True)
-        lowLine.name = 'Low Line'
-        return lowLine[lowLine != lowLine.shift()]
+        if 'LowLine' not in self.analyses:
+            # use m21 objects so that you can do comparison with min
+            notes = self._getM21ObjsNoTies()
+            # you can't compare notes and rests, so replace rests with a really high note
+            highNote = note.Note('C9')
+            notes = notes.applymap(lambda n: highNote if n.isRest else n, na_action='ignore')
+            notes.ffill(inplace=True)
+            lowLine = notes.apply(min, axis=1)
+            lowLine = lowLine.apply(lambda n: n.nameWithOctave)
+            lowLine.replace('C9', 'Rest', inplace=True)
+            lowLine.name = 'Low Line'
+            self.analyses['LowLine'] = lowLine[lowLine != lowLine.shift()]
+        return self.analyses['LowLine']
 
     def final(self):
         '''
@@ -622,17 +624,19 @@ class ImportedPiece:
         any given moment. Attack information cannot be reliably preserved so
         consecutive repeated notes and rests are combined. If all parts have a rest,
         then "Rest" is shown for that stretch of the piece.'''
-        # use m21 objects so that you can do comparison with min
-        notes = self._getM21ObjsNoTies()
-        # you can't compare notes and rests, so replace rests with a really high note
-        lowNote = note.Note('C', octave=-9)
-        notes = notes.applymap(lambda n: lowNote if n.isRest else n, na_action='ignore')
-        notes.ffill(inplace=True)
-        highLine = notes.apply(max, axis=1)
-        highLine = highLine.apply(lambda n: n.nameWithOctave)
-        highLine.replace('C-9', 'Rest', inplace=True)
-        highLine.name = 'High Line'
-        return highLine[highLine != highLine.shift()]
+        if 'HighLine' not in self.analyses:
+            # use m21 objects so that you can do comparison with min
+            notes = self._getM21ObjsNoTies()
+            # you can't compare notes and rests, so replace rests with a really high note
+            lowNote = note.Note('C', octave=-9)
+            notes = notes.applymap(lambda n: lowNote if n.isRest else n, na_action='ignore')
+            notes.ffill(inplace=True)
+            highLine = notes.apply(max, axis=1)
+            highLine = highLine.apply(lambda n: n.nameWithOctave)
+            highLine.replace('C-9', 'Rest', inplace=True)
+            highLine.name = 'High Line'
+            self.analyses['HighLine'] = highLine[highLine != highLine.shift()]
+        return self.analyses['HighLine']
 
     def _getBeatUnit(self):
         '''
@@ -1353,6 +1357,65 @@ class ImportedPiece:
         else:
             return pd.DataFrame()
 
+    def ic(self, module, generic=False):
+        '''
+        *** Invertible Counterpoint Finder ***
+        This method takes a string of a module and finds all the instances of
+        that module at any level of inversion. The module is an interval
+        succession in the format of what you get from the .ngrams() method.
+        Specifically, you would need to show melodic motion of both voices,
+        which you can do by running the .ngrams() method with these
+        parameters: exclude=[], show_both=True, held=1, interval_settings('d', True, True)
+        Usage:
+        piece.ic('7_1:-2, 6_-2:2, 8)
+        Notice that the intervals used are diatonic and without quality. Other
+        settings may work but are not supported or recommended.
+        The `generic` setting changes the output from the different interval
+        successions observed that are at some level of invertible counterpoint
+        from the passed module, to a generic form where the level of invertible
+        counterpoint is given. This is particularly useful if you want to
+        compare how invertible counterpoint is used as a technique among
+        different pieces.
+        '''
+        har_sub = '[^_]*'
+        target1, target2 = [], []
+        chunks = module.split(', ')
+        for chunk in chunks:
+            if '_' not in chunk:
+                target1.append(har_sub)
+                target2.append(har_sub)
+                break
+            temp = re.split('_|:', chunk)
+            mel1 = temp[1]
+            mel2 = temp[2]
+            target1.append('{}_{}:{}'.format(har_sub, mel1, mel2))
+            target2.append('{}_{}:{}'.format(har_sub, mel2, mel1))
+        target1 = ', '.join(target1)
+        target2 = ', '.join(target2)
+        _n = 1 + module.count(',')
+        ngrams = self.ngrams(n=_n, held='1', exclude=[], show_both=True)
+        mask1 = ngrams.apply(lambda row: row.str.contains(target1, regex=True))
+        mask2 = ngrams.apply(lambda row: row.str.contains(target2, regex=True))
+        result = ngrams[(mask1 | mask2)].dropna(how='all')
+        if generic:
+            reference_int = int(module.rsplit(' ', 1)[-1])
+            def _icHelper(repetition):
+                '''
+                Helper function to calculate the level of invertible counterpoint at which
+                a repetition is found. This only gets used when the `generic` setting of
+                .ic() is set to True.
+                '''
+                last_int = int(repetition.rsplit(' ', 1)[-1])
+                if (module == repetition) or (reference_int % 7 == last_int % 7 and reference_int > 0 and last_int > 0):
+                    return 'Repeat'
+                if ((last_int > 0 and reference_int > 0) or (last_int + reference_int < 0)):
+                    val = last_int + reference_int - 1
+                else:
+                    val = last_int + reference_int + 1
+                return '@{}'.format(val)
+            result = result.applymap(_icHelper, na_action='ignore')
+        return result
+
     def _cvf_helper(self, row, df):
         '''
         Assign the cadential voice function of the lower and upper voices in
@@ -1695,21 +1758,19 @@ class ImportedPiece:
         self.analyses['Homorhythm'] = result
         return result
 
-    def _entryHelper(self, col, fermatas=True):
+    def _entryHelper(self, col, fermatas=False):
         """
         Return True for cells in column that correspond to notes that either
-        begin a piece, or immediately preceded by a rest, double barline, or
-        a fermata. For fermatas, this is included by default but can be
-        switched off by passing False for the fermatas paramter.
-        """
+        begin a piece, or immediately preceded by a rest or a double barline."""
         barlines = self.barlines()[col.name]
-        _fermatas = self.fermatas()[col.name].shift()
+        _fermatas = self.fermatas()[col.name]
         _col = col.dropna()
         shifted = _col.shift().fillna('Rest')
+        mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double')))
         mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double') | (_fermatas)))
         return mask
 
-    def entryMask(self, fermatas=True):
+    def entryMask(self, fermatas=False):
         """
         Return a dataframe of True, False, or NaN values which can be used as
         a mask (filter). When applied to another dataframe, only the True cells
@@ -1718,8 +1779,8 @@ class ImportedPiece:
         mask = piece.entryMask()
         df = piece.notes()
         df[mask].dropna(how='all')
-        If fermatas is set to True (default), anything coming immediately after
-        a fermata will also be counted as an entry.
+        If fermatas is set to True (default False), anything coming
+        immediately after a fermata will also be counted as an entry.
         """
         key = ('EntryMask', fermatas)
         if key not in self.analyses:
@@ -1746,7 +1807,7 @@ class ImportedPiece:
         to entries that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
         one more time, though the additional time doesn't have to be after a rest.
-        If `fermatas` is set to True (default), any melody starting immediately
+        If `fermatas` is set to True (default False), any melody starting immediately
         after a fermata will also be counted as an entry.
         """
         if df is None:
@@ -2873,14 +2934,10 @@ class CorpusBase:
         analysis. If either or both of these parameters is omitted, the calling CorpusBase
         object's scores will be used. For clarity, the "calling" CorpusBase object is what goes
         to the left of the period in:
-
         calling_corpus.modelFinder(...
-
         Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
         parameters are omitted, this means that if you omit both, i.e.
-
         corpus.modelFinder()
-
         ... this will compare every score the corpus to every other score in the corpus. You
         should do this if you want to be able to consider every piece a potential model and
         a potential mass.

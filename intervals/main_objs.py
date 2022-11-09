@@ -14,6 +14,7 @@ import requests
 import intervals
 import collections
 import verovio
+import pdb
 
 from IPython.display import SVG, HTML
 cwd = os.path.dirname(intervals.__file__)
@@ -1476,8 +1477,8 @@ class ImportedPiece:
         "Q": quintizans, like a tenorizans, but resolves down by fifth or up by
             fourth to a fourth below the goal tone of a cantizans or an octave
             below the goal tone of an altizans
-        "S": sestizans, occurring in some thicker 16th centurytextures, this is
-            where the agent against the cantizans is already the cantizan's note
+        "S": sestizans, occurring in some thicker 16th century textures, this is
+            where the agent against the cantizans is already the cantizans' note
             of resolution (often results in a simultaneous false relation); the
             melodic motion is down by third at the moment of perfection
 
@@ -1534,6 +1535,23 @@ class ImportedPiece:
         if keep_keys:
             cvfs = pd.concat([cvfs, ngramKeys], axis=1)
         return cvfs
+
+    def patientMelodies(self):
+        '''
+        Return a dataframe of the places where there appear to be patient-type melodies.
+        '''
+        nr = self.notes(combineUnisons=True)
+        mel = self.melodic(kind='d', end=True, df=nr)
+        mel_ng = self.ngrams(n=2, df=mel)
+        mel_matches = mel_ng.applymap(lambda cell: cell == ('-2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        bs = self.beatStrengths().reindex_like(nr)
+        bs_ng = self.ngrams(n=3, df=bs)
+        bs_ng = bs_ng.reindex_like(mel_ng)
+        bs_matches = bs_ng.applymap(lambda cell: cell[0] < cell[2] > cell[1], na_action='ignore').replace(False, np.nan).dropna(how='all')
+        res = pd.DataFrame().reindex_like(bs_ng)
+        res[bs_matches & mel_matches] = True
+        return res.dropna(how='all')
+        
 
     def cadences(self, keep_keys=False):
         '''
@@ -1759,42 +1777,51 @@ class ImportedPiece:
             self.analyses[key] = nr.apply(self._entryHelper, args=(fermatas,))
         return self.analyses[key]
 
-    def entries(self, df=None, n=None, thematic=False, fermatas=True):
+    def entries(self, df=None, n=None, thematic=False, anywhere=False, fermatas=True):
         """
         Return a filtered copy of the passed df that only keeps the events in
         that df if they either start a piece or come after a silence. If the df
-        parameter is left as None, it will be replaced with the default melodic
-        interval results, though with end=False since this is needed specifically
+        parameter is left as None, it will be replaced with melodic interval results
+        calculated after combining unisons and using diatonic intervals without
+        interval quality, and with end=False since this is needed specifically
         for this use case.
-        In these cases, the offset of each melodic entry is the starting offset of
-        the first note in the melody. If you want melodies 4 notes long, for
-        example, note that this would be n=3, because four consecutive notes are
-        constitute 3 melodic intervals.
+        When melodic intervals are calculated with end=False the offset of each
+        melodic entry is the starting offset of the first note in the melody. If you
+        want melodies 4 notes long, for example, note that this would be n=3,
+        because four consecutive notes are constitute 3 melodic intervals.
         If the n parameter is not None, then the default melodic interval results
         or passed df argument will be replaced with n-long ngrams of those events.
         Note that this does not currently work for dataframes where the columns
         are combinations of voices, e.g. harmonic intervals.
-        If `thematic` is set to True, this method will further filter the results
-        to entries that happen at least twice anywhere in the piece. This means
+        If `thematic` is set to True, this method returns all instances of a entries
+        that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
-        one more time, though the additional time doesn't have to be after a rest.
+        one more time, though the additional time doesn't have to be after a rest. 
+        If `anywhere` is set to True, the final results returned include all
+        instances of entry melodies, whether they come from rests or not.
         If `fermatas` is set to True (default), any melody starting immediately
         after a fermata will also be counted as an entry.
         """
         if df is None:
-            df = self.melodic(end=False)
+            nr = self.notes(combineUnisons=True)
+            df = self.melodic(df=nr, kind='d', end=False)
         if n is not None:
             df = self.ngrams(df, n)
         mask = self.entryMask(fermatas)
         num_parts = len(mask.columns)
         mask.columns = df.columns[:num_parts]
-        ret = df.copy()
-        ret.iloc[:, :num_parts] = ret.iloc[:, :num_parts][mask]
+        entries = df.copy()
+        entries.iloc[:, :num_parts] = entries.iloc[:, :num_parts][mask]
+        source = entries.copy() 
+        if anywhere:
+            ret = df[df.isin(entries.stack().values)].copy()
+        else:
+            ret = entries.copy()
         if thematic:
-            stack = df.iloc[:, :num_parts].stack()
+            stack = ret.iloc[:, :num_parts].stack()
             counts = stack.value_counts()
-            two_or_more = counts[counts > 1]
-            recurring = stack[stack.isin(two_or_more.index)].unique()
+            recurring = counts[counts > 1].index
+            # recurring_entries = recurring[recurring.isin(ret.stack())]
             ret = ret[ret.isin(recurring)]
         ret.dropna(how='all', subset=ret.columns[:num_parts], inplace=True)
         return ret
@@ -2617,7 +2644,10 @@ class CorpusBase:
         "driving distance table" showing how likely each model was a source for each mass. This
         is represented by a score 0-1 where 0 means that this relationship was highly unlikely
         and 1 means that the the two are highly likely to be related in this way (or that a
-        piece was compared to itself).
+        piece was compared to itself). Specifically, the value is the percentage of the mass's
+        thematic (i.e. recurring) melodies can be found as thematic melodies from the model. The
+        specific number of times they appear in the model is not considered, provided that it is
+        at least two.
         You can optionally pass a CorpusBase object as the `models` and/or `masses` parameters.
         If you do, the CorpusBase object you pass will be used as that group of pieces in the
         analysis. If either or both of these parameters is omitted, the calling CorpusBase
@@ -2629,11 +2659,11 @@ class CorpusBase:
         Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
         parameters are omitted, this means that if you omit both, i.e.
 
-        corpus.modelFinder()
+        calling_corpus.modelFinder()
 
         ... this will compare every score the corpus to every other score in the corpus. You
         should do this if you want to be able to consider every piece a potential model and
-        a potential mass.
+        a potential derivative mass.
         """
         if models is None:
             models = self
@@ -2651,22 +2681,16 @@ class CorpusBase:
         mass_entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mass_mel, 'n': n, 'thematic': True})
 
         res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
+        res.columns.name = 'Model'
+        res.index.name = 'Mass'
         for i, model in enumerate(models.scores):
-            mod_patterns = entries[i].stack()
-            counts = mod_patterns.value_counts()
-            thematic = counts[counts > 1]
+            mod_patterns = entries[i].stack().unique()
             for j, mass in enumerate(masses.scores):
-                if mass.file_name == model.file_name:
-                    res.at[mass.file_name, model.file_name] = 1
-                    continue
                 stack = mass_entries[j].stack()
-                mass_counts = stack.value_counts()
-                mass_thematic = mass_counts[mass_counts > 1]
-                stack = stack[stack.isin(mass_thematic.index)]
-                hits = stack[stack.isin(thematic.index)]
+                hits = stack[stack.isin(mod_patterns)]
                 if len(stack.index):
                     percent = len(hits.index) / len(stack.dropna().index)
-                res.at[mass.file_name, model.file_name] = percent
+                    res.at[mass.file_name, model.file_name] = percent
         return res
 
     def note_list_whole_piece(self):

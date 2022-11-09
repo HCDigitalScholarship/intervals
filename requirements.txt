@@ -8,6 +8,7 @@ idna==3.1
 ipywidgets==7.6.3
 ipython==8.4.0
 joblib==1.0.1
+louvain==0.7.1
 lxml==4.7.1
 more-itertools==8.7.0
 music21==7.1.0

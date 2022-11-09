@@ -1367,14 +1367,17 @@ class ImportedPiece:
         Specifically, you would need to show melodic motion of both voices,
         which you can do by running the .ngrams() method with these
         parameters: exclude=[], show_both=True, held=1, interval_settings('d', True, True)
+
         Usage:
         piece.ic('7_1:-2, 6_-2:2, 8)
+
         Notice that the intervals used are diatonic and without quality. Other
         settings may work but are not supported or recommended.
+
         The `generic` setting changes the output from the different interval
         successions observed that are at some level of invertible counterpoint
         from the passed module, to a generic form where the level of invertible
-        counterpoint is given. This is particularly useful if you want to
+        counterpoint is given. This is particularly useful if you want to 
         compare how invertible counterpoint is used as a technique among
         different pieces.
         '''
@@ -1563,7 +1566,6 @@ class ImportedPiece:
         res = pd.DataFrame().reindex_like(bs_ng)
         res[bs_matches & mel_matches] = True
         return res.dropna(how='all')
-
 
     def cadences(self, keep_keys=False):
         '''
@@ -1776,11 +1778,19 @@ class ImportedPiece:
         self.analyses['Homorhythm'] = result
         return result
 
+<<<<<<< HEAD
     def _entryHelper(self, col, fermatas=False):
+=======
+    def _entryHelper(self, col, fermatas=True):
+>>>>>>> main
         """
         Return True for cells in column that correspond to notes that either
-        begin a piece, or immediately preceded by a rest or a double barline."""
+        begin a piece, or immediately preceded by a rest, double barline, or
+        a fermata. For fermatas, this is included by default but can be
+        switched off by passing False for the fermatas paramter.
+        """
         barlines = self.barlines()[col.name]
+<<<<<<< HEAD
         _fermatas = self.fermatas()[col.name]
         _col = col.dropna()
         shifted = _col.shift().fillna('Rest')
@@ -1789,14 +1799,25 @@ class ImportedPiece:
         return mask
 
     def entryMask(self, fermatas=False):
+=======
+        _fermatas = self.fermatas()[col.name].shift()
+        _col = col.dropna()
+        shifted = _col.shift().fillna('Rest')
+        mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double') | (_fermatas)))
+        return mask
+
+    def entryMask(self, fermatas=True):
+>>>>>>> main
         """
         Return a dataframe of True, False, or NaN values which can be used as
         a mask (filter). When applied to another dataframe, only the True cells
         in the mask will be kept. Usage:
+
         piece = importScore('path_to_piece')
         mask = piece.entryMask()
         df = piece.notes()
         df[mask].dropna(how='all')
+<<<<<<< HEAD
         If fermatas is set to True (default False), anything coming
         immediately after a fermata will also be counted as an entry.
         """
@@ -1806,11 +1827,30 @@ class ImportedPiece:
             self.analyses[key] = nr.apply(self._entryHelper, args=(fermatas,))
         return self.analyses[key]
 
+=======
+
+        If fermatas is set to True (default), anything coming immediately after
+        a fermata will also be counted as an entry.
+        """
+        key = ('EntryMask', fermatas)
+        if key not in self.analyses:
+            nr = self.notes()
+            self.analyses[key] = nr.apply(self._entryHelper, args=(fermatas,))
+        return self.analyses[key]
+
+>>>>>>> main
     def entries(self, df=None, n=None, thematic=False, anywhere=False, fermatas=True):
         """
         Return a filtered copy of the passed df that only keeps the events in
         that df if they either start a piece or come after a silence. If the df
+<<<<<<< HEAD
         parameter is left as None, it will be replaced with melodic interval results calculated after combining unisons and using diatonic intervals without interval quality, and with end=False since this is needed specifically for this use case.
+=======
+        parameter is left as None, it will be replaced with melodic interval results
+        calculated after combining unisons and using diatonic intervals without
+        interval quality, and with end=False since this is needed specifically
+        for this use case.
+>>>>>>> main
         When melodic intervals are calculated with end=False the offset of each
         melodic entry is the starting offset of the first note in the melody. If you
         want melodies 4 notes long, for example, note that this would be n=3,
@@ -1822,10 +1862,17 @@ class ImportedPiece:
         If `thematic` is set to True, this method returns all instances of a entries
         that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
+<<<<<<< HEAD
         one more time, though the additional time doesn't have to be after a rest.
         If `anywhere` is set to True, the final results returned include all
         instances of entry melodies, whether they come from rests or not.
         If `fermatas` is set to True (default False), any melody starting immediately
+=======
+        one more time, though the additional time doesn't have to be after a rest. 
+        If `anywhere` is set to True, the final results returned include all
+        instances of entry melodies, whether they come from rests or not.
+        If `fermatas` is set to True (default), any melody starting immediately
+>>>>>>> main
         after a fermata will also be counted as an entry.
         """
         if df is None:
@@ -1838,7 +1885,11 @@ class ImportedPiece:
         mask.columns = df.columns[:num_parts]
         entries = df.copy()
         entries.iloc[:, :num_parts] = entries.iloc[:, :num_parts][mask]
+<<<<<<< HEAD
         source = entries.copy()
+=======
+        source = entries.copy() 
+>>>>>>> main
         if anywhere:
             ret = df[df.isin(entries.stack().values)].copy()
         else:
@@ -2964,7 +3015,13 @@ class CorpusBase:
         calling_corpus.modelFinder(...
         Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
         parameters are omitted, this means that if you omit both, i.e.
+<<<<<<< HEAD
         calling_corpus.modelFinder()
+=======
+
+        calling_corpus.modelFinder()
+
+>>>>>>> main
         ... this will compare every score the corpus to every other score in the corpus. You
         should do this if you want to be able to consider every piece a potential model and
         a potential derivative mass.

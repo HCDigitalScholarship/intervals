@@ -1514,6 +1514,8 @@ class ImportedPiece:
         The way these CVFs combine determines which cadence labels are assigned
         in the .cadences() method.
         '''
+        if len(self._getPartNames()) < 2:
+            return pd.DataFrame()
         if not keep_keys and 'CVF' in self.analyses:
             return self.analyses['CVF']
         cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')

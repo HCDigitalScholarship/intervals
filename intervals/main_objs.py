@@ -14,7 +14,6 @@ import requests
 import intervals
 import collections
 import verovio
-import pdb
 from glob import glob
 
 from IPython.display import SVG, HTML
@@ -1553,20 +1552,22 @@ class ImportedPiece:
             cvfs = pd.concat([cvfs, ngramKeys], axis=1)
         return cvfs
 
-    def patientMelodies(self):
+    def morleyCadences(self):
         '''
-        Return a dataframe of the places where there appear to be patient-type melodies.
+        Return a dataframe of the places where there appear to be patient-type melodies. These
+        moments are labeled with "Morley Cadence" as they match Morley's definition of a cadence
+        which is a one-voice melodic pattern.
         '''
         nr = self.notes(combineUnisons=True)
         mel = self.melodic(kind='d', end=True, df=nr)
-        mel_ng = self.ngrams(n=2, df=mel)
+        mel_ng = self.ngrams(n=2, df=mel, offsets='last')
         mel_matches = mel_ng.applymap(lambda cell: cell == ('-2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
         bs = self.beatStrengths().reindex_like(nr)
-        bs_ng = self.ngrams(n=3, df=bs)
+        bs_ng = self.ngrams(n=3, df=bs, offsets='last')
         bs_ng = bs_ng.reindex_like(mel_ng)
         bs_matches = bs_ng.applymap(lambda cell: cell[0] < cell[2] > cell[1], na_action='ignore').replace(False, np.nan).dropna(how='all')
         res = pd.DataFrame().reindex_like(bs_ng)
-        res[bs_matches & mel_matches] = True
+        res[bs_matches & mel_matches] = 'Morley Cadence'
         return res.dropna(how='all')
 
     def cadences(self, keep_keys=False):

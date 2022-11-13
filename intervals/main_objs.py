@@ -3010,6 +3010,10 @@ class CorpusBase:
                     percent = len(hits.index) / len(stack.dropna().index)
                     res.at[mass.file_name, model.file_name] = percent
         return res
+        
+    def _entry_ngram_helper(self, entries, model_modules, cols)
+        combined = entries.join(model_modules)
+        entry_modules = combined.drop(cols, axis=1).dropna(how='all').fillna('')
 
     def moduleFinder(self, models=None, masses=None, n=4):
         """
@@ -3041,10 +3045,15 @@ class CorpusBase:
         if masses is None:
             masses = self
 
-        # get entries from all the models
+        # get modules at entries from all the models
+        entries = models.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
+        cols = models.batch(ImportedPiece.columns).to_list()
         model_modules = models.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
+        entry_modules = models.batch(ImportedPiece._entry_ngram_helper)
 
-        # get entries from the masses
+
+
+        # get modules at entries from the masses
         mass_modules = masses.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
 
         res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))

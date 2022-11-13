@@ -3046,6 +3046,7 @@ class CorpusBase:
             masses = self
 
         # get modules at entries from all the models
+        mel = models.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'df': notes, 'kind': 'd', 'end': False})
         entries = models.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
         cols = models.batch(ImportedPiece.columns).to_list()
         model_modules = models.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)

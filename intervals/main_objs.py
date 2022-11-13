@@ -3010,8 +3010,8 @@ class CorpusBase:
                     percent = len(hits.index) / len(stack.dropna().index)
                     res.at[mass.file_name, model.file_name] = percent
         return res
-        
-    def _entry_ngram_helper(self, entries, model_modules, cols)
+
+    def _entry_ngram_helper(self, entries, model_modules, cols):
         combined = entries.join(model_modules)
         entry_modules = combined.drop(cols, axis=1).dropna(how='all').fillna('')
 

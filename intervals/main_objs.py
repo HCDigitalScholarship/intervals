@@ -1179,6 +1179,13 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
+    def _entry_ngram_helper(self, entries, model_modules, cols):
+        cols = entries.columns.to_list()
+        combined = entries.join(model_modules)
+        entry_modules = combined.drop(cols, axis=1).dropna(how='all').fillna('')
+
+        return entry_modules
+
     def _ngrams_offsets_helper(col, n, offsets):
         """
         Generate a list of series that align the notes from one ngrams according
@@ -3011,10 +3018,7 @@ class CorpusBase:
                     res.at[mass.file_name, model.file_name] = percent
         return res
 
-    def _entry_ngram_helper(self, entries, model_modules, cols):
-        cols = entries.columns.to_list()
-        combined = entries.join(model_modules)
-        entry_modules = combined.drop(cols, axis=1).dropna(how='all').fillna('')
+
 
     def moduleFinder(self, models=None, masses=None, n=4):
         """

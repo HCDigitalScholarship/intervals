@@ -3012,6 +3012,7 @@ class CorpusBase:
         return res
 
     def _entry_ngram_helper(self, entries, model_modules, cols):
+        cols = entries.columns.to_list()
         combined = entries.join(model_modules)
         entry_modules = combined.drop(cols, axis=1).dropna(how='all').fillna('')
 
@@ -3048,7 +3049,6 @@ class CorpusBase:
         # get modules at entries from all the models
         mel = models.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'kind': 'd', 'end': False})
         entries = models.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
-        cols = models.batch(ImportedPiece.columns).to_list()
         model_modules = models.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
         entry_modules = models.batch(ImportedPiece._entry_ngram_helper)
 
@@ -3057,7 +3057,6 @@ class CorpusBase:
         # get modules at entries from the masses
         mel = masses.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'kind': 'd', 'end': False})
         entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
-        cols = masses.batch(ImportedPiece.columns).to_list()
         model_modules = masses.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
         entry_modules = masses.batch(ImportedPiece._entry_ngram_helper)
 

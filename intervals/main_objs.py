@@ -3055,7 +3055,11 @@ class CorpusBase:
 
 
         # get modules at entries from the masses
-        mass_modules = masses.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
+        mel = masses.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'df': notes, 'kind': 'd', 'end': False})
+        entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
+        cols = masses.batch(ImportedPiece.columns).to_list()
+        model_modules = masses.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
+        entry_modules = masses.batch(ImportedPiece._entry_ngram_helper)
 
         res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
         res.columns.name = 'Model'

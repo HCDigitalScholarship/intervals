@@ -1376,7 +1376,7 @@ class ImportedPiece:
         The `generic` setting changes the output from the different interval
         successions observed that are at some level of invertible counterpoint
         from the passed module, to a generic form where the level of invertible
-        counterpoint is given. This is particularly useful if you want to 
+        counterpoint is given. This is particularly useful if you want to
         compare how invertible counterpoint is used as a technique among
         different pieces.
         '''
@@ -1834,7 +1834,7 @@ class ImportedPiece:
         If `thematic` is set to True, this method returns all instances of a entries
         that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
-        one more time, though the additional time doesn't have to be after a rest. 
+        one more time, though the additional time doesn't have to be after a rest.
         If `anywhere` is set to True, the final results returned include all
         instances of entry melodies, whether they come from rests or not.
         If `fermatas` is set to True (default), any melody starting immediately
@@ -3011,6 +3011,54 @@ class CorpusBase:
                     res.at[mass.file_name, model.file_name] = percent
         return res
 
+    def moduleFinder(self, models=None, masses=None, n=4):
+        """
+        Searches for pieces that may be models of one or more masses. This method returns a
+        "driving distance table" showing how likely each model was a source for each mass. This
+        is represented by a score 0-1 where 0 means that this relationship was highly unlikely
+        and 1 means that the the two are highly likely to be related in this way (or that a
+        piece was compared to itself). Specifically, the value is the percentage of the mass's
+        thematic (i.e. recurring) melodies can be found as thematic melodies from the model. The
+        specific number of times they appear in the model is not considered, provided that it is
+        at least two.
+        You can optionally pass a CorpusBase object as the `models` and/or `masses` parameters.
+        If you do, the CorpusBase object you pass will be used as that group of pieces in the
+        analysis. If either or both of these parameters is omitted, the calling CorpusBase
+        object's scores will be used. For clarity, the "calling" CorpusBase object is what goes
+        to the left of the period in:
+        calling_corpus.modelFinder(...
+        Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
+        parameters are omitted, this means that if you omit both, i.e.
+
+        calling_corpus.modelFinder()
+
+        ... this will compare every score the corpus to every other score in the corpus. You
+        should do this if you want to be able to consider every piece a potential model and
+        a potential derivative mass.
+        """
+        if models is None:
+            models = self
+        if masses is None:
+            masses = self
+
+        # get entries from all the models
+        model_modules = models.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
+
+        # get entries from the masses
+        mass_modules = masses.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
+
+        res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
+        res.columns.name = 'Model'
+        res.index.name = 'Mass'
+        for i, model in enumerate(models.scores):
+            mod_patterns = model_modules[i].stack().unique()
+            for j, mass in enumerate(masses.scores):
+                stack = mass_modules[j].stack()
+                hits = stack[stack.isin(mod_patterns)]
+                if len(stack.index):
+                    percent = len(hits.index) / len(stack.dropna().index)
+                    res.at[mass.file_name, model.file_name] = percent
+        return res
     def note_list_whole_piece(self):
         """ Creates a note list from the whole piece for all scores- default note_list
         """

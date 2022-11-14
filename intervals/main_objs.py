@@ -1180,9 +1180,9 @@ class ImportedPiece:
         return self.analyses[key]
 
     def _entry_ngram_helper(self):
-        entries = piece.entries()
+        entries = self.entries()
         cols = entries.columns.to_list()
-        modules = piece.ngrams()
+        modules = self.ngrams()
         combined = entries.join(modules)
         entry_modules = combined.drop(cols, axis=1).dropna(how='all').fillna('')
 

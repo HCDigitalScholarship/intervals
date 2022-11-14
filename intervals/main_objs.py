@@ -3056,7 +3056,7 @@ class CorpusBase:
         # mel = models.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'kind': 'd', 'end': False})
         # entries = models.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
         # model_modules = models.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
-        entry_modules = models.batch(ImportedPiece._entry_ngram_helper)
+        model_modules = models.batch(ImportedPiece._entry_ngram_helper)
 
 
 
@@ -3064,7 +3064,7 @@ class CorpusBase:
         # mel = masses.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'kind': 'd', 'end': False})
         # entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
         # mass_modules = masses.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
-        entry_modules = masses.batch(ImportedPiece._entry_ngram_helper)
+        mass_modules = masses.batch(ImportedPiece._entry_ngram_helper)
 
         res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
         res.columns.name = 'Model'

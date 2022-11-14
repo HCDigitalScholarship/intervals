@@ -1180,6 +1180,15 @@ class ImportedPiece:
         return self.analyses[key]
 
     def _entry_ngram_helper(self):
+        """
+        This private method is used by the moduleFinder function, which compares
+        shared modules across pieces in a corpus.
+
+        The method finds the entries, then uses these locations to determine
+        the contrapuntal modules that occur in those places.  Of course the
+        contrapuntal modules involve all voices active at given moment, and so not all of them will be the result of the entries themselves.
+        
+        """
         entries = self.entries()
         cols = entries.columns.to_list()
         modules = self.ngrams()
@@ -3020,50 +3029,30 @@ class CorpusBase:
                     res.at[mass.file_name, model.file_name] = percent
         return res
 
-
-
     def moduleFinder(self, models=None, masses=None, n=4):
         """
-        Searches for pieces that may be models of one or more masses. This method returns a
-        "driving distance table" showing how likely each model was a source for each mass. This
-        is represented by a score 0-1 where 0 means that this relationship was highly unlikely
-        and 1 means that the the two are highly likely to be related in this way (or that a
-        piece was compared to itself). Specifically, the value is the percentage of the mass's
-        thematic (i.e. recurring) melodies can be found as thematic melodies from the model. The
-        specific number of times they appear in the model is not considered, provided that it is
-        at least two.
+        Like the modelFindfer, this compares a corpus of pieces, returning
+        a table of percentages of shared ngrams.
+
+        In this case the ngrams are contrapuntal modules.
+
         You can optionally pass a CorpusBase object as the `models` and/or `masses` parameters.
-        If you do, the CorpusBase object you pass will be used as that group of pieces in the
-        analysis. If either or both of these parameters is omitted, the calling CorpusBase
-        object's scores will be used. For clarity, the "calling" CorpusBase object is what goes
-        to the left of the period in:
-        calling_corpus.modelFinder(...
-        Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
-        parameters are omitted, this means that if you omit both, i.e.
+        If you do, the CorpusBase object you pass will be used as that group of pieces in the analysis. If either or both of these parameters is omitted, the calling CorpusBase object's scores will be used. For clarity, the "calling" CorpusBase object is what goes to the left of the period in: calling_corpus.modelFinder(...
+        Since the calling CorpusBase object's scores are used if the `models` and/or `masses` parameters are omitted, this means that if you omit both, i.e.
 
         calling_corpus.modelFinder()
 
-        ... this will compare every score the corpus to every other score in the corpus. You
-        should do this if you want to be able to consider every piece a potential model and
-        a potential derivative mass.
+        ... this will compare every score the corpus to every other score in the corpus. You should do this if you want to be able to consider every piece a potential model and a potential derivative mass.
         """
         if models is None:
             models = self
         if masses is None:
             masses = self
 
-        # get modules at entries from all the models
-        # mel = models.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'kind': 'd', 'end': False})
-        # entries = models.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
-        # model_modules = models.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
+        # get modules at entries from all the models using helper
         model_modules = models.batch(ImportedPiece._entry_ngram_helper)
 
-
-
-        # get modules at entries from the masses
-        # mel = masses.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'kind': 'd', 'end': False})
-        # entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
-        # mass_modules = masses.batch(ImportedPiece.ngrams, number_parts=False, metadata=False)
+        # get modules at entries from the masses using helper
         mass_modules = masses.batch(ImportedPiece._entry_ngram_helper)
 
         res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))

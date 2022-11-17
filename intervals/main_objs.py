@@ -1179,6 +1179,24 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
+    def _entry_ngram_helper(self):
+        """
+        This private method is used by the moduleFinder function, which compares
+        shared modules across pieces in a corpus.
+
+        The method finds the entries, then uses these locations to determine
+        the contrapuntal modules that occur in those places.  Of course the
+        contrapuntal modules involve all voices active at given moment, and so not all of them will be the result of the entries themselves.
+
+        """
+        entries = self.entries()
+        cols = entries.columns.to_list()
+        modules = self.ngrams()
+        combined = entries.join(modules)
+        entry_modules = combined.drop(cols, axis=1).dropna(how='all').fillna('')
+
+        return entry_modules
+
     def _ngrams_offsets_helper(col, n, offsets):
         """
         Generate a list of series that align the notes from one ngrams according
@@ -1376,7 +1394,7 @@ class ImportedPiece:
         The `generic` setting changes the output from the different interval
         successions observed that are at some level of invertible counterpoint
         from the passed module, to a generic form where the level of invertible
-        counterpoint is given. This is particularly useful if you want to 
+        counterpoint is given. This is particularly useful if you want to
         compare how invertible counterpoint is used as a technique among
         different pieces.
         '''
@@ -1728,57 +1746,56 @@ class ImportedPiece:
         """
         This function predicts homorhythmic passages in a given piece.
         The method follows various stages:
+
         gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets
         gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr
         checks the number of active voices (thus eliminating places where some voices have rests)
-
-        Note that the output of this function can also be used with verovioHomorhythm
-        to show the results in score.
-
         """
-        if 'Homorhythm' in self.analyses:
-            return self.analyses['Homorhythm']
         # active version with lyric ngs
-        nr = self.notes()
-        dur = self.durations(df=nr)
-        ng = self.ngrams(df=dur, n=2)
+        nr = piece.notes()
+        dur = piece.durations(df=nr)
+        ng = piece.ngrams(df=dur, n=5)
         dur_ngrams = []
         for index, rows in ng.iterrows():
-             dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
-             dur_ngrams.append(dur_ngrams_no_nan)
+            dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
+            dur_ngrams.append(dur_ngrams_no_nan)
 
         ng['dur_ngrams'] = dur_ngrams
 
         ng['active_voices'] = ng['dur_ngrams'].apply(len)
         ng['number_dur_ngrams'] = ng['dur_ngrams'].apply(set).apply(len)
-        ng = ng[(ng['number_dur_ngrams'] < 2) & (ng['active_voices'] > 1)]
+    #     ng = ng[(ng['number_dur_ngrams'] < 2) & (ng['active_voices'] > 1)]
+        ng = ng[ng['number_dur_ngrams'] < ng['active_voices']]
 
          # get the lyrics as ngrams to match the durations
-        lyrics = self.lyrics()
-        lyrics = lyrics.applymap(self._alpha_only)
-        lyrics_ng = self.ngrams(df=lyrics, n=2)
+        lyrics = piece.lyrics()
+        lyrics = lyrics.applymap(piece._alpha_only)
+        lyrics_ng = piece.ngrams(df=lyrics, n=5)
 
+        ng_list = ng.index.to_list()
+        # filtered_lyric_ngs = lyrics_ng.loc[ng_list]
+        filtered_lyric_ngs = lyrics_ng.filter(items = ng_list, axis=0)
         # count the lyric_ngrams at each position
         syll_set = []
-        for index, rows in lyrics_ng.iterrows():
+        for index, rows in filtered_lyric_ngs.iterrows():
              syll_no_nan = [z for z in rows if pd.isnull(z) == False]
              syll_set.append(syll_no_nan)
-        lyrics_ng['syllable_set'] = syll_set
-        lyrics_ng["count_lyr_ngrams"] = lyrics_ng["syllable_set"].apply(set).apply(len)
+        filtered_lyric_ngs['syllable_set'] = syll_set
+        filtered_lyric_ngs["count_lyr_ngrams"] = filtered_lyric_ngs["syllable_set"].apply(set).apply(len)
 
         # and the number of active voices
-        lyrics_ng['active_syll_voices'] = lyrics_ng['syllable_set'].apply(len)
-
-        # finally predict the hr moments, based on the number of both active voices (> 1) and count of lyric ngrams (1)
-        hr_sylls_mask = lyrics_ng[(lyrics_ng['active_syll_voices'] > 1) & (lyrics_ng['count_lyr_ngrams'] < 2)]
+        filtered_lyric_ngs['active_syll_voices'] = filtered_lyric_ngs['syllable_set'].apply(len)
+        # hr_sylls_masked = filtered_lyric_ngs[filtered_lyric_ngs['active_syll_voices'] > lyrics_ng['count_lyr_ngrams']]
+        hr_sylls_mask = filtered_lyric_ngs[filtered_lyric_ngs['active_syll_voices'] > filtered_lyric_ngs['count_lyr_ngrams']]
 
         # combine of both dur_ng and lyric_ng to show passages where more than 2 voices have the same syllables and durations
         ng = ng[['active_voices', "number_dur_ngrams"]]
         hr = pd.merge(ng, hr_sylls_mask, left_index=True, right_index=True)
          # the intersection of coordinated durations and coordinate lyrics
-        hr['voice_match'] = hr['active_voices'] == hr['active_syll_voices']
-        result = self.detailIndex(hr, offset=True)
-        self.analyses['Homorhythm'] = result
+        hr['voice_match'] = hr['number_dur_ngrams'] == hr['count_lyr_ngrams']
+        hr = hr[hr['voice_match']]
+        result = piece.detailIndex(hr, offset=True)
+
         return result
 
     def _entryHelper(self, col, fermatas=True):
@@ -1834,7 +1851,7 @@ class ImportedPiece:
         If `thematic` is set to True, this method returns all instances of a entries
         that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
-        one more time, though the additional time doesn't have to be after a rest. 
+        one more time, though the additional time doesn't have to be after a rest.
         If `anywhere` is set to True, the final results returned include all
         instances of entry melodies, whether they come from rests or not.
         If `fermatas` is set to True (default), any melody starting immediately
@@ -3011,6 +3028,44 @@ class CorpusBase:
                     res.at[mass.file_name, model.file_name] = percent
         return res
 
+    def moduleFinder(self, models=None, masses=None, n=4):
+        """
+        Like the modelFindfer, this compares a corpus of pieces, returning
+        a table of percentages of shared ngrams.
+
+        In this case the ngrams are contrapuntal modules.
+
+        You can optionally pass a CorpusBase object as the `models` and/or `masses` parameters.
+        If you do, the CorpusBase object you pass will be used as that group of pieces in the analysis. If either or both of these parameters is omitted, the calling CorpusBase object's scores will be used. For clarity, the "calling" CorpusBase object is what goes to the left of the period in: calling_corpus.modelFinder(...
+        Since the calling CorpusBase object's scores are used if the `models` and/or `masses` parameters are omitted, this means that if you omit both, i.e.
+
+        calling_corpus.modelFinder()
+
+        ... this will compare every score the corpus to every other score in the corpus. You should do this if you want to be able to consider every piece a potential model and a potential derivative mass.
+        """
+        if models is None:
+            models = self
+        if masses is None:
+            masses = self
+
+        # get modules at entries from all the models using helper
+        model_modules = models.batch(ImportedPiece._entry_ngram_helper)
+
+        # get modules at entries from the masses using helper
+        mass_modules = masses.batch(ImportedPiece._entry_ngram_helper)
+
+        res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
+        res.columns.name = 'Model'
+        res.index.name = 'Mass'
+        for i, model in enumerate(models.scores):
+            mod_patterns = model_modules[i].stack().unique()
+            for j, mass in enumerate(masses.scores):
+                stack = mass_modules[j].stack()
+                hits = stack[stack.isin(mod_patterns)]
+                if len(stack.index):
+                    percent = len(hits.index) / len(stack.dropna().index)
+                    res.at[mass.file_name, model.file_name] = percent
+        return res
     def note_list_whole_piece(self):
         """ Creates a note list from the whole piece for all scores- default note_list
         """

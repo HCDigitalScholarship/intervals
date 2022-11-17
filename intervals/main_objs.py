@@ -1187,7 +1187,7 @@ class ImportedPiece:
         The method finds the entries, then uses these locations to determine
         the contrapuntal modules that occur in those places.  Of course the
         contrapuntal modules involve all voices active at given moment, and so not all of them will be the result of the entries themselves.
-        
+
         """
         entries = self.entries()
         cols = entries.columns.to_list()
@@ -1746,57 +1746,56 @@ class ImportedPiece:
         """
         This function predicts homorhythmic passages in a given piece.
         The method follows various stages:
+
         gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets
         gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr
         checks the number of active voices (thus eliminating places where some voices have rests)
-
-        Note that the output of this function can also be used with verovioHomorhythm
-        to show the results in score.
-
         """
-        if 'Homorhythm' in self.analyses:
-            return self.analyses['Homorhythm']
         # active version with lyric ngs
-        nr = self.notes()
-        dur = self.durations(df=nr)
-        ng = self.ngrams(df=dur, n=2)
+        nr = piece.notes()
+        dur = piece.durations(df=nr)
+        ng = piece.ngrams(df=dur, n=5)
         dur_ngrams = []
         for index, rows in ng.iterrows():
-             dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
-             dur_ngrams.append(dur_ngrams_no_nan)
+            dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
+            dur_ngrams.append(dur_ngrams_no_nan)
 
         ng['dur_ngrams'] = dur_ngrams
 
         ng['active_voices'] = ng['dur_ngrams'].apply(len)
         ng['number_dur_ngrams'] = ng['dur_ngrams'].apply(set).apply(len)
-        ng = ng[(ng['number_dur_ngrams'] < 2) & (ng['active_voices'] > 1)]
+    #     ng = ng[(ng['number_dur_ngrams'] < 2) & (ng['active_voices'] > 1)]
+        ng = ng[ng['number_dur_ngrams'] < ng['active_voices']]
 
          # get the lyrics as ngrams to match the durations
-        lyrics = self.lyrics()
-        lyrics = lyrics.applymap(self._alpha_only)
-        lyrics_ng = self.ngrams(df=lyrics, n=2)
+        lyrics = piece.lyrics()
+        lyrics = lyrics.applymap(piece._alpha_only)
+        lyrics_ng = piece.ngrams(df=lyrics, n=5)
 
+        ng_list = ng.index.to_list()
+        # filtered_lyric_ngs = lyrics_ng.loc[ng_list]
+        filtered_lyric_ngs = lyrics_ng.filter(items = ng_list, axis=0)
         # count the lyric_ngrams at each position
         syll_set = []
-        for index, rows in lyrics_ng.iterrows():
+        for index, rows in filtered_lyric_ngs.iterrows():
              syll_no_nan = [z for z in rows if pd.isnull(z) == False]
              syll_set.append(syll_no_nan)
-        lyrics_ng['syllable_set'] = syll_set
-        lyrics_ng["count_lyr_ngrams"] = lyrics_ng["syllable_set"].apply(set).apply(len)
+        filtered_lyric_ngs['syllable_set'] = syll_set
+        filtered_lyric_ngs["count_lyr_ngrams"] = filtered_lyric_ngs["syllable_set"].apply(set).apply(len)
 
         # and the number of active voices
-        lyrics_ng['active_syll_voices'] = lyrics_ng['syllable_set'].apply(len)
-
-        # finally predict the hr moments, based on the number of both active voices (> 1) and count of lyric ngrams (1)
-        hr_sylls_mask = lyrics_ng[(lyrics_ng['active_syll_voices'] > 1) & (lyrics_ng['count_lyr_ngrams'] < 2)]
+        filtered_lyric_ngs['active_syll_voices'] = filtered_lyric_ngs['syllable_set'].apply(len)
+        # hr_sylls_masked = filtered_lyric_ngs[filtered_lyric_ngs['active_syll_voices'] > lyrics_ng['count_lyr_ngrams']]
+        hr_sylls_mask = filtered_lyric_ngs[filtered_lyric_ngs['active_syll_voices'] > filtered_lyric_ngs['count_lyr_ngrams']]
 
         # combine of both dur_ng and lyric_ng to show passages where more than 2 voices have the same syllables and durations
         ng = ng[['active_voices', "number_dur_ngrams"]]
         hr = pd.merge(ng, hr_sylls_mask, left_index=True, right_index=True)
          # the intersection of coordinated durations and coordinate lyrics
-        hr['voice_match'] = hr['active_voices'] == hr['active_syll_voices']
-        result = self.detailIndex(hr, offset=True)
-        self.analyses['Homorhythm'] = result
+        hr['voice_match'] = hr['number_dur_ngrams'] == hr['count_lyr_ngrams']
+        hr = hr[hr['voice_match']]
+        result = piece.detailIndex(hr, offset=True)
+
         return result
 
     def _entryHelper(self, col, fermatas=True):

@@ -1368,7 +1368,7 @@ class ImportedPiece:
         parameters: exclude=[], show_both=True, held=1, interval_settings('d', True, True)
 
         Usage:
-        piece.ic('7_1:-2, 6_-2:2, 8)
+        piece.ic('7_1:-2, 6_-2:2, 8')
 
         Notice that the intervals used are diatonic and without quality. Other
         settings may work but are not supported or recommended.

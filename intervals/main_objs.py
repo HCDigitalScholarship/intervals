@@ -1359,7 +1359,7 @@ class ImportedPiece:
 
     def ic(self, module, generic=False):
         '''
-        *** Invertible Counterpoint Finder ***
+        *** Invertible Counterpoint and Double Counterpoint Finder ***
         This method takes a string of a module and finds all the instances of
         that module at any level of inversion. The module is an interval
         succession in the format of what you get from the .ngrams() method.
@@ -1367,11 +1367,17 @@ class ImportedPiece:
         which you can do by running the .ngrams() method with these
         parameters: exclude=[], show_both=True, held=1, interval_settings('d', True, True)
 
+        In this method, Invertible Counterpoint is where we have a repetition of
+        the given module but where the upper and lower melodies have been exchanged.
+        Double Counterpoint is when the module repeats and the melody of each
+        part is the same as before, but the harmonic intervals are all off by a
+        given amount. This is like Invertible Counterpoint, but the parts have
+        not actually crossed.
+
         Usage:
         piece.ic('7_1:-2, 6_-2:2, 8')
 
-        Notice that the intervals used are diatonic and without quality. Other
-        settings may work but are not supported or recommended.
+        Notice that the intervals used must be diatonic and without quality.
 
         The `generic` setting changes the output from the different interval
         successions observed that are at some level of invertible counterpoint
@@ -1380,44 +1386,55 @@ class ImportedPiece:
         compare how invertible counterpoint is used as a technique among
         different pieces.
         '''
-        har_sub = '[^_]*'
+        har_regex = '[^_]*'
         target1, target2 = [], []
         chunks = module.split(', ')
         for chunk in chunks:
             if '_' not in chunk:
-                target1.append(har_sub)
-                target2.append(har_sub)
+                target1.append(har_regex)
+                target2.append(har_regex)
                 break
             temp = re.split('_|:', chunk)
             mel1 = temp[1]
             mel2 = temp[2]
-            target1.append('{}_{}:{}'.format(har_sub, mel1, mel2))
-            target2.append('{}_{}:{}'.format(har_sub, mel2, mel1))
+            target1.append('{}_{}:{}'.format(har_regex, mel1, mel2))
+            target2.append('{}_{}:{}'.format(har_regex, mel2, mel1))
         target1 = ', '.join(target1)
         target2 = ', '.join(target2)
         _n = 1 + module.count(',')
         ngrams = self.ngrams(n=_n, held='1', exclude=[], show_both=True)
         mask1 = ngrams.apply(lambda row: row.str.contains(target1, regex=True))
         mask2 = ngrams.apply(lambda row: row.str.contains(target2, regex=True))
-        result = ngrams[(mask1 | mask2)].dropna(how='all')
-        if generic:
+        if not generic:
+            return ngrams[(mask1 | mask2)].dropna(how='all')
+        else:
             reference_int = int(module.rsplit(' ', 1)[-1])
+            prefix = 'DBL'
             def _icHelper(repetition):
                 '''
                 Helper function to calculate the level of invertible counterpoint at which
                 a repetition is found. This only gets used when the `generic` setting of
                 .ic() is set to True.
                 '''
-                last_int = int(repetition.rsplit(' ', 1)[-1])
-                if (module == repetition) or (reference_int % 7 == last_int % 7 and reference_int > 0 and last_int > 0):
+                last_har_int = int(repetition.rsplit(' ', 1)[-1])
+                if (module == repetition) or (reference_int % 7 == last_har_int % 7 and reference_int > 0 and last_har_int > 0):
                     return 'Repeat'
-                if ((last_int > 0 and reference_int > 0) or (last_int + reference_int < 0)):
-                    val = last_int + reference_int - 1
+                if prefix == 'DBL':
+                    val = last_har_int - reference_int
+                    if val > 0:
+                        val += 1
+                    else:
+                        val -= 1
+                elif ((last_har_int > 0 and reference_int > 0) or (last_har_int + reference_int < 0)):
+                    val = last_har_int + reference_int - 1
                 else:
-                    val = last_int + reference_int + 1
-                return '@{}'.format(val)
-            result = result.applymap(_icHelper, na_action='ignore')
-        return result
+                    val = last_har_int + reference_int + 1
+                return '{}@{}'.format(prefix, val)
+            res1 = ngrams[mask1].dropna(how='all').applymap(_icHelper, na_action='ignore')
+            prefix = 'IC'
+            res2 = ngrams[mask2].dropna(how='all').applymap(_icHelper, na_action='ignore')
+            res1.update(res2)
+            return res1
 
     def _cvf_helper(self, row, df):
         '''

@@ -3028,6 +3028,28 @@ class CorpusBase:
                     res.at[mass.file_name, model.file_name] = percent
         return res
 
+    def derivativeAnalyzer(self, df=None, n=10):
+        '''
+        Find the top n masses with the highest derivation scores for each model in a table of .modelFinder results.
+        The scores from the different movements in each mass are averaged together to get a single score for each
+        model-mass pair.'''
+        if df is None:
+            _df = self.modelFinder()
+        else:
+            _df = df.copy()
+        _df.index = [i.rsplit('_', 1)[0].split('_', 1)[1] if 'Mass' in i else i.split('_', 1)[1] for i in _df.index]
+        means = _df.groupby(level=0, sort=False).mean()
+        if n > len(means.index):
+            print('\nYou used an n of size {} but only passed a corpus with {} masses in it. Returning all results ranked.\n'.format(n, len(means.index)))
+            n = len(means.index)
+        cols = []
+        for col in means.columns:
+            topDerivatives = means[col].nlargest(n).round(4)
+            cols.append([(i, topDerivatives[i]) for i in topDerivatives.index])
+        res = pd.DataFrame(cols, columns=range(1, n+1), index=_df.columns).T
+        res.index.set_names('Rank', inplace=True)
+        return res
+
     def note_list_whole_piece(self):
         """ Creates a note list from the whole piece for all scores- default note_list
         """

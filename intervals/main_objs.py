@@ -1179,7 +1179,7 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
-    def _entry_ngram_helper(self):
+    def _entry_ngram_helper(self, n):
         """
         This private method is used by the moduleFinder function, which compares
         shared modules across pieces in a corpus.
@@ -1191,7 +1191,7 @@ class ImportedPiece:
         """
         entries = self.entries()
         cols = entries.columns.to_list()
-        modules = self.ngrams()
+        modules = self.ngrams(n=n, held='1', exclude=[], show_both=True)
         combined = entries.join(modules)
         entry_modules = combined.drop(cols, axis=1).dropna(how='all').fillna('')
 
@@ -1375,7 +1375,7 @@ class ImportedPiece:
         else:
             return pd.DataFrame()
 
-    def ic(self, module, generic=False):
+    def ic(self, module, generic=False, df=None):
         '''
         *** Invertible Counterpoint Finder ***
         This method takes a string of a module and finds all the instances of
@@ -1414,7 +1414,10 @@ class ImportedPiece:
         target1 = ', '.join(target1)
         target2 = ', '.join(target2)
         _n = 1 + module.count(',')
-        ngrams = self.ngrams(n=_n, held='1', exclude=[], show_both=True)
+        if df is None:
+            ngrams = self.ngrams(n=_n, held='1', exclude=[], show_both=True)
+        else:
+            ngrams = df.copy()
         mask1 = ngrams.apply(lambda row: row.str.contains(target1, regex=True))
         mask2 = ngrams.apply(lambda row: row.str.contains(target2, regex=True))
         result = ngrams[(mask1 | mask2)].dropna(how='all')
@@ -3049,10 +3052,10 @@ class CorpusBase:
             masses = self
 
         # get modules at entries from all the models using helper
-        model_modules = models.batch(ImportedPiece._entry_ngram_helper)
+        model_modules = models.batch(ImportedPiece._entry_ngram_helper, kwargs={'n': n})
 
         # get modules at entries from the masses using helper
-        mass_modules = masses.batch(ImportedPiece._entry_ngram_helper)
+        mass_modules = masses.batch(ImportedPiece._entry_ngram_helper, kwargs={'n': n})
 
         res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
         res.columns.name = 'Model'

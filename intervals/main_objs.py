@@ -2819,12 +2819,18 @@ class CorpusBase:
         In this case the ngrams are contrapuntal modules.
 
         You can optionally pass a CorpusBase object as the `models` and/or `masses` parameters.
-        If you do, the CorpusBase object you pass will be used as that group of pieces in the analysis. If either or both of these parameters is omitted, the calling CorpusBase object's scores will be used. For clarity, the "calling" CorpusBase object is what goes to the left of the period in: calling_corpus.modelFinder(...
-        Since the calling CorpusBase object's scores are used if the `models` and/or `masses` parameters are omitted, this means that if you omit both, i.e.
+        If you do, the CorpusBase object you pass will be used as that group of pieces in the
+        analysis. If either or both of these parameters is omitted, the calling CorpusBase
+        object's scores will be used. For clarity, the "calling" CorpusBase object is what
+        goes to the left of the period in: calling_corpus.modelFinder(...
+        Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
+        parameters are omitted, this means that if you omit both, i.e.
 
         calling_corpus.modelFinder()
 
-        ... this will compare every score the corpus to every other score in the corpus. You should do this if you want to be able to consider every piece a potential model and a potential derivative mass.
+        ... this will compare every score the corpus to every other score in the corpus. You
+        should do this if you want to be able to consider every piece a potential model and a
+        potential derivative mass.
         """
         if models is None:
             models = self

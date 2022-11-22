@@ -1157,7 +1157,7 @@ class ImportedPiece:
 
     def ic(self, module, generic=False, df=None):
         '''
-        *** Invertible Counterpoint Finder ***
+        *** Invertible Counterpoint and Double Counterpoint Finder ***
         This method takes a string of a module and finds all the instances of
         that module at any level of inversion. The module is an interval
         succession in the format of what you get from the .ngrams() method.
@@ -1165,11 +1165,17 @@ class ImportedPiece:
         which you can do by running the .ngrams() method with these
         parameters: exclude=[], show_both=True, held=1, interval_settings('d', True, True)
 
-        Usage:
-        piece.ic('7_1:-2, 6_-2:2, 8)
+        In this method, Invertible Counterpoint is where we have a repetition of
+        the given module but where the upper and lower melodies have been exchanged.
+        Double Counterpoint is when the module repeats and the melody of each
+        part is the same as before, but the harmonic intervals are all off by a
+        given amount. This is like Invertible Counterpoint, but the parts have
+        not actually crossed.
 
-        Notice that the intervals used are diatonic and without quality. Other
-        settings may work but are not supported or recommended.
+        Usage:
+        piece.ic('7_1:-2, 6_-2:2, 8')
+
+        Notice that the intervals used must be diatonic and without quality.
 
         The `generic` setting changes the output from the different interval
         successions observed that are at some level of invertible counterpoint
@@ -1178,19 +1184,19 @@ class ImportedPiece:
         compare how invertible counterpoint is used as a technique among
         different pieces.
         '''
-        har_sub = '[^_]*'
+        har_regex = '[^_]*'
         target1, target2 = [], []
         chunks = module.split(', ')
         for chunk in chunks:
             if '_' not in chunk:
-                target1.append(har_sub)
-                target2.append(har_sub)
+                target1.append(har_regex)
+                target2.append(har_regex)
                 break
             temp = re.split('_|:', chunk)
             mel1 = temp[1]
             mel2 = temp[2]
-            target1.append('{}_{}:{}'.format(har_sub, mel1, mel2))
-            target2.append('{}_{}:{}'.format(har_sub, mel2, mel1))
+            target1.append('{}_{}:{}'.format(har_regex, mel1, mel2))
+            target2.append('{}_{}:{}'.format(har_regex, mel2, mel1))
         target1 = ', '.join(target1)
         target2 = ', '.join(target2)
         _n = 1 + module.count(',')
@@ -1200,25 +1206,36 @@ class ImportedPiece:
             ngrams = df.copy()
         mask1 = ngrams.apply(lambda row: row.str.contains(target1, regex=True))
         mask2 = ngrams.apply(lambda row: row.str.contains(target2, regex=True))
-        result = ngrams[(mask1 | mask2)].dropna(how='all')
-        if generic:
+        if not generic:
+            return ngrams[(mask1 | mask2)].dropna(how='all')
+        else:
             reference_int = int(module.rsplit(' ', 1)[-1])
+            prefix = 'DBL'
             def _icHelper(repetition):
                 '''
                 Helper function to calculate the level of invertible counterpoint at which
                 a repetition is found. This only gets used when the `generic` setting of
                 .ic() is set to True.
                 '''
-                last_int = int(repetition.rsplit(' ', 1)[-1])
-                if (module == repetition) or (reference_int % 7 == last_int % 7 and reference_int > 0 and last_int > 0):
+                last_har_int = int(repetition.rsplit(' ', 1)[-1])
+                if (module == repetition) or (reference_int % 7 == last_har_int % 7 and reference_int > 0 and last_har_int > 0):
                     return 'Repeat'
-                if ((last_int > 0 and reference_int > 0) or (last_int + reference_int < 0)):
-                    val = last_int + reference_int - 1
+                if prefix == 'DBL':
+                    val = last_har_int - reference_int
+                    if val > 0:
+                        val += 1
+                    else:
+                        val -= 1
+                elif ((last_har_int > 0 and reference_int > 0) or (last_har_int + reference_int < 0)):
+                    val = last_har_int + reference_int - 1
                 else:
-                    val = last_int + reference_int + 1
-                return '@{}'.format(val)
-            result = result.applymap(_icHelper, na_action='ignore')
-        return result
+                    val = last_har_int + reference_int + 1
+                return '{}@{}'.format(prefix, val)
+            res1 = ngrams[mask1].dropna(how='all').applymap(_icHelper, na_action='ignore')
+            prefix = 'IC'
+            res2 = ngrams[mask2].dropna(how='all').applymap(_icHelper, na_action='ignore')
+            res1.update(res2)
+            return res1
 
     def _cvf_helper(self, row, df):
         '''
@@ -2808,6 +2825,28 @@ class CorpusBase:
                     res.at[mass.file_name, model.file_name] = percent
         return res
 
+    def derivativeAnalyzer(self, df=None, n=10):
+        '''
+        Find the top n masses with the highest derivation scores for each model in a table of .modelFinder results.
+        The scores from the different movements in each mass are averaged together to get a single score for each
+        model-mass pair.'''
+        if df is None:
+            _df = self.modelFinder()
+        else:
+            _df = df.copy()
+        _df.index = [i.rsplit('_', 1)[0].split('_', 1)[1] if 'Mass' in i else i.split('_', 1)[1] for i in _df.index]
+        means = _df.groupby(level=0, sort=False).mean()
+        if n > len(means.index):
+            print('\nYou used an n of size {} but only passed a corpus with {} masses in it. Returning all results ranked.\n'.format(n, len(means.index)))
+            n = len(means.index)
+        cols = []
+        for col in means.columns:
+            topDerivatives = means[col].nlargest(n).round(4)
+            cols.append([(i, topDerivatives[i]) for i in topDerivatives.index])
+        res = pd.DataFrame(cols, columns=range(1, n+1), index=_df.columns).T
+        res.index.set_names('Rank', inplace=True)
+        return res
+
     def moduleFinder(self, models=None, masses=None, n=4, ic=False):
         """
         Like the modelFindfer, this compares a corpus of pieces, returning
@@ -2870,34 +2909,12 @@ class CorpusBase:
                     ic_targets = []
                     for patt in mod_patterns:
                         temp = mass.ic(module=patt, df=mass_modules[j])
-                        # pdb.set_trace()
                         ic_targets.append(temp.stack().unique())
-                    # ic_targets = np.unique(np.concatenate([mass.ic(module=patt).stack().unique() for patt in mod_patterns]))
-                    # pdb.set_trace()
                     unique_targets = np.unique(np.concatenate(ic_targets))
                     hits = stack[stack.isin(unique_targets)]
                 if len(stack.index):
                     percent = len(hits.index) / len(stack.index)
                     res.at[mass.file_name, model.file_name] = percent
 
-
-            # md_mods = pd.concat(model_modules)
-            # md_mod_stack = md_mods.stack()
-            # md_mod_counts = md_mod_stack.value_counts()
-            # for patt in range(len(md_mod_counts)):
-            #     if patt >= len(md_mod_counts):
-            #         break
-            
-            # for i in range(len(models)):
-            #     mod_patterns = model_modules[i].stack().unique()
-            #     for j, mass in enumerate(masses.scores):
-            #         stack = mass_modules[j].stack()
-            #         ic_targets = np.unique(np.concatenate([mass.ic(module=patt, df=mass_modules[j]).stack().unique() for patt in mod_patterns]))
-            #         hits = stack[stack.isin(ic_targets)]
-            #         if len(stack.index):
-            #             percent = len(hits.index) / len(stack.index)
-            #             res.at[mass.file_name, model.file_name] = percent
-
-            # mass_modules = masses.batch(ImportedPiece.ngrams, kwargs={'n': n, 'held': '1', 'exclude': [], 'show_both': True})
         return res
 

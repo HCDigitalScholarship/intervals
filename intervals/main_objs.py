@@ -2666,9 +2666,6 @@ class CorpusBase:
         if len(self.scores) == 0:
             raise Exception("At least one score must be succesfully imported")
 
-        self.note_list = self.note_list_whole_piece()
-        self.no_unisons = self.note_list_no_unisons()
-
     def batch(self, func, kwargs={}, metadata=True, number_parts=True, verbose=False):
         '''
         Run the `func` on each of the scores in this CorpusBase object and
@@ -2807,11 +2804,11 @@ class CorpusBase:
                 stack = mass_entries[j].stack()
                 hits = stack[stack.isin(mod_patterns)]
                 if len(stack.index):
-                    percent = len(hits.index) / len(stack.dropna().index)
+                    percent = len(hits.index) / len(stack.index)
                     res.at[mass.file_name, model.file_name] = percent
         return res
 
-    def moduleFinder(self, models=None, masses=None, n=4):
+    def moduleFinder(self, models=None, masses=None, n=4, ic=False):
         """
         Like the modelFindfer, this compares a corpus of pieces, returning
         a table of percentages of shared ngrams.
@@ -2836,22 +2833,71 @@ class CorpusBase:
             models = self
         if masses is None:
             masses = self
-
-        # get modules at entries from all the models using helper
-        model_modules = models.batch(ImportedPiece._entry_ngram_helper, kwargs={'n': n})
-
-        # get modules at entries from the masses using helper
-        mass_modules = masses.batch(ImportedPiece._entry_ngram_helper, kwargs={'n': n})
-
         res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
         res.columns.name = 'Model'
         res.index.name = 'Mass'
+
+        if not ic:
+            # get modules at entries from all the models using helper
+            model_modules = models.batch(ImportedPiece._entry_ngram_helper, kwargs={'n': n}, metadata=False)
+            # get modules at entries from the masses using helper
+            mass_modules = masses.batch(ImportedPiece._entry_ngram_helper, kwargs={'n': n}, metadata=False)
+        else:   # ic == True
+            model_modules = models.batch(ImportedPiece.ngrams, kwargs={'n': n, 'held': '1', 'exclude': [], 'show_both': True}, metadata=False)
+            mass_modules = masses.batch(ImportedPiece.ngrams, kwargs={'n': n, 'held': '1', 'exclude': [], 'show_both': True}, metadata=False)
+
         for i, model in enumerate(models.scores):
-            mod_patterns = model_modules[i].stack().unique()
+            mod_patterns = model_modules[i].stack()
+            mod_patterns = mod_patterns[~mod_patterns.str.contains('Rest')].unique()
+            if ic:
+                copy = pd.Series(mod_patterns)
+                reduced_patterns = []
+                while len(copy.index):
+                    reduced_patterns.append(copy.iat[0])
+                    variants = model.ic(module=copy.iat[0], df=model_modules[i])
+                    copy = copy[~copy.isin(variants.stack().unique())]
+                mod_patterns = reduced_patterns
             for j, mass in enumerate(masses.scores):
-                stack = mass_modules[j].stack()
-                hits = stack[stack.isin(mod_patterns)]
+                if ic and mass.file_name == model.file_name:
+                    res.at[mass.file_name, model.file_name] = 1
+                    continue
+                df = mass_modules[j]
+                df = df[df.applymap(lambda cell: 'Rest' not in cell, na_action='ignore')].dropna(how='all')
+                stack = df.stack()
+                if not ic:
+                    hits = stack[stack.isin(mod_patterns)]
+                else:   # ic == True
+                    ic_targets = []
+                    for patt in mod_patterns:
+                        temp = mass.ic(module=patt, df=mass_modules[j])
+                        # pdb.set_trace()
+                        ic_targets.append(temp.stack().unique())
+                    # ic_targets = np.unique(np.concatenate([mass.ic(module=patt).stack().unique() for patt in mod_patterns]))
+                    # pdb.set_trace()
+                    unique_targets = np.unique(np.concatenate(ic_targets))
+                    hits = stack[stack.isin(unique_targets)]
                 if len(stack.index):
-                    percent = len(hits.index) / len(stack.dropna().index)
+                    percent = len(hits.index) / len(stack.index)
                     res.at[mass.file_name, model.file_name] = percent
+
+
+            # md_mods = pd.concat(model_modules)
+            # md_mod_stack = md_mods.stack()
+            # md_mod_counts = md_mod_stack.value_counts()
+            # for patt in range(len(md_mod_counts)):
+            #     if patt >= len(md_mod_counts):
+            #         break
+            
+            # for i in range(len(models)):
+            #     mod_patterns = model_modules[i].stack().unique()
+            #     for j, mass in enumerate(masses.scores):
+            #         stack = mass_modules[j].stack()
+            #         ic_targets = np.unique(np.concatenate([mass.ic(module=patt, df=mass_modules[j]).stack().unique() for patt in mod_patterns]))
+            #         hits = stack[stack.isin(ic_targets)]
+            #         if len(stack.index):
+            #             percent = len(hits.index) / len(stack.index)
+            #             res.at[mass.file_name, model.file_name] = percent
+
+            # mass_modules = masses.batch(ImportedPiece.ngrams, kwargs={'n': n, 'held': '1', 'exclude': [], 'show_both': True})
         return res
+

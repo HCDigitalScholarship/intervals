@@ -62,226 +62,6 @@ def importScore(path):
 
     return pathDict[path]
 
-# Allows for the addition of non-moving-window pattern searching approaches
-# Needs to be called before any matches can be made
-def into_patterns(vectors_list, interval):
-    """Takes in a series of vector patterns with data attached and finds close matches
-    Parameters
-    ----------
-    vectors_list : list of vectorized lists
-        MUST be a list from calling generic_intervals or semitone_intervals on a VectorInterval object
-    interval : int
-        size of interval to be analyzed
-    Returns
-    -------
-    patterns_data : list of tuples
-        A list of vector patterns with additional information about notes attached
-    """
-    pattern, patterns_data = [], []
-    for vectors in vectors_list:
-        for i in range(len(vectors) - interval):
-            pattern = []
-            durations = []
-            valid_pattern = True
-            durations.append(vectors[i].note1.duration)
-            for num_notes in range(interval):
-                if vectors[i + num_notes].vector == 'Rest':
-                    valid_pattern = False
-                pattern.append(vectors[i + num_notes].vector)
-                durations.append(vectors[i + num_notes].note2.duration)
-            if valid_pattern:
-                # Here, with help from vectorize() you can jam in whatever more data you would like about the note
-                patterns_data.append((pattern, vectors[i].note1, vectors[i + num_notes].note2, durations))
-    return patterns_data
-
-# Potential redesign needed due to unstable nature of having user give over patterns_data
-# Potential fix is reincorporating into_patterns back into this method
-def find_exact_matches(patterns_data, min_matches=5):
-    """Takes in a series of vector patterns with data attached and finds exact matches
-    Parameters
-    ----------
-    patterns_data : return value from into_patterns
-        MUST be return value from into_patterns
-    min_matches : int, optional
-        Minimum number of matches needed to be deemed relevant, defaults to 5
-    Returns
-    -------
-    all_matches_list : list
-        A list of PatternMatches objects
-    """
-    # A series of arrays are needed to keep track of various data associated with each pattern
-    print("Finding exact matches...")
-    patterns_nodup, patterns = [], []
-    p = 0
-    for pattern in patterns_data:
-        patterns.append(pattern[0])
-        if pattern[0] not in patterns_nodup:
-            patterns_nodup.append(pattern[0])
-    m = 0
-    # Go through each individual pattern and count up its occurences
-    all_matches_list = []
-    for p in patterns_nodup:
-        amt = patterns.count(p)
-        # If a pattern occurs more than the designated threshold, we add it to our list of matches
-        if amt > min_matches:
-            matches_list = PatternMatches(p, [])
-            m += 1
-            for a in patterns_data:
-                if p == a[0]:
-                    exact_match = Match(p, a[1], a[2], a[3])
-                    matches_list.matches.append(exact_match)
-            all_matches_list.append(matches_list)
-    print(str(len(all_matches_list)) + " melodic intervals had more than " + str(min_matches) + " exact matches.\n")
-    # all_matches_list has a nested structure- it contains a list of PatternMatches objects, which contain a list of individual Match objects
-    return all_matches_list
-
-# Finds matches based on a cumulative distance difference between two patterns
-def find_close_matches(patterns_data, min_matches, threshold):
-    """Takes in a series of vector patterns with data attached and finds close matches
-    Parameters
-    ----------
-    patterns_data : return value from into_patterns
-        MUST be return value from into_patterns
-    min_matches : int, optional
-        Minimum number of matches needed to be deemed relevant, defaults to 5
-    threshold : int
-        Cumulative variance allowed between vector patterns before they are deemed not similar
-    Returns
-    -------
-    all_matches_list : list
-        A list of PatternMatches objects
-    """
-    # A series of arrays are needed to keep track of various data associated with each pattern
-    print("Finding close matches...")
-    patterns_nodup = []
-    for pat in patterns_data:
-        # Build up a list of patterns without duplicates
-        if pat[0] not in patterns_nodup:
-            patterns_nodup.append(pat[0])
-    # Go through each individual pattern and count up its occurences
-    all_matches_list = []
-    for p in patterns_nodup:
-        matches_list = PatternMatches(p, [])
-        # If a pattern occurs more than the designated threshold
-        for a in patterns_data:
-            rhytmic_match = 0
-            # Calculate the "difference" by comparing each vector with the matching one in the other pattern
-            for v in range(len(a[0])):
-                rhytmic_match += abs(p[v] - a[0][v])
-            if rhytmic_match <= threshold:
-                close_match = Match(a[0], a[1], a[2], a[3])
-                matches_list.matches.append(close_match)
-        if len(matches_list.matches) > min_matches:
-            all_matches_list.append(matches_list)
-    print(str(len(all_matches_list)) + " melodic intervals had more than " + str(
-        min_matches) + " exact or close matches.\n")
-    return all_matches_list
-
-def export_pandas(matches):
-    match_data = []
-    for match_series in matches:
-        for match in match_series.matches:
-            match_dict = {
-                "pattern_generating_match": match_series.pattern,
-                "pattern_matched": match.pattern,
-                "piece_title": match.first_note.metadata.title,
-                "part": match.first_note.part,
-                "start_measure": match.first_note.note.measureNumber,
-                "start_beat": match.first_note.note.beat,
-                "end_measure": match.last_note.note.measureNumber,
-                "end_beat": match.last_note.note.beat,
-                "start_offset": match.first_note.offset,
-                "end_offset": match.last_note.offset,
-                "note_durations": match.durations,
-                "ema": match.ema,
-                "ema_url": match.ema_url
-            }
-            match_data.append(match_dict)
-    return pd.DataFrame(match_data)
-
-# Filters for the length of the Presentation Type in the Classifier
-def limit_offset_size(array, limit):
-    under_limit = np.cumsum(array) <= limit
-    return array[: sum(under_limit)]
-
-# Gets the the list of offset differences for each group
-def get_offset_difference_list(group):
-    # if we do sort values as part of the func call, then we don't need this first line
-    group = group.sort_values("start_offset")
-    group["next_offset"] = group.start_offset.shift(-1)
-    offset_difference_list = (group.next_offset - group.start_offset).dropna().tolist()
-    return offset_difference_list
-
-# The classifications are done here
-# be sure to have the offset difference limit set here and matched in gap check below  80 = ten bars
-def classify_offsets(offset_difference_list, offset_difference_limit):
-    """
-    Put logic for classifying an offset list here
-    """
-    offset_difference_list = limit_offset_size(offset_difference_list, offset_difference_limit)
-    alt_list = offset_difference_list[::2]
-
-    if len(set(offset_difference_list)) == 1 and len(offset_difference_list) > 1:
-        return ("PEN", offset_difference_list)
-    # elif (len(offset_difference_list) %2 != 0) and (len(set(alt_list)) == 1):
-    elif (len(offset_difference_list) % 2 != 0) and (len(set(alt_list)) == 1) and (len(offset_difference_list) >= 3):
-        return ("ID", offset_difference_list)
-    elif len(offset_difference_list) >= 1:
-        return ("Fuga", offset_difference_list)
-    else:
-        return ("Singleton", offset_difference_list)
-
-def predict_type(group, offset_difference_limit):
-    offset_differences = get_offset_difference_list(group)
-    predicted_type, offsets = classify_offsets(offset_differences, offset_difference_limit)
-
-    group["predicted_type"] = [predicted_type for i in range(len(group))]
-    group["offset_diffs"] = [offsets for i in range(len(group))]
-    group["entry_number"] = [i + 1 for i in range(len(group))]
-    return group
-
-
-
-
-class NoteListElement:
-    """
-    An extension of the music21 note class
-
-    Attributes
-    ----------
-    note : music21.note.Note
-        music21 note class
-    offset : int
-        cumulative offset of note
-    id : int
-        unique music21 id
-    metadata : music21.metadata
-        piece metadata- not normally attached to a music21 note
-    part : str
-        voice name
-    partNumber : int
-        voice number, not 0 indexed
-    duration : int
-        note duration
-    piece_url : str
-        piece url for note
-    prev_note : NoteListElement
-        prior non-rest note element
-    """
-    def __init__(self, note: note.Note, metadata, part, partNumber, duration, piece_url, prev_note=None):
-        self.note = note
-        self.prev_note = prev_note
-        self.offset = self.note.offset
-        self.id = self.note.id
-        self.metadata = metadata
-        self.part = part
-        self.partNumber = partNumber
-        self.duration = duration
-        self.piece_url = piece_url
-
-    def __str__(self):
-        return "<NoteListElement: {}>".format(self.note.name)
-
 
 class ImportedPiece:
     def __init__(self, score, path, mei_doc=None):
@@ -1179,6 +959,24 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
 
+    def _entry_ngram_helper(self, n):
+        """
+        This private method is used by the moduleFinder function, which compares
+        shared modules across pieces in a corpus.
+
+        The method finds the entries, then uses these locations to determine
+        the contrapuntal modules that occur in those places.  Of course the
+        contrapuntal modules involve all voices active at given moment, and so not all of them will be the result of the entries themselves.
+
+        """
+        entries = self.entries()
+        cols = entries.columns.to_list()
+        modules = self.ngrams(n=n, held='1', exclude=[], show_both=True)
+        combined = entries.join(modules)
+        entry_modules = combined.drop(cols, axis=1).dropna(how='all').fillna('')
+
+        return entry_modules
+
     def _ngrams_offsets_helper(col, n, offsets):
         """
         Generate a list of series that align the notes from one ngrams according
@@ -1357,7 +1155,7 @@ class ImportedPiece:
         else:
             return pd.DataFrame()
 
-    def ic(self, module, generic=False):
+    def ic(self, module, generic=False, df=None):
         '''
         *** Invertible Counterpoint and Double Counterpoint Finder ***
         This method takes a string of a module and finds all the instances of
@@ -1382,7 +1180,7 @@ class ImportedPiece:
         The `generic` setting changes the output from the different interval
         successions observed that are at some level of invertible counterpoint
         from the passed module, to a generic form where the level of invertible
-        counterpoint is given. This is particularly useful if you want to 
+        counterpoint is given. This is particularly useful if you want to
         compare how invertible counterpoint is used as a technique among
         different pieces.
         '''
@@ -1402,7 +1200,10 @@ class ImportedPiece:
         target1 = ', '.join(target1)
         target2 = ', '.join(target2)
         _n = 1 + module.count(',')
-        ngrams = self.ngrams(n=_n, held='1', exclude=[], show_both=True)
+        if df is None:
+            ngrams = self.ngrams(n=_n, held='1', exclude=[], show_both=True)
+        else:
+            ngrams = df.copy()
         mask1 = ngrams.apply(lambda row: row.str.contains(target1, regex=True))
         mask2 = ngrams.apply(lambda row: row.str.contains(target2, regex=True))
         if not generic:
@@ -1745,57 +1546,56 @@ class ImportedPiece:
         """
         This function predicts homorhythmic passages in a given piece.
         The method follows various stages:
+
         gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets
         gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr
         checks the number of active voices (thus eliminating places where some voices have rests)
-
-        Note that the output of this function can also be used with verovioHomorhythm
-        to show the results in score.
-
         """
-        if 'Homorhythm' in self.analyses:
-            return self.analyses['Homorhythm']
         # active version with lyric ngs
-        nr = self.notes()
-        dur = self.durations(df=nr)
-        ng = self.ngrams(df=dur, n=2)
+        nr = piece.notes()
+        dur = piece.durations(df=nr)
+        ng = piece.ngrams(df=dur, n=5)
         dur_ngrams = []
         for index, rows in ng.iterrows():
-             dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
-             dur_ngrams.append(dur_ngrams_no_nan)
+            dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
+            dur_ngrams.append(dur_ngrams_no_nan)
 
         ng['dur_ngrams'] = dur_ngrams
 
         ng['active_voices'] = ng['dur_ngrams'].apply(len)
         ng['number_dur_ngrams'] = ng['dur_ngrams'].apply(set).apply(len)
-        ng = ng[(ng['number_dur_ngrams'] < 2) & (ng['active_voices'] > 1)]
+    #     ng = ng[(ng['number_dur_ngrams'] < 2) & (ng['active_voices'] > 1)]
+        ng = ng[ng['number_dur_ngrams'] < ng['active_voices']]
 
          # get the lyrics as ngrams to match the durations
-        lyrics = self.lyrics()
-        lyrics = lyrics.applymap(self._alpha_only)
-        lyrics_ng = self.ngrams(df=lyrics, n=2)
+        lyrics = piece.lyrics()
+        lyrics = lyrics.applymap(piece._alpha_only)
+        lyrics_ng = piece.ngrams(df=lyrics, n=5)
 
+        ng_list = ng.index.to_list()
+        # filtered_lyric_ngs = lyrics_ng.loc[ng_list]
+        filtered_lyric_ngs = lyrics_ng.filter(items = ng_list, axis=0)
         # count the lyric_ngrams at each position
         syll_set = []
-        for index, rows in lyrics_ng.iterrows():
+        for index, rows in filtered_lyric_ngs.iterrows():
              syll_no_nan = [z for z in rows if pd.isnull(z) == False]
              syll_set.append(syll_no_nan)
-        lyrics_ng['syllable_set'] = syll_set
-        lyrics_ng["count_lyr_ngrams"] = lyrics_ng["syllable_set"].apply(set).apply(len)
+        filtered_lyric_ngs['syllable_set'] = syll_set
+        filtered_lyric_ngs["count_lyr_ngrams"] = filtered_lyric_ngs["syllable_set"].apply(set).apply(len)
 
         # and the number of active voices
-        lyrics_ng['active_syll_voices'] = lyrics_ng['syllable_set'].apply(len)
-
-        # finally predict the hr moments, based on the number of both active voices (> 1) and count of lyric ngrams (1)
-        hr_sylls_mask = lyrics_ng[(lyrics_ng['active_syll_voices'] > 1) & (lyrics_ng['count_lyr_ngrams'] < 2)]
+        filtered_lyric_ngs['active_syll_voices'] = filtered_lyric_ngs['syllable_set'].apply(len)
+        # hr_sylls_masked = filtered_lyric_ngs[filtered_lyric_ngs['active_syll_voices'] > lyrics_ng['count_lyr_ngrams']]
+        hr_sylls_mask = filtered_lyric_ngs[filtered_lyric_ngs['active_syll_voices'] > filtered_lyric_ngs['count_lyr_ngrams']]
 
         # combine of both dur_ng and lyric_ng to show passages where more than 2 voices have the same syllables and durations
         ng = ng[['active_voices', "number_dur_ngrams"]]
         hr = pd.merge(ng, hr_sylls_mask, left_index=True, right_index=True)
          # the intersection of coordinated durations and coordinate lyrics
-        hr['voice_match'] = hr['active_voices'] == hr['active_syll_voices']
-        result = self.detailIndex(hr, offset=True)
-        self.analyses['Homorhythm'] = result
+        hr['voice_match'] = hr['number_dur_ngrams'] == hr['count_lyr_ngrams']
+        hr = hr[hr['voice_match']]
+        result = piece.detailIndex(hr, offset=True)
+
         return result
 
     def _entryHelper(self, col, fermatas=True):
@@ -1851,7 +1651,7 @@ class ImportedPiece:
         If `thematic` is set to True, this method returns all instances of a entries
         that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
-        one more time, though the additional time doesn't have to be after a rest. 
+        one more time, though the additional time doesn't have to be after a rest.
         If `anywhere` is set to True, the final results returned include all
         instances of entry melodies, whether they come from rests or not.
         If `fermatas` is set to True (default), any melody starting immediately
@@ -2883,9 +2683,6 @@ class CorpusBase:
         if len(self.scores) == 0:
             raise Exception("At least one score must be succesfully imported")
 
-        self.note_list = self.note_list_whole_piece()
-        self.no_unisons = self.note_list_no_unisons()
-
     def batch(self, func, kwargs={}, metadata=True, number_parts=True, verbose=False):
         '''
         Run the `func` on each of the scores in this CorpusBase object and
@@ -3024,7 +2821,7 @@ class CorpusBase:
                 stack = mass_entries[j].stack()
                 hits = stack[stack.isin(mod_patterns)]
                 if len(stack.index):
-                    percent = len(hits.index) / len(stack.dropna().index)
+                    percent = len(hits.index) / len(stack.index)
                     res.at[mass.file_name, model.file_name] = percent
         return res
 
@@ -3050,745 +2847,74 @@ class CorpusBase:
         res.index.set_names('Rank', inplace=True)
         return res
 
-    def note_list_whole_piece(self):
-        """ Creates a note list from the whole piece for all scores- default note_list
+    def moduleFinder(self, models=None, masses=None, n=4, ic=False):
         """
-        pure_notes = []
-        urls_index = 0
-        prev_note = None
+        Like the modelFindfer, this compares a corpus of pieces, returning
+        a table of percentages of shared ngrams.
 
-        for imported in self.scores:
-            # if statement to check if analyses already done else do it
-            score = imported.score
-            if imported.analyses['note_list']:
-                pure_notes += imported.analyses['note_list']
-                urls_index += 1
-                continue
-            parts = score.getElementsByClass(stream.Part)
-            score_notes = []
-            for part in parts:
-                noteList = part.flat.getElementsByClass(['Note', 'Rest'])
-                for _note in noteList:
-                    if _note.tie is not None:
-                        if _note.tie.type == 'start':
-                            note_obj = NoteListElement(_note, score.metadata, part.partName, score.index(part),
-                                                       _note.quarterLength, self.paths[urls_index], prev_note)
-                            score_notes.append(note_obj)
-                        else:
-                            score_notes[-1].duration += _note.quarterLength
-                    else:
-                        note_obj = NoteListElement(_note, score.metadata, part.partName, score.index(part),
-                                                   _note.quarterLength, self.paths[urls_index], prev_note)
-                        score_notes.append(note_obj)
-                    # Rests carry the last non-rest note as their prev_note
-                    if not score_notes[-1].note.isRest:
-                        prev_note = score_notes[-1]
-                note_obj = NoteListElement(note.Rest(), score.metadata, part.partName, score.index(part), 4.0,
-                                           self.paths[urls_index], prev_note)
-                score_notes.append(note_obj)
-            urls_index += 1
-            # add to dictionary
-            imported.analyses['note_list'] = score_notes
-            pure_notes += score_notes
-        return pure_notes
+        In this case the ngrams are contrapuntal modules.
 
-    def note_list_no_unisons(self):
-        """ Creates a note list from the whole piece for all scores combining unisons
+        You can optionally pass a CorpusBase object as the `models` and/or `masses` parameters.
+        If you do, the CorpusBase object you pass will be used as that group of pieces in the
+        analysis. If either or both of these parameters is omitted, the calling CorpusBase
+        object's scores will be used. For clarity, the "calling" CorpusBase object is what
+        goes to the left of the period in: calling_corpus.modelFinder(...
+        Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
+        parameters are omitted, this means that if you omit both, i.e.
 
-        Combines consecutive notes at the same pitch into one note, adding in the duration
-        of the next note into the previous one.
+        calling_corpus.modelFinder()
+
+        ... this will compare every score the corpus to every other score in the corpus. You
+        should do this if you want to be able to consider every piece a potential model and a
+        potential derivative mass.
         """
-        pure_notes = []
-        urls_index = 0
-        prev_note = None
-        for imported in self.scores:
-            score = imported.score
-            parts = score.getElementsByClass(stream.Part)
-            for part in parts:
-                noteList = part.flat.getElementsByClass(['Note', 'Rest'])
-                prev_pitch = None
-                for _note in noteList:
-                    if not _note.isRest and _note.nameWithOctave == prev_pitch:
-                        pure_notes[len(pure_notes) - 1].duration += _note.quarterLength
-                    else:
-                        note_obj = NoteListElement(_note, score.metadata, part.partName, score.index(part),
-                                                   _note.quarterLength, self.paths[urls_index], prev_note)
-                        pure_notes.append(note_obj)
-                    if not _note.isRest:
-                        prev_pitch = _note.nameWithOctave
-                    else:
-                        prev_pitch == 'Rest'
-                    if not pure_notes[-1].note.isRest:
-                        prev_note = pure_notes[-1]
-                note_obj = NoteListElement(note.Rest(), score.metadata, part.partName, score.index(part), 4.0,
-                                           self.paths[urls_index], prev_note)
-                pure_notes.append(note_obj)
-            urls_index += 1
-        return pure_notes
+        if models is None:
+            models = self
+        if masses is None:
+            masses = self
+        res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
+        res.columns.name = 'Model'
+        res.index.name = 'Mass'
 
-    def note_list_selected_offset(self, offsets: list):
-        """
-        Creates a note list from the whole piece for all scores, going by provided offsets
+        if not ic:
+            # get modules at entries from all the models using helper
+            model_modules = models.batch(ImportedPiece._entry_ngram_helper, kwargs={'n': n}, metadata=False)
+            # get modules at entries from the masses using helper
+            mass_modules = masses.batch(ImportedPiece._entry_ngram_helper, kwargs={'n': n}, metadata=False)
+        else:   # ic == True
+            model_modules = models.batch(ImportedPiece.ngrams, kwargs={'n': n, 'held': '1', 'exclude': [], 'show_both': True}, metadata=False)
+            mass_modules = masses.batch(ImportedPiece.ngrams, kwargs={'n': n, 'held': '1', 'exclude': [], 'show_both': True}, metadata=False)
 
-        Parameters
-        ----------
-        offsets : list
-            offsets within measures to collect notes at (notes collected will be those that are sounding at that offset- not just starting)
-        """
-        pure_notes = []
-        urls_index = 0
-        prev_note = None
-        for imported in self.scores:
-            score = imported.score
-            parts = score.getElementsByClass(stream.Part)
-            for part in parts:
-                measures = part.getElementsByClass(stream.Measure)
-                for measure in measures:
-                    voices = measure.getElementsByClass(stream.Voice)
-                    for voice in voices:
-                        for _note in voice:
-                            for point in offsets:
-                                if point >= _note.offset and point < (_note.offset + _note.quarterLength):
-                                    note_obj = NoteListElement(_note, score.metadata, part.partName, score.index(part),
-                                                               _note.quarterLength, self.paths[urls_index], prev_note)
-                                    pure_notes.append(note_obj)
-                                    if not pure_notes[-1].note.isRest:
-                                        prev_note = pure_notes[-1]
-                                    break
-            urls_index += 1
-        return pure_notes
+        for i, model in enumerate(models.scores):
+            mod_patterns = model_modules[i].stack()
+            mod_patterns = mod_patterns[~mod_patterns.str.contains('Rest')].unique()
+            if ic:
+                copy = pd.Series(mod_patterns)
+                reduced_patterns = []
+                while len(copy.index):
+                    reduced_patterns.append(copy.iat[0])
+                    variants = model.ic(module=copy.iat[0], df=model_modules[i])
+                    copy = copy[~copy.isin(variants.stack().unique())]
+                mod_patterns = reduced_patterns
+            for j, mass in enumerate(masses.scores):
+                if ic and mass.file_name == model.file_name:
+                    res.at[mass.file_name, model.file_name] = 1
+                    continue
+                df = mass_modules[j]
+                df = df[df.applymap(lambda cell: 'Rest' not in cell, na_action='ignore')].dropna(how='all')
+                stack = df.stack()
+                if not ic:
+                    hits = stack[stack.isin(mod_patterns)]
+                else:   # ic == True
+                    ic_targets = []
+                    for patt in mod_patterns:
+                        temp = mass.ic(module=patt, df=mass_modules[j])
+                        ic_targets.append(temp.stack().unique())
+                    unique_targets = np.unique(np.concatenate(ic_targets))
+                    hits = stack[stack.isin(unique_targets)]
+                if len(stack.index):
+                    percent = len(hits.index) / len(stack.index)
+                    res.at[mass.file_name, model.file_name] = percent
 
-    def note_list_incremental_offset(self, min_offset):
-        """
-        Creates a note list from the whole piece for all scores, sampling at a regular interval- not within a measure
+        return res
 
-        Parameters
-        ----------
-        min_offset : int
-            sample every x offset- 2 will sample every half note, 1 every quarter note, etc.
-        """
-        pure_notes = []
-        urls_index = 0
-        prev_note = None
-        for imported in self.scores:
-            score = imported.score
-            for part in score.getElementsByClass(stream.Part):
-                counter = 0
-                while counter < score.highestTime - min_offset:
-                    stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False,
-                                                                    mustFinishInSpan=False, includeEndBoundary=True,
-                                                                    includeElementsThatEndAtStart=False)
-                    note_at_offset = None
-                    for item in stuff_at_offset:
-                        if type(item) == note.Note or type(item) == note.Rest:
-                            note_at_offset = item
-                            break
-                    if note_at_offset:
-                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part),
-                                                   min_offset, self.paths[urls_index], prev_note)
-                        note_obj.offset = counter
-                        pure_notes.append(note_obj)
-                    else:
-                        note_obj = NoteListElement(note.Rest(), score.metadata, part.partName, score.index(part),
-                                                   min_offset, self.paths[urls_index], prev_note)
-                        note_obj.offset = counter
-                        pure_notes.append(note_obj)
-                    counter += min_offset
-                    if not pure_notes[-1].note.isRest:
-                        prev_note = pure_notes[-1]
-            note_obj = NoteListElement(note.Rest(), score.metadata, part.partName, score.index(part), 4.0,
-                                       self.paths[urls_index], prev_note)
-        urls_index += 1
-        return pure_notes
-
-
-    def vis_pandas_setup(self, min_offset):
-        urls_index = 0
-        prev_note = None
-        dataframes = []
-        for imported in self.scores:
-            score = imported.score
-            part_rows = []
-            pure_notes = []
-            row_names = []
-            for part in score.getElementsByClass(stream.Part):
-                counter = 0
-                row_names.append(part.partName)
-                while counter < score.highestTime - min_offset:
-                    stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False,
-                                                                    mustFinishInSpan=False, includeEndBoundary=True,
-                                                                    includeElementsThatEndAtStart=False)
-                    note_at_offset = None
-                    for item in stuff_at_offset:
-                        if type(item) == note.Note or type(item) == note.Rest:
-                            note_at_offset = item
-                            break
-                    if note_at_offset:
-                        note_obj = NoteListElement(note_at_offset, score.metadata, part.partName, score.index(part),
-                                                   min_offset, self.paths[urls_index], prev_note)
-                        note_obj.offset = counter
-                        pure_notes.append(note_obj)
-                    else:
-                        note_obj = NoteListElement(note.Rest(), score.metadata, part.partName, score.index(part),
-                                                   min_offset, self.paths[urls_index], prev_note)
-                        note_obj.offset = counter
-                        pure_notes.append(note_obj)
-                    counter += min_offset
-                    if not pure_notes[-1].note.isRest:
-                        prev_note = pure_notes[-1]
-                part_rows.append(pure_notes)
-                pure_notes = []
-
-            column_names = []
-            i = 0
-            while i < score.highestTime - min_offset:
-                column_names.append(i)
-                i += min_offset
-
-            df = pd.DataFrame(part_rows, index=row_names, columns=column_names)
-            dataframes.append(df)
-        return dataframes
-
-# For single file uploads
-class ScoreBase:
-    """
-    A class for importing a single score- offers more precise construction options
-
-    Attributes
-    ----------
-    url : str
-        url or path of mei file
-    score : music21.Score
-        music21.Score object gathered from mei file import
-    note_list : list of NoteListElement
-        list of notes constructed from score
-    """
-    def __init__(self, url):
-        """
-        Parameters
-        ----------
-        url:
-            url or path of mei file
-        Raises
-        ----------
-        Exception
-            If score isn't succesfully imported, raises error
-        """
-        self.url = url
-        self.score = importScore(url)
-        if self.score is None:
-            raise Exception("Import from", str(self.url),
-                            "failed, please check your ath/file type.")
-        self.note_list = self.note_list_whole_piece()
-
-    def note_list_whole_piece(self):
-        """ Creates a note list from the whole piece- default note_list
-        """
-        pure_notes = []
-        parts = self.score.getElementsByClass(stream.Part)
-        prev_note = None
-        for part in parts:
-            noteList = part.flat.getElementsByClass(['Note', 'Rest'])
-            for _note in noteList:
-                if _note.tie is not None:
-                    if _note.tie.type == 'start':
-                        note_obj = NoteListElement(_note, self.score.metadata, part.partName, self.score.index(part),
-                                                   _note.quarterLength, self.url, prev_note)
-                        pure_notes.append(note_obj)
-                    else:
-                        pure_notes[len(pure_notes) - 1].duration += _note.quarterLength
-                else:
-                    note_obj = NoteListElement(_note, self.score.metadata, part.partName, self.score.index(part),
-                                               _note.quarterLength, self.url, prev_note)
-                    pure_notes.append(note_obj)
-                if not pure_notes[-1].note.isRest:
-                    prev_note = pure_notes[-1]
-            note_obj = NoteListElement(note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0,
-                                       self.url, prev_note)
-            pure_notes.append(note_obj)
-        return pure_notes
-
-    # Combines unison intervals into one note- generally for increased pattern finding
-    def note_list_no_unisons(self):
-        """ Creates a note list from the whole piece for all scores combining unisons
-
-        Combines consecutive notes at the same pitch into one note, adding in the duration
-        of the next note into the previous one.
-        """
-        pure_notes = []
-        urls_index = 0
-        prev_note = None
-        parts = self.score.getElementsByClass(stream.Part)
-        for part in parts:
-            noteList = part.flat.getElementsByClass(['Note', 'Rest'])
-            prev_pitch = None
-            for _note in noteList:
-                if not _note.isRest and _note.nameWithOctave == prev_pitch:
-                    pure_notes[len(pure_notes) - 1].duration += _note.quarterLength
-                else:
-                    note_obj = NoteListElement(_note, self.score.metadata, part.partName, self.score.index(part),
-                                               _note.quarterLength, self.url, prev_note)
-                    pure_notes.append(note_obj)
-                if not _note.isRest:
-                    prev_pitch = _note.nameWithOctave
-                else:
-                    prev_pitch == 'Rest'
-                if not pure_notes[-1].note.isRest:
-                    prev_note = pure_notes[-1]
-            note_obj = NoteListElement(note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0,
-                                       self.url, prev_note)
-            pure_notes.append(note_obj)
-        urls_index += 1
-        return pure_notes
-
-    # Gets only notes that start on the specified beats- allows for user specification in case of weird time signatures
-    def note_list_selected_beats(self, beats: list):
-        """
-        Creates a note list from the whole piece, going by provided beats
-
-        Parameters
-        ----------
-        beats : list
-            collects all notes which begin on specified beat
-        """
-        pure_notes = []
-        parts = self.score.getElementsByClass(stream.Part)
-        prev_note = None
-        for part in parts:
-            noteList = part.flat.getElementsByClass(['Note', 'Rest'])
-            for _note in noteList:
-                if _note.beat in beats:
-                    note_obj = NoteListElement(_note, self.score.metadata, part.partName, self.score.index(part),
-                                               _note.quarterLength, self.url, prev_note)
-                    pure_notes.append(note_obj)
-                    if not pure_notes[-1].note.isRest:
-                        prev_note = pure_notes[-1]
-            note_obj = NoteListElement(note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0,
-                                       self.url, prev_note)
-            pure_notes.append(note_obj)
-        return pure_notes
-
-    def note_list_by_offset(self, offsets: list):
-        """
-        Creates a note list from the whole piece, going by provided offsets
-
-        Parameters
-        ----------
-        offsets : list
-            offsets within measures to collect notes at (notes collected will be those that are sounding at that offset- not just starting)
-        """
-        pure_notes = []
-        part_number = 0
-        prev_note = None
-        parts = self.score.getElementsByClass(stream.Part)
-        for part in parts:
-            part_number += 1
-            measures = part.getElementsByClass(stream.Measure)
-            for measure in measures:
-                voices = measure.getElementsByClass(stream.Voice)
-                for voice in voices:
-                    for _note in voice:
-                        for point in offsets:
-                            if point >= _note.offset and point < (_note.offset + _note.quarterLength):
-                                note_obj = NoteListElement(_note, self.score.metadata, part.partName, part_number,
-                                                           _note.quarterLength, self.url, prev_note)
-                                pure_notes.append(note_obj)
-                                if not pure_notes[-1].note.isRest:
-                                    prev_note = pure_notes[-1]
-                                break
-        return pure_notes
-
-    # Allows for very specific note selection
-    def note_list_single_part(self, part, measure_start, num_measures):
-        """
-        Creates a note list from a selected measure range within a single voice
-
-        Parameters
-        ----------
-        part : int
-            part number
-        measure_start : int
-            starting measure
-        num_measures : int
-            measures until end measure
-        """
-        pure_notes = []
-        part_selected = self.score.getElementsByClass(stream.Part)[part]
-        measures = part_selected.getElementsByClass(stream.Measure)
-        measures_selected = []
-        prev_note = None
-        for i in range(num_measures):
-            measures_selected.append(measures[i + measure_start])
-        for measure in measures_selected:
-            voices = measure.getElementsByClass(stream.Voice)
-            for voice in voices:
-                for _note in voice:
-                    print(_note.offset)
-                    if _note.tie is not None:
-                        if _note.tie.type == 'start':
-                            note_obj = NoteListElement(_note, self.score.metadata, part_selected.partName, part,
-                                                       _note.quarterLength, self.url, prev_note)
-                            pure_notes.append(note_obj)
-                        else:
-                            pure_notes[len(pure_notes) - 1].duration += _note.quarterLength
-                    else:
-                        note_obj = NoteListElement(_note, self.score.metadata, part_selected.partName, part,
-                                                   _note.quarterLength, self.url, prev_note)
-                        pure_notes.append(note_obj)
-                    if not pure_notes[-1].note.isRest:
-                        prev_note = pure_notes[-1]
-        return pure_notes
-
-    # Allows for specific selection in terms of measures, but gets all parts/instruments
-    def note_list_all_parts(self, measure_start, num_measures):
-        """
-        Creates a note list from a selected measure range over all voices
-
-        Parameters
-        ----------
-        measure_start : int
-            starting measure
-        num_measures : int
-            measures until end measure
-        """
-        pure_notes = []
-        prev_note = None
-        parts = self.score.getElementsByClass(stream.Part)
-        for part in parts:
-            measures = part.getElementsByClass(stream.Measure)
-            measures_selected = []
-            for i in range(num_measures):
-                measures_selected.append(measures[i + measure_start])
-            for measure in measures_selected:
-                voices = measure.getElementsByClass(stream.Voice)
-                for voice in voices:
-                    for _note in voice:
-                        if _note.tie is not None:
-                            if _note.tie.type == 'start':
-                                note_obj = NoteListElement(_note, self.score.metadata, part.partName,
-                                                           self.score.index(part), _note.quarterLength, self.url,
-                                                           prev_note)
-                                pure_notes.append(note_obj)
-                            else:
-                                pure_notes[len(pure_notes) - 1].duration += _note.quarterLength
-                        else:
-                            note_obj = NoteListElement(_note, self.score.metadata, part.partName, self.score.index(part),
-                                                       _note.quarterLength, self.url, prev_note)
-                            pure_notes.append(note_obj)
-                        if not pure_notes[-1].note.isRest:
-                            prev_note = pure_notes[-1]
-            # Added rest to ensure parts don't overlap
-            note_obj = NoteListElement(note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0,
-                                       self.url, prev_note)
-            pure_notes.append(note_obj)
-        return pure_notes
-
-    def note_list_incremental_offset(self, min_offset):
-        """
-        Creates a note list from the whole piece, sampling at a regular interval- not within a measure
-
-        Parameters
-        ----------
-        min_offset : int
-            sample every x offset- 2 will sample every half note, 1 every quarter note, etc.
-        """
-        pure_notes = []
-        prev_note = None
-        for part in self.score.getElementsByClass(stream.Part):
-            counter = 0
-            while counter < self.score.highestTime - min_offset:
-                stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False,
-                                                                includeEndBoundary=True,
-                                                                includeElementsThatEndAtStart=False)
-                note_at_offset = None
-                for item in stuff_at_offset:
-                    if type(item) == note.Note or type(item) == note.Rest:
-                        note_at_offset = item
-                        break
-                if note_at_offset:
-                    note_obj = NoteListElement(note_at_offset, self.score.metadata, part.partName,
-                                               self.score.index(part), min_offset, self.url, prev_note)
-                    note_obj.offset = counter
-                    pure_notes.append(note_obj)
-                else:
-                    note_obj = NoteListElement(note.Rest(), self.score.metadata, part.partName,
-                                               self.score.index(part), min_offset, self.url, prev_note)
-                    note_obj.offset = counter
-                    pure_notes.append(note_obj)
-                if not pure_notes[-1].note.isRest:
-                    prev_note = pure_notes[-1]
-                counter += min_offset
-        note_obj = NoteListElement(note.Rest(), self.score.metadata, part.partName, self.score.index(part), 4.0,
-                                   self.url, prev_note)
-        return pure_notes
-
-
-    def vis_pandas_setup(self, min_offset):
-        part_rows = []
-        prev_note = None
-        pure_notes = []
-        row_names = []
-        for part in self.score.getElementsByClass(stream.Part):
-            counter = 0
-            row_names.append(part.partName)
-            while counter < self.score.highestTime - min_offset:
-                stuff_at_offset = part.flat.getElementsByOffset(counter, mustBeginInSpan=False, mustFinishInSpan=False,
-                                                                includeEndBoundary=True,
-                                                                includeElementsThatEndAtStart=False)
-                note_at_offset = None
-                for item in stuff_at_offset:
-                    if type(item) == note.Note or type(item) == note.Rest:
-                        note_at_offset = item
-                        break
-                if note_at_offset:
-                    note_obj = NoteListElement(note_at_offset, self.score.metadata, part.partName,
-                                               self.score.index(part), min_offset, self.url, prev_note)
-                    note_obj.offset = counter
-                    pure_notes.append(note_obj)
-                else:
-                    note_obj = NoteListElement(note.Rest(), self.score.metadata, part.partName,
-                                               self.score.index(part), min_offset, self.url, prev_note)
-                    note_obj.offset = counter
-                    pure_notes.append(note_obj)
-                counter += min_offset
-                if not pure_notes[-1].note.isRest:
-                    prev_note = pure_notes[-1]
-            part_rows.append(pure_notes)
-            pure_notes = []
-
-        column_names = []
-        i = 0
-        while i < self.score.highestTime - min_offset:
-            column_names.append(i)
-            i += min_offset
-
-        df = pd.DataFrame(part_rows, index=row_names, columns=column_names)
-        return df
-
-class VectorInterval:
-    """
-    An individual vector with information about the notes creating it
-
-    Attributes
-    ----------
-    vector : int or str
-        vector- in generic or semitones: is "Rest" if done between a note and a rest
-    note1 : NoteListElement
-        first note of interval pair
-    note2 : NoteListElement
-        list of notes constructed from score
-    """
-    def __init__(self, vector, note1: NoteListElement, note2: NoteListElement):
-        self.vector = vector
-        self.note1 = note1
-        self.note2 = note2
-
-    def __str__(self):
-        if self.note1.note.isRest or self.note2.note.isRest:
-            return "<VectorInterval: Rest, First Note: {}, Second Note: {}>".format(self.vector, self.note1.note,
-                                                                                    self.note2.note)
-        else:
-            return "<VectorInterval: {}, First Note: {}, Second Note: {}>".format(self.vector,
-                                                                                  self.note1.note.nameWithOctave,
-                                                                                  self.note2.note.nameWithOctave)
-
-# Allows for selected "vectorizations" given a note list created from either ScoreBase or CorpusBase
-# Consider making this a Standalone method- an object seems slightly redundant/hard to justify
-class IntervalBase:
-    """
-    A list of VectorInterval objects created from a note list
-
-    Attributes
-    ----------
-    notes : list
-        note list gathered from either CorpusBase or ScoreBase's methods/attributes
-    generic_intervals : list
-        creates list of VectorInterval objects in terms of generic intervals
-    semitone_intervals : list
-        creates list of VectorInterval objects in terms of semitone intervals
-    """
-    def __init__(self, notes):
-        """
-        Parameters
-        ----------
-        notes:
-            note list gathered from either CorpusBase or ScoreBase's methods/attributes
-        """
-        self.notes = notes
-        self.generic_intervals = self.vectorize_generic(self.notes)
-        self.semitone_intervals = self.vectorize_semitone(self.notes)
-
-    # Construct intervals in terms of semitone distances between notes
-    def vectorize_semitone(self, notes):
-        """Creates list of VectorInterval objects in terms of semitone intervals
-
-        Parameters
-        ----------
-        notes:
-            (frequently self.notes): note list gathered from either CorpusBase or ScoreBase's methods/attributes
-        """
-        vec = []
-        for i in range(len(notes) - 1):
-            if notes[i].note.isRest or notes[i + 1].note.isRest:
-                interval_obj = VectorInterval("Rest", notes[i], notes[i + 1])
-                vec.append(interval_obj)
-            else:
-                interval_semitones = interval.Interval(notes[i].note, notes[i + 1].note).semitones
-                interval_obj = VectorInterval(interval_semitones, notes[i], notes[i + 1])
-                vec.append(interval_obj)
-        return vec
-
-    # Construct intervals in terms of generic distance between notes
-    def vectorize_generic(self, notes):
-        """Creates list of VectorInterval objects in terms of generic intervals
-
-        Parameters
-        ----------
-        notes:
-            (frequently self.notes): note list gathered from either CorpusBase or ScoreBase's methods/attributes
-        """
-        vec = []
-        for i in range(len(notes) - 1):
-            if notes[i].note.isRest or notes[i + 1].note.isRest:
-                interval_obj = VectorInterval("Rest", notes[i], notes[i + 1])
-                vec.append(interval_obj)
-            else:
-                interval_semitones = interval.Interval(notes[i].note, notes[i + 1].note).semitones
-                interval_obj = VectorInterval(interval.convertSemitoneToSpecifierGeneric(interval_semitones)[1],
-                                              notes[i], notes[i + 1])
-                vec.append(interval_obj)
-        return vec
-
-# An individual match event- can be used for close matches as well
-class Match:
-    """
-    A pattern that has been deemed part of a match
-
-    Attributes
-    ----------
-    pattern : list
-        list of vectors in pattern
-    first_note : NoteListElement
-        first note in the soggetti creating the vector pattern
-    last_note : NoteListElement
-        last note in the soggetti creating the vector pattern
-    durations : list
-        list of durations of notes in soggetti creating the vector pattern
-    ema : str
-        standalone ema snippet for the pattern
-    ema_url : str
-        url to get mei for the pattern
-    """
-    def __init__(self, pattern, first_note: NoteListElement, last_note: NoteListElement, durations):
-        self.pattern = pattern
-        self.first_note = first_note
-        self.last_note = last_note
-        # Construct an ema address for the entire pattern to pass on
-        ema = str(self.first_note.note.measureNumber) + "-" + str(self.last_note.note.measureNumber) + "/" + str(
-            self.first_note.partNumber) + "/"
-        ema += ("@" + str(self.first_note.note.beat) + "-end")
-        for i in range(self.last_note.note.measureNumber - self.first_note.note.measureNumber - 1):
-            ema += ",@start-end"
-        ema += (",@start-" + str(self.last_note.note.beat))
-        self.ema = ema
-        try:
-            splice = self.first_note.piece_url.index('mei/')
-            self.ema_url = "https://ema.crimproject.org/https%3A%2F%2Fcrimproject.org%2Fmei%2F" + str(
-                self.first_note.piece_url[splice + 4:]) + "/" + str(self.ema)
-        except:
-            self.ema_url = "File must be a crim url to have a valid EMA url"
-        self.durations = durations
-
-# Object representing all the occurences of a pattern in a list of notes/vectors
-# User generally doesn't create this- it is done in the finding matches methods
-class PatternMatches:
-    """
-    A group of Match objects generated from a pattern
-
-    Attributes
-    ----------
-    pattern : list
-        pattern generating matches
-    matches : list
-        list of Match objects found to be matching the pattern
-    """
-
-    def __init__(self, pattern, matches: list):
-        self.pattern = pattern
-        self.matches = matches
-
-    def print_exact_matches(self):
-        """A facilitated way to display all the matches gathered by a find_exact_matches search
-        """
-        print("Melodic interval/pattern " + str(self.pattern) + " occurs " + str(len(self.matches)) + " times:")
-        for match in self.matches:
-            print("In " + str(match.first_note.metadata.title) + " part " + str(
-                match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) + \
-                  " and ending in measure " + str(match.last_note.note.measureNumber) + ". Notes lengths: " + str(
-                match.durations))
-        print("\n")
-
-    def print_close_matches(self):
-        """A facilitated way to display all the matches gathered by a find_close_matches search
-        """
-        print("Occurences of " + str(self.pattern) + " or similar:")
-        for match in self.matches:
-            print("Pattern " + str(match.pattern) + " appears in " + str(
-                match.first_note.metadata.title) + " part " + str(
-                match.first_note.part) + " beginning in measure " + str(match.first_note.note.measureNumber) + \
-                  " and ending in measure " + str(match.last_note.note.measureNumber) + ". Notes lengths: " + str(
-                match.durations))
-        print("Said pattern or similar appeared " + str(len(self.matches)) + " times.\n")
-
-class ClassifiedMatch:
-    """
-    Group of matches classified to be a periodic entry, imitative duo, or fuga
-
-    Attributes
-    ----------
-    matches : list
-        list of Match objects found to be matching the pattern
-    type : str
-        either "periodic entry", "imitative duo", or "fuga" depending on match classification
-    pattern : list
-        interval pattern that the matches have in common
-    ema : str
-        ema address for the series of patterns
-    ema_url : str
-        url to download mei slice for the series of patterns
-    """
-    def __init__(self, matches: list, type):
-        """
-        Parameters
-        ----------
-        matches : list
-            list of Match objects found to be matching the pattern
-        type : str
-            either "periodic entry", "imitative duo", or "fuga" depending on match classification
-        """
-        self.matches = matches
-        self.type = type
-        self.pattern = self.matches[0].pattern
-
-        ema_measures = ""
-        ema_parts = ""
-        ema_beats = ""
-        for match in self.matches:
-            ema_measures += str(match.first_note.note.measureNumber) + "-" + str(
-                match.last_note.note.measureNumber) + ","
-            for i in range(match.last_note.note.measureNumber - match.first_note.note.measureNumber + 1):
-                ema_parts += str(match.first_note.partNumber) + ","
-            ema_beats += "@" + str(match.first_note.note.beat) + "-end,"
-            for j in range(match.last_note.note.measureNumber - match.first_note.note.measureNumber - 1):
-                ema_beats += "@start-end,"
-            ema_beats += "@start-" + str(match.last_note.note.beat) + ","
-        self.ema = ema_measures[0:len(ema_measures) - 1] + "/" + ema_parts[0:len(ema_parts) - 1] + "/" + ema_beats[
-                                                                                                         0:len(
-                                                                                                             ema_beats) - 1]
-
-        try:
-            splice = self.matches[0].first_note.piece_url.index('mei/')
-            self.ema_url = "https://ema.crimproject.org/https%3A%2F%2Fcrimproject.org%2Fmei%2F" + str(
-                self.matches[0].first_note.piece_url[splice + 4:]) + "/" + str(self.ema)
-        except:
-            self.ema_url = "File must be a crim url (not a file path) to have a valid EMA url"

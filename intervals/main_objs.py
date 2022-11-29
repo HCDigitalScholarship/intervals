@@ -704,22 +704,35 @@ class ImportedPiece:
         else:
             return cell
 
-    def _durationalRatioHelper(self, row):
+    def _durationalRatioHelper(self, row, end):
         _row = row.dropna()
-        return _row / _row.shift(1)
+        res = _row / _row.shift(1)
+        if not end:
+            res = res.shift(-1)
+        return res
 
-    def durationalRatios(self, df=None):
+    def durationalRatios(self, df=None, end=True):
         '''
         Return durational ratios of each item in each column compared to the
         previous item in the same column. If a df is passed, it should be of
         float or integer values. If no df is passed, the default results from
         .durations will be used as input (durations of notes and rests).
+
+        The `end` parameter works the same as for .melodic(). It associates the
+        durational ratios with the start of the first event rather than with the
+        start of the second event.
         '''
-        if 'DurationalRatios' not in self.analyses:
+        cachable = False
+        key = ('DurationalRatios', end)
+        if df is None:
+            cachable = True
+            if key in self.analyses:
+                return self.analyses['DurationalRatios']
             df = self.durations()
-            self.analyses['DurationalRatios'] = df.apply(self._durationalRatioHelper).dropna(how='all')
-            return self.analyses['DurationalRatios']
-        return df.apply(self._durationalRatioHelper).dropna(how='all')
+        res = df.apply(self._durationalRatioHelper, args=(end,)).dropna(how='all')
+        if cachable:
+            self.analyses['DurationalRatios'] = res
+        return res
 
     def distance(self, df=None, n=3):
         '''
@@ -1110,10 +1123,14 @@ class ImportedPiece:
         cols = []
         other = other.fillna(held)
         for pair in df.columns:
-            lowerVoice, upperVoice = pair.split('_')
-            lowerMel = other[lowerVoice].copy()
-            if show_both and 'Rest' not in exclude:
-                lowerMel += ':' + other[upperVoice]
+            if '_' not in pair:  # df is not a pair of voices, but rather info about 1 voice at a time
+                lowerVoice = pair
+                lowerMel = other[lowerVoice].copy()
+            else:  # df column labels correspond to a pair of voices e.g. Bass_Tenor
+                lowerVoice, upperVoice = pair.split('_')
+                lowerMel = other[lowerVoice].copy()
+                if show_both and 'Rest' not in exclude:
+                    lowerMel += ':' + other[upperVoice]
             combo = pd.concat([lowerMel, df[pair]], axis=1)
             combo.dropna(subset=(pair,), inplace=True)
             filler = held + ':' + held if show_both else held

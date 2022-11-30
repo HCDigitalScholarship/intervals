@@ -1027,8 +1027,8 @@ class ImportedPiece:
         for excl in exclude:
             chains = chains[(chains != excl).all(1)]
         chains.dropna(inplace=True)
-        if col.dtype.name == 'str':
-            chains = chains.apply(lambda row: ', '.join(row), axis=1)
+        if len(chains.index) and type(chains.iat[0, 0]) == str:
+            chains = chains.apply(', '.join, axis=1)
         else:
             chains = chains.apply(tuple, axis=1)
         return chains
@@ -1122,15 +1122,18 @@ class ImportedPiece:
             other = self.melodic(*interval_settings, unit=unit)
         cols = []
         other = other.fillna(held)
+        if '_' not in df.columns[0]:  # df is not a pair of voices, but rather info about 1 voice at a time
+            _df = df.applymap(str, na_action='ignore')
+            _other = other.applymap(str, na_action='ignore')
+            ret = _df + '_' + _other
+            if n == 1:
+                return ret
+            return self.ngrams(df=ret, n=n)
         for pair in df.columns:
-            if '_' not in pair:  # df is not a pair of voices, but rather info about 1 voice at a time
-                lowerVoice = pair
-                lowerMel = other[lowerVoice].copy()
-            else:  # df column labels correspond to a pair of voices e.g. Bass_Tenor
-                lowerVoice, upperVoice = pair.split('_')
-                lowerMel = other[lowerVoice].copy()
-                if show_both and 'Rest' not in exclude:
-                    lowerMel += ':' + other[upperVoice]
+            lowerVoice, upperVoice = pair.split('_')
+            lowerMel = other[lowerVoice].copy()
+            if show_both and 'Rest' not in exclude:
+                lowerMel += ':' + other[upperVoice]
             combo = pd.concat([lowerMel, df[pair]], axis=1)
             combo.dropna(subset=(pair,), inplace=True)
             filler = held + ':' + held if show_both else held

@@ -924,7 +924,7 @@ class ImportedPiece:
                 self.analyses[key] = _df
         return self.analyses[key]
 
-    def _createGraphList(pattern_list):
+    def createGraphList(pattern_list):
         '''
         helper function for graphing interval families
         '''
@@ -985,7 +985,7 @@ class ImportedPiece:
             matching_unique_ngrams_list = list(map(lambda x: x if ",".join(x).startswith(",".join(suggestedPattern)) else "", total_unique_ngrams_list))
             total_unique_ngrams_list = list(filter(lambda x: x != "", matching_unique_ngrams_list))
 
-        graph_pattern_list = _createGraphList(total_unique_ngrams_list)
+        graph_pattern_list = createGraphList(total_unique_ngrams_list)
 
         for pattern in graph_pattern_list:
             plt.plot(pattern, alpha=0.35, lw=6)

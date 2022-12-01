@@ -1655,7 +1655,6 @@ class ImportedPiece:
         '''
         Parameters Overview:
 
-        - piece: a Piece object [hopefully] with some cadences
         - includeType: if set to True, the Cadence markers would be set based on both their Type. If set to False, a universal (round) marker will be used
         cadTone: specify the Tone of cadences to explore. Takes an String input. Set to None by default
         - cadType: specify the Type of cadences to explore. Takes an String input. Set to None by default
@@ -1664,7 +1663,7 @@ class ImportedPiece:
 
         Typical use:
 
-        cadenceProgressPlot(piece, includeType=True)
+        cadenceProgressPlot(includeType=True)
 
         '''
 

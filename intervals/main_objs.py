@@ -14,6 +14,7 @@ import requests
 import intervals
 import collections
 import verovio
+import seaborn as sns
 from glob import glob
 
 from IPython.display import SVG, HTML

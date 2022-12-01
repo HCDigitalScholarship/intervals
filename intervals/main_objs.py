@@ -947,9 +947,7 @@ class ImportedPiece:
 
     # do we need to set a default length for the following?
     # is the typical use code correct? Do we pass in piece?
-
-    def graphIntervalFamilies(self, length, combineUnisons=True, kind="d", end=False, variableLength=False, suggestedPattern=None, useEntries=True):
-        local_ngrams = pd.DataFrame(columns=self.notes().columns)
+    def graphIntervalFamilies(self, length=4, combineUnisons=True, kind="d", end=False, variableLength=False, suggestedPattern=None, useEntries=True, arriveAt=None, includeLegend=False):
 
         '''
         It is possible to select:
@@ -978,7 +976,16 @@ class ImportedPiece:
         '''
         # runs sns plot layout
         self._plot_default()
-        
+
+        local_ngrams = pd.DataFrame(columns=self.notes().columns)
+
+        if length < 1:
+            print("Please use length >= 1")
+            return None
+
+        if kind not in ["d", "z", "c"]:
+            print("\n Warning: you might encounter an error due to using an uncommon interval kind. \n Currently, we have been working with \"z\", \"d\", and \"c\"")
+
         if variableLength:
             loop_start = 1
         else:
@@ -994,18 +1001,32 @@ class ImportedPiece:
             local_ngrams = pd.concat([local_ngrams, loop_ngrams])
 
         total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))
+
         if suggestedPattern:
             matching_unique_ngrams_list = list(map(lambda x: x if ",".join(x).startswith(",".join(suggestedPattern)) else "", total_unique_ngrams_list))
             total_unique_ngrams_list = list(filter(lambda x: x != "", matching_unique_ngrams_list))
+            if len(total_unique_ngrams_list) < 1:
+                print("No patterns matching the suggestedPattern found")
+                return None
 
         graph_pattern_list = self._createGraphList(total_unique_ngrams_list)
+
+        if arriveAt != None:
+            graph_pattern_list = list(filter(lambda x: x[-1] == arriveAt, graph_pattern_list))
+            if len(graph_pattern_list) < 1:
+                print("No patterns arriving at arriveAt found")
+                return None
 
         for pattern in graph_pattern_list:
             plt.plot(pattern, alpha=0.35, lw=6)
         plt.yticks(np.arange(min(list(map(lambda x: sorted(x)[0], graph_pattern_list))) - 1, max(list(map(lambda x: sorted(x)[-1], graph_pattern_list))) + 1, 1.0))
         plt.xticks(np.arange(0, max(list(map(lambda x: len(x), graph_pattern_list))), 1.0))
-        plt.title("Total Number of Patterns: " + str(len(graph_pattern_list)) + "\n Piece Name: " + self.metadata["title"])
+        if includeLegend:
+            plt.title("Total Number of Patterns: " + str(len(graph_pattern_list)) + "\n Piece Name: " + self.metadata["title"])
         plt.show()
+
+
+
 
 
     def _getM21HarmonicIntervals(self):

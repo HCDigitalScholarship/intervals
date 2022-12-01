@@ -1651,7 +1651,7 @@ class ImportedPiece:
     # is PIECE needed in the arguments?
 
     # setting up the figure size:
-    def _plot_default():
+    def _plot_default(self):
 
         """
         Set sns plot size for cadence progress tool.

@@ -927,6 +927,14 @@ class ImportedPiece:
                 self.analyses[key] = _df
         return self.analyses[key]
 
+    def _patternToSeries(self, pattern):
+        output_list = []
+        output_list.append(0)
+        output_list.append(pattern[0])
+        for i in range(1, len(pattern)):
+            output_list.append(sum(pattern[0:i]) + pattern[i])
+        return output_list
+
     def _createGraphList(self, pattern_list):
         '''
         helper function for graphing interval families
@@ -934,7 +942,7 @@ class ImportedPiece:
         graph_list = []
         for item in pattern_list:
             temp_item = list(map(lambda x: int(x), item))
-            graph_list.append(patternToSeries(temp_item))
+            graph_list.append(self._patternToSeries(temp_item))
         return graph_list
 
     # do we need to set a default length for the following?
@@ -968,7 +976,9 @@ class ImportedPiece:
         graphIntervalFamilies(piece, 4, variableLength=True, suggestedPattern=("4", "2"))
 
         '''
-
+        # runs sns plot layout
+        self._plot_default()
+        
         if variableLength:
             loop_start = 1
         else:

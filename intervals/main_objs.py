@@ -1650,6 +1650,17 @@ class ImportedPiece:
     # Cadence Progress
     # is PIECE needed in the arguments?
 
+    # setting up the figure size:
+    def _plot_default():
+
+        """
+        Set sns plot size for cadence progress tool.
+        """
+        if '_plot_default' not in self.analyses:
+            sns.set(rc={'figure.figsize':(15,9)})
+            self.analyses['_plot_default'] = True
+
+
     def cadenceProgressPlot(self, includeType=False, cadTone=None, cadType=None, customOrder=None, includeLegend=True):
 
         '''
@@ -1666,6 +1677,8 @@ class ImportedPiece:
         cadenceProgressPlot(includeType=True)
 
         '''
+        # runs sns plot layout
+        self._plot_default()
 
         # defining markers for Cadence Types
         cadence_type_dict = {"Clausula Vera": "o", "Abandoned Clausula Vera": "v", "Evaded Clausula Vera": "^",

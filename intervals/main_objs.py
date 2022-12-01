@@ -16,6 +16,9 @@ import collections
 import verovio
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
 import plotly.express as px
 from glob import glob
 

@@ -1610,7 +1610,7 @@ class ImportedPiece:
             order_array = customOrder
 
         # getting cadences
-        local_cadences = piece.cadences()
+        local_cadences = self.cadences()
 
         # checking if empty
         if len(local_cadences) == 0:

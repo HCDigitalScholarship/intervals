@@ -14,6 +14,12 @@ import requests
 import intervals
 import collections
 import verovio
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
+import plotly.express as px
 from glob import glob
 
 from IPython.display import SVG, HTML
@@ -921,6 +927,108 @@ class ImportedPiece:
                 self.analyses[key] = _df
         return self.analyses[key]
 
+    def _patternToSeries(self, pattern):
+        output_list = []
+        output_list.append(0)
+        output_list.append(pattern[0])
+        for i in range(1, len(pattern)):
+            output_list.append(sum(pattern[0:i]) + pattern[i])
+        return output_list
+
+    def _createGraphList(self, pattern_list):
+        '''
+        helper function for graphing interval families
+        '''
+        graph_list = []
+        for item in pattern_list:
+            temp_item = list(map(lambda x: int(x), item.split(', ')))
+            graph_list.append(self._patternToSeries(temp_item))
+        return graph_list
+
+    # do we need to set a default length for the following?
+    # is the typical use code correct? Do we pass in piece?
+    def graphIntervalFamilies(self, length=4, combineUnisons=True, kind="d", end=False, variableLength=False, suggestedPattern=None, useEntries=True, arriveAt=None, includeLegend=False):
+
+        '''
+        It is possible to select:
+
+        length
+        combineUnisons=True
+        kind="d"
+        end=False
+        variableLength=False
+        suggestedPattern=None
+        useEntries=True
+
+        Graphing the Interval Families with `length=4` and `useEntries=True`):
+
+        Typical use:
+        graphIntervalFamilies(5, useEntries=True)
+
+        Another useful option is `variableLength=True`, therefore including **all unique patterns up to the specified length**:
+
+        graphIntervalFamilies(piece, 4, variableLength=True)
+
+        We can narrow down patterns of interested by specifying `suggestedPattern=Tuple(Str*)`, for example looking for **all patterns that start with `-2, -2`**:
+
+        graphIntervalFamilies(piece, 4, variableLength=True, suggestedPattern=("4", "2"))
+
+        '''
+        # runs sns plot layout
+        self._plot_default()
+
+        local_ngrams = pd.DataFrame(columns=self.notes().columns)
+
+        if length < 1:
+            print("Please use length >= 1")
+            return None
+
+        if kind not in ["d", "z", "c"]:
+            print("\n Warning: you might encounter an error due to using an uncommon interval kind. \n Currently, we have been working with \"z\", \"d\", and \"c\"")
+
+        if variableLength:
+            loop_start = 1
+        else:
+            loop_start = length
+
+        for i in range(loop_start, length + 1):
+            loop_notes = self.notes(combineUnisons=True)
+            loop_melodic = self.melodic(df=loop_notes, kind=kind, end=end)
+            if useEntries:
+                loop_ngrams = self.entries(df=loop_melodic, n=int(i)).fillna('')
+            else:
+                loop_ngrams = self.ngrams(df=loop_melodic, n=int(i)).fillna('')
+            local_ngrams = pd.concat([local_ngrams, loop_ngrams])
+
+        total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))
+
+        if suggestedPattern:
+            matching_unique_ngrams_list = list(map(lambda x: x if ",".join(x).startswith(",".join(suggestedPattern)) else "", total_unique_ngrams_list))
+            total_unique_ngrams_list = list(filter(lambda x: x != "", matching_unique_ngrams_list))
+            if len(total_unique_ngrams_list) < 1:
+                print("No patterns matching the suggestedPattern found")
+                return None
+
+        graph_pattern_list = self._createGraphList(total_unique_ngrams_list)
+
+        if arriveAt != None:
+            graph_pattern_list = list(filter(lambda x: x[-1] == arriveAt, graph_pattern_list))
+            if len(graph_pattern_list) < 1:
+                print("No patterns arriving at arriveAt found")
+                return None
+
+        for pattern in graph_pattern_list:
+            plt.plot(pattern, alpha=0.35, lw=6)
+        plt.yticks(np.arange(min(list(map(lambda x: sorted(x)[0], graph_pattern_list))) - 1, max(list(map(lambda x: sorted(x)[-1], graph_pattern_list))) + 1, 1.0))
+        plt.xticks(np.arange(0, max(list(map(lambda x: len(x), graph_pattern_list))), 1.0))
+        if includeLegend:
+            plt.title("Total Number of Patterns: " + str(len(graph_pattern_list)) + "\n Piece Name: " + self.metadata["title"])
+        plt.show()
+
+
+
+
+
     def _getM21HarmonicIntervals(self):
         if 'M21HarmonicIntervals' not in self.analyses:
             m21Objs = self._getM21ObjsNoTies()
@@ -1505,6 +1613,157 @@ class ImportedPiece:
         if not keep_keys:
             labels = labels.drop(['Pattern', 'Key'], axis=1)
         return labels
+
+    # cadence RADAR plots:
+
+    def cadenceRadarPlot(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"):
+
+        '''
+        Parameters Overview:
+
+        - combinedType: if set to True, the Cadences would be classified based on both their Type and Tone. If set to False, only Tone will be used. False by default
+        - sounding: specify how many voices are sounding (optional). Takes an integer input. Set to None by default
+        - displayAll: if set to True, the chart will display all pitches in the Default (Fifth) or Custom order
+        - customOrder: the custom order parameter. Takes in a List of Strings
+        - renderer: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc
+
+        Typical use:
+
+        cadenceRadarPlot(combinedType=False, displayAll=True, renderer="iframe")
+
+        '''
+    # defining the Default display order
+        order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
+
+        # accepting a custom order
+        if customOrder != None:
+            order_array = customOrder
+
+        # getting cadences
+        local_cadences = self.cadences()
+
+        # checking if empty
+        if len(local_cadences) == 0:
+            print("No cadences found in the piece")
+            return None
+
+        # filtering for sounding
+        if sounding != None:
+            local_cadences = local_cadences[local_cadences["Sounding"] == sounding]
+            if len(local_cadences) == 0:
+                print("No cadences with given number of voices Sounding found in the piece")
+                return None
+
+        # generating Combined Type (if combinedType)
+        if combinedType:
+            local_cadences["Combined_Type"] = local_cadences["Tone"] + "_" + local_cadences["CadType"]
+            selected_type = "Combined_Type"
+        else:
+            selected_type = "Tone"
+
+        # groupby: Selected Type
+        grouped_combined = pd.DataFrame(local_cadences.groupby([selected_type]).size().reset_index(name='Count'))
+
+        # displaying all values (if displayAll)
+        if displayAll:
+            if selected_type == "Tone":
+                grouped_combined['Tone'] = pd.Categorical(grouped_combined.Tone, categories=order_array, ordered=True)
+                grouped_combined = grouped_combined.sort_values(by='Tone')
+            fig = px.line_polar(grouped_combined, r="Count", theta=selected_type, category_orders={"Tone": order_array}, line_close=True)
+        else:
+            fig = px.line_polar(grouped_combined, r="Count", theta=selected_type, line_close=True)
+
+        # including the Title
+        fig.update_layout(title_text=(self.metadata['composer'] + ": " + self.metadata['title']))
+        fig.show(renderer=renderer)
+
+
+    # Cadence Progress
+    # is PIECE needed in the arguments?
+
+    # setting up the figure size:
+    def _plot_default(self):
+
+        """
+        Set sns plot size for cadence progress tool.
+        """
+        if '_plot_default' not in self.analyses:
+            sns.set(rc={'figure.figsize':(15,9)})
+            self.analyses['_plot_default'] = True
+
+
+    def cadenceProgressPlot(self, includeType=False, cadTone=None, cadType=None, customOrder=None, includeLegend=True):
+
+        '''
+        Parameters Overview:
+
+        - includeType: if set to True, the Cadence markers would be set based on both their Type. If set to False, a universal (round) marker will be used
+        cadTone: specify the Tone of cadences to explore. Takes an String input. Set to None by default
+        - cadType: specify the Type of cadences to explore. Takes an String input. Set to None by default
+        - customOrder: specify a custom order to be used for the plot (a dictionary: e.g. {"A":0, "B":1 ...}
+        - includeLegend: flag to display legend; Default set to True
+
+        Typical use:
+
+        cadenceProgressPlot(includeType=True)
+
+        '''
+        # runs sns plot layout
+        self._plot_default()
+
+        # defining markers for Cadence Types
+        cadence_type_dict = {"Clausula Vera": "o", "Abandoned Clausula Vera": "v", "Evaded Clausula Vera": "^",
+                     "Authentic" : "<", "Evaded Authentic": ">", "Abandoned Authentic": "8", "Double Leading Tone" : "s",
+                     "Evaded Double Leading Tone": "p", "Abandoned Double Leading Tone": "P", "Phrygian Clausula Vera": "d",
+                     "Altizans Only": "h", "Evaded Altizans Only": "H", "Leaping Contratenor": "X", "Reinterpreted": "D", "Phrygian": "d", "None": "*"}
+
+        # defining the default order list (or accepting the custom one)
+        if customOrder == None:
+            order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "F#":9, "Db":10, "Ab":11}
+        else:
+            order_dict = customOrder
+
+        # get cadences
+        local_cadences = self.cadences()
+
+        # check for a lookup type
+        if cadType != None:
+            local_cadences = local_cadences[local_cadences["CadType"] == cadType]
+
+        # check for a lookup tone
+        if cadTone != None:
+            local_cadences = local_cadences[local_cadences["Tone"] == cadTone]
+
+        # check if empty
+        if len(local_cadences) < 1:
+            print("No cadences found!")
+            return None
+
+        # convert Tone to a Numerical
+        local_cadences["Numerical"] = local_cadences["Tone"].apply(lambda x: order_dict.get(x))
+
+        # filtering for Types
+        if includeType:
+            local_cadences["CadType"] = local_cadences["CadType"].fillna("None")
+            sns.scatterplot(x=local_cadences['Progress'], y=local_cadences['Numerical'], style=local_cadences["CadType"], markers=cadence_type_dict, s=140)
+        else:
+            sns.scatterplot(x=local_cadences['Progress'], y=local_cadences['Numerical'], s=140)
+
+        # arranging Ticks and Tick labels
+        plt.yticks(ticks=list(order_dict.values()), labels=list(order_dict.keys()))
+
+        # producing the Type legend
+        if includeType:
+            type_patch_array = []
+            for type_item in local_cadences["CadType"].unique().tolist():
+                type_patch_array.append(mlines.Line2D([0], [0], marker=cadence_type_dict[type_item], color='black', label=type_item, markerfacecolor='black', markersize=10, linewidth=0))
+                plt.legend(handles=type_patch_array)
+
+        # Producing the chart legend
+        if includeLegend:
+            plt.title("Cadence Progress Graph: " + self.metadata["title"])
+        plt.ylabel("Cadence Tone")
+        plt.show()
 
     def markFourths(self):
         '''
@@ -2934,4 +3193,3 @@ class CorpusBase:
                     res.at[mass.file_name, model.file_name] = percent
 
         return res
-

@@ -1024,8 +1024,7 @@ class ImportedPiece:
 
         chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
         chains = pd.concat(chunks, axis=1)
-        for excl in exclude:
-            chains = chains[(chains != excl).all(1)]
+        chains = chains[chains.apply(lambda row: row.str.contains('|'.join(exclude), regex=True)) == False]
         chains.dropna(inplace=True)
         if len(chains.index) and type(chains.iat[0, 0]) == str:
             chains = chains.apply(', '.join, axis=1)
@@ -1126,9 +1125,7 @@ class ImportedPiece:
             _df = df.applymap(str, na_action='ignore')
             _other = other.applymap(str, na_action='ignore')
             ret = _df + '_' + _other
-            if n == 1:
-                return ret
-            return self.ngrams(df=ret, n=n)
+            return self.ngrams(df=ret, n=n, exclude=exclude, offsets=offsets)
         for pair in df.columns:
             lowerVoice, upperVoice = pair.split('_')
             lowerMel = other[lowerVoice].copy()

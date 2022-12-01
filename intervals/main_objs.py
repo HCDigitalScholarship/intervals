@@ -1588,49 +1588,49 @@ class ImportedPiece:
 
     def cadenceRadarPlot(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"):
     # defining the Default display order
-    order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
+        order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
 
-    # accepting a custom order
-    if customOrder != None:
-        order_array = customOrder
+        # accepting a custom order
+        if customOrder != None:
+            order_array = customOrder
 
-    # getting cadences
-    local_cadences = self.cadences()
+        # getting cadences
+        local_cadences = self.cadences()
 
-    # checking if empty
-    if len(local_cadences) == 0:
-        print("No cadences found in the piece")
-        return None
-
-    # filtering for sounding
-    if sounding != None:
-        local_cadences = local_cadences[local_cadences["Sounding"] == sounding]
+        # checking if empty
         if len(local_cadences) == 0:
-            print("No cadences with given number of voices Sounding found in the piece")
+            print("No cadences found in the piece")
             return None
 
-    # generating Combined Type (if combinedType)
-    if combinedType:
-        local_cadences["Combined_Type"] = local_cadences["Tone"] + "_" + local_cadences["CadType"]
-        selected_type = "Combined_Type"
-    else:
-        selected_type = "Tone"
+        # filtering for sounding
+        if sounding != None:
+            local_cadences = local_cadences[local_cadences["Sounding"] == sounding]
+            if len(local_cadences) == 0:
+                print("No cadences with given number of voices Sounding found in the piece")
+                return None
 
-    # groupby: Selected Type
-    grouped_combined = pd.DataFrame(local_cadences.groupby([selected_type]).size().reset_index(name='Count'))
+        # generating Combined Type (if combinedType)
+        if combinedType:
+            local_cadences["Combined_Type"] = local_cadences["Tone"] + "_" + local_cadences["CadType"]
+            selected_type = "Combined_Type"
+        else:
+            selected_type = "Tone"
 
-    # displaying all values (if displayAll)
-    if displayAll:
-        if selected_type == "Tone":
-            grouped_combined['Tone'] = pd.Categorical(grouped_combined.Tone, categories=order_array, ordered=True)
-            grouped_combined = grouped_combined.sort_values(by='Tone')
-        fig = px.line_polar(grouped_combined, r="Count", theta=selected_type, category_orders={"Tone": order_array}, line_close=True)
-    else:
-        fig = px.line_polar(grouped_combined, r="Count", theta=selected_type, line_close=True)
+        # groupby: Selected Type
+        grouped_combined = pd.DataFrame(local_cadences.groupby([selected_type]).size().reset_index(name='Count'))
 
-    # including the Title
-    fig.update_layout(title_text=(self.metadata['composer'] + ": " + self.metadata['title']))
-    fig.show(renderer=renderer)
+        # displaying all values (if displayAll)
+        if displayAll:
+            if selected_type == "Tone":
+                grouped_combined['Tone'] = pd.Categorical(grouped_combined.Tone, categories=order_array, ordered=True)
+                grouped_combined = grouped_combined.sort_values(by='Tone')
+            fig = px.line_polar(grouped_combined, r="Count", theta=selected_type, category_orders={"Tone": order_array}, line_close=True)
+        else:
+            fig = px.line_polar(grouped_combined, r="Count", theta=selected_type, line_close=True)
+
+        # including the Title
+        fig.update_layout(title_text=(self.metadata['composer'] + ": " + self.metadata['title']))
+        fig.show(renderer=renderer)
 
 
     # Cadence Progress

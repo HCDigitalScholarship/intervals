@@ -15,7 +15,6 @@ import intervals
 import collections
 import verovio
 from glob import glob
-
 from IPython.display import SVG, HTML
 cwd = os.path.dirname(intervals.__file__)
 
@@ -1024,10 +1023,11 @@ class ImportedPiece:
 
         chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
         chains = pd.concat(chunks, axis=1)
-        chains = chains[chains.apply(lambda row: row.str.contains('|'.join(exclude), regex=True)) == False]
+        if len(exclude):
+            chains = chains[chains.apply(lambda row: row.str.contains('|'.join(exclude), regex=True)) == False]
         chains.dropna(inplace=True)
-        if len(chains.index) and type(chains.iat[0, 0]) == str:
-            chains = chains.apply(', '.join, axis=1)
+        if col.dtype.name == 'str':
+            chains = chains.apply(lambda row: ', '.join(row), axis=1)
         else:
             chains = chains.apply(tuple, axis=1)
         return chains
@@ -1571,7 +1571,7 @@ class ImportedPiece:
         # active version with lyric ngs
         nr = self.notes()
         dur = self.durations(df=nr)
-        ng = self.ngrams(df=dur, n=5)
+        ng = self.ngrams(df=dur, exclude=[], n=5)
         dur_ngrams = []
         for index, rows in ng.iterrows():
             dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
@@ -1587,7 +1587,7 @@ class ImportedPiece:
          # get the lyrics as ngrams to match the durations
         lyrics = self.lyrics()
         lyrics = lyrics.applymap(self._alpha_only)
-        lyrics_ng = self.ngrams(df=lyrics, n=5)
+        lyrics_ng = self.ngrams(df=lyrics, exclude=[], n=5)
 
         ng_list = ng.index.to_list()
         # filtered_lyric_ngs = lyrics_ng.loc[ng_list]

@@ -1937,7 +1937,7 @@ class ImportedPiece:
             nr = self.notes(combineUnisons=True)
             df = self.melodic(df=nr, kind='d', end=False)
         if n is not None:
-            df = self.ngrams(df, exclude=[], n)
+            df = self.ngrams(df, n, exclude=[])
         mask = self.entryMask(fermatas)
         num_parts = len(mask.columns)
         mask.columns = df.columns[:num_parts]

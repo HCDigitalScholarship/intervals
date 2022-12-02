@@ -996,7 +996,7 @@ class ImportedPiece:
             if useEntries:
                 loop_ngrams = self.entries(df=loop_melodic, n=int(i)).fillna('')
             else:
-                loop_ngrams = self.ngrams(df=loop_melodic, n=int(i)).fillna('')
+                loop_ngrams = self.ngrams(df=loop_melodic, exclude=[], n=int(i)).fillna('')
             local_ngrams = pd.concat([local_ngrams, loop_ngrams])
 
         total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))
@@ -1504,9 +1504,9 @@ class ImportedPiece:
         nr = self.notes(combineUnisons=True)
         mel = self.melodic(kind='d', end=True, df=nr)
         mel_ng = self.ngrams(n=2, df=mel, offsets='last')
-        mel_matches = mel_ng.applymap(lambda cell: cell == ('-2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        mel_matches = mel_ng.applymap(lambda cell: cell == '-2, 2', na_action='ignore').replace(False, np.nan).dropna(how='all')
         bs = self.beatStrengths().reindex_like(nr)
-        bs_ng = self.ngrams(n=3, df=bs, offsets='last')
+        bs_ng = self.ngrams(n=3, df=bs, exclude=[], offsets='last')
         bs_ng = bs_ng.reindex_like(mel_ng)
         bs_matches = bs_ng.applymap(lambda cell: cell[0] < cell[2] > cell[1], na_action='ignore').replace(False, np.nan).dropna(how='all')
         res = pd.DataFrame().reindex_like(bs_ng)
@@ -1937,7 +1937,7 @@ class ImportedPiece:
             nr = self.notes(combineUnisons=True)
             df = self.melodic(df=nr, kind='d', end=False)
         if n is not None:
-            df = self.ngrams(df, n)
+            df = self.ngrams(df, exclude=[], n)
         mask = self.entryMask(fermatas)
         num_parts = len(mask.columns)
         mask.columns = df.columns[:num_parts]
@@ -2279,11 +2279,11 @@ class ImportedPiece:
             return self.analyses[memo_key]
         nr = self.notes(combineUnisons=combine_unisons)
         mel = self.melodic(df=nr, kind='d', end=False)
-        mel_ng = self.ngrams(df=mel, n=melodic_ngram_length)
+        mel_ng = self.ngrams(df=mel, exclude=[], n=melodic_ngram_length)
         if limit_to_entries:
             entries = self.entries(mel_ng)
         else:
-            entries = self.ngrams(df=mel, n=melodic_ngram_length)
+            entries = self.ngrams(df=mel, exclude=[], n=melodic_ngram_length)
         # return entries
         # get ngram durs to use for overlap check as part of _temp files
         ng_durs = self.durations(df=entries)

@@ -21,7 +21,6 @@ import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import plotly.express as px
 from glob import glob
-
 from IPython.display import SVG, HTML
 cwd = os.path.dirname(intervals.__file__)
 
@@ -997,7 +996,7 @@ class ImportedPiece:
             if useEntries:
                 loop_ngrams = self.entries(df=loop_melodic, n=int(i)).fillna('')
             else:
-                loop_ngrams = self.ngrams(df=loop_melodic, n=int(i)).fillna('')
+                loop_ngrams = self.ngrams(df=loop_melodic, exclude=[], n=int(i)).fillna('')
             local_ngrams = pd.concat([local_ngrams, loop_ngrams])
 
         total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))
@@ -1132,11 +1131,11 @@ class ImportedPiece:
 
         chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
         chains = pd.concat(chunks, axis=1)
-        for excl in exclude:
-            chains = chains[(chains != excl).all(1)]
+        if len(exclude):
+            chains = chains[chains.apply(lambda row: row.str.contains('|'.join(exclude), regex=True)) == False]
         chains.dropna(inplace=True)
-        if len(chains.index) and type(chains.iat[0, 0]) == str:
-            chains = chains.apply(', '.join, axis=1)
+        if col.dtype.name == 'str':
+            chains = chains.apply(lambda row: ', '.join(row), axis=1)
         else:
             chains = chains.apply(tuple, axis=1)
         return chains
@@ -1234,9 +1233,7 @@ class ImportedPiece:
             _df = df.applymap(str, na_action='ignore')
             _other = other.applymap(str, na_action='ignore')
             ret = _df + '_' + _other
-            if n == 1:
-                return ret
-            return self.ngrams(df=ret, n=n)
+            return self.ngrams(df=ret, n=n, exclude=exclude, offsets=offsets)
         for pair in df.columns:
             lowerVoice, upperVoice = pair.split('_')
             lowerMel = other[lowerVoice].copy()
@@ -1507,9 +1504,9 @@ class ImportedPiece:
         nr = self.notes(combineUnisons=True)
         mel = self.melodic(kind='d', end=True, df=nr)
         mel_ng = self.ngrams(n=2, df=mel, offsets='last')
-        mel_matches = mel_ng.applymap(lambda cell: cell == ('-2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        mel_matches = mel_ng.applymap(lambda cell: cell == '-2, 2', na_action='ignore').replace(False, np.nan).dropna(how='all')
         bs = self.beatStrengths().reindex_like(nr)
-        bs_ng = self.ngrams(n=3, df=bs, offsets='last')
+        bs_ng = self.ngrams(n=3, df=bs, exclude=[], offsets='last')
         bs_ng = bs_ng.reindex_like(mel_ng)
         bs_matches = bs_ng.applymap(lambda cell: cell[0] < cell[2] > cell[1], na_action='ignore').replace(False, np.nan).dropna(how='all')
         res = pd.DataFrame().reindex_like(bs_ng)
@@ -1833,7 +1830,7 @@ class ImportedPiece:
         # active version with lyric ngs
         nr = self.notes()
         dur = self.durations(df=nr)
-        ng = self.ngrams(df=dur, n=5)
+        ng = self.ngrams(df=dur, exclude=[], n=5)
         dur_ngrams = []
         for index, rows in ng.iterrows():
             dur_ngrams_no_nan = [x for x in rows if pd.isnull(x) == False]
@@ -1849,7 +1846,7 @@ class ImportedPiece:
          # get the lyrics as ngrams to match the durations
         lyrics = self.lyrics()
         lyrics = lyrics.applymap(self._alpha_only)
-        lyrics_ng = self.ngrams(df=lyrics, n=5)
+        lyrics_ng = self.ngrams(df=lyrics, exclude=[], n=5)
 
         ng_list = ng.index.to_list()
         # filtered_lyric_ngs = lyrics_ng.loc[ng_list]
@@ -1940,7 +1937,7 @@ class ImportedPiece:
             nr = self.notes(combineUnisons=True)
             df = self.melodic(df=nr, kind='d', end=False)
         if n is not None:
-            df = self.ngrams(df, n)
+            df = self.ngrams(df, n, exclude=[])
         mask = self.entryMask(fermatas)
         num_parts = len(mask.columns)
         mask.columns = df.columns[:num_parts]
@@ -2282,11 +2279,11 @@ class ImportedPiece:
             return self.analyses[memo_key]
         nr = self.notes(combineUnisons=combine_unisons)
         mel = self.melodic(df=nr, kind='d', end=False)
-        mel_ng = self.ngrams(df=mel, n=melodic_ngram_length)
+        mel_ng = self.ngrams(df=mel, exclude=[], n=melodic_ngram_length)
         if limit_to_entries:
             entries = self.entries(mel_ng)
         else:
-            entries = self.ngrams(df=mel, n=melodic_ngram_length)
+            entries = self.ngrams(df=mel, exclude=[], n=melodic_ngram_length)
         # return entries
         # get ngram durs to use for overlap check as part of _temp files
         ng_durs = self.durations(df=entries)

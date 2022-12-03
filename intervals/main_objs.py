@@ -941,7 +941,7 @@ class ImportedPiece:
         '''
         graph_list = []
         for item in pattern_list:
-            temp_item = list(map(lambda x: int(x)))
+            temp_item = list(map(lambda x: int(x), item))
             graph_list.append(self._patternToSeries(temp_item))
         return graph_list
 

@@ -996,7 +996,7 @@ class ImportedPiece:
             if useEntries:
                 loop_ngrams = self.entries(df=loop_melodic, n=int(i)).fillna('')
             else:
-                loop_ngrams = self.ngrams(df=loop_melodic, exclude=[], n=int(i)).fillna('')
+                loop_ngrams = self.ngrams(df=loop_melodic, exclude=[Rests], n=int(i)).fillna('')
             local_ngrams = pd.concat([local_ngrams, loop_ngrams])
 
         total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))

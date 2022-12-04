@@ -1002,7 +1002,7 @@ class ImportedPiece:
             if useEntries:
                 loop_ngrams = self.entries(df=loop_melodic, n=int(i)).fillna('')
             else:
-                loop_ngrams = self.ngrams(df=loop_melodic, exclude=[], n=int(i)).fillna('')
+                loop_ngrams = self.ngrams(df=loop_melodic, exclude=["Rest"], n=int(i)).fillna('')
             local_ngrams = pd.concat([local_ngrams, loop_ngrams])
 
         total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))
@@ -1910,7 +1910,7 @@ class ImportedPiece:
             self.analyses[key] = nr.apply(self._entryHelper, args=(fermatas,))
         return self.analyses[key]
 
-    def entries(self, df=None, n=None, thematic=False, anywhere=False, fermatas=True):
+    def entries(self, df=None, n=None, thematic=False, anywhere=False, fermatas=True, exclude=[]):
         """
         Return a filtered copy of the passed df that only keeps the events in
         that df if they either start a piece or come after a silence. If the df
@@ -1939,7 +1939,7 @@ class ImportedPiece:
             nr = self.notes(combineUnisons=True)
             df = self.melodic(df=nr, kind='d', end=False)
         if n is not None:
-            df = self.ngrams(df, n, exclude=[])
+            df = self.ngrams(df, n, exclude=exclude)
         mask = self.entryMask(fermatas)
         num_parts = len(mask.columns)
         mask.columns = df.columns[:num_parts]

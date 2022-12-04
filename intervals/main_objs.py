@@ -3386,7 +3386,7 @@ class CorpusBase:
         plt.ylabel("Cadence Tone")
         plt.show()
 
-   def _patternToSeries(self, pattern):
+    def _patternToSeries(self, pattern):
         output_list = []
         output_list.append(0)
         output_list.append(pattern[0])

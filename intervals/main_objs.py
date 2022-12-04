@@ -1677,10 +1677,6 @@ class ImportedPiece:
         fig.update_layout(title_text=(self.metadata['composer'] + ": " + self.metadata['title']))
         fig.show(renderer=renderer)
 
-
-    # Cadence Progress
-    # is PIECE needed in the arguments?
-
     # setting up the figure size:
     def _plot_default(self):
 
@@ -2951,6 +2947,7 @@ class CorpusBase:
         """
         self.paths = paths
         self.scores = []  # store lists of ImportedPieces generated from the path above
+        self.analyses = {'note_list': None}
         for path in paths:
             _score = importScore(path)
             if _score is not None:
@@ -3275,6 +3272,16 @@ class CorpusBase:
         # chart title
         fig.update_layout(title_text=("Cadence Distribution Comparison"))
         fig.show(renderer=renderer)
+
+    # setting up the figure size:
+    def _plot_default(self):
+
+        """
+        Set sns plot size for cadence progress tool.
+        """
+        if '_plot_default' not in self.analyses:
+            sns.set(rc={'figure.figsize':(15,9)})
+            self.analyses['_plot_default'] = True
 
     def compareCadenceProgressPlots(self, includeType=False, cadTone=None, cadType=None, includeLegend=True, customOrder=None):
        

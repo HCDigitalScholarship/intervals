@@ -3275,3 +3275,100 @@ class CorpusBase:
         # chart title
         fig.update_layout(title_text=("Cadence Distribution Comparison"))
         fig.show(renderer=renderer)
+
+    def compareCadenceProgressPlots(self, includeType=False, cadTone=None, cadType=None, includeLegend=True, customOrder=None):
+       
+        '''
+        Parameters Overview:
+
+        - includeType: if set to True, the Cadence markers would be set based on both their Type. If set to False, a universal (round) marker will be used
+        cadTone: specify the Tone of cadences to explore. Takes an String input. Set to None by default
+        - cadType: specify the Type of cadences to explore. Takes an String input. Set to None by default
+        - customOrder: specify a custom order to be used for the plot (a dictionary: e.g. {"A":0, "B":1 ...}
+        - includeLegend: flag to display legend; Default set to True
+
+        Typical use:
+
+        compareCadenceProgressPlots(includeType=True)
+
+        '''
+
+        # runs sns plot layout
+        self._plot_default()
+       
+        # defining a palette for the pieces
+        colors_array = sns.color_palette(n_colors=len(self.scores), as_cmap=True)
+        color_pointer = 0
+        patch_set = []
+        type_patch_array = []
+        
+        # creating the piece legend
+        for i in range(len(self.scores)):
+            patch_set.append(mpatches.Patch(color=colors_array[i], label=self.scores[i].metadata["title"]))
+        piece_legend = plt.legend(handles=patch_set, loc='upper left')
+        
+        # looking for unique Types
+        unique_types_array = []
+        
+        # defining markers for Cadence Types
+        cadence_type_dict = {"Clausula Vera": "o", "Abandoned Clausula Vera": "v", "Evaded Clausula Vera": "^",
+                    "Authentic" : "<", "Evaded Authentic": ">", "Abandoned Authentic": "8", "Double Leading Tone" : "s",
+                    "Evaded Double Leading Tone": "p", "Abandoned Double Leading Tone": "P", "Phrygian Clausula Vera": "d",
+                    "Altizans Only": "h", "Evaded Altizans Only": "H", "Leaping Contratenor": "X", "Reinterpreted": "D", "Phrygian": "d", "None": "*"}
+    
+        # defining the default order or accepting the custom order
+        if customOrder == None:
+            order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "F#":9, "C#":10, "Ab":11}
+        else:
+            order_dict = customOrder
+        
+        # piece loop
+        for piece_item in self.scores:
+        
+            # get cadences
+            loop_cadences = piece_item.cadences()
+            
+            # pick color
+            local_color = colors_array[color_pointer]
+            color_pointer += 1
+
+            # check for a lookup type
+            if cadType != None:
+                loop_cadences = loop_cadences[loop_cadences["CadType"] == cadType]
+
+            # check for a lookup tone
+            if cadTone != None:
+                loop_cadences = loop_cadences[loop_cadences["Tone"] == cadTone]
+
+            # check if empty
+            if len(loop_cadences) < 1:
+                print("No cadences found in: " + piece_item.metadata["title"])
+                continue
+        
+            # convert Tone to a Numerical
+            loop_cadences["Numerical"] = loop_cadences["Tone"].apply(lambda x: order_dict.get(x))
+            
+            # include Type (if includeType)
+            if includeType:
+                loop_cadences["CadType"] = loop_cadences["CadType"].fillna("None")
+                sns.scatterplot(x=loop_cadences['Progress'], y=loop_cadences['Numerical'], style=loop_cadences["CadType"], markers=cadence_type_dict, s=140, color=local_color)
+                unique_types_array.extend(loop_cadences["CadType"].unique().tolist())
+            else:
+                plt.scatter(x=loop_cadences['Progress'], y=loop_cadences['Numerical'], s=140, color=local_color)
+        
+        # produce y Ticks and Labels
+        plt.yticks(ticks=list(order_dict.values()), labels=list(order_dict.keys()))
+        
+        # producing the Type Legend (if includeType)
+        if includeType:
+            type_patches = list(set(unique_types_array))
+            for type_item in type_patches:
+                type_patch_array.append(mlines.Line2D([0], [0], marker=cadence_type_dict[type_item], color='black', label=type_item, markerfacecolor='black', markersize=10, linewidth=0))
+                plt.legend(handles=type_patch_array)
+    
+        # producing the Legend (if includeLegend)
+        if includeLegend:
+            plt.title("Cadence Progress Comparison")
+            plt.gca().add_artist(piece_legend)
+        plt.ylabel("Cadence Tone")
+        plt.show()

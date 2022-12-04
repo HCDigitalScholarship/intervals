@@ -3193,3 +3193,85 @@ class CorpusBase:
                     res.at[mass.file_name, model.file_name] = percent
 
         return res
+
+    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"): 
+        
+        '''
+        Parameters Overview:
+
+        - combinedType: if set to True, the Cadences would be classified based on both their Type and Tone. If set to False, only Tone will be used. False by default
+        - sounding: specify how many voices are sounding (optional). Takes an integer input. Set to None by default
+        - displayAll: if set to True, the chart will display all pitches in the Default (Fifth) or Custom order
+        - customOrder: the custom order parameter. Takes in a List of Strings
+        - renderer: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc
+
+        Typical use:
+
+        compareCadenceRadarPlots(combinedType=False, displayAll=True, renderer="iframe")
+
+        '''
+
+        # specifying the Default order:
+        order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
+        
+        # accepting a custom order (if customOrder)
+        if customOrder != None:
+            order_array = customOrder
+        
+        # creating an empty DataFrame
+        data = pd.DataFrame()
+        
+        # iterating
+        for piece_item in self.scores:
+            
+            # get Piece cadences
+            loop_cadences = piece_item.cadences()
+            
+            # check if empty
+            if len(loop_cadences) == 0:
+                print("No cadences found in the piece: " + piece_item.metadata["title"])
+                continue
+            
+            # filter for sounding (if sounding)
+            if sounding != None:
+                loop_cadences = loop_cadences[loop_cadences["Sounding"] == sounding]
+                if len(loop_cadences) == 0:
+                    print("No cadences with given number of voices Sounding found in the piece: " + piece_item.metadata["title"])
+                    continue
+
+            # create Combined Type (if combinedType)
+            if combinedType:
+                loop_cadences["Combined_Type"] = loop_cadences["Tone"] + "_" + loop_cadences["CadType"]
+                selected_type = "Combined_Type"
+            else:
+                selected_type = "Tone"
+
+            # groupby: Selected Type
+            loop_group = pd.DataFrame(loop_cadences.groupby([selected_type]).size().reset_index(name='Count'))
+            # assign Piece Title
+            loop_group["Piece"] = piece_item.metadata["title"]
+            
+            # making sure grapher graphs in order (before displaying in order)
+            if displayAll and selected_type == "Tone":
+                loop_group['Tone'] = pd.Categorical(loop_group.Tone, categories=order_array, ordered=True)
+                loop_group = loop_group.sort_values(by='Tone')
+        
+            # concat
+            data = pd.concat([loop_group, data], ignore_index=True)
+        
+        if len(data) == 0:
+            print("No cadences found in the corpus")
+            return None
+        
+        # display all categories (if displayAll)
+        if displayAll and selected_type == "Tone":
+            fig = px.line_polar(data, r="Count", theta=selected_type, color="Piece", category_orders={"Tone": order_array}, line_close=True)
+        else:
+            if combinedType:
+                sort_order = sorted(data["Combined_Type"].unique())
+                fig = px.line_polar(data, r="Count", theta=selected_type, color="Piece", category_orders={"Combined_Type": sort_order}, line_close=True)
+            else:  
+                fig = px.line_polar(data, r="Count", theta=selected_type, color="Piece", line_close=True)
+        # chart title
+        fig.update_layout(title_text=("Cadence Distribution Comparison"))
+        fig.show(renderer=renderer)

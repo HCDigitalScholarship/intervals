@@ -940,7 +940,13 @@ class ImportedPiece:
         '''
         graph_list = []
         for item in pattern_list:
-            temp_item = list(map(lambda x: int(x), item.split(', ')))
+            if isinstance(item, tuple):
+                temp_item = list(map(lambda x: int(x), item))
+            elif isinstance(item, str):
+                temp_item = list(map(lambda x: int(x), item.split(', ')))
+            else:
+                print("Intervals are not of type: String or Tuple")
+                return None
             graph_list.append(self._patternToSeries(temp_item))
         return graph_list
 
@@ -951,7 +957,7 @@ class ImportedPiece:
         '''
         It is possible to select:
 
-        length
+        length=4
         combineUnisons=True
         kind="d"
         end=False
@@ -959,18 +965,18 @@ class ImportedPiece:
         suggestedPattern=None
         useEntries=True
 
-        Graphing the Interval Families with `length=4` and `useEntries=True`):
+        Graphing the Interval Families with `length=4` and `useEntries=True` by default:
 
         Typical use:
-        graphIntervalFamilies(5, useEntries=True)
+        graphIntervalFamilies()
 
         Another useful option is `variableLength=True`, therefore including **all unique patterns up to the specified length**:
 
-        graphIntervalFamilies(piece, 4, variableLength=True)
+        graphIntervalFamilies(length=4, variableLength=True)
 
         We can narrow down patterns of interested by specifying `suggestedPattern=Tuple(Str*)`, for example looking for **all patterns that start with `-2, -2`**:
 
-        graphIntervalFamilies(piece, 4, variableLength=True, suggestedPattern=("4", "2"))
+        graphIntervalFamilies(length=4, variableLength=True, suggestedPattern=("4", "2"))
 
         '''
         # runs sns plot layout
@@ -3378,4 +3384,118 @@ class CorpusBase:
             plt.title("Cadence Progress Comparison")
             plt.gca().add_artist(piece_legend)
         plt.ylabel("Cadence Tone")
+        plt.show()
+
+   def _patternToSeries(self, pattern):
+        output_list = []
+        output_list.append(0)
+        output_list.append(pattern[0])
+        for i in range(1, len(pattern)):
+            output_list.append(sum(pattern[0:i]) + pattern[i])
+        return output_list
+
+    def _createGraphList(self, pattern_list):
+        '''
+        helper function for graphing interval families
+        '''
+        graph_list = []
+        for item in pattern_list:
+            if isinstance(item, tuple):
+                temp_item = list(map(lambda x: int(x), item))
+            elif isinstance(item, str):
+                temp_item = list(map(lambda x: int(x), item.split(', ')))
+            else:
+                print("Intervals are not of type: String or Tuple")
+                return None
+            graph_list.append(self._patternToSeries(temp_item))
+        return graph_list
+
+    def compareIntervalFamilies(self, length=4, combineUnisons=True, kind="d", end=False, variableLength=False, suggestedPattern=None, useEntries=True, arriveAt=None, includeLegend=True):
+       
+        '''
+        It is possible to select:
+
+        length=4
+        combineUnisons=True
+        kind="d"
+        end=False
+        variableLength=False
+        suggestedPattern=None
+        useEntries=True
+
+        Comparing the Interval Families with `length=4` and `useEntries=True` by default:
+
+        Typical use:
+        compareIntervalFamilies(length=4)
+
+        Another useful option is `variableLength=True`, therefore including **all unique patterns up to the specified length**:
+
+        compareIntervalFamilies(length=4, variableLength=True)
+
+        We can narrow down patterns of interested by specifying `suggestedPattern=Tuple(Str*)`, for example looking for **all patterns that start with `-2, -2`**:
+
+        compareIntervalFamilies(length=4, variableLength=True, suggestedPattern=("4", "2"))
+
+        '''
+
+        # runs sns plot layout
+        self._plot_default()
+       
+        if length < 1:
+            print("Please use length >= 1")
+            return None
+        
+        if kind not in ["d", "z", "c"]:
+            print("\n Warning: you might encounter an error due to using an uncommon interval kind. \n Currently, we have been working with \"z\", \"d\", and \"c\"")
+        
+        number_of_patterns = 0
+        colors_array = sns.color_palette(n_colors=length, as_cmap=True)
+        color_pointer = 0
+        patch_array = []
+        for piece_item in self.scores:
+            local_color = colors_array[color_pointer]
+            color_pointer += 1
+            patch_array.append(mpatches.Patch(color=local_color, label=piece_item.metadata["title"]))
+            local_ngrams = pd.DataFrame(columns=piece_item.notes().columns)
+
+            if variableLength:
+                loop_start = 1
+            else:
+                loop_start = length
+
+            for i in range(loop_start, length + 1):  
+                loop_notes = piece_item.notes(combineUnisons=combineUnisons)
+                loop_melodic = piece_item.melodic(df=loop_notes, kind=kind, end=end)
+                if useEntries:     
+                    loop_ngrams = piece_item.entries(df=loop_melodic, n=int(i)).fillna('')
+                else:
+                    loop_ngrams = piece_item.ngrams(df=loop_melodic, n=int(i)).fillna('')
+                local_ngrams = pd.concat([local_ngrams, loop_ngrams])
+
+            total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))
+        
+            if suggestedPattern:
+                matching_unique_ngrams_list = list(map(lambda x: x if ",".join(x).startswith(",".join(suggestedPattern)) else "", total_unique_ngrams_list))
+                total_unique_ngrams_list = list(filter(lambda x: x != "", matching_unique_ngrams_list))
+                if len(total_unique_ngrams_list) < 1:
+                    print("No patterns matching the suggestedPattern found in: " + piece_item.metadata["title"])
+                    continue
+
+            graph_pattern_list = createGraphList(total_unique_ngrams_list)
+            
+            if arriveAt != None:
+                graph_pattern_list = list(filter(lambda x: x[-1] == arriveAt, graph_pattern_list))
+                if len(graph_pattern_list) < 1:
+                    print("No patterns arriving at arriveAt found in: " + piece_item.metadata["title"])
+                    continue
+            
+            number_of_patterns += len(graph_pattern_list)
+            for single_pattern in graph_pattern_list:
+                plt.plot(single_pattern, alpha=0.35, lw=6, color=local_color)
+                
+        plt.yticks(np.arange(-15, 15, 1.0))
+        plt.xticks(np.arange(0, length + 1, 1.0))
+        if includeLegend:
+            plt.title("Total Number of Patterns: " + str(number_of_patterns))
+            plt.legend(handles=patch_array)
         plt.show()

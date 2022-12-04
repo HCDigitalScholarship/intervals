@@ -3072,6 +3072,23 @@ class CorpusBase:
         ... this will compare every score the corpus to every other score in the corpus. You
         should do this if you want to be able to consider every piece a potential model and
         a potential derivative mass.
+
+        Typical Use:
+
+        model_list = ['https://crimproject.org/mei/CRIM_Model_0010.mei',
+              'https://crimproject.org/mei/CRIM_Model_0011.mei',
+             'https://crimproject.org/mei/CRIM_Model_0014.mei']
+        mass_list = ['https://crimproject.org/mei/CRIM_Mass_0008_1.mei',
+             'https://crimproject.org/mei/CRIM_Mass_0008_2.mei',
+              'https://crimproject.org/mei/CRIM_Mass_0008_3.mei']
+
+        mod_corp = CorpusBase(model_list)
+        mass_corp = CorpusBase(mass_list)
+        cross_plot = mod_corp.modelFinder(masses=mass_corp, models=mod_corp)
+        cross_plot
+
+
+
         """
         if models is None:
             models = self
@@ -3143,6 +3160,20 @@ class CorpusBase:
         ... this will compare every score the corpus to every other score in the corpus. You
         should do this if you want to be able to consider every piece a potential model and a
         potential derivative mass.
+
+        Typical Use:
+
+        model_list = ['https://crimproject.org/mei/CRIM_Model_0010.mei',
+              'https://crimproject.org/mei/CRIM_Model_0011.mei',
+             'https://crimproject.org/mei/CRIM_Model_0014.mei']
+        mass_list = ['https://crimproject.org/mei/CRIM_Mass_0008_1.mei',
+             'https://crimproject.org/mei/CRIM_Mass_0008_2.mei',
+              'https://crimproject.org/mei/CRIM_Mass_0008_3.mei']
+
+        mod_corp = CorpusBase(model_list)
+        mass_corp = CorpusBase(mass_list)
+        cross_plot = mod_corp.moduleFinder(masses=mass_corp, models=mod_corp)
+        cross_plot
         """
         if models is None:
             models = self

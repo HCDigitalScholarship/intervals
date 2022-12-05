@@ -3232,7 +3232,7 @@ class CorpusBase:
 
         return res
 
-    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"):
+    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="svg"):
 
         '''
         Parameters Overview:
@@ -3241,7 +3241,7 @@ class CorpusBase:
         - sounding: specify how many voices are sounding (optional). Takes an integer input. Set to None by default
         - displayAll: if set to True, the chart will display all pitches in the Default (Fifth) or Custom order
         - customOrder: the custom order parameter. Takes in a List of Strings
-        - renderer: specify what renderer to be used for the plot (options include but are not limited to "svg", "plots", "png", "notebook" etc
+        - renderer: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc
 
         Typical use:
 

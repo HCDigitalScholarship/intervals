@@ -1626,7 +1626,7 @@ class ImportedPiece:
 
     # cadence RADAR plots:
 
-    def cadenceRadarPlot(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"):
+    def cadenceRadarPlot(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="svg"):
 
         '''
         Parameters Overview:
@@ -3232,7 +3232,7 @@ class CorpusBase:
 
         return res
 
-    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"):
+    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="svg"):
 
         '''
         Parameters Overview:

@@ -3232,7 +3232,7 @@ class CorpusBase:
 
         return res
 
-    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="svg"):
+    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"):
 
         '''
         Parameters Overview:

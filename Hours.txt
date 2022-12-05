@@ -1,0 +1,40 @@
+Hours
+
+Running: 6.3
+
+Started: 2:15
+
+
+jaowens@ucdavis.edu
+Tigrini theorist
+
+
+1040.0  Evaded Clausula Vera           1.0   tC  G3     P1    G  ...      4.0      1.0       56.0    16.0       Pere Riquet  Missa Susanne un jour: Sanctus 4
+
+
+92.0   C1T-2u-3         Clausula Vera             1    CuT  G3     P8    G      P8  4/2       12   3.0         3  0.113861       12.0     8.0
+552.0  C1T-2u-3         Clausula Vera             1    CTu  E3     M6    G      P8  4/2       70   1.0         4  0.683168       12.0    24.0
+
+
+
+
+Showing Recent Messages
+/Users/amor/Library/Developer/Xcode/DerivedData/App-hbevnvynbypnfygnpkzczkhsmyit/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/Frameworks/Capacitor.framework: errSecInternalComponent
+
+
+
+
+Models            CRIM_Mass_0020_1  CRIM_Mass_0020_2  CRIM_Mass_0020_3
+Masses                                                                
+CRIM_Mass_0020_1          1.000000          0.534653          0.633663
+CRIM_Mass_0020_2          0.223958          1.000000          0.588542
+CRIM_Mass_0020_3          0.247655          0.521576          1.000000
+
+
+
+Model             CRIM_Model_0023  CRIM_Mass_0020_1  CRIM_Mass_0020_2  CRIM_Mass_0020_3
+Mass                                                                                   
+CRIM_Model_0023          1.000000          0.255814          0.352159          0.568106
+CRIM_Mass_0020_1         0.554455          1.000000          0.534653          0.633663
+CRIM_Mass_0020_2         0.473958          0.223958          1.000000          0.588542
+CRIM_Mass_0020_3         0.547842          0.247655          0.521576          1.000000

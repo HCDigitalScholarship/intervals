@@ -1000,7 +1000,7 @@ class ImportedPiece:
             loop_notes = self.notes(combineUnisons=True)
             loop_melodic = self.melodic(df=loop_notes, kind=kind, end=end)
             if useEntries:
-                loop_ngrams = self.entries(df=loop_melodic, n=int(i)).fillna('')
+                loop_ngrams = self.entries(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
             else:
                 loop_ngrams = self.ngrams(df=loop_melodic, exclude=["Rest"], n=int(i)).fillna('')
             local_ngrams = pd.concat([local_ngrams, loop_ngrams])

@@ -2279,11 +2279,11 @@ class ImportedPiece:
             return self.analyses[memo_key]
         nr = self.notes(combineUnisons=combine_unisons)
         mel = self.melodic(df=nr, kind='d', end=False)
-        mel_ng = self.ngrams(df=mel, exclude=[], n=melodic_ngram_length)
+        mel_ng = self.ngrams(df=mel, n=melodic_ngram_length)
         if limit_to_entries:
             entries = self.entries(mel_ng)
         else:
-            entries = self.ngrams(df=mel, exclude=[], n=melodic_ngram_length)
+            entries = self.ngrams(df=mel, n=melodic_ngram_length)
         # return entries
         # get ngram durs to use for overlap check as part of _temp files
         ng_durs = self.durations(df=entries)

@@ -3467,9 +3467,9 @@ class CorpusBase:
                 loop_notes = piece_item.notes(combineUnisons=combineUnisons)
                 loop_melodic = piece_item.melodic(df=loop_notes, kind=kind, end=end)
                 if useEntries:     
-                    loop_ngrams = piece_item.entries(df=loop_melodic, n=int(i)).fillna('')
+                    loop_ngrams = piece_item.entries(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
                 else:
-                    loop_ngrams = piece_item.ngrams(df=loop_melodic, n=int(i)).fillna('')
+                    loop_ngrams = piece_item.ngrams(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
                 local_ngrams = pd.concat([local_ngrams, loop_ngrams])
 
             total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))

@@ -3481,7 +3481,7 @@ class CorpusBase:
                     print("No patterns matching the suggestedPattern found in: " + piece_item.metadata["title"])
                     continue
 
-            graph_pattern_list = createGraphList(total_unique_ngrams_list)
+            graph_pattern_list = self.createGraphList(total_unique_ngrams_list)
             
             if arriveAt != None:
                 graph_pattern_list = list(filter(lambda x: x[-1] == arriveAt, graph_pattern_list))

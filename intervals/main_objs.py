@@ -1626,7 +1626,7 @@ class ImportedPiece:
 
     # cadence RADAR plots:
 
-    def cadenceRadarPlot(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="svg"):
+    def cadenceRadarPlot(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"):
 
         '''
         Parameters Overview:

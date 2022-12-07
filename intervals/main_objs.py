@@ -2600,7 +2600,7 @@ class ImportedPiece:
       tk.setOption( "pageWidth", "2500" )
 
       # Now get meas ranges and number of active voices
-      homorhythm = homorhythm(self)
+      homorhythm = self.homorhythm()
       hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
       #Get the groupings of consecutive items
       short_list =list(set(hr_list))

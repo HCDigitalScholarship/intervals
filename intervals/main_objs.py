@@ -2631,7 +2631,7 @@ class ImportedPiece:
         # get the number of pages and display the music for each passage
          print("Results:")
          count = tk.getPageCount()
-         print("File Name: ", piece.file_name)
+         print("File Name: ", self.file_name)
          print(self.metadata['composer'])
          print(self.metadata['title'])
          print("HR Start Measure: ", span[0])

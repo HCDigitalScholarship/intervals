@@ -1829,9 +1829,21 @@ class ImportedPiece:
         This function predicts homorhythmic passages in a given piece.
         The method follows various stages:
 
-        gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets
-        gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr
-        checks the number of active voices (thus eliminating places where some voices have rests)
+        Gets durational ngrams, and finds passages in which these are the same in two or more voices at a given offsets;
+        Gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr;
+        Checks the number of active voices (thus eliminating places where some voices have rests).
+
+        Users can supply either of two arguments:
+
+        'ngram_length' (which is 4 by default, and determines the number of durations and syllables that must be in common among the voices in order to be marked as HR);
+
+        'full_hr' (which is True default).  When full_hr=True the method will find any passage where _all active voices_ share the same durational ngram and syllables; if full_hr=False the method will find any passage where even _two voices_ share the same durational ngram and the same syllables.
+
+        Typical use:
+
+        piece.homorhythm() or piece.homorhythm(ngram_length=4, full_hr=True)
+
+
         """
         # active version with lyric ngs
         nr = self.notes()

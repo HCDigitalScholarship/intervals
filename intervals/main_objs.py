@@ -1830,7 +1830,7 @@ class ImportedPiece:
         The method follows various stages:
 
         Gets durational ngrams, and finds passages in which these are the same in two or more voices at a given offsets;
-        Gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr;
+        Gets syllables at every offset, and identifies passages where two or more voices are singing the same lyrics_hr;
         Checks the number of active voices (thus eliminating places where some voices have rests).
 
         Users can supply either of two arguments:

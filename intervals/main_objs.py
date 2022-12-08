@@ -1829,7 +1829,7 @@ class ImportedPiece:
         This function predicts homorhythmic passages in a given piece.
         The method follows various stages:
 
-        Gets durational ngrams, and finds passages in which these are the same in more than two voices at a given offsets;
+        Gets durational ngrams, and finds passages in which these are the same in two or more voices at a given offsets;
         Gets syllables at every offset, and identifies passages where more than two voices are singing the same lyrics_hr;
         Checks the number of active voices (thus eliminating places where some voices have rests).
 

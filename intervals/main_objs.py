@@ -1921,6 +1921,20 @@ class ImportedPiece:
 
         return result
 
+    def _entryHelper(self, col, fermatas=True):
+        """
+        Return True for cells in column that correspond to notes that either
+        begin a piece, or immediately preceded by a rest, double barline, or
+        a fermata. For fermatas, this is included by default but can be
+        switched off by passing False for the fermatas paramter.
+        """
+        barlines = self.barlines()[col.name]
+        _fermatas = self.fermatas()[col.name].shift()
+        _col = col.dropna()
+        shifted = _col.shift().fillna('Rest')
+        mask = ((_col != 'Rest') & ((shifted == 'Rest') | (barlines == 'double') | (_fermatas)))
+        return mask
+
     def entryMask(self, fermatas=True):
         """
         Return a dataframe of True, False, or NaN values which can be used as

@@ -102,7 +102,7 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
     return ngrams_df
 
 
-def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300):
+def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False):
     """
     Plot a heatmap for crim-intervals getNgram's processed output.
     :param ngrams_df: processed crim-intervals getNgram's output.
@@ -122,14 +122,17 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     new_processed_ngrams_df = processed_ngrams_df.copy()
     new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
 
-    patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
     heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
                              selector, selector, tooltip=['start', 'end', 'pattern'])
-    return alt.vconcat(patterns_bar, heatmap)
+    if includeCount:
+        patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
+        return alt.vconcat(patterns_bar, heatmap)
+    else:
+        return heatmap
 
 
 def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,
-                        heatmap_height=300):
+                        heatmap_height=300, includeCount=False):
     """
     Plot a heatmap for crim-intervals getNgram's output.
     :param ngrams_df: crim-intervals getNgram's output
@@ -145,7 +148,7 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
                                             selected_pattern=selected_patterns,
                                             voices=voices)
-    return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height)
+    return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height, includeCount=includeCount)
 
 
 def _from_ema_to_offsets(df, ema_column):

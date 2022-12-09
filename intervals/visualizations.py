@@ -348,6 +348,10 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
     key_pattern = _close_match_helper(key_pattern)
     score_ngrams = _close_match(ngrams, key_pattern)
 
+    print("\n \n \n Score ngrams:", score_ngrams)
+    print("\n \n \n Key pattern:", key_pattern)
+
+
     slider = alt.binding_range(min=0, max=100, step=1, name='cutoff:')
     selector = alt.selection_single(name="SelectorName", fields=['cutoff'],
                                     bind=slider, init={'cutoff': 50})

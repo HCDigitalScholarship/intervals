@@ -342,6 +342,8 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
 
     ngrams = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration, selected_pattern=selected_patterns,
                                voices=voices)
+    print("\n \n \n Pre-score ngrams:", ngrams)
+
     ngrams.dropna(how='any',
                   inplace=True)  # only the pattern column can be NaN because all columns have starts (==offsets) and voices
     # calculate the score

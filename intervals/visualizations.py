@@ -20,7 +20,7 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
         opacity=alt.condition(condition, alt.value(1), alt.value(0.2))
     ).add_selection(
         *selectors
-    ).configure_axisX(labelAngle=45)
+    )
     return observer_chart
 
 
@@ -125,7 +125,8 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
                              selector, selector, tooltip=['start', 'end', 'pattern'])
     if includeCount:
-        patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
+        variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
+        patterns_bar = create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
         return alt.vconcat(patterns_bar, heatmap)
     else:
         return heatmap

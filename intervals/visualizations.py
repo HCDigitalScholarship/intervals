@@ -152,7 +152,7 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height, includeCount=includeCount)
 
 def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], chart_width=800,
-                        chart_height=300, includeCount=False):
+                        chart_height=300):
     """
     Plot a bar chart for crim-intervals getNgram's output.
     :param ngrams_df: crim-intervals getNgram's output
@@ -167,9 +167,9 @@ def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], 
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
                                             selected_pattern=selected_patterns,
                                             voices=voices)
-    return _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=chart_width, chart_height=chart_height, includeCount=includeCount)
+    return _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=chart_width, chart_height=chart_height)
 
-def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300, includeCount=False):
+def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300):
     """
     Plot a bar chart for crim-intervals getNgram's processed output.
     :param ngrams_df: processed crim-intervals getNgram's output.

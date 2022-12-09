@@ -20,7 +20,7 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
         opacity=alt.condition(condition, alt.value(1), alt.value(0.2))
     ).add_selection(
         *selectors
-    ).configure_axisX(labelAngle=45)
+    )#.configure_axisX(labelAngle=45)
     return observer_chart
 
 

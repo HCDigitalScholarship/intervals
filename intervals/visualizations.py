@@ -14,13 +14,13 @@ from pyvis.network import Network
 def create_bar_chart(variable, count, color, data, condition, *selectors):
 
     observer_chart = alt.Chart(data).mark_bar().encode(
-        y=variable,
-        x=count,
+        x=variable,
+        y=count,
         color=color,
         opacity=alt.condition(condition, alt.value(1), alt.value(0.2))
     ).add_selection(
         *selectors
-    )
+    ).configure_axisX(labelAngle=45)
     return observer_chart
 
 

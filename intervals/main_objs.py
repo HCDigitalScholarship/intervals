@@ -952,10 +952,11 @@ class ImportedPiece:
 
     # do we need to set a default length for the following?
     # is the typical use code correct? Do we pass in piece?
-    def compareIntervalFamilies(self, length=4, combineUnisons=True, kind="d", end=False, variableLength=False, suggestedPattern=None, useEntries=True, arriveAt=None, includeLegend=True):
+    def graphIntervalFamilies(self, length=4, combineUnisons=True, kind="d", end=False, variableLength=False, suggestedPattern=None, useEntries=True, arriveAt=None, includeLegend=False):
 
         '''
         It is possible to select:
+
         length=4
         combineUnisons=True
         kind="d"
@@ -963,17 +964,25 @@ class ImportedPiece:
         variableLength=False
         suggestedPattern=None
         useEntries=True
-        Comparing the Interval Families with `length=4` and `useEntries=True` by default:
-        Typical use:
-        compareIntervalFamilies(length=4)
-        Another useful option is `variableLength=True`, therefore including **all unique patterns up to the specified length**:
-        compareIntervalFamilies(length=4, variableLength=True)
-        We can narrow down patterns of interested by specifying `suggestedPattern=Tuple(Str*)`, for example looking for **all patterns that start with `-2, -2`**:
-        compareIntervalFamilies(length=4, variableLength=True, suggestedPattern=("4", "2"))
-        '''
 
+        Graphing the Interval Families with `length=4` and `useEntries=True` by default:
+
+        Typical use:
+        graphIntervalFamilies()
+
+        Another useful option is `variableLength=True`, therefore including **all unique patterns up to the specified length**:
+
+        graphIntervalFamilies(length=4, variableLength=True)
+
+        We can narrow down patterns of interested by specifying `suggestedPattern=Tuple(Str*)`, for example looking for **all patterns that start with `-2, -2`**:
+
+        graphIntervalFamilies(length=4, variableLength=True, suggestedPattern=("4", "2"))
+
+        '''
         # runs sns plot layout
         self._plot_default()
+
+        local_ngrams = pd.DataFrame(columns=self.notes().columns)
 
         if length < 1:
             print("Please use length >= 1")
@@ -982,60 +991,44 @@ class ImportedPiece:
         if kind not in ["d", "z", "c"]:
             print("\n Warning: you might encounter an error due to using an uncommon interval kind. \n Currently, we have been working with \"z\", \"d\", and \"c\"")
 
-        number_of_patterns = 0
-        colors_array = sns.color_palette(n_colors=length, as_cmap=True)
-        color_pointer = 0
-        patch_array = []
-        for piece_item in self.scores:
-            local_color = colors_array[color_pointer]
-            color_pointer += 1
-            patch_array.append(mpatches.Patch(color=local_color, label=piece_item.metadata["title"]))
-            local_ngrams = pd.DataFrame(columns=piece_item.notes().columns)
+        if variableLength:
+            loop_start = 1
+        else:
+            loop_start = length
 
-            if variableLength:
-                loop_start = 1
+        for i in range(loop_start, length + 1):
+            loop_notes = self.notes(combineUnisons=True)
+            loop_melodic = self.melodic(df=loop_notes, kind=kind, end=end)
+            if useEntries:
+                loop_ngrams = self.entries(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
             else:
-                loop_start = length
+                loop_ngrams = self.ngrams(df=loop_melodic, exclude=["Rest"], n=int(i)).fillna('')
+            local_ngrams = pd.concat([local_ngrams, loop_ngrams])
 
-            for i in range(loop_start, length + 1):
-                loop_notes = piece_item.notes(combineUnisons=combineUnisons)
-                loop_melodic = piece_item.melodic(df=loop_notes, kind=kind, end=end)
-                if useEntries:
-                    loop_ngrams = piece_item.entries(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
-                else:
-                    loop_ngrams = piece_item.ngrams(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
-                local_ngrams = pd.concat([local_ngrams, loop_ngrams])
+        total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))
 
-            total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))
+        if suggestedPattern:
+            matching_unique_ngrams_list = list(map(lambda x: x if ",".join(x).startswith(",".join(suggestedPattern)) else "", total_unique_ngrams_list))
+            total_unique_ngrams_list = list(filter(lambda x: x != "", matching_unique_ngrams_list))
+            if len(total_unique_ngrams_list) < 1:
+                print("No patterns matching the suggestedPattern found")
+                return None
 
-            if suggestedPattern:
-                matching_unique_ngrams_list = list(map(lambda x: x if ",".join(x).startswith(",".join(suggestedPattern)) else "", total_unique_ngrams_list))
-                total_unique_ngrams_list = list(filter(lambda x: x != "", matching_unique_ngrams_list))
-                if len(total_unique_ngrams_list) < 1:
-                    print("No patterns matching the suggestedPattern found in: " + piece_item.metadata["title"])
-                    continue
+        graph_pattern_list = self._createGraphList(total_unique_ngrams_list)
 
-            graph_pattern_list = self._createGraphList(total_unique_ngrams_list)
+        if arriveAt != None:
+            graph_pattern_list = list(filter(lambda x: x[-1] == arriveAt, graph_pattern_list))
+            if len(graph_pattern_list) < 1:
+                print("No patterns arriving at arriveAt found")
+                return None
 
-            if arriveAt != None:
-                graph_pattern_list = list(filter(lambda x: x[-1] == arriveAt, graph_pattern_list))
-                if len(graph_pattern_list) < 1:
-                    print("No patterns arriving at arriveAt found in: " + piece_item.metadata["title"])
-                    continue
-
-            number_of_patterns += len(graph_pattern_list)
-            for single_pattern in graph_pattern_list:
-                plt.plot(single_pattern, alpha=0.35, lw=6, color=local_color)
-
-        plt.yticks(np.arange(-15, 15, 1.0))
-        plt.xticks(np.arange(0, length + 1, 1.0))
+        for pattern in graph_pattern_list:
+            plt.plot(pattern, alpha=0.35, lw=6)
+        plt.yticks(np.arange(min(list(map(lambda x: sorted(x)[0], graph_pattern_list))) - 1, max(list(map(lambda x: sorted(x)[-1], graph_pattern_list))) + 1, 1.0))
+        plt.xticks(np.arange(0, max(list(map(lambda x: len(x), graph_pattern_list))), 1.0))
         if includeLegend:
-            plt.title("Total Number of Patterns: " + str(number_of_patterns))
-            plt.legend(handles=patch_array)
+            plt.title("Total Number of Patterns: " + str(len(graph_pattern_list)) + "\n Piece Name: " + self.metadata["title"])
         plt.show()
-
-
-
 
 
     def _getM21HarmonicIntervals(self):

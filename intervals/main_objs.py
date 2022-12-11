@@ -2622,7 +2622,7 @@ class ImportedPiece:
       homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr)
       hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
       #Get the groupings of consecutive items
-      short_list =list(set(hr_list))
+      short_list =sorted(list(set(hr_list)))
       li = [list(item) for item in consecutive_groups(short_list)]
 
       for span in li:

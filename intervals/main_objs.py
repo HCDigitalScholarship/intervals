@@ -2627,9 +2627,9 @@ class ImportedPiece:
 
       for span in li:
          if len(span) == 1:
-             mr = mr = str(span[0]) + "-" + str(span[0] + 1)
+             mr = mr = str(span[0]) + "-" + str(span[0] + 2)
          else:
-             mr = str(span[0]) + "-" + str(span[-1])
+             mr = str(span[0]) + "-" + str(span[-1] + 1)
          mdict = {'measureRange': mr}
          min_hr_count = 20
          max_hr_count = 0

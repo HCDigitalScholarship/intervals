@@ -2626,7 +2626,10 @@ class ImportedPiece:
       li = [list(item) for item in consecutive_groups(short_list)]
 
       for span in li:
-         mr = str(span[0]) + "-" + str(span[-1])
+         if len(span) == 1:
+             mr = mr = str(span) + "-" span + 1
+         else:
+             mr = str(span[0]) + "-" + str(span[-1])
          mdict = {'measureRange': mr}
          min_hr_count = 20
          max_hr_count = 0

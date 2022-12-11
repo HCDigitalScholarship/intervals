@@ -2605,7 +2605,7 @@ class ImportedPiece:
                 display(HTML(music))
 
     # July 2022 Addition for printing hr types with Verovio
-    def verovioHomorhythm(self):
+    def verovioHomorhythm(self, ngram_length=4, full_hr=True):
       if self.path.startswith('Music_Files/'):
          text_file = open(self.path, "r")
          fetched_mei_string = text_file.read()
@@ -2619,7 +2619,7 @@ class ImportedPiece:
       tk.setOption( "pageWidth", "2500" )
 
       # Now get meas ranges and number of active voices
-      homorhythm = self.homorhythm()
+      homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr)
       hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
       #Get the groupings of consecutive items
       short_list =list(set(hr_list))

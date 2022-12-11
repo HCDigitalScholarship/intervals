@@ -2627,7 +2627,7 @@ class ImportedPiece:
 
       for span in li:
          if len(span) == 1:
-             mr = mr = str(span) + "-" + str(span) + 1
+             mr = mr = str(span) + "-" + str(span + 1)
          else:
              mr = str(span[0]) + "-" + str(span[-1])
          mdict = {'measureRange': mr}

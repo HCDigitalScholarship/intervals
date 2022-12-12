@@ -2631,7 +2631,7 @@ class ImportedPiece:
       for span in li:
          if ngram_length > 4:
              if len(span) == 1:
-                 mr = mr = str(span[0]) + "-" + str(span[0] + 3)
+                 mr = str(span[0]) + "-" + str(span[0] + 3)
              else:
                  mr = str(span[0]) + "-" + str(span[-1] + 1)
          mdict = {'measureRange': mr}

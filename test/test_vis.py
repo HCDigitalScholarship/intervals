@@ -22,34 +22,48 @@ def ngrams_heatmap_test_helper(model, notes):
     """
     # test no durations
     ngrams = model.ngrams(df=notes, n=5)
-    chart = viz.plot_ngrams_heatmap(ngrams_df=ngrams)
+    heatmap = viz.plot_ngrams_heatmap(ngrams_df=ngrams)
+    bar_chart = viz.plot_ngrams_barchart(ngrams_df=ngrams)
+    heatmap_and_barchart = viz.plot_ngrams_heatmap(ngrams_df=ngrams, includeCount=True)
 
-    # retrieved two charts: one pattern bar chart
-    # and one heatmap
-    assert isinstance(chart, alt.VConcatChart)
-    assert len(chart.vconcat) == 2
+    # retrieved one heatmap
+    assert isinstance(heatmap, alt.Chart)
+
+    # retrieved one barchart
+    assert isinstance(bar_chart, alt.Chart)
+
+    # includeType=True: retrieved two charts: one pattern bar chart and one heatmap
+    assert isinstance(heatmap_and_barchart, alt.VConcatChart)
+    assert len(chart_and_bar.vconcat) == 2
 
     # test no durations
     ngrams_multiple = model.ngrams(df=notes, n=-1)
     chart_multiple = viz.plot_ngrams_heatmap(ngrams_df=ngrams_multiple)
 
-    # retrieved two charts: one pattern bar chart
-    # and one heatmap
-    assert isinstance(chart_multiple, alt.VConcatChart)
-    assert len(chart_multiple.vconcat) == 2
+    # retrieved one heatmap
+    assert isinstance(chart_multiple, alt.Chart)
 
     # popular pattern
     popular_patterns = ngrams.stack().dropna().value_counts().head(10).index.to_list()
-    selected_patterns_chart = viz.plot_ngrams_heatmap(ngrams_df=ngrams, selected_patterns=popular_patterns)
+    selected_patterns_heatmap = viz.plot_ngrams_heatmap(ngrams_df=ngrams, selected_patterns=popular_patterns)
+    selected_patterns_barchart = viz.plot_ngrams_barchart(ngrams_df=ngrams, selected_patterns=popular_patterns)
+    selected_patterns_both = viz.plot_ngrams_heatmap(ngrams_df=ngrams, selected_patterns=popular_patterns, includeCount=True)
 
-    assert isinstance(selected_patterns_chart, alt.VConcatChart)
-    assert len(selected_patterns_chart.vconcat) == 2
+    assert isinstance(selected_patterns_heatmap, alt.Chart)
+    assert isinstance(selected_patterns_barchart, alt.Chart)
+    assert isinstance(selected_patterns_both, alt.VConcatChart)
+    assert len(selected_patterns_both.vconcat) == 2
 
     # select all voices but the last one
     selected_voices = ngrams.columns.to_list()[:-1]
-    selected_voices_chart = viz.plot_ngrams_heatmap(ngrams, voices=selected_voices)
-    assert isinstance(selected_voices_chart, alt.VConcatChart)
-    assert len(selected_voices_chart.vconcat) == 2
+    selected_voices_heatmap = viz.plot_ngrams_heatmap(ngrams, voices=selected_voices)
+    selected_voices_barchart = viz.plot_ngrams_barchart(ngrams, voices=selected_voices)
+    selected_voices_both = viz.plot_ngrams_heatmap(ngrams, voices=selected_voices, includeCount=True)
+    
+    assert isinstance(selected_voices_heatmap, alt.Chart)
+    assert isinstance(selected_voices_barchart, alt.Chart)
+    assert isinstance(selected_voices_both, alt.VConcatChart)
+    assert len(selected_patterns_both.vconcat) == 2
 
     # # These tests had to be turned off because they are hard-coded to work with fractions
     # # and we're no longer using fractions

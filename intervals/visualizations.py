@@ -14,8 +14,8 @@ from pyvis.network import Network
 def create_bar_chart(variable, count, color, data, condition, *selectors):
 
     observer_chart = alt.Chart(data).mark_bar().encode(
-        y=variable,
-        x=count,
+        x=variable,
+        y=count,
         color=color,
         opacity=alt.condition(condition, alt.value(1), alt.value(0.2))
     ).add_selection(
@@ -102,7 +102,7 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
     return ngrams_df
 
 
-def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300):
+def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False):
     """
     Plot a heatmap for crim-intervals getNgram's processed output.
     :param ngrams_df: processed crim-intervals getNgram's output.
@@ -122,14 +122,18 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     new_processed_ngrams_df = processed_ngrams_df.copy()
     new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
 
-    patterns_bar = create_bar_chart('pattern', 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
     heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
                              selector, selector, tooltip=['start', 'end', 'pattern'])
-    return alt.vconcat(patterns_bar, heatmap)
+    if includeCount:
+        variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
+        patterns_bar = create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
+        return alt.vconcat(patterns_bar, heatmap)
+    else:
+        return heatmap
 
 
 def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,
-                        heatmap_height=300):
+                        heatmap_height=300, includeCount=False):
     """
     Plot a heatmap for crim-intervals getNgram's output.
     :param ngrams_df: crim-intervals getNgram's output
@@ -145,8 +149,47 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
                                             selected_pattern=selected_patterns,
                                             voices=voices)
-    return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height)
+    return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, heatmap_height=heatmap_height, includeCount=includeCount)
 
+def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], chart_width=800,
+                        chart_height=300):
+    """
+    Plot a bar chart for crim-intervals getNgram's output.
+    :param ngrams_df: crim-intervals getNgram's output
+    :param ngrams_duration: if not None, rely on durations in the
+    df to calculate the durations of the ngrams.
+    :param selected_patterns: list of specific patterns the users want (optional)
+    :param voices: list of specific voices the users want (optional)
+    :param chart_width: the width of the final bar chart (optional)
+    :param chart_height: the height of the final bar chart (optional)
+    :return: a bar chart that displays the different patterns and their counts
+    """
+    processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
+                                            selected_pattern=selected_patterns,
+                                            voices=voices)
+    return _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=chart_width, chart_height=chart_height)
+
+def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300):
+    """
+    Plot a bar chart for crim-intervals getNgram's processed output.
+    :param ngrams_df: processed crim-intervals getNgram's output.
+    :param selected_pattern: list of specific patterns the users want (optional)
+    :param voices: list of specific voices the users want (optional)
+    :param chart_width: the width of the final bar chart (optional)
+    :param chart_height: the height of the final bar chart (optional)
+    :return: a bar chart that displays the different patterns and their counts
+    """
+
+    processed_ngrams_df = processed_ngrams_df.dropna(how='any')
+    selector = alt.selection_multi(fields=['pattern'])
+    y = alt.Y("voice", sort=None)
+
+    # make a copy of the processed n_grams and turn them into Strings
+    new_processed_ngrams_df = processed_ngrams_df.copy()
+    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
+
+    variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
+    return create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
 
 def _from_ema_to_offsets(df, ema_column):
     """
@@ -299,9 +342,11 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
 
     ngrams = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration, selected_pattern=selected_patterns,
                                voices=voices)
-    ngrams.dropna(how='any',
-                  inplace=True)  # only the pattern column can be NaN because all columns have starts (==offsets) and voices
+
+    ngrams.dropna(subset=['pattern'], inplace=True)
+    # dropping the NAs in pattern
     # calculate the score
+
     key_pattern = _close_match_helper(key_pattern)
     score_ngrams = _close_match(ngrams, key_pattern)
 

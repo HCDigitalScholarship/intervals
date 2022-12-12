@@ -2634,6 +2634,8 @@ class ImportedPiece:
                  mr = str(span[0]) + "-" + str(span[0] + 3)
              else:
                  mr = str(span[0]) + "-" + str(span[-1] + 1)
+         else:
+             mr = str(span[0]) + "-" + str(span[-1] + 1)
          mdict = {'measureRange': mr}
          min_hr_count = 20
          max_hr_count = 0

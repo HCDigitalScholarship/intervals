@@ -2625,6 +2625,9 @@ class ImportedPiece:
       short_list =sorted(list(set(hr_list)))
       li = [list(item) for item in consecutive_groups(short_list)]
 
+      # adjusts number of measures to display based on length of each span
+      # of adjacent bars.
+      # This matters for long 'n'
       for span in li:
          if len(span) == 1:
              mr = mr = str(span[0]) + "-" + str(span[0] + 2)

@@ -11,7 +11,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.7.1,<4.0"
 altair = "4.2.0"
-certifi = "2020.12.5"
+certifi = "2022.12.7"
 chardet = "^4.0.0"
 h11 = "0.12.0"
 httpcore = "0.13.2"

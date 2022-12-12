@@ -2629,10 +2629,11 @@ class ImportedPiece:
       # of adjacent bars.
       # This matters for long 'n'
       for span in li:
-         if len(span) == 1:
-             mr = mr = str(span[0]) + "-" + str(span[0] + 2)
-         else:
-             mr = str(span[0]) + "-" + str(span[-1] + 1)
+         if ngram_length > 4:
+             if len(span) == 1:
+                 mr = mr = str(span[0]) + "-" + str(span[0] + 3)
+             else:
+                 mr = str(span[0]) + "-" + str(span[-1] + 1)
          mdict = {'measureRange': mr}
          min_hr_count = 20
          max_hr_count = 0

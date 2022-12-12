@@ -23,18 +23,18 @@ def ngrams_heatmap_test_helper(model, notes):
     # test no durations
     ngrams = model.ngrams(df=notes, n=5)
     heatmap = viz.plot_ngrams_heatmap(ngrams_df=ngrams)
-    bar_chart = viz.plot_ngrams_barchart(ngrams_df=ngrams)
+    barchart = viz.plot_ngrams_barchart(ngrams_df=ngrams)
     heatmap_and_barchart = viz.plot_ngrams_heatmap(ngrams_df=ngrams, includeCount=True)
 
     # retrieved one heatmap
     assert isinstance(heatmap, alt.Chart)
 
     # retrieved one barchart
-    assert isinstance(bar_chart, alt.Chart)
+    assert isinstance(barchart, alt.Chart)
 
     # includeType=True: retrieved two charts: one pattern bar chart and one heatmap
     assert isinstance(heatmap_and_barchart, alt.VConcatChart)
-    assert len(chart_and_bar.vconcat) == 2
+    assert len(heatmap_and_barchart.vconcat) == 2
 
     # test no durations
     ngrams_multiple = model.ngrams(df=notes, n=-1)

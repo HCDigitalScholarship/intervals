@@ -28,18 +28,46 @@ MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
 suppliedPattern = re.compile("<supplied.*?(<accid.*?\/>).*?<\/supplied>", flags=re.DOTALL)
 
-
+accepted_filetypes = ('mei', 'mid', 'midi', 'abc', 'xml')
 pathDict = {}
 # An extension of the music21 note class with more information easily accessible
-def importScore(path):
+def importScore(path, recurse=False, verbose=False):
     '''
-    Import piece and return a music21 score. Return None if there is an error.
+    Import piece or group of pieces and return an ImportedPiece or CorpusBase object respectively.
+    Return None if there is an error. This function accepts piece urls, and local paths. A list of
+    the accepted file formats can be found in the accepted_filetypes tuple. This function also
+    accepts directories and will import all the score files within a passed directory. Set
+    recurse=True (default False) to import all score files from the passed directory *and* those
+    of all subdirectories. Set verbose=True (default False) to print out confirmation of import
+    success for each piece. If any errors are encountered, these issues will be printed out
+    regardless of verbose setting.
     '''
-    if path in pathDict:
+    if os.path.isdir(path):
+        files = os.listdir(path)
+        files = [os.path.join(path, file) for file in files]
+        scores = []
+        for file in files:
+            if os.path.isdir(file) and recurse:
+                score_list = importScore(file, recurse, verbose)
+                if score_list is not None and len(score_list.scores):
+                    scores.extend(score_list.scores)
+            elif os.path.isfile(file):
+                score = importScore(file, verbose=verbose)
+                if score is not None:
+                    scores.append(score)
+        
+        if len(scores):
+            return CorpusBase(scores)
+        elif verbose:
+            print('No scores found in this directory: {}'.format(path))
+        return
+
+    if path in pathDict and verbose:
         print('Previously imported piece detected.')
     else:
         if path.startswith('http'):
-            print('Downloading remote score...')
+            if verbose:
+                print('Downloading remote score...')
             try:
                 to_import = httpx.get(path).text
                 mei_doc = ET.fromstring(to_import) if path.endswith('.mei') else None
@@ -48,10 +76,16 @@ def importScore(path):
                       'your url and try again. Continuing to next file.')
                 return None
         else:
+            ending = path.rsplit('.', 1)[1]
+            if ending not in accepted_filetypes:
+                return None
             if path.endswith('.mei'):
-                with open(path, "r") as file:
-                    to_import = file.read()
-                    mei_doc = ET.fromstring(to_import)
+                try:
+                    with open(path, "r") as file:
+                        to_import = file.read()
+                        mei_doc = ET.fromstring(to_import)
+                except ET.ParseError as err:
+                    print('Error reading the mei file tree of {}'.format(path), err, sep='\n')
             else:
                 to_import = path
                 mei_doc = None
@@ -60,7 +94,8 @@ def importScore(path):
                 to_import = re.sub(suppliedPattern, '\\1', to_import)
             score = converter.parse(to_import)
             pathDict[path] = ImportedPiece(score, path, mei_doc)
-            print("Successfully imported", path)
+            if verbose:
+                print("Successfully imported", path)
         except:
             print("Import of", str(path), "failed, please check your file path/url.")
             return None
@@ -2959,12 +2994,15 @@ class CorpusBase:
         self.scores = []  # store lists of ImportedPieces generated from the path above
         self.analyses = {'note_list': None}
         for path in paths:
-            _score = importScore(path)
-            if _score is not None:
-                self.scores.append(_score)
+            if type(path) == str:
+                _score = importScore(path)
+                if _score is not None:
+                    self.scores.append(_score)
+            else:   # path is already an ImportedPiece
+                self.scores.append(path)
 
         if len(self.scores) == 0:
-            raise Exception("At least one score must be succesfully imported")
+            print("Empty corpus created. Please import at least one score.")
 
     def batch(self, func, kwargs={}, metadata=True, number_parts=True, verbose=False):
         '''

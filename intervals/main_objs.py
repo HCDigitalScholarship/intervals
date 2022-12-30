@@ -28,7 +28,7 @@ MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
 suppliedPattern = re.compile("<supplied.*?(<accid.*?\/>).*?<\/supplied>", flags=re.DOTALL)
 
-accepted_filetypes = ('mei', 'mid', 'midi', 'abc', 'xml')
+accepted_filetypes = ('mei', 'mid', 'midi', 'abc', 'xml', 'musicxml')
 pathDict = {}
 # An extension of the music21 note class with more information easily accessible
 def importScore(path, recurse=False, verbose=False):
@@ -55,7 +55,7 @@ def importScore(path, recurse=False, verbose=False):
                 score = importScore(file, verbose=verbose)
                 if score is not None:
                     scores.append(score)
-        
+
         if len(scores):
             return CorpusBase(scores)
         elif verbose:

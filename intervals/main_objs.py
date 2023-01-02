@@ -2579,7 +2579,7 @@ class ImportedPiece:
         count = tk.getPageCount()
         for c in range(1, count + 1):
             music = tk.renderToSVG(c)
-            print("File Name: ", piselfece.file_name)
+            print("File Name: ", self.file_name)
             print(self.metadata['composer'])
             print(self.metadata['title'])
             print("Measures: " + str(start) + "-" + str(stop))

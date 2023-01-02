@@ -2548,6 +2548,42 @@ class ImportedPiece:
                 print("Cadence Type: ", c_type)
                 print("Cadential Voice Functions: ", cvfs)
                 display(HTML(music))
+    # January 2023 addition to print score or excerpt
+
+    def verovio_print_example(self, start, stop):
+        if self.path.startswith('Music_Files/'):
+            text_file = open(self.path, "r")
+            fetched_mei_string = text_file.read()
+        else:
+            response = requests.get(self.path)
+            fetched_mei_string = response.text
+        tk = verovio.toolkit()
+        tk.loadData(fetched_mei_string)
+        tk.setScale(30)
+        tk.setOption( "pageHeight", "1500" )
+        tk.setOption( "pageWidth", "3000" )
+
+        if stop == -1:
+            meas = self.measures()
+            stop = meas.iloc[-1].tolist()[0]
+
+        mr = str(start) + "-" + str(stop)
+        mdict = {'measureRange': mr}
+
+        # select verovio measures and redo layout
+        tk.select(str(mdict))
+        tk.redoLayout()
+
+        # get the number of pages and display the music
+        print("Score:")
+        count = tk.getPageCount()
+        for c in range(1, count + 1):
+            music = tk.renderToSVG(c)
+            print("File Name: ", piselfece.file_name)
+            print(self.metadata['composer'])
+            print(self.metadata['title'])
+            print("Measures: " + str(start) + "-" + str(stop))
+            display(HTML(music))
 
     # July 2022 Addition for printing presentation types with Verovio
     def verovioPtypes(self, p_types=None):

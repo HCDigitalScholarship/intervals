@@ -2570,20 +2570,22 @@ class ImportedPiece:
         mr = str(start) + "-" + str(stop)
         mdict = {'measureRange': mr}
 
-        # select verovio measures and redo layout
-        tk.select(str(mdict))
-        tk.redoLayout()
+        if stop < start:
+            print("Check the measure range, the stop measure must be equal to or greater than the start measure")
+        else:# select verovio measures and redo layout
+            tk.select(str(mdict))
+            tk.redoLayout()
 
-        # get the number of pages and display the music
-        print("Score:")
-        count = tk.getPageCount()
-        for c in range(1, count + 1):
-            music = tk.renderToSVG(c)
-            print("File Name: ", self.file_name)
-            print(self.metadata['composer'])
-            print(self.metadata['title'])
-            print("Measures: " + str(start) + "-" + str(stop))
-            display(HTML(music))
+            # get the number of pages and display the music
+            print("Score:")
+            count = tk.getPageCount()
+            for c in range(1, count + 1):
+                music = tk.renderToSVG(c)
+                print("File Name: ", self.file_name)
+                print(self.metadata['composer'])
+                print(self.metadata['title'])
+                print("Measures: " + str(start) + "-" + str(stop))
+                display(HTML(music))
 
     # July 2022 Addition for printing presentation types with Verovio
     def verovioPtypes(self, p_types=None):

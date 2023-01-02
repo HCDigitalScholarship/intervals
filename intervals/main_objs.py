@@ -2550,7 +2550,7 @@ class ImportedPiece:
                 display(HTML(music))
     # January 2023 addition to print score or excerpt
 
-    def verovio_print_example(self, start, stop):
+    def verovioPrintExample(self, start, stop):
         if self.path.startswith('Music_Files/'):
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()

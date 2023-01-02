@@ -2551,6 +2551,15 @@ class ImportedPiece:
     # January 2023 addition to print score or excerpt
 
     def verovioPrintExample(self, start, stop):
+
+        """
+        Pass a range of measures (as integers) to print the given range.
+
+        For last measure you can also use '-1', thus for all measures:
+
+        verovioPrintExample(1, -1)
+
+        """
         if self.path.startswith('Music_Files/'):
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()

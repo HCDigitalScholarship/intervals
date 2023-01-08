@@ -102,6 +102,16 @@ def importScore(path, recurse=False, verbose=False):
 
     return pathDict[path]
 
+def _getCVFTable():
+    if 'CVFTable' not in pathDict:
+        pathDict['CVFTable'] = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
+    return pathDict['CVFTable']
+
+def _getCadenceTable():
+    if 'CadenceTable' not in pathDict:
+        pathDict['CadenceTable'] = pd.read_csv(cwd + '/data/cadences/cadenceLabels.csv', index_col=0)
+    return pathDict['CadenceTable']
+
 
 class ImportedPiece:
     def __init__(self, score, path, mei_doc=None):
@@ -1498,7 +1508,7 @@ class ImportedPiece:
             return pd.DataFrame()
         if not keep_keys and 'CVF' in self.analyses:
             return self.analyses['CVF']
-        cadences = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
+        cadences = _getCVFTable()
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         harmonic = self.markFourths()
         melodic = self.melodic('d', True, False)
@@ -1619,7 +1629,7 @@ class ImportedPiece:
         keys = cadKeys.apply(lambda row: ''.join(row.dropna().sort_values().unique()), axis=1)
         keys.name = 'Pattern'
         keys = pd.DataFrame(keys)
-        cadDict = pd.read_csv(cwd + '/data/cadences/cadenceLabels.csv', index_col=0)
+        cadDict = _getCadenceTable()
         keys['Key'] = keys.Pattern.replace(cadDict.index, cadDict.index, regex=True)
         labels = keys.join(cadDict, on='Key')
         labels['CVFs'] = cvfs.apply(lambda row: ''.join(row.dropna()), axis=1)
@@ -1807,6 +1817,9 @@ class ImportedPiece:
         dissonant if it is against the same pitch class as the lowest sounding note.'''
         if 'AnalyzeFourths' in self.analyses:
             return self.analyses['AnalyzeFourths']
+        if len(self._getPartNames()) == 1:
+            self.analyses['AnalyzeFourths'] = pd.DataFrame()
+            return self.analyses['AnalyzeFourths']
         har = self.harmonic('d', True, False).copy()
         nr = self.notes().ffill()
         lowLine = self.lowLine()
@@ -1826,7 +1839,7 @@ class ImportedPiece:
                     if upperNote[0] == lowest[0]:
                         har.at[i, col] += label
         self.analyses['AnalyzeFourths'] = har
-        return har
+        return self.analyses['AnalyzeFourths']
 
 
     def supplementum(self):

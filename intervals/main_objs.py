@@ -1088,7 +1088,7 @@ class ImportedPiece:
             if againstLow:
                 low = self.lowLine().apply(note.Note)
                 lowIndex = len(m21Objs.columns)
-                combos = [(lowIndex, x) for x in range(len(m21Objs.columns) - 1, -1, -1)]
+                combos = [(lowIndex, x) for x in range(len(m21Objs.columns))]
                 m21Objs = pd.concat([m21Objs, low], axis=1)
             else:
                 combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
@@ -1141,6 +1141,21 @@ class ImportedPiece:
                 df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
             self.analyses[key] = df
         return self.analyses[key]
+    
+    def sonorities(self, kind='z', directed=True, compound='simple', sort=True):
+        """
+        Return a dataframe of sonorities that are similar to a continuo part but
+        not reduced. There is a sonority observed every time any part in the piece
+        has an attack. The `kind`, `directed`, and `compound` parameters are passed
+        unchanged to .harmonic and will control the type of intervals used. In all
+        cases Rests are ignored.
+        """
+        har = self.harmonic(kind=kind, directed=directed, compound=compound, againstLow=True).ffill()
+        if sort:
+            son = har.apply(lambda row: '/'.join(sorted(set([note for note in row if note != 'Rest']), reverse=True)[:-1]), axis=1)
+        else:
+            son = har.apply(lambda row: '/'.join([note for note in row if note != 'Rest']), axis=1)
+        return son
 
     def _entry_ngram_helper(self, n):
         """

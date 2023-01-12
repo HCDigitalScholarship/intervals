@@ -1076,11 +1076,22 @@ class ImportedPiece:
         plt.show()
 
 
-    def _getM21HarmonicIntervals(self):
-        if 'M21HarmonicIntervals' not in self.analyses:
+    def _getM21HarmonicIntervals(self, againstLow=False):
+        """
+        Return m21 interval objects for every pair of intervals in the piece.
+        This does all pairs between voices if againstLow is False (default) or
+        each voice against the lowest sounding note if againstLow is True."""
+        key = ('M21HarmonicIntervals', againstLow)
+        if key not in self.analyses:
             m21Objs = self._getM21ObjsNoTies()
             pairs = []
-            combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
+            if againstLow:
+                low = self.lowLine().apply(note.Note)
+                lowIndex = len(m21Objs.columns)
+                combos = [(x, lowIndex) for x in range(len(m21Objs.columns) - 1, -1, -1)]
+                m21Objs = pd.concat([m21Objs, low], axis=1)
+            else:
+                combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
             for combo in combos:
                 df = m21Objs.iloc[:, list(combo)].dropna(how='all').ffill()
                 ser = df.apply(ImportedPiece._harmonicIntervalHelper, axis=1)
@@ -1091,8 +1102,9 @@ class ImportedPiece:
                 ret = pd.concat(pairs, axis=1)
             else:
                 ret = pd.DataFrame()
-            self.analyses['M21HarmonicIntervals'] = ret
-        return self.analyses['M21HarmonicIntervals']
+
+            self.analyses[key] = ret
+        return self.analyses[key]
 
     def harmonic(self, kind='q', directed=True, compound=True):
         '''

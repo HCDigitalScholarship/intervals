@@ -1148,7 +1148,8 @@ class ImportedPiece:
         not reduced. There is a sonority observed every time any part in the piece
         has an attack. The `kind`, `directed`, and `compound` parameters are passed
         unchanged to .harmonic and will control the type of intervals used. In all
-        cases Rests are ignored.
+        cases Rests are ignored. `sort` will sort the values before returning them, and
+        remove duplicates as well as any unisons against the lowest line.
         """
         har = self.harmonic(kind=kind, directed=directed, compound=compound, againstLow=True).ffill()
         if sort:

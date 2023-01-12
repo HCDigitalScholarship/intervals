@@ -1088,7 +1088,7 @@ class ImportedPiece:
             if againstLow:
                 low = self.lowLine().apply(note.Note)
                 lowIndex = len(m21Objs.columns)
-                combos = [(x, lowIndex) for x in range(len(m21Objs.columns) - 1, -1, -1)]
+                combos = [(lowIndex, x) for x in range(len(m21Objs.columns) - 1, -1, -1)]
                 m21Objs = pd.concat([m21Objs, low], axis=1)
             else:
                 combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
@@ -1106,7 +1106,7 @@ class ImportedPiece:
             self.analyses[key] = ret
         return self.analyses[key]
 
-    def harmonic(self, kind='q', directed=True, compound=True):
+    def harmonic(self, kind='q', directed=True, compound=True, againstLow=False):
         '''
         Return harmonic intervals for all voice pairs. The voice pairs are
         named with the voice that's lower on the staff given first, and the two
@@ -1125,14 +1125,17 @@ class ImportedPiece:
             simplifies to within the octave, so octaves don't get simplified to
             unisons. But for semitonal intervals, an interval of an octave
             (12 semitones) would does get simplified to a unison (0 semitones).
+        :param bool againstLow: if False (default) harmonic intervals between
+            all pairs of voices will be returned. If True harmonic intervals of
+            each voice against the lowest sounding note at each moment is returned.
         '''
         kind = kind[0].lower()
         kind = {'s': 'c'}.get(kind, kind)
         _kind = {'z': 'd'}.get(kind, kind)
         settings = (_kind, directed, compound)
-        key = ('HarmonicIntervals', kind, directed, compound)
+        key = ('HarmonicIntervals', kind, directed, compound, againstLow)
         if key not in self.analyses:
-            df = self._getM21HarmonicIntervals()
+            df = self._getM21HarmonicIntervals(againstLow)
             df = df.applymap(self._intervalMethods[settings])
             if kind == 'z':
                 df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')

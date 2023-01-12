@@ -2991,11 +2991,14 @@ class CorpusBase:
         '''
         Find the top n masses with the highest derivation scores for each model in a table of .modelFinder results.
         The scores from the different movements in each mass are averaged together to get a single score for each
-        model-mass pair.'''
+        model-mass pair. The `df` parameter should be the results from the modelFinder method. If it is left as the
+        default value of None, it will be replaced with the results of the modelFinder on this corpus with the
+        default settings.'''
         if df is None:
             _df = self.modelFinder()
         else:
             _df = df.copy()
+        _df.dropna(inplace=True, how='all')
         _df.index = [i.rsplit('_', 1)[0].split('_', 1)[1] if 'Mass' in i else i.split('_', 1)[1] for i in _df.index]
         means = _df.groupby(level=0, sort=False).mean()
         if n > len(means.index):

@@ -1086,7 +1086,7 @@ class ImportedPiece:
             m21Objs = self._getM21ObjsNoTies()
             pairs = []
             if againstLow:
-                low = self.lowLine().apply(note.Note)
+                low = self.lowLine().apply(lambda val: note.Note(val) if val != 'Rest' else note.Rest())
                 lowIndex = len(m21Objs.columns)
                 combos = [(lowIndex, x) for x in range(len(m21Objs.columns))]
                 m21Objs = pd.concat([m21Objs, low], axis=1)
@@ -1142,7 +1142,7 @@ class ImportedPiece:
             self.analyses[key] = df
         return self.analyses[key]
     
-    def sonorities(self, kind='z', directed=True, compound='simple', sort=True):
+    def sonorities(self, kind='d', directed=True, compound='simple', sort=True):
         """
         Return a dataframe of sonorities that are similar to a continuo part but
         not reduced. There is a sonority observed every time any part in the piece
@@ -1153,10 +1153,11 @@ class ImportedPiece:
         """
         har = self.harmonic(kind=kind, directed=directed, compound=compound, againstLow=True).ffill()
         if sort:
-            son = har.apply(lambda row: '/'.join(sorted(set([note for note in row if note != 'Rest']), reverse=True)[:-1]), axis=1)
+            son = har.apply(lambda row: '/'.join(sorted([note for note in row.unique() if note != 'Rest'], reverse=True)[:-1]), axis=1)
         else:
-            son = har.apply(lambda row: '/'.join([note for note in row if note != 'Rest']), axis=1)
-        return son
+            son = har.apply(lambda row: '/'.join([note for note in row.unique() if note != 'Rest']), axis=1)
+        son.name = 'Sonority'
+        return pd.DataFrame(son)
 
     def _entry_ngram_helper(self, n):
         """
@@ -1308,14 +1309,18 @@ class ImportedPiece:
             other = self.melodic(*interval_settings, unit=unit)
         cols = []
         other = other.fillna(held)
-        if '_' not in df.columns[0]:  # df is not a pair of voices, but rather info about 1 voice at a time
+        if '_' not in df.columns[0] and 'Sonority' != df.columns[0]:  # df is not a pair of voices, but rather info about 1 voice at a time
             _df = df.applymap(str, na_action='ignore')
             _other = other.applymap(str, na_action='ignore')
             ret = _df + '_' + _other
             return self.ngrams(df=ret, n=n, exclude=exclude, offsets=offsets)
         for pair in df.columns:
-            lowerVoice, upperVoice = pair.split('_')
-            lowerMel = other[lowerVoice].copy()
+            if pair == 'Sonority':
+                lowerVoice = other.columns[0]
+                lowerMel = other.iloc[:, 0].copy()
+            else:
+                lowerVoice, upperVoice = pair.split('_')
+                lowerMel = other[lowerVoice].copy()
             if show_both and 'Rest' not in exclude:
                 lowerMel += ':' + other[upperVoice]
             combo = pd.concat([lowerMel, df[pair]], axis=1)
@@ -1583,14 +1588,43 @@ class ImportedPiece:
         nr = self.notes(combineUnisons=True)
         mel = self.melodic(kind='d', end=True, df=nr)
         mel_ng = self.ngrams(n=2, df=mel, offsets='last')
-        mel_matches = mel_ng.applymap(lambda cell: cell == '-2, 2', na_action='ignore').replace(False, np.nan).dropna(how='all')
+        mel2_matches = mel_ng.applymap(lambda cell: cell == ('-2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
         bs = self.beatStrengths().reindex_like(nr)
         bs_ng = self.ngrams(n=3, df=bs, exclude=[], offsets='last')
         bs_ng = bs_ng.reindex_like(mel_ng)
-        bs_matches = bs_ng.applymap(lambda cell: cell[0] < cell[2] > cell[1], na_action='ignore').replace(False, np.nan).dropna(how='all')
+        bs2_matches = bs_ng.applymap(lambda cell: cell[0] < cell[2] > cell[1], na_action='ignore').replace(False, np.nan).dropna(how='all')
+        # C-B-A-B-C
+        mel4_ng = self.ngrams(n=4, df=mel, offsets='last')
+        mel4_matches = mel4_ng.applymap(lambda cell: cell == ('-2', '-2', '2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        bs4_ng = self.ngrams(n=5, df=bs, exclude=[], offsets='last')
+        bs4_ng = bs4_ng.reindex_like(mel4_ng)
+        bs4_matches = bs_ng.applymap(lambda cell: all([cell[-1] > val for val in cell[:-1]]), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        
         res = pd.DataFrame().reindex_like(bs_ng)
-        res[bs_matches & mel_matches] = 'Morley Cadence'
+        res[bs2_matches & mel2_matches] = 'Morley Cadence'
+        res4 = pd.DataFrame().reindex_like(bs4_ng)
+        res4[bs4_matches & mel4_matches] = 'Morley Cadence'
+        res.update(res4)        
         return res.dropna(how='all')
+
+    def morleyCloses(self):
+        """
+        Return "closes" according to Morley, which are normally called cadences. This
+        method uses a harmonically based definition of a cadence. A close is observed
+        if the harmony goes from a root position triad to another root position triad
+        a fifth lower at the same time as a morelyCadence event is observed."""
+        mcads = self.morleyCadences()
+        mcad = pd.Series(True, index=mcads.index, name='MCad')
+        sons = self.sonorities()
+        low = pd.DataFrame(self.lowLine())
+        lowMel = self.melodic(end=True, kind='d', df=low)
+        progressions = self.ngrams(df=sons, other=lowMel, n=2, offsets='last', held='1')
+        data = pd.concat([progressions, mcad], axis=1).dropna(subset=('MCad',))
+        res = data.Sonority.str.match('(5/3|3)_(-5|4), (3|)')
+        res = res[res]
+        res.name = 'Close'
+        res.iloc[:] = 'Close'
+        return pd.DataFrame(res)
 
     def cadences(self, keep_keys=False):
         '''

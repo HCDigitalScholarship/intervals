@@ -1620,7 +1620,7 @@ class ImportedPiece:
         lowMel = self.melodic(end=True, kind='d', df=low)
         progressions = self.ngrams(df=sons, other=lowMel, n=2, offsets='last', held='1')
         data = pd.concat([progressions, mcad], axis=1).dropna(subset=('MCad',))
-        res = data.Sonority.str.match('(5/3|3)_(-5|4), (3|)')
+        res = data.Sonority.str.match('(7/5/3|7/3|5/3|3)_(-5|4), (3|)')
         res = res[res]
         res.name = 'Close'
         res.iloc[:] = 'Close'

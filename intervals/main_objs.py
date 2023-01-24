@@ -102,6 +102,12 @@ def importScore(path, recurse=False, verbose=False):
 
     return pathDict[path]
 
+def Crimport(path, recurse=False, verbose=False):
+    '''
+    Better naming convention for importing single files or directories of files. This is
+    an alias for importScore. See that method's doc string for instructions.'''
+    return importScore(path, recurse, verbose)
+
 def _getCVFTable():
     if 'CVFTable' not in pathDict:
         pathDict['CVFTable'] = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')

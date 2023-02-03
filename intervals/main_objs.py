@@ -197,7 +197,8 @@ class ImportedPiece:
             part_series = []
             part_names = self._getPartNames()
             for i, flat_part in enumerate(self._getSemiFlatParts()):
-                notesAndRests = flat_part.getElementsByClass(['Note', 'Rest'])
+                notesAndRests = flat_part.getElementsByClass(['Note', 'Rest', 'Chord'])
+                notesAndRests = [max(noteOrRest.notes) if noteOrRest.isChord else noteOrRest for noteOrRest in notesAndRests]
                 ser = pd.Series(notesAndRests, name=part_names[i])
                 ser.index = ser.apply(lambda noteOrRest: noteOrRest.offset)
                 ser = ser[~ser.index.duplicated()]  # remove multiple events at the same offset in a given part

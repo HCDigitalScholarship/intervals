@@ -27,6 +27,7 @@ cwd = os.path.dirname(intervals.__file__)
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
 suppliedPattern = re.compile("<supplied.*?(<accid.*?\/>).*?<\/supplied>", flags=re.DOTALL)
+datePattern = re.compile('date isodate="(1\d*)')
 
 accepted_filetypes = ('mei', 'mid', 'midi', 'abc', 'xml', 'musicxml')
 pathDict = {}
@@ -62,6 +63,7 @@ def importScore(path, recurse=False, verbose=False):
             print('No scores found in this directory: {}'.format(path))
         return
 
+    date = None
     if path in pathDict and verbose:
         print('Previously imported piece detected.')
     else:
@@ -92,8 +94,11 @@ def importScore(path, recurse=False, verbose=False):
         try:
             if mei_doc is not None:
                 to_import = re.sub(suppliedPattern, '\\1', to_import)
+                _date = re.search(datePattern, to_import)
+                if _date:
+                    date = int(_date.group(1))
             score = converter.parse(to_import)
-            pathDict[path] = ImportedPiece(score, path, mei_doc)
+            pathDict[path] = ImportedPiece(score, path, mei_doc, date)
             if verbose:
                 print("Successfully imported", path)
         except:
@@ -120,7 +125,7 @@ def _getCadenceTable():
 
 
 class ImportedPiece:
-    def __init__(self, score, path, mei_doc=None):
+    def __init__(self, score, path, mei_doc=None, date=None):
         self.score = score
         self.path = path
         self.file_name = path.rsplit('.', 1)[0].rsplit('/')[-1]
@@ -141,7 +146,13 @@ class ImportedPiece:
                 title = self.score.metadata.title
             if self.score.metadata.composer is not None:
                 composer = self.score.metadata.composer
-        self.metadata = {'title': title, 'composer': composer}
+        self.metadata = {'title': title, 'composer': composer, 'date': date}
+        if not self.metadata['date']:
+            if hasattr(self.score.metadata, 'date') and self.score.metadata.date != 'None':
+                self.metadata['date'] = int(self.score.metadata.date[:4])
+            elif hasattr(self.score.metadata, 'dateCreated') and self.score.metadata.dateCreated != 'None':
+            # music21 v8 replaced date with dateCreated and date will be removed in v10
+                self.metadata['date'] = int(self.score.metadata.dateCreated[:4])
 
         self._intervalMethods = {
             # (quality, directed, compound):   function returning the specified type of interval

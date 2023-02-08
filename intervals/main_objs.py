@@ -3000,7 +3000,7 @@ class CorpusBase:
             post.append(df)
         return post
 
-    def modelFinder(self, models=None, masses=None, n=4):
+    def modelFinder(self, models=None, masses=None, n=4, thematic=True, anywhere=True):
         """
         Searches for pieces that may be models of one or more masses. This method returns a
         "driving distance table" showing how likely each model was a source for each mass. This
@@ -3050,12 +3050,14 @@ class CorpusBase:
         # get entries from all the models
         notes = models.batch(ImportedPiece.notes, number_parts=False, metadata=False, kwargs={'combineUnisons': True})
         mel = models.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'df': notes, 'kind': 'd', 'end': False})
-        entries = models.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mel, 'n': n, 'thematic': True})
+        entries = models.batch(ImportedPiece.entries, number_parts=False, metadata=False,
+                               kwargs={'df': mel, 'n': n, 'thematic': thematic, 'anywhere': anywhere})
 
         # get entries from the masses
         mass_notes = masses.batch(ImportedPiece.notes, number_parts=False, metadata=False, kwargs={'combineUnisons': True})
         mass_mel = masses.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'df': mass_notes, 'kind': 'd', 'end': False})
-        mass_entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False, kwargs={'df': mass_mel, 'n': n, 'thematic': True})
+        mass_entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False,
+                                    kwargs={'df': mass_mel, 'n': n, 'thematic': thematic, 'anywhere': anywhere})
 
         res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
         res.columns.name = 'Model'

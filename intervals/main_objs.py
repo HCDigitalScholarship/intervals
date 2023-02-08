@@ -2996,7 +2996,7 @@ class CorpusBase:
                 df = score.numberParts(df)
             if isinstance(df, pd.DataFrame):
                 if metadata:
-                    df[['Composer', 'Title']] = score.metadata['composer'], score.metadata['title']
+                    df[['Composer', 'Title', 'Date']] = score.metadata['composer'], score.metadata['title'], score.metadata['date']
             post.append(df)
         return post
 

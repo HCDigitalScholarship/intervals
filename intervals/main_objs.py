@@ -2095,7 +2095,7 @@ class ImportedPiece:
         or passed df argument will be replaced with n-long ngrams of those events.
         Note that this does not currently work for dataframes where the columns
         are combinations of voices, e.g. harmonic intervals.
-        If `thematic` is set to True, this method returns all instances of a entries
+        If `thematic` is set to True, this method returns all instances of entries
         that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
         one more time, though the additional time doesn't have to be after a rest.

@@ -1746,16 +1746,12 @@ class ImportedPiece:
         self._plot_default()
 
         # defining markers for Cadence Types
-        cadence_type_dict = {"Clausula Vera": "$CV$", "Abandoned Clausula Vera": "$CV-a$", "Evaded Clausula Vera": "$CV-e$",
-                     "Authentic" : "$Au$", "Evaded Authentic": "$Au-e$", "Abandoned Authentic": "$Au-a$", "Double Leading Tone" : "$dlt$",
-                     "Evaded Double Leading Tone": "$dlt-e$", "Abandoned Double Leading Tone": "$dlt-a$", "Phrygian Clausula Vera": "$CV-Ph$",
-                     "Altizans Only": "$alt$", "Evaded Altizans Only": "$alt-e$", "Leaping Contratenor": "$ct-leap$", "Reinterpreted": "$reint$", 
-                     "Phrygian": "$Ph$", "None": "$None$", "Quince": "$Qu$"}
-        # cadence_type_dict = {"Clausula Vera": "o", "Abandoned Clausula Vera": "v", "Evaded Clausula Vera": "^",
-        #              "Authentic" : "<", "Evaded Authentic": ">", "Abandoned Authentic": "8", "Double Leading Tone" : "s",
-        #              "Evaded Double Leading Tone": "p", "Abandoned Double Leading Tone": "P", "Phrygian Clausula Vera": "d",
-        #              "Altizans Only": "h", "Evaded Altizans Only": "H", "Leaping Contratenor": "X", "Reinterpreted": "D", 
-        #              "Phrygian": "d", "None": "*", "Quince": "4"}
+        
+        cadence_type_dict = {"Clausula Vera": "o", "Abandoned Clausula Vera": "v", "Evaded Clausula Vera": "^",
+                     "Authentic" : "<", "Evaded Authentic": ">", "Abandoned Authentic": "8", "Double Leading Tone" : "s",
+                     "Evaded Double Leading Tone": "p", "Abandoned Double Leading Tone": "P", "Phrygian Clausula Vera": "d",
+                     "Altizans Only": "h", "Evaded Altizans Only": "H", "Leaping Contratenor": "X", "Reinterpreted": "D", 
+                     "Phrygian": "d", "None": "*", "Quince": "."}
 
         # defining the default order list (or accepting the custom one)
         if customOrder == None:

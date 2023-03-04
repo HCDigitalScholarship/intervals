@@ -1839,10 +1839,12 @@ class ImportedPiece:
         self._plot_default()
 
         # defining markers for Cadence Types
+        
         cadence_type_dict = {"Clausula Vera": "o", "Abandoned Clausula Vera": "v", "Evaded Clausula Vera": "^",
                      "Authentic" : "<", "Evaded Authentic": ">", "Abandoned Authentic": "8", "Double Leading Tone" : "s",
                      "Evaded Double Leading Tone": "p", "Abandoned Double Leading Tone": "P", "Phrygian Clausula Vera": "d",
-                     "Altizans Only": "h", "Evaded Altizans Only": "H", "Leaping Contratenor": "X", "Reinterpreted": "D", "Phrygian": "d", "None": "*"}
+                     "Altizans Only": "h", "Evaded Altizans Only": "H", "Leaping Contratenor": "X", "Reinterpreted": "D", 
+                     "Phrygian": "d", "None": "*", "Quince": "."}
 
         # defining the default order list (or accepting the custom one)
         if customOrder == None:

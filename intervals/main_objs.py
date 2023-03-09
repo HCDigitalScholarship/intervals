@@ -1806,7 +1806,10 @@ class ImportedPiece:
 
         # including the Title
         fig.update_layout(title_text=(self.metadata['composer'] + ": " + self.metadata['title']))
-        fig.show(renderer=renderer)
+        if renderer == 'streamlit':
+            return fig
+        else:
+            fig.show(renderer=renderer)
 
     # setting up the figure size:
     def _plot_default(self):
@@ -1819,7 +1822,7 @@ class ImportedPiece:
             self.analyses['_plot_default'] = True
 
 
-    def cadenceProgressPlot(self, includeType=False, cadTone=None, cadType=None, customOrder=None, includeLegend=True):
+    def cadenceProgressPlot(self, includeType=False, cadTone=None, cadType=None, customOrder=None, includeLegend=True, renderer=""):
 
         '''
         Parameters Overview:
@@ -1892,7 +1895,10 @@ class ImportedPiece:
         if includeLegend:
             plt.title("Cadence Progress Graph: " + self.metadata["title"])
         plt.ylabel("Cadence Tone")
-        plt.show()
+        if renderer == "streamlit":
+            return plt
+        else:
+            plt.show()
 
     def markFourths(self):
         '''
@@ -3264,7 +3270,10 @@ class CorpusBase:
                 fig = px.line_polar(data, r="Count", theta=selected_type, color="Piece", line_close=True)
         # chart title
         fig.update_layout(title_text=("Cadence Distribution Comparison"))
-        fig.show(renderer=renderer)
+        if renderer == "streamlit":
+            return fig
+        else:
+            fig.show(renderer=renderer)
 
     # setting up the figure size:
     def _plot_default(self):
@@ -3276,7 +3285,7 @@ class CorpusBase:
             sns.set(rc={'figure.figsize':(15,9)})
             self.analyses['_plot_default'] = True
 
-    def compareCadenceProgressPlots(self, includeType=False, cadTone=None, cadType=None, includeLegend=True, customOrder=None):
+    def compareCadenceProgressPlots(self, includeType=False, cadTone=None, cadType=None, includeLegend=True, customOrder=None, renderer=""):
 
         '''
         Parameters Overview:
@@ -3371,7 +3380,10 @@ class CorpusBase:
             plt.title("Cadence Progress Comparison")
             plt.gca().add_artist(piece_legend)
         plt.ylabel("Cadence Tone")
-        plt.show()
+        if renderer == "streamlit":
+            return plt
+        else:
+            plt.show()
 
     def _patternToSeries(self, pattern):
         output_list = []
@@ -3397,7 +3409,8 @@ class CorpusBase:
             graph_list.append(self._patternToSeries(temp_item))
         return graph_list
 
-    def compareIntervalFamilies(self, length=4, combineUnisons=True, kind="d", end=False, variableLength=False, suggestedPattern=None, useEntries=True, arriveAt=None, includeLegend=True):
+    def compareIntervalFamilies(self, length=4, combineUnisons=True, kind="d", end=False, variableLength=False,
+        suggestedPattern=None, useEntries=True, arriveAt=None, includeLegend=True, renderer=""):
 
         '''
         It is possible to select:
@@ -3485,4 +3498,7 @@ class CorpusBase:
         if includeLegend:
             plt.title("Total Number of Patterns: " + str(number_of_patterns))
             plt.legend(handles=patch_array)
-        plt.show()
+        if renderer == "streamlit":
+            return plt
+        else:
+            plt.show()

@@ -34,14 +34,32 @@ pathDict = {}
 # An extension of the music21 note class with more information easily accessible
 def importScore(path, recurse=False, verbose=False):
     '''
-    Import piece or group of pieces and return an ImportedPiece or CorpusBase object respectively.
-    Return None if there is an error. This function accepts piece urls, and local paths. A list of
-    the accepted file formats can be found in the accepted_filetypes tuple. This function also
+    Import one or more pieces and return an ImportedPiece or CorpusBase object respectively, or
+    returns none if there is an error. This function accepts both piece urls and local paths.
+    A list of the accepted file formats can be found in the accepted_filetypes tuple. This function also
     accepts directories and will import all the score files within a passed directory. Set
     recurse=True (default False) to import all score files from the passed directory *and* those
-    of all subdirectories. Set verbose=True (default False) to print out confirmation of import
+    of all subdirectories within it. Set verbose=True (default False) to print out confirmation of import
     success for each piece. If any errors are encountered, these issues will be printed out
     regardless of verbose setting.
+    
+    Parameters
+    ----------
+    
+    path
+        the local or url path where the desired piece or pieces are located
+        
+    recurse
+        boolean statement determining if the function imports pieces found in subdirectories of imported directories
+        default = False
+        
+    verbose
+        boolean statement determining if the function prints confirmation after each piece is successfully imported
+        default = False
+        
+    If this function does not find any valid scores to import, it will print a statement declaring this.
+    Otherwise, the function will return an object of type CorpusBase (if multiple scores were successfully imported),
+    or of type Imported Piece (if only one score was successfully imported)
     '''
     if os.path.isdir(path):
         files = os.listdir(path)
@@ -110,10 +128,14 @@ def importScore(path, recurse=False, verbose=False):
 def Crimport(path, recurse=False, verbose=False):
     '''
     Better naming convention for importing single files or directories of files. This is
-    an alias for importScore. See that method's doc string for instructions.'''
+    an alias for importScore. See function importScore's doc string for instructions.
+    '''
     return importScore(path, recurse, verbose)
 
 def _getCVFTable():
+    """
+    Function to 
+    """
     if 'CVFTable' not in pathDict:
         pathDict['CVFTable'] = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
     return pathDict['CVFTable']

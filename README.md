@@ -18,25 +18,42 @@ Some methods in **CRIM Intervals** also work with **CRIM Project** data created 
 
 CRIM intervals is now available in a series of interactive **Jupyter** notebooks easily launched via **Binder** at https://github.com/RichardFreedman/CRIM_Public_Notebooks.  These can in turn be downloaded and adapted for your own use.
 
-### What can CRIM Intervals do?
+### The Basics
 
-As explained in the **ReadMe** section of our public **Jupyter** notebook (https://github.com/RichardFreedman/CRIM_Public_Notebooks), CRIM Intervals performs a variety of tasks.
+CRIM Intervals begins by importing one (or more) MEI, MusicXML, and MIDI files, for example: 
 
-- The individual tools (called methods in Python and Pandas) can be adjusted in various ways, such as diatonic vs chromatic, compound vs simple intervals, real vs constant durations, as well as pattern length, similarity.
-- Read the documentation with this command ```print(model.YourMethod.__doc__)```, where you will replace ```'YourMethod'``` with the name of the individual method, for example ```print(model.melodic.__doc__)```.
+  piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')
 
+Once imported this **piece** object can be explored in various ways. `piece.notes()` for instance, produces a dataframe in which each staff (voice part) is represented as a column of events--notes, rests, durations, lyrics, etc. Other methods (see the list below) in turn present these basic events in many different ways:  as melodic intervals, harmonic intervals, n-grams, contrapuntal "modules", and so on.
 
-#### Notes, Durations, Rests, Patterns (Melodic, Harmonic, Modular)
+There are many ways to configure these basic methods. For instance intervals can be **diatonic, or chromatic**, or **with (and without) 'quality'** (such as M3 vs m3). They can also be **simple or compound** (a tenth in the latter would be a third in the former).Unisons can be combined (something helpful for comparing similar melodies), or events can be taken at **actual durations or 'sampled' at some regular durational unit**.
 
-CRIM Intervals as various *methods*, notably:
+Complete documentation of each method capacities is available via doc.strings via this command `print(model.YourMethod.__doc__)`, where you will replace 'YourMethod' with the name of the individual method, for example `print(piece.melodic.__doc__)`
 
+## Key Methods in CRIM Intervals
 
-- **notes**, which finds **all the notes and rests in a score**, with a tabular score-like representation of the pitches, pitch classes, and durations (expressed in music21 "offsets", in which each quarter note corresponds to the value of 1.0).  It can also derminte the location of any note as a measure+beat reference with **detailIndex**
-- **melodic**, which finds **melodic intervals** in any voice part, with various options for *diatonic*, *chromatic* and *zero-based* distances. Intervals can be *compound* (distinguishing between tenths and thirds, for instance), or *simple*, and can include *quality* (distinguishing major and minor thirds, for instance), or not.
-- **harmonic**, which finds **harmonic intervals** between every combination of two voices in a piece, with various options for *diatonic* and *chromatic*. These intervals can also be *directed* (as when a tenor voice sounds above the altus), or not.
-- **ngrams**, which finds **nGrams of any length in each voice part**.  nGrams are frequently used in linguistic analysis (https://en.wikipedia.org/wiki/N-gram), and can help us find repeating patterns within and among works.
+* `piece.notes()`, which finds all the notes and rests in a score, with a tabular score-like representation of the pitches, pitch classes, and durations (expressed in music21 "offsets", in which each quarter note corresponds to the value of 1.0). It can also determine the location of any note as a measure+beat reference with `detailIndex` (see below)
 
-Other Features
+* `piece.melodic()`, which finds a seqence of the distances/intervals between the pitches of individual notes in any voice part, with various options for diatonic, chromatic and zero-based distances. Intervals can be compound (distinguishing between tenths and thirds, for instance), or simple, and can include quality (distinguishing major and minor thirds, for instance), or not.
+
+* `piece.harmonic()`, which finds harmonic intervals (distance between pitches played on the same beat) between every combination of two voices in a piece, with various options for diatonic and chromatic. These intervals can also be directed (as when a tenor voice sounds above the altus), or not.
+
+* `piece.lyrics()`, which finds the lyric associated with each note in a piece.
+
+* `piece.durations()`, which finds the duration of each sequential note in a piece, with quarter-note = 1.0 as per music21.
+
+* `piece.ngrams()`, which finds n-grams, or note sequences of any given length *n*, in each voice part. [n-grams](https://en.wikipedia.org/wiki/N-gram)" are frequently used in linguistic analysis, and can help us find repeating patterns within and among works.
+  * The n-gram tool can be used for any of the methods above:  melodic, harmonic, durations, lyrics. For example:
+  `har = importedPiece.harmonic()`
+  `mel = importedPiece.melodic()`
+  `_n = 5`
+  `ngrams = importedPiece.ngrams(df=har, other=mel, n=_n)`
+  `ngramDurations = importedPiece.durations(df=har, n=_n, mask_df=ngrams)`
+  `ngramLyrics = importedPiece.ngrams( //TODO, how does this work?`
+  
+* etc. etc. //TODO
+
+### Other Features
 
 - **Finds notes and patterns according to actual or incremental durations**. The default method follows the **actual durations** (so that melodic tones and ngrams are simply strings of events representing each new tone in a given voice), but we can also select a sample by fixed **incremental durations**, for instance by every half-note.
 - **Finds contrapuntal modules** of any length.  Modular analysis represents in numerical values a combination of the vertical intervals made between any two voices with the melodic intervals heard in the motion of the lower voice.  A module of **7_Held 6_-2, 8** for instance, represents vertical intervals of **7, 6, 8** between two voices and **in the lower voice a tied note followed by a descending second**.  Together these five events represent a typical cadence formula.  Repeating modules are a key part of Renaissance contraputnal style.

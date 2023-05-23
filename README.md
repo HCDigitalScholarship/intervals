@@ -44,12 +44,12 @@ Complete documentation of each method capacities is available via doc.strings vi
 
 * `piece.ngrams()`, which finds n-grams, or note sequences of any given length *n*, in each voice part. [n-grams](https://en.wikipedia.org/wiki/N-gram)" are frequently used in linguistic analysis, and can help us find repeating patterns within and among works.
   * The n-gram tool can be used for any of the methods above:  melodic, harmonic, durations, lyrics. For example:
-  *`har = importedPiece.harmonic()`
-  *`mel = importedPiece.melodic()`
-  *`_n = 5`
-  *`ngrams = importedPiece.ngrams(df=har, other=mel, n=_n)`
-  *`ngramDurations = importedPiece.durations(df=har, n=_n, mask_df=ngrams)`
-  *`ngramLyrics = importedPiece.ngrams( //TODO, how does this work?`
+  * `har = importedPiece.harmonic()`
+  * `mel = importedPiece.melodic()`
+  * `_n = 5`
+  * `ngrams = importedPiece.ngrams(df=har, other=mel, n=_n)`
+  * `ngramDurations = importedPiece.durations(df=har, n=_n, mask_df=ngrams)`
+  * `ngramLyrics = importedPiece.ngrams( //TODO, how does this work?`
   
 * etc. etc. //TODO
 

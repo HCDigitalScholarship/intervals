@@ -2,15 +2,19 @@ from .main_objs import *
 
 # Given list of matches, write to csv in current working directory
 def export_to_csv(matches: list):
-    """Exports matches data to a csv in the current working directory
+    """
+    Exports matches data to a csv in the current working directory
 
     Parameters
     ----------
     matches : list
-        return value from either find_exact_matches or find_close_matches
+        "matches" parameter should be a list returned from function "find_exact matches" or "find_close_matches"
+        
+        this function has no return, instead printing a message confirming that a csv file
+        based on the given list input has been saved to the current directory
     """
     proceed = input("This method will create a csv file in your current working directory. Continue? (y/n): ").lower()
-    csv_name = input("Enter a name for your csv file (.csv will be appended): ")
+    csv_name = input("Enter a name for your csv file (do NOT include the file extension, .csv will be appended automatically): ")
     csv_name += '.csv'
     if proceed != 'y' and proceed != 'yes':
         print("Exiting...")

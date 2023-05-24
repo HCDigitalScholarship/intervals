@@ -13,7 +13,7 @@
 ## combineUnisons
 
   * A unison is when a new note is sounded, but the pitch remains the same (e.g. a half note C5 followed by a quarter note C5). the `notes()` function contains a parameter called combineUnisons, which defaults to False.  
-  * When combineUnisons is set to true, any uinsons pitches will be treated as a continuation of the previous note, effectively adding a tie to those notes of the piece, and resulting in the table output of the `notes()` function not printing anything at the given offset of the given repition in pitch.  
+  * When combineUnisons is set to true, any unisons in pitches will be treated as a continuation of the previous note, effectively adding a tie to those notes of the piece, and resulting in the table output of the `notes()` function not printing anything at the given offset of the given repition in pitch.  
   * The combineUnisons parameter may be run as follows:  
 `piece.notes(combineUnisons = True)` OR `piece.notes(combineUnisons = False)`  
   * The `head()` function can be combined with `notes(combineUnisons = True/False)` as follows:  

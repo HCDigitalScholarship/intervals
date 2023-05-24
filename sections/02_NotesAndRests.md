@@ -62,33 +62,33 @@ Additionally, the `combineRests()` and `combineUnisons()` parameters may be chan
   * Since the output of the `notes()` function is in the form of a pandas dataframe, all of the functions applicable to dataframes in general apply here as well. A cheat sheet of pandas dataframe functions can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). These operations include the following:  
 
 First, let's create a variable to represent the dataframe for our piece:  
-`df = piece.notes()`  
+> `df = piece.notes()`  
 
-> Count the number of rows in the dataframe (table)
+### Count the number of rows in the dataframe (table)
 
-`df.count()`  
+> `df.count()`  
 
-> Rename a column in the dataframe (table)
+### Rename a column in the dataframe (table)
 
-`df.rename(columns = {'[Superious]':'Cantus'}, inplace = False)`
+> `df.rename(columns = {'[Superious]':'Cantus'}, inplace = False)`
 
   * More detail about `dataframe.rename()` can be [found here](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.rename.html?highlight=rename#pandas.DataFrame.rename).  
 
-> Stack all columns on top of each other to get one list of all notes  
+### Stack all columns on top of each other to get one list of all notes  
 
-`df.stack()`  
+> `df.stack()`  
 
-> Stack all columns, and count unique tones in the piece  
+### Stack all columns, and count unique tones in the piece  
 
-`df.stack().nunique()`  
+> `df.stack().nunique()`  
 
-> Count the number of each note in each voice part  
+### Count the number of each note in each voice part  
 
-`df.apply(pd.Series.value_counts).fillna(0).astype(int)`  
+> `df.apply(pd.Series.value_counts).fillna(0).astype(int)`  
 
-> Count the number of each note in a single voice part, sorted in descending order  
+### Count the number of each note in a single voice part, sorted in descending order  
 
-`df.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by = df.columns[0], ascending = False)`  
+> `df.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by = df.columns[0], ascending = False)`  
 
 `sort_values()` can be modified as follows:  
   * Parameter `ascending` (default = True) can be changed to False  

@@ -9,8 +9,8 @@
   * By default, printing `piece.notes()` will print the first and last five rows of the table. That is, the first and last 5 points in the piece at which any voice changes in note.
   * To control how many rows are printed;  
 
-`piece.notes.head(20)` will print only the first 20 rows of the table, while  
-`piece.notes.tail(20)` will print only the last 20 rows of the table.
+`piece.notes().head(20)` will print only the first 20 rows of the table, while  
+`piece.notes().tail(20)` will print only the last 20 rows of the table.
 
 ## combineUnisons
 
@@ -30,7 +30,27 @@ Or, more directly:
 
 ## combineRests
 
-  * The combineRests parameter operates similarly to the combineUnisons parameter, 
+  * The combineRests parameter operates similarly to the combineUnisons parameter, where any rests in the piece that does not preceed the first non-rest note are combined with neighboring rests, such as three whole rest measures in a row.
+  * By default, the combineRests parameter of the `notes()` function is set to True, and can similarly be toggled by the following code:  
+
+`piece.notes(combineRests = True/False)`  
+Or, once again,
+`piece_seperate_rests = piece.notes(combineRests = False)`  
+`piece_seperate_rests.head(20)`  
+
+## Removing "NaN"
+
+  * If a note changes in one voice but not another, then a row will be created in the table only partially filled. This is because while the table will attempt to populate the change in note for all voices, but subsequent beats of a note or rest (for example, beats 2, 3, and 4 of a whole rest) do not appear for the note or rest's entire duration, only at its first instance.
+  * These empty slots, which we now see as representing some note or rest being held, are therefore printed as "NaN", which stands for "Not a Number"
+  * To decrease the visual clutter of the table, these "NaN" outputs can be replaced with the `fillna()` function, which is used as follows:  
+
+`piece.notes().fillna('')`
+
+  * The `fillna()` function accepts a parameter which, in quotes, represents the text which will replace the "NaN" elements of the `notes()` output table. This field may contain empty quotes, as shown above, or another symbol such as '-':  
+
+`piece.notes().fillna('-')`  
+
+  * Once again, the amount of rows shown by this function can 
 
 -----
 

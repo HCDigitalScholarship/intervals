@@ -64,29 +64,29 @@ Additionally, the `combineRests()` and `combineUnisons()` parameters may be chan
 First, let's create a variable to represent the dataframe for our piece:  
 `df = piece.notes()`  
 
-### Count the number of rows in the dataframe (table)
+> Count the number of rows in the dataframe (table)
 
 `df.count()`  
 
-### Rename a column in the dataframe (table)
+> Rename a column in the dataframe (table)
 
 `df.rename(columns = {'[Superious]':'Cantus'}, inplace = False)`
 
   * More detail about `dataframe.rename()` can be [found here](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.rename.html?highlight=rename#pandas.DataFrame.rename).  
 
-### Stack all columns on top of each other to get one list of all notes  
+> Stack all columns on top of each other to get one list of all notes  
 
 `df.stack()`  
 
-### Stack all columns, and count unique tones in the piece  
+> Stack all columns, and count unique tones in the piece  
 
 `df.stack().nunique()`  
 
-### Count the number of each note in each voice part  
+> Count the number of each note in each voice part  
 
 `df.apply(pd.Series.value_counts).fillna(0).astype(int)`  
 
-### Count the number of each note in a single voice part, sorted in descending order  
+> Count the number of each note in a single voice part, sorted in descending order  
 
 `df.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by = df.columns[0], ascending = False)`  
 
@@ -94,11 +94,11 @@ First, let's create a variable to represent the dataframe for our piece:
   * Parameter `ascending` (default = True) can be changed to False  
   * Parameter `by` must be set as equal to the name of the column by which the table will be sorted. For example, to sort the entire table such that the first column appears in descending order, set `by = df.columns[0]` and `ascending = False` as shown above. The value for `by` can be set with either `df.columns[index_value]` or the actual text of the column's name itself. `index_value` may be any number from 0 to the number of voices in the table - 1, corresponding to the first and last voice in the piece, respectively. To index from the last voice rather than the first, use -1 as the last index, -2 as the second to last index, etc.  
 
-  ### Sorting pitches  
+## Sorting pitches  
 
-  We Previously saw how to sort the columns by the **counts** of the pitches in a particular voice.  
-  But we can also declare a **sort order** for the pitches themselves, then organize the entire data frame in that sequence.  This will show the voice ranges of each part.  
-  We first create a list of the pitches in order (from low to high, in this case).  Note that music21 (and thus CRIM Intervals) represents **B-flat** as **B-**.  **C-sharp** is **C#**.  
+We Previously saw how to sort the columns by the **counts** of the pitches in a particular voice.  
+But we can also declare a **sort order** for the pitches themselves, then organize the entire data frame in that sequence.  This will show the voice ranges of each part.  
+We first create a list of the pitches in order (from low to high, in this case).  Note that music21 (and thus CRIM Intervals) represents **B-flat** as **B-**.  **C-sharp** is **C#**.  
 
 
   * First, set the order of pitches:  

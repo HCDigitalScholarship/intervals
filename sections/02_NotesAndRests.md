@@ -2,11 +2,13 @@
 
 ## The `notes()` Function
   * After importing one or more pieces, the `notes()` function can be run to create a table of all of a piece's notes and rests, in order. The `notes()` function may be run in the following format:  
+
 `piece.notes()`  
   * These notes will be printed in a table, where each new row represents the fact that any voice has changed its note. The left-most column is an index representing the offset of the change in note, where 0 represents the first note of the piece, and 1 unit of offset represents a single quarter note. Note that this index will not necessarily be regularly spaced.  
   * Each column of the `notes()` table represents a different voice of the pieces, as indicatd by the headings of the table
   * By default, printing `piece.notes()` will print the first and last five rows of the table. That is, the first and last 5 points in the piece at which any voice changes in note.
   * To control how many rows are printed;  
+
 `piece.notes.head(20)` will print only the first 20 rows of the table, while  
 `piece.notes.tail(20)` will print only the last 20 rows of the table.
 
@@ -15,12 +17,15 @@
   * A unison is when a new note is sounded, but the pitch remains the same (e.g. a half note C5 followed by a quarter note C5). the `notes()` function contains a parameter called combineUnisons, which defaults to False.  
   * When combineUnisons is set to true, any unisons will be treated as a continuation of the previous note, effectively adding a tie between those notes. As a result, the table output of the `notes()` function will not printing anything at the offset of the given note's repition.  
   * The combineUnisons parameter may be run as follows:  
+
 `piece.notes(combineUnisons = True)` OR `piece.notes(combineUnisons = False)`  
   * The `head()` function can be combined with `notes(combineUnisons = True/False)` as follows:  
+
 `whole_piece = piece.notes(combineUnisons = False)`  
 `whole_piece.head(20)`  
 Or, more directly:  
-`piece.notes(combineUnisons = False).head(20)`
+`piece.notes(combineUnisons = False).head(20)`  
+
   * Sometimes, declaring variables, such as in the first example, may be more useful, since it allows you to reference a specific condition of the piece more easily than adding `combineUnisons = True/False` to the function every time you want to reference that piece with those paremters. This type of variable declaration with specific parameters is useful in many instances not limited to applications of the CRIM Intervals library to increase your code's efficiency and prevent unnecessariily repeatedly declaring the same statement.
 
 ## combineRests

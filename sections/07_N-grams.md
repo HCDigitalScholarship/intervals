@@ -14,5 +14,3 @@
   * [09_Item](link.to.item)
   * [10_Item](link.to.item)
   * ...
-  * 
-aq

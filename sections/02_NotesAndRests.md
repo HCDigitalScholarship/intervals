@@ -108,17 +108,16 @@ First, let's create a variable to represent the dataframe for our piece:
                'C4', 'C#4','D4', 'E-4', 'E4', 'F4', 'F#4','G4', 'A4', 'B-4', 'B4',
                'C5', 'C#5','D5', 'E-5','E5', 'F5', 'F#5', 'G5', 'A5', 'B-5', 'B5']`  
 
-`df = piece.notes().fillna('-')  
-df = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
-df.rename(columns = {'index':'pitch'}, inplace = True)  
-df['pitch'] = pd.Categorial(df["pitch"], categories = pitch_order)  
-df = df.sort_values(by = "pitch").dropna().copy()`  
+`df = piece.notes().fillna('-')`  
+`df = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()`  
+`df.rename(columns = {'index':'pitch'}, inplace = True)`  
+`df['pitch'] = pd.Categorial(df["pitch"], categories = pitch_order)`  
+`df = df.sort_values(by = "pitch").dropna().copy()`  
 
   * Now, running `df` will print a dataframe where every row is a pitch, sorted in ascending order, and each column represents a voice part. Each element of the table itself is the number of times the voice in its column sounded the pitch in its row.  
   * Various python libraries exist to help create graphs and charts. We can ue Matplot to create a historgram of the of how many times each voice sounded each pitch:  
 
 `%matplotlib inline`  
-
 
 -----
 

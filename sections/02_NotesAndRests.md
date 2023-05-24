@@ -66,29 +66,29 @@ First, let's create a variable to represent the dataframe for our piece:
 
 ### Count the number of rows in the dataframe (table)
 
-> `df.count()`  
+`df.count()`  
 
 ### Rename a column in the dataframe (table)
 
-> `df.rename(columns = {'[Superious]':'Cantus'}, inplace = False)`
+`df.rename(columns = {'[Superious]':'Cantus'}, inplace = False)`
 
   * More detail about `dataframe.rename()` can be [found here](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.rename.html?highlight=rename#pandas.DataFrame.rename).  
 
 ### Stack all columns on top of each other to get one list of all notes  
 
-> `df.stack()`  
+`df.stack()`  
 
 ### Stack all columns, and count unique tones in the piece  
 
-> `df.stack().nunique()`  
+`df.stack().nunique()`  
 
 ### Count the number of each note in each voice part  
 
-> `df.apply(pd.Series.value_counts).fillna(0).astype(int)`  
+`df.apply(pd.Series.value_counts).fillna(0).astype(int)`  
 
 ### Count the number of each note in a single voice part, sorted in descending order  
 
-> `df.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by = df.columns[0], ascending = False)`  
+`df.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by = df.columns[0], ascending = False)`  
 
 `sort_values()` can be modified as follows:  
   * Parameter `ascending` (default = True) can be changed to False  

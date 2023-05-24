@@ -37,6 +37,8 @@ Or, more directly:
 Or, once again,
 `piece_seperate_rests = piece.notes(combineRests = False)`  
 `piece_seperate_rests.head(20)`  
+Additionally, the `combineRests()` and `combineUnisons()` parameters may be changed simultaneously as follows:  
+`piece.notes(combineRests = False, combineUnisons = True).head(20)`  
 
 ## Removing "NaN"
 
@@ -50,7 +52,15 @@ Or, once again,
 
 `piece.notes().fillna('-')`  
 
-  * Once again, the amount of rows shown by this function can 
+  * Once again, the amount of rows shown by this function can be controlled by adding a `.head()` function to the line, which may be placed either before or after the `fillna('')` function. For example, both of the following lines will each output the first 20 lines of the give piece, with all "NaN" elements replace by a dash:  
+
+`piece.notes().fillna('-').head(20)`  
+`piece.notes.head(20).fillna('-')`  
+
+## Counting, Sorting, and Graphing Notes
+
+  * Since the output of the `notes()` function is in the form of a pandas dataframe, all of the functions applicable to dataframes in general apply here as well. Dataframe functions can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). 
+
 
 -----
 

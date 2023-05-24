@@ -12,7 +12,7 @@
 
   * The CRIM Interval library also allows the user to import multiple pieces at once through the `CorpusBase()` function  
   * This function operates similarly to the `importPiece()` function, but accepts a list of piece urls or paths instead of a single one  
-  * Note that the function must be formatted as follows, including [brackets] to indicate that the input is a list, and including a / at the beginning of any local path. Otherwise, the local path will be read as an online url, and the piece will not be found.  
+  * Note that the function must be formatted as follows, including [brackets] to indicate that the input is a list, and including a /slash at the beginning of any local path. Otherwise, the local path will be read as an online url, and the piece will not be found.  
 `corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', '/path/to/mei/file1.mei', '/path/to/mei/file2.mei'])`
 
 # Credits and Intellectual Property Statement

@@ -59,7 +59,9 @@ Additionally, the `combineRests()` and `combineUnisons()` parameters may be chan
 
 ## Counting, Sorting, and Graphing Notes
 
-  * Since the output of the `notes()` function is in the form of a pandas dataframe, all of the functions applicable to dataframes in general apply here as well. Dataframe functions can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). 
+  * Since the output of the `notes()` function is in the form of a pandas dataframe, all of the functions applicable to dataframes in general apply here as well. A cheat sheet of pandas dataframe functions can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). These operations include the following:  
+
+### TEST
 
 
 -----

@@ -49,9 +49,12 @@ Complete documentation of each method capacities is available via doc.strings vi
   * `_n = 5`
   * `ngrams = importedPiece.ngrams(df=har, other=mel, n=_n)`
   * `ngramDurations = importedPiece.durations(df=har, n=_n, mask_df=ngrams)`
-  * `ngramLyrics = importedPiece.ngrams( //TODO, how does this work?`
-  
-* etc. etc. //TODO
+  * 
+  * `lyrics = self.lyrics()`
+  * `lyrics = lyrics.applymap(self._alpha_only)`
+  * `lyrics_ng = self.ngrams(df=lyrics, n=ngram_length)`
+
+* `etc. etc. //TODO`
 
 ### Other Features
 

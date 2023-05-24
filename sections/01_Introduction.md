@@ -20,7 +20,7 @@
   * Once one or more pieces have been imported, they can be examined and analyzed through a wide variety of different functions. Most of these functions follows one of a few common formats:  
 `pieceName.func()`  
 OR  
-`peiceName.func(p1)`  
+`pieceName.func(p1)`  
 OR  
 `pieceName.func(param_1 = p1, param_2 = p2, ... param_X = pX)`  
   * If the function does not require any parameter inputs, or you do not wish to modify any of the function's default parameters, the parentheses may be left blank, but must still be included. Ommitting any parameter from a function will apply the function's default setting for that parameter  

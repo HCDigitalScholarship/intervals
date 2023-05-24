@@ -7,7 +7,7 @@
   * Each column of the `notes()` table represents a different voice of the pieces, as indicatd by the headings of the table
   * By default, printing `piece.notes()` will print the first and last five rows of the table. That is, the first and last 5 points in the piece at which any voice changes in note.
   * To control how many rows are printed;  
-Running the line `piece.notes.head(20)` will print only the first 20 rows of the table, while  
+`piece.notes.head(20)` will print only the first 20 rows of the table, while  
 `piece.notes.tail(20)` will print only the last 20 rows of the table.
 
 ## combineUnisons

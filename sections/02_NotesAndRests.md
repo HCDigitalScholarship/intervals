@@ -130,8 +130,8 @@ First, let's create a variable to represent the dataframe for our piece:
 `voices = nr.columns.to_list()`  
 `palette = sns.husl_palette(len(voices), l=.4)`  
 `md = piece.metadata`  
-`for key, value in md.items():  
-    print(key, ':', value)`  
+`for key, value in md.items():`  
+`    print(key, ':', value)`  
 `sns.set(rc={'figure.figsize':(15,9)})`  
 `nr.set_index('pitch').plot(kind='bar', stacked=True)`  
 

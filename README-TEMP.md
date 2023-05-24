@@ -27,6 +27,6 @@ CRIM intervals is now available in a series of interactive **Jupyter** notebooks
   * [06_Durations](sections/06_Durations.md)
   * [07_N-grams](sections/07_Ngrams.md)
   * [08_Time-Signatures](sections/08_TimeSignatures.md)
-  * [09_](link.to.item)
-  * [10_Item](link.to.item)
-  * ...
+  * [09_DetailIndex](sections/09_DetailIndex.md)
+  * [10_Cadences](sections/10_Cadences.md)
+  * [11_Item](link.to.item)

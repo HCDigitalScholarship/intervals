@@ -5,7 +5,7 @@
   * CRIM Intervals begins by importing one or more MEI, MusicXML, or MIDI Files. This can be done directly, as shown:  
 `piece = importPiece('https://crimproject.org/mei/CRIM_Model_0008.mei')`
   * The field within the `importPiece()` function can be either a url or local file path  
-  * Finally, combine these fields, After importing the resulting link, the piece's successful import can be confirmed by printing out its metadata:   
+  * After importing a piece from a url or local path, the piece's successful import can be confirmed by printing out its metadata:   
 `print(piece.metadata)`  
 
 ## Importing multiple pieces at once

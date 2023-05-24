@@ -4,7 +4,7 @@
 
   * CRIM Intervals begins by importing one or more MEI, MusicXML, or MIDI Files. This can be done directly, as shown:  
 `piece = importPiece('https://crimproject.org/mei/CRIM_Model_0008.mei')`
-  * The field within the `importPiece()` function can be either a url or local file path  
+  * The field within the `importPiece()` function can be either a url or local file path, and must be surrounded by quotes as shown  
   * After importing a piece from a url or local path, the piece's successful import can be confirmed by printing out its metadata:   
 `print(piece.metadata)`  
 
@@ -12,10 +12,20 @@
 
   * The CRIM Interval library also allows the user to import multiple pieces at once through the `CorpusBase()` function  
   * This function operates similarly to the `importPiece()` function, but accepts a list of piece urls or paths instead of a single one  
-  * Note that the function must be formatted as follows, including [brackets] to indicate that the input is a list, and including a /slash at the beginning of any local path. Otherwise, the local path will be read as an online url, and the piece will not be found.  
+  * Note that the function must be formatted as follows, including quotes surrounding each name, [brackets] to indicate that the input is a list, commas in between each item in the list, and a /slash at the beginning of any local path. Otherwise, the local path will be read as an online url, and the piece will not be found.  
 `corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', '/path/to/mei/file1.mei', '/path/to/mei/file2.mei'])`  
   * The CRIM Interval functions will allow the same examinations of a group of pieces as they would of a single piece  
 
+## Operations applied to pieces
+  * Once one or more pieces have been imported, they can be examined and analyzed through a wide variety of different functions. Most of these functions follows one of a few common formats:  
+`pieceName.func()`  
+OR  
+`peiceName.func(p1)`  
+OR  
+`pieceName.func(param_1 = p1, param_2 = p2, ... param_X = pX)`  
+  * If the function does not require any parameter inputs, or you do not wish to modify any of the function's default parameters, the parentheses may be left blank, but must still be included. Ommitting any parameter from a function will apply the function's default setting for that parameter  
+  * The specific details of how to format the function will be dependent on the function. The function's documentation can be read to view the details associated with how to apply a given function.  
+ 
 ## Help and Documentation
 
   * The documentation associated with each function can be read with a line of the following sample format:  

@@ -19,13 +19,13 @@ Some methods in **CRIM Intervals** also work with **CRIM Project** data created 
 CRIM intervals is now available in a series of interactive **Jupyter** notebooks easily launched via **Binder** at https://github.com/RichardFreedman/CRIM_Public_Notebooks.  These can in turn be downloaded and adapted for your own use.
 
 ## Sections in this guide
-  * [01_Item](link.to.item)
-  * [02_Item](link.to.item)
-  * [03_Item](link.to.item)
-  * [04_Item](link.to.item)
-  * [05_Item](link.to.item)
-  * [06_Item](link.to.item)
-  * [07_Item](link.to.item)
+  * [01_Introduction](link.to.item)
+  * [02_NotesAndRests](link.to.item)
+  * [03_MelodicIntervals](link.to.item)
+  * [04_HarmonicIntervals](link.to.item)
+  * [05_Lyrics](link.to.item)
+  * [06_Durations](link.to.item)
+  * [07_N-grams](link.to.item)
   * [08_Item](link.to.item)
   * [09_Item](link.to.item)
   * [10_Item](link.to.item)

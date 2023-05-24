@@ -94,7 +94,7 @@ First, let's create a variable to represent the dataframe for our piece:
   * Parameter `ascending` (default = True) can be changed to False  
   * Parameter `by` must be set as equal to the name of the column by which the table will be sorted. For example, to sort the entire table such that the first column appears in descending order, set `by = df.columns[0]` and `ascending = False` as shown above. The value for `by` can be set with either `df.columns[index_value]` or the actual text of the column's name itself. `index_value` may be any number from 0 to the number of voices in the table - 1, corresponding to the first and last voice in the piece, respectively. To index from the last voice rather than the first, use -1 as the last index, -2 as the second to last index, etc.  
 
-  ### Sorting pitches  
+  ### Sorting and graphing pitches  
 
   We Previously saw how to sort the columns by the **counts** of the pitches in a particular voice.  
   But we can also declare a **sort order** for the pitches themselves, then organize the entire data frame in that sequence.  This will show the voice ranges of each part.  
@@ -108,6 +108,16 @@ First, let's create a variable to represent the dataframe for our piece:
                'C4', 'C#4','D4', 'E-4', 'E4', 'F4', 'F#4','G4', 'A4', 'B-4', 'B4',
                'C5', 'C#5','D5', 'E-5','E5', 'F5', 'F#5', 'G5', 'A5', 'B-5', 'B5']`  
 
+`df = piece.notes().fillna('-')  
+df = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
+df.rename(columns = {'index':'pitch'}, inplace = True)  
+df['pitch'] = pd.Categorial(df["pitch"], categories = pitch_order)  
+df = df.sort_values(by = "pitch").dropna().copy()`  
+
+  * Now, running `df` will print a dataframe where every row is a pitch, sorted in ascending order, and each column represents a voice part. Each element of the table itself is the number of times the voice in its column sounded the pitch in its row.  
+  * Various python libraries exist to help create graphs and charts. We can ue Matplot to create a historgram of the of how many times each voice sounded each pitch:  
+
+`%matplotlib inline`  
 
 
 -----

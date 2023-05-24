@@ -1,19 +1,37 @@
 # Introduction
 
-## Importing pieces
+## Importing a piece
 
-### Import a Single Piece and Check Metadata for Title and Composer
-
-  * Importing a piece is done by combining a prefix for the location of the piece with the file name of the piece itself
-  * To import from either a local folder or the CRIM website, choose between the following prefixes, respectively  
-`prefix = 'Music_Files/'`  
-`prefix = 'https://crimproject.org/mei/'`  
-  * Then, add the name of the file itself:  
-`mei_file = 'CRIM_Model_0032.mei'`  
-  * Finally, combine these fields, import the resulting link, and (optionally) confirm the piece's successful import by printing out its metadata:  
-`url = prefix + mei_file`  
-`piece = importScore(url)`  
+  * CRIM Intervals begins by importing one or more MEI, MusicXML, or MIDI Files. This can be done directly, as shown:  
+`piece = importPiece('https://crimproject.org/mei/CRIM_Model_0008.mei')`
+  * The field within the `importPiece()` function can be either a url or local file path  
+  * Finally, combine these fields, After importing the resulting link, the piece's successful import can be confirmed by printing out its metadata:   
 `print(piece.metadata)`  
+
+## Importing multiple pieces at once
+
+  * The CRIM Interval library also allows the user to import multiple pieces at once through the `CorpusBase()` function  
+  * This function operates similarly to the `importPiece()` function, but accepts a list of piece urls or paths instead of a single one  
+  * Note that the function must be formatted as follows, including [brackets] to indicate that the input is a list, and including a / at the beginning of any local path. Otherwise, the local path will be read as an online url, and the piece will not be found.  
+`corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', '/path/to/mei/file1.mei', '/path/to/mei/file2.mei'])`
+
+# Credits and Intellectual Property Statement
+
+CRIM Intervals contributors include:
+
+- Andrew Janco (Haverford College)
+- Freddie Gould (Haverford College)
+- Trang Dang (Bryn Mawr College)
+- Alexander Morgan (McGill University)
+- Daniel Russo-Batterham (Melbourne University)
+- Richard Freedman (Haverford College)
+
+CRIM Intervals is made possible generous support from:
+
+- Haverford College
+- The American Council of Learned Societies
+
+All CRIM intervals tools are available via a **Creative Commons** license (Attribution-ShareAlike 4.0 International (CC BY-SA 4.0):  https://creativecommons.org/licenses/by-sa/4.0/.
 
 -----
 

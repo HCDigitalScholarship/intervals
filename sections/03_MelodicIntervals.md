@@ -68,8 +68,8 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 
   * Optionally, the `df` parameter of the `melodic()` function can be substituted with any DataFrame you wish to find the melodic interval of. The parameter's default `None` value will simply run the function on itself.  
 
-`piece.melodic()`: Default  
-`piece.meldoci(df = NameOfOtherDataFrame)`: Optional replacement  
+`piece.melodic()` (Default)  
+`piece.melodic(df = NameOfOtherDataFrame)` (Optional replacement)  
 
 ## Counting and Sorting Intervals  
 

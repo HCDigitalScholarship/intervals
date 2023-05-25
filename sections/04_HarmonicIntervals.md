@@ -11,7 +11,7 @@
 
 ### kind (str)
 
-***These parameters are identical to those used in [the `melodic()` function](03_MelodicIntervals.md#kind-str)***  
+***These parameters are identical to those used in [the `melodic()` function](03_MelodicIntervals.md#kind-str):***  
 The `harmonic()` function contains a parameter `kind`, which has a default value of "q". These inputs are case sensitive.  
   * `kind = "q"`: Diatonic with qualities. These qualities are outputs such as "P8" for a perfect octave (e.g. C4 -> C5), "M3" for a major third interval (e.g. C5 -> E5), and "m3" for minor third interval (e.g. C5 -> E-5).
   * `kind = "d"`: Diatonic without qualities. Provides outputs such as "8" for an octave, and "3" for a third interval.  
@@ -26,6 +26,13 @@ The `harmonic()` function contains a parameter `kind`, which has a default value
 
   * The default `True` value of this paramter indicates that compound intervals (intervals spanning more than an octave) should be analyzed without this consideration. For example an interval from C4 to D5 would be treated as a diatonic interval of 1, or chromatic interval of 2. By setting this paramter to `False`, this same interval would instead be considerd a diatonic interval of 8, or chromatic interval of 14.
 
+## `fillna()` and `dropna()` Functions  
+
+  * We have previously seen the `fillna()` function which, when applied to a DataFrame, replaces all "NaN" objects with the chosen text. For example:  
+
+`piece.harmonic().fillna('-')`  
+
+  * We are also able to apply the `dropna()` function, which simply removes all rows (or beats) from the table where there are no 
 
 -----
 

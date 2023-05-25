@@ -31,12 +31,13 @@ Or, more directly:
 ## combineRests
 
   * The combineRests parameter operates similarly to the combineUnisons parameter, where any rests in the piece that does not preceed the first non-rest note are combined with neighboring rests, such as three whole rest measures in a row.
-  * By default, the combineRests parameter of the `notes()` function is set to True, and can similarly be toggled by the following code:  
+  * By default, the combineRests parameter of the `notes()` function is set to True, and can be controlled similarly to the `combineUnison` parameter by the following code:  
 
 `piece.notes(combineRests = True/False)`  
 Or, once again,
 `piece_seperate_rests = piece.notes(combineRests = False)`  
 `piece_seperate_rests.head(20)`  
+  
 Additionally, the `combineRests()` and `combineUnisons()` parameters may be changed simultaneously as follows:  
 `piece.notes(combineRests = False, combineUnisons = True).head(20)`  
 

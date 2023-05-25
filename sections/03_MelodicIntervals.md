@@ -4,12 +4,13 @@
 
 ## The `melodic()` Function  
 
-  * One of the most important tools for determining the similarity between pieces --the primary purpose of the CRIM Intervals library-- is the ability to determine the distance between subsequent notes. These distances form patterns, which can be searched for either wihin a piece, or accross multiple different pieces to notice similarities in their melodies. The `melodic()` function is used as follows:  
+  * One of the most important tools for determining the similarity between pieces --the primary purpose of the CRIM Intervals library-- is the ability to determine the distance between subsequent pitches in a piece, or melodic intervals. These melodic intervals form patterns, which can be searched for either wihin a piece or across multiple different pieces to notice similarities in their melodies. The `melodic()` function is used as follows:  
 
-`piece.melodic()`  
+`piece.melodic()` 
+`piece.melodic(kind = "d")` 
 
   * The `melodic()` function contains a parameter `kind`, which has a default value of "q"  
-    * 
+    * `kind = "q"`: diatonic with qualities. These qualities are outputs such as "P8" for a perfect octave (e.g. C4 -> C5), "M3" for a major third interval (e.g. C5 -> E5), and "m3" for minor third interval (e.g. C5 -> E-5).
 
 
 -----

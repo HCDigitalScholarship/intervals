@@ -26,7 +26,7 @@
 Or, more directly:  
 `piece.notes(combineUnisons = True).head(20)`  
 
-  * Beyond applications of the CRIM Intervals library, it is often more efficient in code to declare a variable with one funcition, and perform other functions on that variable, rather than performing multiple functions simultaneously. This will prevent unnecessary repetitions of the same statement, saving memory as well as time.
+  * Beyond applications of the CRIM Intervals library, it is often more efficient in code to declare a variable, and then perform functions on that variable, rather than performing multiple functions simultaneously. This will prevent unnecessary repetitions of the same statement, saving memory as well as time.
 
 ## combineRests
 

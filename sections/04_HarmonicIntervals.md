@@ -11,7 +11,7 @@
 
 ### `kind` (str)
 
-***These parameters are identical to those used in [the `melodic()` function](03_MelodicIntervals.md#kind-str)***
+***These parameters are identical to those used in [the `melodic()` function](03_MelodicIntervals.md#kind-str)***  
 The `harmonic()` function contains a parameter `kind`, which has a default value of "q". These inputs are case sensitive.  
   * `kind = "q"`: Diatonic with qualities. These qualities are outputs such as "P8" for a perfect octave (e.g. C4 -> C5), "M3" for a major third interval (e.g. C5 -> E5), and "m3" for minor third interval (e.g. C5 -> E-5).
   * `kind = "d"`: Diatonic without qualities. Provides outputs such as "8" for an octave, and "3" for a third interval.  

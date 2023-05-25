@@ -19,6 +19,7 @@ Some methods in **CRIM Intervals** also work with **CRIM Project** data created 
 CRIM intervals is now available in a series of interactive **Jupyter** notebooks:  [https://github.com/RichardFreedman/CRIM_Public_Notebooks](https://github.com/RichardFreedman/CRIM_JHUB).  These can in turn be downloaded and adapted for your own use.
 
 ## Sections in this guide
+
   * [01_Introduction](sections/01_Introduction.md)
   * [02_NotesAndRests](sections/02_NotesAndRests.md)
   * [03_MelodicIntervals](sections/03_MelodicIntervals.md)

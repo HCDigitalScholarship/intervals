@@ -131,7 +131,7 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 > for key, value in md.items():  
 >    print(key, ':', value)  
 
-Color palette options:  
+Graph options:  
 > palette = sns.husl_palette(len(voices), l=.4)  
 > sns.set(rc={'figure.figsize':(15,9)})  
 > mel.set_index('interval').plot(kind='bar', stacked=True)

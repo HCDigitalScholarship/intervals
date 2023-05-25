@@ -9,7 +9,7 @@
 `piece.harmonic()`  
 `piece.harmonic(kind = "d")` 
 
-### `kind` (str)
+### kind (str)
 
 ***These parameters are identical to those used in [the `melodic()` function](03_MelodicIntervals.md#kind-str)***  
 The `harmonic()` function contains a parameter `kind`, which has a default value of "q". These inputs are case sensitive.  
@@ -18,7 +18,7 @@ The `harmonic()` function contains a parameter `kind`, which has a default value
   * `kind = "c"`: Chromatic. Simply the difference in pitch including all intermediary notes. Outputs "12" for an octave interval (e.g. C4 -> C5), "6" for a tritone interval (e.g. C5 -> F#5), and "0" for a unison (e.g. C5 -> C5).
   * `kind = "z"`: Zero-based. Diatonic intervals, begins counting at 0 rather than 1. Outputs "7" for a perfect octave interval up (e.g. D3 -> D4), "-4" for a fifth interval down (e.g. F5 -> A5), "2" for a third interval up (e.g. G4 -> B5).  
 
-### `compound` (bool)  
+### compound (bool)  
 
   * The `melodic()` function contains a parameter `compound`, with a default value of `True`, and can be modified as follows:  
 

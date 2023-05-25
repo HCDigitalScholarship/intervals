@@ -9,7 +9,7 @@
 `piece.melodic()` 
 `piece.melodic(kind = "d")` 
 
-### `kind`
+### `kind` (str)
 
 The `melodic()` function contains a parameter `kind`, which has a default value of "q". These inputs are case sensitive.  
   * `kind = "q"`: Diatonic with qualities. These qualities are outputs such as "P8" for a perfect octave (e.g. C4 -> C5), "M3" for a major third interval (e.g. C5 -> E5), and "m3" for minor third interval (e.g. C5 -> E-5).
@@ -17,7 +17,7 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
   * `kind = "c"`: Chromatic. Simply the difference in pitch including all intermediary notes. Outputs "12" for an octave interval (e.g. C4 -> C5), "6" for a tritone interval (e.g. C5 -> F#5), and "0" for a unison (e.g. C5 -> C5).
   * `kind = "z"`: Zero-based. Diatonic intervals, begins counting at 0 rather than 1. Outputs "7" for a perfect octave interval up (e.g. D3 -> D4), "-4" for a fifth interval down (e.g. F5 -> A5), "2" for a third interval up (e.g. G4 -> B5).  
 
-### `compound`  
+### `compound` (bool)  
 
   * The `melodic()` function contains a parameter `compound`, with a default value of `True`, and can be modified as follows:  
 
@@ -25,23 +25,23 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 
   * The default `True` value of this paramter indicates that compound intervals (intervals spanning more than an octave) should be analyzed without this consideration. For example an interval from C4 to D5 would be treated as a diatonic interval of 1, or chromatic interval of 2. By setting this paramter to `False`, this same interval would instead be considerd a diatonic interval of 8, or chromatic interval of 14.
 
-### `combineUnisons`  
+### `combineUnisons` (bool)  
 
   * Similarly to the `notes()` functions, the `melodic()` function contains an identical `combineUnisons` parameter, with a default value of `False`. Rather than treating unisons as diatonic intervals of 1, or zero-based intervals of 0, setting this paramter to `True` will prevent the unison from being recognized as any interval at all, simply treated as if it was one longer note held for a duration equal to the sum of each invidual note or notes.
   * These parameters can be controlled simultaneously as follows (as per previous examples, and general python syntax):  
 
 `piece.melodic(compound = False, combineUnisons = True)`  
 
-### `unit`  
+### `unit` (int)  
 
   * The `melodic()` function contains a parameter `unit`, with a default value of 0. This parameter determines the offset interval in  the leftmost column of the table. With a value of either 0 (the default value) or 4, the table will print the melodic interval of every fourth beat in the piece (regularized to whole note). Note that changing this value does not change the time over which an interval is found, which will always be from one beat of the piece to the next, even if the table skips the intermediary beats. For example, printing a table in which there are three intervals of "1" in a row, but ommitting the middle interval, will still provide intervals of 1, rather than finding the melodic interval from the beat to the third, even though the interval between the rows of the table would now actually be "2."  
   * The following line of code would print a table such that a line is printed for the melodic intervals found every other beat (every two quarter notes):  
 
 `piece.melodic(unit = "2")`  
 
-### `directed`  
+### `directed` (bool)  
 
-  * The `melodic()` function contains a parameter `directed`, with a default value of True. When this is set to `True`, intervals are indicated to move up or down as follows:  
+  * The `melodic()` function contains a parameter `directed`, with a default value of True. This parameter indicates whether or not intervals return if the movement was up or down as follows:  
 
 `piece.melodic(directed = True)`  
 > [C5 -> G5] returns diatonic interval of "4"  
@@ -51,7 +51,25 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 > [C5 -> G5] returns diatonic interval of "4"  
 > [G5 -> C5] returns diatonic interval of "4"  
 
+### `end` (bool)  
 
+  * The `melodic()` function contains a parameter `end`, with a default value of True. This parameter indicates if a melodic interval is associated with the first or second note in its interval.  
+  * When set to `True`, intervals are associated with their second note. For example:  
+
+`piece.melodic(end = True)` (default) with a C5 on beat 1 and a D5 on beat 2  
+> returns diatonic interval of 1, or chromatic interval of 2, on **beat 2**  
+
+`piece.melodic(end = False)` with a C5 on beat 1 and a D5 on beat 2  
+> returns diatonic interval of 1, or chromatic interval of 2, on **beat 1**  
+
+### `df` (DataFrame)  
+
+  * Optionally, the `df` parameter of the `melodic()` function can be substituted with any DataFrame you wish to find the melodic interval of. The parameter's default `None` value will simply run the function on itself.  
+
+`piece.melodic()`: Default  
+`piece.meldoci(df = NameOfOtherDataFrame)`: Optional replacement  
+
+## Counting and Sorting Intervals  
 
 
 -----

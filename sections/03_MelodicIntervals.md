@@ -9,7 +9,9 @@
 `piece.melodic()` 
 `piece.melodic(kind = "d")` 
 
-The `melodic()` function contains a parameter `kind`, which has a default value of "q"  
+### `kind`
+
+The `melodic()` function contains a parameter `kind`, which has a default value of "q". These inputs are case sensitive.  
   * `kind = "q"`: Diatonic with qualities. These qualities are outputs such as "P8" for a perfect octave (e.g. C4 -> C5), "M3" for a major third interval (e.g. C5 -> E5), and "m3" for minor third interval (e.g. C5 -> E-5).
   * `kind = "d"`: Diatonic without qualities. Provides outputs such as "8" for an octave, and "3" for a third interval.  
   * `kind = "c"`: Chromatic. Simply the difference in pitch including all intermediary notes. Outputs "12" for an octave interval (e.g. C4 -> C5), "6" for a tritone interval (e.g. C5 -> F#5), and "0" for a unison (e.g. C5 -> C5).
@@ -36,6 +38,20 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
   * The following line of code would print a table such that a line is printed for the melodic intervals found every other beat (every two quarter notes):  
 
 `piece.melodic(unit = "2")`  
+
+### `directed`  
+
+  * The `melodic()` function contains a parameter `directed`, with a default value of True. When this is set to `True`, intervals are indicated to move up or down as follows:  
+
+`piece.melodic(directed = True)`  
+> [C5 -> G5] returns diatonic interval of "4"  
+> [G5 -> C5] returns diatonic interval of "-4"  
+
+`piece.melodic(directed = False)`  
+> [C5 -> G5] returns diatonic interval of "4"  
+> [G5 -> C5] returns diatonic interval of "4"  
+
+
 
 
 -----

@@ -14,7 +14,7 @@
 
 ## combineUnisons
 
-  * A unison is when a new note is sounded, but the pitch remains the same (e.g. a half note C5 followed by a quarter note C5). the `notes()` function contains a parameter called combineUnisons, which defaults to False.  
+  * A unison is when a new note is sounded, but the pitch remains the same (e.g. a C5 half note followed by a C5 quarter note). the `notes()` function contains a parameter called combineUnisons, which defaults to False.  
   * When combineUnisons is set to true, any unisons will be treated as a continuation of the previous note, effectively adding a tie between those notes. As a result, the table output of the `notes()` function will not printing anything at the offset of the given note's repition.  
   * The combineUnisons parameter may be run as follows:  
 
@@ -30,7 +30,7 @@ Or, more directly:
 
 ## combineRests
 
-  * The combineRests parameter operates similarly to the combineUnisons parameter, where any rests in the piece that does not preceed the first non-rest note are combined with neighboring rests, such as three whole rest measures in a row.
+  * The combineRests parameter operates similarly to the combineUnisons parameter, where any rests in the piece that does not preceed the first non-rest note are combined with neighboring rests (e.g. three whole rest measures in a row).
   * By default, the combineRests parameter of the `notes()` function is set to True, and can be controlled similarly to the `combineUnison` parameter by the following code:  
 
 `piece.notes(combineRests = True/False)`  
@@ -43,53 +43,59 @@ Additionally, the `combineRests()` and `combineUnisons()` parameters may be chan
 
 ## Removing "NaN"
 
-  * If a note changes in one voice but not another, then a row will be created in the table only partially filled. This is because while the table will attempt to populate the change in note for all voices, but subsequent beats of a note or rest (for example, beats 2, 3, and 4 of a whole rest) do not appear for the note or rest's entire duration, only at its first instance.
-  * These empty slots, which we now see as representing some note or rest being held, are therefore printed as "NaN", which stands for "Not a Number"
+  * If a note changes in one voice but not another, then a row will be created in the table only partially filled. This is because  the table will attempt to populate a change in note for all of the voices in the piece, but subsequent beats of a note or rest (e.g. beats 2, 3, and 4 of a whole rest) do not appear, only the first instance of the note's creation does.
+  * These empty slots, which we now understand to represent a note or rest being *held* rather than ommitted are therefore printed as "NaN", which stands for "Not a Number", since the code is unable to find a value for the "missing" note.
   * To decrease the visual clutter of the table, these "NaN" outputs can be replaced with the `fillna()` function, which is used as follows:  
 
 `piece.notes().fillna('')`
 
-  * The `fillna()` function accepts a parameter which, in quotes, represents the text which will replace the "NaN" elements of the `notes()` output table. This field may contain empty quotes, as shown above, or another symbol such as '-':  
+  * The `fillna()` function accepts a parameter for the text which will replace the "NaN" elements of the `notes()` output table. This field may contain empty quotes, as shown above, or another symbol such as '-':  
 
 `piece.notes().fillna('-')`  
 
-  * Once again, the amount of rows shown by this function can be controlled by adding a `.head()` function to the line, which may be placed either before or after the `fillna('')` function. For example, both of the following lines will each output the first 20 lines of the give piece, with all "NaN" elements replace by a dash:  
+  * Note that the parameter of the `fillna()` function is not necessarily a text, as any valid data could be provided, such as an integer value in place of the text field. Later, we will see how it can be useful to perform the function as written below, but in many cases, it is simply most optimal to pass either an empty quote string, a dash, or some other discrete symbol to the `fillna()` function for the benefit of a human reader.  
+
+`piece.notes().fillna(0)`  
+
+  * Once again, the amount of rows shown by this function can be modified by adding a `.head()` function to the line, which may be placed either before or after the `fillna('')` function. For example, both of the following lines will each output the first 20 lines of the give piece, with all "NaN" elements replace by a dash:  
 
 `piece.notes().fillna('-').head(20)`  
 `piece.notes.head(20).fillna('-')`  
+
+  * Note that this property is not true of all functions depending on their properties, so take care to order functions correctly when applying multiple functions to an object simultaneously.  
 
 ## Counting, Sorting, and Graphing Notes
 
   * Since the output of the `notes()` function is in the form of a pandas dataframe, all of the functions applicable to dataframes in general apply here as well. A cheat sheet of pandas dataframe functions can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). These operations include the following:  
 
 First, let's create a variable to represent the dataframe for our piece:  
-> `df = piece.notes()`  
+> df = piece.notes()  
 
 ### Count the number of rows in the dataframe (table)
 
-`df.count()`  
+> df.count()  
 
 ### Rename a column in the dataframe (table)
 
-`df.rename(columns = {'[Superious]':'Cantus'}, inplace = False)`
+> df.rename(columns = {'[Superious]':'Cantus'}, inplace = False)
 
   * More detail about `dataframe.rename()` can be [found here](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.rename.html?highlight=rename#pandas.DataFrame.rename).  
 
 ### Stack all columns on top of each other to get one list of all notes  
 
-`df.stack()`  
+> df.stack()  
 
 ### Stack all columns, and count unique tones in the piece  
 
-`df.stack().nunique()`  
+> df.stack().nunique()  
 
 ### Count the number of each note in each voice part  
 
-`df.apply(pd.Series.value_counts).fillna(0).astype(int)`  
+> df.apply(pd.Series.value_counts).fillna(0).astype(int)  
 
 ### Count the number of each note in a single voice part, sorted in descending order  
 
-`df.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by = df.columns[0], ascending = False)`  
+> df.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by = df.columns[0], ascending = False)  
 
 `sort_values()` can be modified as follows:  
   * Parameter `ascending` (default = True) can be changed to False  

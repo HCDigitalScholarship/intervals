@@ -21,12 +21,12 @@
 `piece.notes(combineUnisons = True)` OR `piece.notes(combineUnisons = False)` (Default)  
   * The `head()` function can be combined with `notes(combineUnisons = True/False)` as follows:  
 
-`whole_piece = piece.notes(combineUnisons = False)`  
+`whole_piece = piece.notes(combineUnisons = True)`  
 `whole_piece.head(20)`  
 Or, more directly:  
-`piece.notes(combineUnisons = False).head(20)`  
+`piece.notes(combineUnisons = True).head(20)`  
 
-  * Sometimes, declaring variables, such as in the first example, may be more useful, since it allows you to reference a specific condition of the piece more easily than adding `combineUnisons = True/False` to the function every time you want to reference that piece with those paremters. This type of variable declaration with specific parameters is useful in many instances not limited to applications of the CRIM Intervals library to increase your code's efficiency and prevent unnecessariily repeatedly declaring the same statement.
+  * Beyond applications of the CRIM Intervals library, it is often more efficient in code to declare a variable with one funcition, and perform other functions on that variable, rather than performing multiple functions simultaneously. This will prevent unnecessary repetitions of the same statement, saving memory as well as time.
 
 ## combineRests
 

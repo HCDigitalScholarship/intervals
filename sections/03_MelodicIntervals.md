@@ -11,7 +11,7 @@
 
 ## `melodic()` parameters  
 
-### kind (str)
+### kind (str): Diatonic vs. Chromatic intervals
 
 The `melodic()` function contains a parameter `kind`, which has a default value of "q". These inputs are case sensitive.  
   * `kind = "q"`: Diatonic with qualities. These qualities are outputs such as "P8" for a perfect octave (e.g. C4 -> C5), "M3" for a major third interval (e.g. C5 -> E5), and "m3" for minor third interval (e.g. C5 -> E-5).
@@ -34,7 +34,7 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 
 `piece.melodic(compound = False, combineUnisons = True)`  
 
-### unit (int)  
+### unit (int): ***FIXME***  
 
   * The `melodic()` function contains a parameter `unit`, with a default value of 0. This parameter determines the offset interval in  the leftmost column of the table. With a value of either 0 (the default value) or 4, the table will print the melodic interval of every fourth beat in the piece (regularized to whole note). Note that changing this value does not change the time over which an interval is found, which will always be from one beat of the piece to the next, even if the table skips the intermediary beats. For example, printing a table in which there are three intervals of "1" in a row, but ommitting the middle interval, will still provide intervals of 1, rather than finding the melodic interval from the beat to the third, even though the interval between the rows of the table would now actually be "2."  
   * The following line of code would print a table such that a line is printed for the melodic intervals found every other beat (every two quarter notes):  

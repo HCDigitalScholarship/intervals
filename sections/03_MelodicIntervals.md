@@ -85,7 +85,7 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 
 ### Rename columns in the DataFrame  
 
-> mel.rename(columns = {'[Superius]':'Cantus'})  
+> mel.rename(columns = {'[Superious]':'Cantus'})  
 
 ### Stack all the columns on top of each other to get one list of all the notes  
 
@@ -101,7 +101,7 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 
 ### Count and sort the intervals in a single voice part: 
 
-> mel.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values("[Superius]", ascending=False)  
+> mel.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values("[Superious]", ascending=False)  
 
   * Similarly to the note order created when [sorting pitches of notes](02_NotesAndRests.md#sorting-pitches), we can define an order of intervals as follows:  
 

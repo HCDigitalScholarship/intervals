@@ -5,7 +5,7 @@
 
 `piece.notes()`  
   * These notes will be printed in a table, where each new row represents the fact that any voice has changed its note. The left-most column is an index representing the offset of the change in note, where 0 represents the first note of the piece, and 1 unit of offset represents a single quarter note. Note that this index will not necessarily be regularly spaced.  
-  * Each column of the `notes()` table represents a different voice of the pieces, as indicatd by the headings of the table
+  * Each column of the `notes()` table represents a different voice of the pieces, as indicated by the headings of the table
   * By default, printing `piece.notes()` will print the first and last five rows of the table. That is, the first and last 5 points in the piece at which any voice changes in note.
   * To control how many rows are printed;  
 
@@ -16,8 +16,8 @@
 
 ## combineUnisons
 
-  * A unison is when a new note is sounded, but the pitch remains the same (e.g. a C5 half note followed by a C5 quarter note). the `notes()` function contains a parameter called combineUnisons, which defaults to False.  
-  * When combineUnisons is set to true, any unisons will be treated as a continuation of the previous note, effectively adding a tie between those notes. As a result, the table output of the `notes()` function will not printing anything at the offset of the given note's repition.  
+  * A unison is when a new note is sounded, but the pitch remains the same (e.g. a C5 half note followed by a C5 quarter note). the `notes()` function contains a parameter called `combineUnisons`, which defaults to False.  
+  * When `combineUnisons` is set to `True`, any unisons will be treated as a continuation of the previous note, effectively adding a tie between those notes. As a result, the table output of the `notes()` function will not printing anything at the offset of the given note's repition.  
   * The combineUnisons parameter may be run as follows:  
 
 `piece.notes(combineUnisons = True)` OR `piece.notes(combineUnisons = False)` (Default)  

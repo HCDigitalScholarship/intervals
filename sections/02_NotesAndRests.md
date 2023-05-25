@@ -16,8 +16,8 @@
 
 ## combineUnisons
 
-  * A unison is when a new note is sounded, but the pitch remains the same (e.g. a C5 half note followed by a C5 quarter note). the `notes()` function contains a parameter called `combineUnisons`, which defaults to False.  
-  * When `combineUnisons` is set to `True`, any unisons will be treated as a continuation of the previous note, effectively adding a tie between those notes. As a result, the table output of the `notes()` function will not printing anything at the offset of the given note's repition.  
+  * A unison is when a new note is sounded, but the pitch remains the same (e.g. a C5 half note followed by a C5 quarter note). the `notes()` function contains a parameter called `combineUnisons`, which defaults to `False`.  
+  * When `combineUnisons` is set to `True`, any unisons will be treated as a continuation of the previous note, effectively adding a tie between those notes. As a result, the table output of the `notes()` function will not printing anything at the offset of the given note's repititon.  
   * The combineUnisons parameter may be run as follows:  
 
 `piece.notes(combineUnisons = True)` OR `piece.notes(combineUnisons = False)` (Default)  
@@ -33,9 +33,9 @@ Or, more directly:
 ## combineRests
 
   * The combineRests parameter operates similarly to the combineUnisons parameter, where any rests in the piece that does not preceed the first non-rest note are combined with neighboring rests (e.g. three whole rest measures in a row).
-  * By default, the combineRests parameter of the `notes()` function is set to True, and can be controlled similarly to the `combineUnison` parameter by the following code:  
+  * By default, the combineRests parameter of the `notes()` function is set to `True`. Note that this is different from the default state of the `combineUnisons` parameter. This can be controlled similarly to the `combineUnison` parameter by the following code:  
 
-`piece.notes(combineRests = True/False)`  
+`piece.notes(combineRests = False)`  
 Or, once again,  
 `piece_seperate_rests = piece.notes(combineRests = False)`  
 `piece_seperate_rests.head(20)`  
@@ -64,7 +64,7 @@ Additionally, the `combineRests()` and `combineUnisons()` parameters may be chan
 `piece.notes().fillna('-').head(20)`  
 `piece.notes.head(20).fillna('-')`  
 
-  * Note that this property is not true of all functions depending on their properties, so take care to order functions correctly when applying multiple functions to an object simultaneously.  
+  * Note that this property is not true of all functions depending on their properties, so take care to order functions correctly when applying multiple functions to an object simultaneously. In general, it is good form to include the `head()` function as the last function in the line.  
 
 ## Counting, Sorting, and Graphing Notes
 

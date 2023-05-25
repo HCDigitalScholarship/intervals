@@ -66,20 +66,20 @@ Additionally, the `combineRests()` and `combineUnisons()` parameters may be chan
 
 ## Counting, Sorting, and Graphing Notes
 
-  * Since the output of the `notes()` function is in the form of a pandas dataframe, all of the functions applicable to dataframes in general apply here as well. A cheat sheet of pandas dataframe functions can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). These operations include the following:  
+  * Since the output of the `notes()` function is in the form of a pandas DataFrame, all of the functions applicable to DataFrames in general apply here as well. A cheat sheet of pandas DataFrame functions can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). These operations include the following:  
 
-First, let's create a variable to represent the dataframe for our piece:  
+First, let's create a variable to represent the DataFrame for our piece:  
 > df = piece.notes()  
 
-### Count the number of rows in the dataframe (table)
+### Count the number of rows in the DataFrame (table)
 
 > df.count()  
 
-### Rename a column in the dataframe (table)
+### Rename a column in the DataFrame (table)
 
 > df.rename(columns = {'[Superious]':'Cantus'}, inplace = False)
 
-  * More detail about `dataframe.rename()` can be [found here](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.rename.html?highlight=rename#pandas.DataFrame.rename).  
+  * More detail about `DataFrame.rename()` can be [found here](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.rename.html?highlight=rename#pandas.DataFrame.rename).  
 
 ### Stack all columns on top of each other to get one list of all notes  
 
@@ -121,7 +121,7 @@ We first create a list of the pitches in order (from low to high, in this case).
 `df['pitch'] = pd.Categorial(df["pitch"], categories = pitch_order)`  
 `df = df.sort_values(by = "pitch").dropna().copy()`  
 
-  * Now, running `df` will print a dataframe where every row is a pitch, sorted in ascending order, and each column represents a voice part. Each element of the table itself is the number of times the voice in its column sounded the pitch in its row.  
+  * Now, running `df` will print a DataFrame where every row is a pitch, sorted in ascending order, and each column represents a voice part. Each element of the table itself is the number of times the voice in its column sounded the pitch in its row.  
 
 
 ### Graphing pitches  

@@ -7,7 +7,9 @@
   * Harmony is one of the most important elements of music, and of musical similarity. By searching for patterns where pieces utilize certain harmonic intervals, we are able to find points of similarity within and between different pieces. The `harmonic()` function is used as follows:  
 
 `piece.harmonic()`  
-`piece.harmonic(kind = "d")` 
+`piece.harmonic(kind = "d")`  
+
+## `harmonic()` parameters  
 
 ### kind (str)
 

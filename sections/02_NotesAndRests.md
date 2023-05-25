@@ -10,7 +10,9 @@
   * To control how many rows are printed;  
 
 `piece.notes().head(20)` will print only the first 20 rows of the table, while  
-`piece.notes().tail(20)` will print only the last 20 rows of the table.
+`piece.notes().tail(20)` will print only the last 20 rows of the table.  
+
+## `notes()` parameters  
 
 ## combineUnisons
 

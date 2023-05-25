@@ -71,6 +71,71 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 
 ## Counting and Sorting Intervals  
 
+  * These operations utilize the same functions as counting and sorting notes, since both cases simply require manipulating pandas DataFrame objects. A cheat sheet of pandas DataFrame operations can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). For these examples, we can define a variable as our melodic interval data frame:  
+
+`mel = piece.melodic()`  
+
+### Count the number of rows/find the size of the DataFrame  
+
+  * This value will be equal to the number of beats in the piece  
+
+> mel.count()  
+
+### Rename columns in the DataFrame  
+
+> mel.rename(columns = {'[Superius]':'Cantus'})  
+
+### Stack all the columns on top of each other to get one list of all the notes  
+
+> mel.stack()  
+
+### Stack and count the number of unique values (which will tell us how many different intervals appear in this piece)  
+
+> mel.stack().nunique()  
+
+### Count the number of times each interval appears in each part  
+
+> mel.apply(pd.Series.value_counts).fillna(0).astype(int)  
+
+### Count and sort the intervals in a single voice part: 
+
+> mel.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values("[Superius]", ascending=False)  
+
+  * Similarly to the note order created when [sorting pitches of notes](02_NotesAndRests.md#sorting-pitches), we can define an order of intervals as follows:  
+
+`int_order = ["P1", "m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "-m2", "-M2", "-m3", "-M3", "-P4", "-P5", "-m6", "-M6", "-m7", "-M7", "-P8"]`  
+
+  * This `int_order` can now be used to sort the intervals from smallest to largest, ascending to descending:  
+
+`mel = piece.melodic().fillna("-")`  
+`mel = mel.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()`  
+`mel.rename(columns = {'index':'interval'}, inplace = True)`  
+`mel['interval'] = pd.Categorical(mel["interval"], categories=int_order)`
+`mel = mel.sort_values(by = "interval").dropna().copy()`
+`mel.reset_index()`  
+
+## Charting intervals  
+
+  * Similarly to how we created a histogram of frequency of pitch usage per voice, we can use the Matplot library to create a chart of the frequence of interval usage:  
+
+> %matplotlib inline  
+> int_order = ["P1", "m2", "-m2", "M2", "-M2", "m3", "-m3", "M3", "-M3", "P4", "-P4", "P5", "-P5", "m6", "-m6", "M6", "-M6", "m7", "-m7", "M7", "-M7", "P8", "-P8"]  
+> mel = piece.melodic()  
+> mel = mel.fillna("-")  
+> mel = mel.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
+> mel.rename(columns = {'index':'interval'}, inplace = True)  
+> mel['interval'] = pd.Categorical(mel["interval"], categories=int_order)  
+> mel = mel.sort_values(by = "interval").dropna().copy()  
+> voices = mel.columns.to_list()  
+> md = piece.metadata  
+> for key, value in md.items():  
+>    print(key, ':', value)  
+
+Color palette options:  
+> palette = sns.husl_palette(len(voices), l=.4)
+> sns.set(rc={'figure.figsize':(15,9)})  
+> mel.set_index('interval').plot(kind='bar', stacked=True)
+
 
 -----
 

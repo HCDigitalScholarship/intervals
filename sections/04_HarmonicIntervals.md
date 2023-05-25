@@ -32,18 +32,21 @@ The `harmonic()` function contains a parameter `kind`, which has a default value
 
 `piece.harmonic().fillna('-')`  
 
-  * We are also able to apply the `dropna()` function, which simply removes all rows (or beats) from the table where there are no 
+  * We are also able to apply the `dropna()` function, which simply removes all rows (beats) from the table where no voices sound  
+
+`piece.harmonic().dropna()`  
 
 -----
 
 ## Sections in this guide
+
   * [01_Introduction](01_Introduction.md)
   * [02_NotesAndRests](02_NotesAndRests.md)
   * [03_MelodicIntervals](03_MelodicIntervals.md)
   * [04_HarmonicIntervals](04_HarmonicIntervals.md)
-  * [05_Lyrics](05_Lyrics.md)
+  * [05_Ngrams](05_Ngrams.md)
   * [06_Durations](06_Durations.md)
-  * [07_N-grams](07_Ngrams.md)
+  * [07_Lyrics](07_Lyrics.md)
   * [08_Time-Signatures](08_TimeSignatures.md)
   * [09_DetailIndex](09_DetailIndex.md)
   * [10_Cadences](10_Cadences.md)

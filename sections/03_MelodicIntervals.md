@@ -64,7 +64,7 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 `piece.melodic(end = False)` with a C5 on beat 1 and a D5 on beat 2  
 > returns diatonic interval of 1, or chromatic interval of 2, on **beat 1**  
 
-### df (DataFrame)  
+### df (DataFrame): ***Clarify: after finding offset range of some harmony as a DataFrame, return a DataFrame of its melody, for example***  
 
   * Optionally, the `df` parameter of the `melodic()` function can be substituted with any DataFrame you wish to find the melodic interval of. The parameter's default `None` value will simply run the function on itself.  
 

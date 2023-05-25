@@ -18,7 +18,7 @@
   * When combineUnisons is set to true, any unisons will be treated as a continuation of the previous note, effectively adding a tie between those notes. As a result, the table output of the `notes()` function will not printing anything at the offset of the given note's repition.  
   * The combineUnisons parameter may be run as follows:  
 
-`piece.notes(combineUnisons = True)` OR `piece.notes(combineUnisons = False)`  
+`piece.notes(combineUnisons = True)` OR `piece.notes(combineUnisons = False)` (Default)  
   * The `head()` function can be combined with `notes(combineUnisons = True/False)` as follows:  
 
 `whole_piece = piece.notes(combineUnisons = False)`  

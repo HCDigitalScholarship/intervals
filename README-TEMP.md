@@ -39,7 +39,7 @@ CRIM Intervals is made possible generous support from:
 
 All CRIM intervals tools are available via a **Creative Commons** license (Attribution-ShareAlike 4.0 International (CC BY-SA 4.0):  https://creativecommons.org/licenses/by-sa/4.0/.
 
-## Sections in this guide
+# Sections in this guide
 
   * [01_Introduction](sections/01_Introduction.md)
   * [02_NotesAndRests](sections/02_NotesAndRests.md)

@@ -29,8 +29,6 @@ Or alternatively,
 `mel = piece.melodic(kind = "c", compound = False)`  
 `ngrams = mel.ngrams(n = 5, offsets = "last")`  
 
-
-
 ### entries(): All N-grams or entries only?  
 
   * By default, the `ngrams()` function will find every single series of intervals of its given length, creating a moving window that will find not only the N-grams representing the beginnings of melody lines, but also those same N-grams starting from the second interval, and from the third, and so on. We can include only the N-grams beginning after a rest, section break, or fermata with the `entries()` function.  
@@ -44,6 +42,18 @@ Or alternatively,
   * Similarly to other functions previously discussed in this documentation, N-gram DataFrams can be cleaned up using the `dropna()` and `fillna()` functions to drop all rows filled with only "NaN" values, and replace the remaining "NaN" values with blank spaces so that the table may be read more easily:  
 
 `cleaned_entries = entries.dropna(how = "all").fillna(' ')`  
+
+## Counting N-grams  
+
+  * After using the `ngrams()` function to identify all of the N-grams in a piece, they can be counted and sorted by their frequency in the piece overall through some [general pandas functions](11_Pandas.md):  
+
+`mel = piece.melodic(kind = "c", compound = False)`  
+`melNgrams = mel.ngrams(n = 4)`  
+`melNgrams.stack().value_counts().to_frame()`  
+
+## Searching for melodic N-grams
+
+
 
 ## Measures and beats  
 

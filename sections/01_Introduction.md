@@ -29,6 +29,8 @@ OR
 
 ## Exporting  
 
+### Export to CSV:  
+
   * If you are running the Jupyter Hub version of this code, then there should be a folder provided called 'saved_csv'. This is where we will be exporting files, from which you can then download them to your computer.  
   * If you wish to export a CSV a piece's that has been generated as a DataFrame, you can do so with the following command line:  
 
@@ -42,6 +44,20 @@ OR
   * You could then save this model's melodic interval data to a CSV file with the file name 'CRIM_Model_0008.csv' by running the following:  
 
 `mel.to_csv('saved_csv/CRIM_Model_0008.csv')`  
+
+### Export to Excel:  
+
+  * Alternatively, a DataFrame can be saved as an Excel file with the following command lines in order, once again replacing 'file_name.xlsx' with your desired file name, replacing 'Sheet1' with your desired sheet name **(in quotes)**, and replacing 'frame_name' in the second line with the name of your DataFrame **(without quotes)**, which was be 'mel' in the last example:  
+
+`writer = pd.ExcelWriter('saved_csv/file_name.xlsx', engine='xlsxwriter')`  
+`frame_name.to_excel(writer, sheet_name='Sheet1')`  
+`writer.save()`  
+
+Substituting the information from the first example, we could write that same DataFrame to an Excel sheet with the following commands:  
+
+`writer = pd.ExcelWriter('saved_csv/CRIM_Model_0008.xlsx', engine = 'xlsxwriter')`  
+`mel.to_excel(writer, sheet_name = 'CRIM Model 0008')`  
+`writer.save()`  
  
 ## Help and Documentation
 

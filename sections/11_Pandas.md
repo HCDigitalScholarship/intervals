@@ -42,9 +42,6 @@ Executing the first line of code below will rename the column named '[Superious]
 
 `int_order = ["P1", "m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "-m2", "-M2", "-m3", "-M3", "-P4", "-P5", "-m6", "-M6", "-m7", "-M7", "-P8"]`  
 
-`this is  
-a test`
-
   * This `int_order` can now be used to sort the intervals from smallest to largest, ascending to descending:  
 
 `mel = piece.melodic().fillna("-")`  

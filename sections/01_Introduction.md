@@ -29,7 +29,19 @@ OR
 
 ## Exporting  
 
-***EXPORT GUIDE***
+  * If you are running the Jupyter Hub version of this code, then there should be a folder provided called 'saved_csv'. This is where we will be exporting files, from which you can then download them to your computer.  
+  * If you wish to export a CSV a piece's that has been generated as a DataFrame, you can do so with the following command line:  
+
+`notebook_data_frame_name.to_csv('saved_csv/your_file_title.csv')`  
+
+  * 'notebook_data_frame_name' should be replaced with the name of your DataFrame. For example, if you had ran the following lines;  
+
+`piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')`  
+`mel = piece.melodic()`  
+
+  * You could then save this model's melodic interval data to a CSV file with the file name 'CRIM_Model_0008.csv' by running the following:  
+
+`mel.to_csv('saved_csv/CRIM_Model_0008.csv')`  
  
 ## Help and Documentation
 

@@ -38,24 +38,6 @@ OR
   * This line would print out the documentation (`.__doc__`) associated with the function `notes()`, a function applicable to the object `piece`
   * Note that to print the documentation for a function, some object able to utilize that function must be used in the command line as shown above
 
-# Credits and Intellectual Property Statement
-
-CRIM Intervals contributors include:
-
-- Andrew Janco (Haverford College)
-- Freddie Gould (Haverford College)
-- Trang Dang (Bryn Mawr College)
-- Alexander Morgan (McGill University)
-- Daniel Russo-Batterham (Melbourne University)
-- Richard Freedman (Haverford College)
-
-CRIM Intervals is made possible generous support from:
-
-- Haverford College
-- The American Council of Learned Societies
-
-All CRIM intervals tools are available via a **Creative Commons** license (Attribution-ShareAlike 4.0 International (CC BY-SA 4.0):  https://creativecommons.org/licenses/by-sa/4.0/.
-
 -----
 
 ## Sections in this guide

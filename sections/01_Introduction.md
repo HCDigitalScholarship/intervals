@@ -18,11 +18,11 @@
 
 ## Operations applied to pieces
   * Once one or more pieces have been imported, they can be examined and analyzed through a wide variety of different functions. Most of these functions follows one of a few common formats:  
-`pieceName.func()`  
+`piece.func()`  
 OR  
-`pieceName.func(p1)`  
+`piece.func(parameter)`  
 OR  
-`pieceName.func(param_1 = p1, param_2 = p2, ... param_X = pX)`  
+`piece.func(param_1 = True, param_2 = "d" ...)`  
   * If the function does not require any parameter inputs, or you do not wish to modify any of the function's default parameters, the parentheses may be left blank, but must still be included. Ommitting any parameter from a function will apply the function's default setting for that parameter  
   * The specific details of how to format the function will be dependent on the function. The function's documentation can be read to view the details associated with how to apply a given function.  
  
@@ -65,4 +65,4 @@ All CRIM intervals tools are available via a **Creative Commons** license (Attri
   * [08_Time-Signatures](08_TimeSignatures.md)
   * [09_DetailIndex](09_DetailIndex.md)
   * [10_Cadences](10_Cadences.md)
-  * [11_Item](link.to.item)
+  * [11_Pandas](11_Pandas.md)

@@ -29,13 +29,16 @@ Or alternatively,
 `mel = piece.melodic(kind = "c", compound = False)`  
 `ngrams = mel.ngrams(n = -1)`  
 `entries = ngrams.entries()`  
-Additionally, we can clean up the resulting DataFrame by removing empty rows, such as those which would have previously contained submelodies of the entry melodies:  
+
+### Removing "NaN" values  
+
+  * Similarly to other functions previously discussed in this documentation, N-gram DataFrams can be cleaned up using the `dropna()` and `fillna()` functions to drop all rows filled with only "NaN" values, and replace the remaining "NaN" values with blank spaces so that the table may be read more easily:  
+
 `cleaned_entries = entries.dropna(how = "all").fillna(' ')`  
-`cleaned_entries`  
 
-### combineUnisons (bool)  
+### Measures and beats  
 
-  * 
+  * To display DataFrames relative to measures, and beats within measures, rather than offsets across the entire piece, we can use the `detailIndex()` function, which is [documented here](09_DetailIndex.md).  
 
 
 -----

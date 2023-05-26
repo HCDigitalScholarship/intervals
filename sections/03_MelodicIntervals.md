@@ -74,6 +74,10 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 `piece.melodic()` (Default)  
 `piece.melodic(df = NameOfOtherDataFrame)` (Optional replacement)  
 
+## Measures and beats  
+
+  * To display DataFrames relative to measures, and beats within measures, rather than offsets across the entire piece, we can use the `detailIndex()` function, which is [documented here](09_DetailIndex.md).  
+
 -----
 
 ## Sections in this guide

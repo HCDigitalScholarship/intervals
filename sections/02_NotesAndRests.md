@@ -66,6 +66,10 @@ Additionally, the `combineRests()` and `combineUnisons()` parameters may be chan
 
   * Note that this property is not true of all functions depending on their properties, so take care to order functions correctly when applying multiple functions to an object simultaneously. In general, it is good form to include the `head()` function as the last function in the line.  
 
+## Measures and beats  
+
+  * To display DataFrames relative to measures, and beats within measures, rather than offsets across the entire piece, we can use the `detailIndex()` function, which is [documented here](09_DetailIndex.md).  
+
 -----
 
 ## Sections in this guide

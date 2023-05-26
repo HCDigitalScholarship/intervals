@@ -34,14 +34,14 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 
 `piece.melodic(compound = False, combineUnisons = True)`  
 
-### unit (int): ***FIXME***  
+### unit (int): Modifying interval polling period ***FIXME***  
 
   * The `melodic()` function contains a parameter `unit`, with a default value of 0. This parameter determines the offset interval in  the leftmost column of the table. With a value of either 0 (the default value) or 4, the table will print the melodic interval of every fourth beat in the piece (regularized to whole note). Note that changing this value does not change the time over which an interval is found, which will always be from one beat of the piece to the next, even if the table skips the intermediary beats. For example, printing a table in which there are three intervals of "1" in a row, but ommitting the middle interval, will still provide intervals of 1, rather than finding the melodic interval from the beat to the third, even though the interval between the rows of the table would now actually be "2."  
   * The following line of code would print a table such that a line is printed for the melodic intervals found every other beat (every two quarter notes):  
 
 `piece.melodic(unit = "2")`  
 
-### directed (bool)  
+### directed (bool): Toggling indicators of intervals' directions  
 
   * The `melodic()` function contains a parameter `directed`, with a default value of True. This parameter indicates whether or not intervals return if the movement was up or down as follows:  
 
@@ -53,7 +53,7 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 > [C5 -> G5] returns diatonic interval of "4"  
 > [G5 -> C5] returns diatonic interval of "4"  
 
-### end (bool)  
+### end (bool): Placing intervals at beginning or ending timeframe  
 
   * The `melodic()` function contains a parameter `end`, with a default value of True. This parameter indicates if a melodic interval is associated with the first or second note in its interval.  
   * When set to `True`, intervals are associated with their second note. For example:  
@@ -64,80 +64,12 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 `piece.melodic(end = False)` with a C5 on beat 1 and a D5 on beat 2  
 > returns diatonic interval of 1, or chromatic interval of 2, on **beat 1**  
 
-### df (DataFrame): ***Clarify: after finding offset range of some harmony as a DataFrame, return a DataFrame of its melody, for example***  
+### df (DataFrame): Optional ***Clarify: after finding offset range of some harmony as a DataFrame, return a DataFrame of its melody, for example***  
 
   * Optionally, the `df` parameter of the `melodic()` function can be substituted with any DataFrame you wish to find the melodic interval of. The parameter's default `None` value will simply run the function on itself.  
 
 `piece.melodic()` (Default)  
 `piece.melodic(df = NameOfOtherDataFrame)` (Optional replacement)  
-
-## Counting and Sorting Intervals  
-
-  * These operations utilize the same functions as counting and sorting notes, since both cases simply require manipulating pandas DataFrame objects. A cheat sheet of pandas DataFrame operations can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). For these examples, we can define a variable as our melodic interval data frame:  
-
-`mel = piece.melodic()`  
-
-### Count the number of rows/find the size of the DataFrame  
-
-  * This value will be equal to the number of beats in the piece  
-
-> mel.count()  
-
-### Rename columns in the DataFrame  
-
-> mel.rename(columns = {'[Superious]':'Cantus'})  
-
-### Stack all the columns on top of each other to get one list of all the notes  
-
-> mel.stack()  
-
-### Stack and count the number of unique values (which will tell us how many different intervals appear in this piece)  
-
-> mel.stack().nunique()  
-
-### Count the number of times each interval appears in each part  
-
-> mel.apply(pd.Series.value_counts).fillna(0).astype(int)  
-
-### Count and sort the intervals in a single voice part: 
-
-> mel.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values("[Superious]", ascending=False)  
-
-  * Similarly to the note order created when [sorting pitches of notes](02_NotesAndRests.md#sorting-pitches), we can define an order of intervals as follows:  
-
-`int_order = ["P1", "m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "-m2", "-M2", "-m3", "-M3", "-P4", "-P5", "-m6", "-M6", "-m7", "-M7", "-P8"]`  
-
-  * This `int_order` can now be used to sort the intervals from smallest to largest, ascending to descending:  
-
-`mel = piece.melodic().fillna("-")`  
-`mel = mel.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()`  
-`mel.rename(columns = {'index':'interval'}, inplace = True)`  
-`mel['interval'] = pd.Categorical(mel["interval"], categories=int_order)`
-`mel = mel.sort_values(by = "interval").dropna().copy()`
-`mel.reset_index()`  
-
-## Charting intervals  
-
-  * Similarly to how we created a histogram of frequency of pitch usage per voice, we can use the Matplot library to create a chart of the frequence of interval usage:  
-
-> %matplotlib inline  
-> int_order = ["P1", "m2", "-m2", "M2", "-M2", "m3", "-m3", "M3", "-M3", "P4", "-P4", "P5", "-P5", "m6", "-m6", "M6", "-M6", "m7", "-m7", "M7", "-M7", "P8", "-P8"]  
-> mel = piece.melodic()  
-> mel = mel.fillna("-")  
-> mel = mel.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
-> mel.rename(columns = {'index':'interval'}, inplace = True)  
-> mel['interval'] = pd.Categorical(mel["interval"], categories=int_order)  
-> mel = mel.sort_values(by = "interval").dropna().copy()  
-> voices = mel.columns.to_list()  
-> md = piece.metadata  
-> for key, value in md.items():  
->    print(key, ':', value)  
-
-Graph options:  
-> palette = sns.husl_palette(len(voices), l=.4)  
-> sns.set(rc={'figure.figsize':(15,9)})  
-> mel.set_index('interval').plot(kind='bar', stacked=True)
-
 
 -----
 

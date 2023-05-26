@@ -25,21 +25,23 @@ The `melodic()` function contains a parameter `kind`, which has a default value 
 
 `piece.melodic(compound = False)`
 
-  * The default `True` value of this paramter indicates that compound intervals (intervals spanning more than an octave) should be analyzed without this consideration. For example an interval from C4 to D5 would be treated as a diatonic interval of 1, or chromatic interval of 2. By setting this paramter to `False`, this same interval would instead be considerd a diatonic interval of 8, or chromatic interval of 14.
+  * The default `True` value of this paramter indicates that compound intervals (intervals spanning more than an octave) should be analyzed as if the second note in the interval was its equivalent pitch within the octave of the first note. For example, by default an interval from C4 to D5 would be treated as a diatonic interval of 1, or chromatic interval of 2, since although the actual interval is greater than an octave, the pitch itself is simply C -> D. By setting this paramter to `False`, however, this same interval would instead be considerd a diatonic interval of 8, or chromatic interval of 14, reflecting the fact that the interval spans more than an octave. Note that intervals of exactly an octave will always reflect this distance regardless of how the `compound` parameter's value.
 
 ### combineUnisons (bool)  
 
-  * Similarly to the `notes()` functions, the `melodic()` function contains an identical `combineUnisons` parameter, with a default value of `False`. Rather than treating unisons as diatonic intervals of 1, or zero-based intervals of 0, setting this paramter to `True` will prevent the unison from being recognized as any interval at all, simply treated as if it was one longer note held for a duration equal to the sum of each invidual note or notes.
-  * These parameters can be controlled simultaneously as follows (as per previous examples, and general python syntax):  
+  * Similarly to the `notes()` functions, the `melodic()` function contains an identical `combineUnisons` parameter, with a default value of `False`. By default, the `notes()` function will interpret every note individally, even if it is the same pitch as the note immediately preceeding it. Rather than treating unisons as intervals, setting this paramter to `True` will prevent the unison from being recognized as any interval at all, simply treated as if it was one longer note held for a duration equal to the sum of the invidual notes.
+  * These two parameters can be controlled simultaneously as follows (as per previous examples, and general python syntax):  
 
 `piece.melodic(compound = False, combineUnisons = True)`  
 
-### unit (int): Modifying interval polling period ***FIXME***  
+### unit (int): Modifying interval polling period  
 
-  * The `melodic()` function contains a parameter `unit`, with a default value of 0. This parameter determines the offset interval in  the leftmost column of the table. With a value of either 0 (the default value) or 4, the table will print the melodic interval of every fourth beat in the piece (regularized to whole note). Note that changing this value does not change the time over which an interval is found, which will always be from one beat of the piece to the next, even if the table skips the intermediary beats. For example, printing a table in which there are three intervals of "1" in a row, but ommitting the middle interval, will still provide intervals of 1, rather than finding the melodic interval from the beat to the third, even though the interval between the rows of the table would now actually be "2."  
-  * The following line of code would print a table such that a line is printed for the melodic intervals found every other beat (every two quarter notes):  
+  * The `melodic()` function contains a parameter `unit`. This parameter determines how frequently a row of the DataFrame table is printed. When the value of the `unit` parameter is unspecified, it will default to a value of 0, which indicates that the table will generate a row for every time an interval is found, regardless of how frequently or infrequently this occurs, and regardless of whether or not intervals are found at regular or irregular offsets. This is the most efficient way to display all intervals of a piece.  
+  * Passing a value to this parameter, as shown in the line below, will instead enforce a regularly occuring polling period at which a line will generate the interval at a given offset. A value of 1 will generate a row for every offset, or every beat of a piece. A value of 2 will generate a row for every two offsets, or every other beat/every 2 beats of a piece.  
 
-`piece.melodic(unit = "2")`  
+`piece.melodic(unit = "4")`  
+
+  * Note that changing the value of the `unit` parameter will only change which rows of the DataFrame are displayed, but will not change the data contained in the table itself. A table generated with `unit = 4` will generate and print the intervals from beat 1 to beat 2, from beat 5 to beat 6, and so on. It will **NOT** find the interval from beat 1 to beat 4, from beat 5 to beat 8, and so on.  
 
 ### directed (bool): Toggling indicators of intervals' directions  
 

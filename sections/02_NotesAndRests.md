@@ -14,7 +14,7 @@
 
 ## `notes()` parameters  
 
-## combineUnisons
+### combineUnisons
 
   * A unison is when a new note is sounded, but the pitch remains the same (e.g. a C5 half note followed by a C5 quarter note). the `notes()` function contains a parameter called `combineUnisons`, which defaults to `False`.  
   * When `combineUnisons` is set to `True`, any unisons will be treated as a continuation of the previous note, effectively adding a tie between those notes. As a result, the table output of the `notes()` function will not printing anything at the offset of the given note's repititon.  
@@ -30,7 +30,7 @@ Or, more directly:
 
   * Beyond applications of the CRIM Intervals library, it is often more efficient in code to declare a variable, and then perform functions on that variable, rather than performing multiple functions simultaneously. This will prevent unnecessary repetitions of the same statement, saving memory as well as time.
 
-## combineRests
+### combineRests
 
   * The combineRests parameter operates similarly to the combineUnisons parameter, where any rests in the piece that does not preceed the first non-rest note are combined with neighboring rests (e.g. three whole rest measures in a row).
   * By default, the combineRests parameter of the `notes()` function is set to `True`. Note that this is different from the default state of the `combineUnisons` parameter. This can be controlled similarly to the `combineUnison` parameter by the following code:  
@@ -43,7 +43,7 @@ Or, once again,
 Additionally, the `combineRests()` and `combineUnisons()` parameters may be changed simultaneously as follows:  
 `piece.notes(combineRests = False, combineUnisons = True).head(20)`  
 
-## Removing "NaN"
+### Removing "NaN"
 
   * If a note changes in one voice but not another, then a row will be created in the table only partially filled. This is because  the table will attempt to populate a change in note for all of the voices in the piece, but subsequent beats of a note or rest (e.g. beats 2, 3, and 4 of a whole rest) do not appear, only the first instance of the note's creation does.
   * These empty slots, which we now understand to represent a note or rest being *held* rather than ommitted are therefore printed as "NaN", which stands for "Not a Number", since the code is unable to find a value for the "missing" note.

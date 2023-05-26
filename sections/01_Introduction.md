@@ -3,10 +3,11 @@
 ## Importing a piece
 
   * CRIM Intervals begins by importing one or more MEI, MusicXML, or MIDI Files. This can be done directly, as shown:  
-`piece = importPiece('https://crimproject.org/mei/CRIM_Model_0008.mei')`
-  * The field within the `importPiece()` function can be either a url or local file path, and must be surrounded by quotes as shown  
+`piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')`
+  * The field within the `importScore()` function can be either a url or local file path, and must be surrounded by quotes as shown  
   * After importing a piece from a url or local path, the piece's successful import can be confirmed by printing out its metadata:   
 `print(piece.metadata)`  
+  * By adding the parameter `verbose = True` to the `importScore()` function, the code will automatically provide information to the user as it runs about whether or not it was able to successfully import the given piece.  
 
 ## Importing multiple pieces at once
 
@@ -25,6 +26,10 @@ OR
 `piece.func(param_1 = True, param_2 = "d" ...)`  
   * If the function does not require any parameter inputs, or you do not wish to modify any of the function's default parameters, the parentheses may be left blank, but must still be included. Ommitting any parameter from a function will apply the function's default setting for that parameter  
   * The specific details of how to format the function will be dependent on the function. The function's documentation can be read to view the details associated with how to apply a given function.  
+
+## Exporting  
+
+***EXPORT GUIDE***
  
 ## Help and Documentation
 

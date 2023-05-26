@@ -6,7 +6,7 @@
 
   * One of the most important tools for determining the similarity between pieces --the primary purpose of the CRIM Intervals library-- is the ability to determine the distance between subsequent pitches in a piece, or melodic intervals. These melodic intervals form patterns, which can be searched for either wihin a piece or across multiple different pieces to notice similarities in their melodies. The `melodic()` function is used as follows:  
 
-`piece.melodic()` 
+`piece.melodic()`  
 `piece.melodic(kind = "d")`  
 
 ## `melodic()` parameters  

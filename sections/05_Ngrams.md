@@ -15,7 +15,28 @@ Or alternatively,
 
 ### n (int)  
 
-  * When gathering N-grams, we can either search for N-grams of a specific length, or simply collect intervals until a rest is reached.  
+  * When gathering N-grams, we can either search for N-grams of a specific length, or simply collect intervals until a rest is reached. By default, `n` is set to 3, so to find N-grams of 3 consecutive intervals, simply leave this parameter unspecificed and do not include it in the command line. Below is an example of a command line which will find all N-grams containing five consecutive intervals in the imported piece:  
+
+`mel = piece.melodic(kind = "c", compound = False)`
+`ngrams = mel.ngrams(n = 5)`  
+
+  * Additionally, to find N-grams of the maximum length until a rest is found, set `n = -1`. 
+
+### entries(): All N-grams or entries only?  
+
+  * By default, the `ngrams()` function will find every single series of intervals of its given length, creating a moving window that will find not only the N-grams representing the beginnings of melody lines, but also those same N-grams starting from the second interval, and from the third, and so on. We can include only the N-grams beginning after a rest, section break, or fermata with the `entries()` function.  
+
+`mel = piece.melodic(kind = "c", compound = False)`  
+`ngrams = mel.ngrams(n = -1)`  
+`entries = ngrams.entries()`  
+Additionally, we can clean up the resulting DataFrame by removing empty rows, such as those which would have previously contained submelodies of the entry melodies:  
+`cleaned_entries = entries.dropna(how = "all").fillna(' ')`  
+`cleaned_entries`  
+
+### combineUnisons (bool)  
+
+  * 
+
 
 -----
 

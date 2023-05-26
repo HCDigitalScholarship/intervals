@@ -16,15 +16,15 @@
 
 ### Rename columns in the DataFrame  
 
-Executing the following line of code will rename the column named '[Superious]' to 'Cantus'. More than one column name could be changed by adding more commands formatted as `'existingColumnName':'newColumnName'` within the curly brackets, separated by commas.  
+Executing the first line of code below will rename the column named '[Superious]' to 'Cantus'. More than one column name could be changed by adding more commands formatted as `'existingColumnName':'newColumnName'` within the curly brackets, separated by commas. Executing the second line of code below will rename the existing column named '[Superious]' to 'Canuts', and rename the existing column named 'Altus' to 'Alto'.  
 > mel.rename(columns = {'[Superious]':'Cantus'})  
-> mel.rename(columns = {'[Superious]':'Cantus', 'Altus':'This is now called Alto'})  
+> mel.rename(columns = {'[Superious]':'Cantus', 'Altus':'Alto'})  
 
-### Stack all the columns on top of each other to get one list of all the notes  
+### Stack all the columns on top of each other to get one list of all the notes. [Flattens table into a single column, but still differentiates based on voice]  
 
 > mel.stack()  
 
-### Stack and count the number of unique values (which will tell us how many different intervals appear in this piece)  
+### Stack and count the number of unique values (which will tell us how many different intervals appear in this piece accross all voices, since they are all now in a single column)  
 
 > mel.stack().nunique()  
 
@@ -41,6 +41,9 @@ Executing the following line of code will rename the column named '[Superious]' 
   * Similarly to the note order created when [sorting pitches of notes](02_NotesAndRests.md#sorting-pitches), we can define an order of intervals as follows:  
 
 `int_order = ["P1", "m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "-m2", "-M2", "-m3", "-M3", "-P4", "-P5", "-m6", "-M6", "-m7", "-M7", "-P8"]`  
+
+`this is  
+a test`
 
   * This `int_order` can now be used to sort the intervals from smallest to largest, ascending to descending:  
 

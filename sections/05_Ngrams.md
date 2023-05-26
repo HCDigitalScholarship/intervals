@@ -20,7 +20,16 @@ Or alternatively,
 `mel = piece.melodic(kind = "c", compound = False)`
 `ngrams = mel.ngrams(n = 5)`  
 
-  * Additionally, to find N-grams of the maximum length until a rest is found, set `n = -1`. 
+  * Additionally, to find N-grams of the maximum length until a rest is found, set `n = -1`.  
+
+### offsets (str): N-gram placement relative to first/last element  
+
+  * An N-gram can be placed within the DataFrame at one of two offsets. By default, the `offsets` parameter is set equal to `"first"`, which means that the N-gram will appear at the offset of the first note within it. Alternatively, setting the parameter to `"last"` will place it at the offset of its last note.  
+
+`mel = piece.melodic(kind = "c", compound = False)`  
+`ngrams = mel.ngrams(n = 5, offsets = "last")`  
+
+
 
 ### entries(): All N-grams or entries only?  
 
@@ -36,7 +45,7 @@ Or alternatively,
 
 `cleaned_entries = entries.dropna(how = "all").fillna(' ')`  
 
-### Measures and beats  
+## Measures and beats  
 
   * To display DataFrames relative to measures, and beats within measures, rather than offsets across the entire piece, we can use the `detailIndex()` function, which is [documented here](09_DetailIndex.md).  
 

@@ -18,6 +18,27 @@ Some methods in **CRIM Intervals** also work with **CRIM Project** data created 
 
 CRIM intervals is now available in a series of interactive **Jupyter** notebooks:  [https://github.com/RichardFreedman/CRIM_Public_Notebooks](https://github.com/RichardFreedman/CRIM_JHUB).  These can in turn be downloaded and adapted for your own use.
 
+## Credits and Intellectual Property Statement
+
+CRIM Intervals contributors include:
+
+- Andrew Janco (Haverford College)
+- Freddie Gould (Haverford College)
+- Trang Dang (Bryn Mawr College)
+- Alexander Morgan (McGill University)
+- Daniel Russo-Batterham (Melbourne University)
+- Richard Freedman (Haverford College)
+- Oleh Shostak (Haverford College)
+- Edgar Leon (Haverford College)
+- Harrison West (Haverford College)
+
+CRIM Intervals is made possible generous support from:
+
+- Haverford College
+- The American Council of Learned Societies
+
+All CRIM intervals tools are available via a **Creative Commons** license (Attribution-ShareAlike 4.0 International (CC BY-SA 4.0):  https://creativecommons.org/licenses/by-sa/4.0/.
+
 ## Sections in this guide
 
   * [01_Introduction](sections/01_Introduction.md)

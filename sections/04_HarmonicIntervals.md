@@ -20,13 +20,14 @@ The `harmonic()` function contains a parameter `kind`, which has a default value
   * `kind = "c"`: Chromatic. Simply the difference in pitch including all intermediary notes. Outputs "12" for an octave interval (e.g. C4 -> C5), "6" for a tritone interval (e.g. C5 -> F#5), and "0" for a unison (e.g. C5 -> C5).
   * `kind = "z"`: Zero-based. Diatonic intervals, begins counting at 0 rather than 1. Outputs "7" for a perfect octave interval up (e.g. D3 -> D4), "-4" for a fifth interval down (e.g. F5 -> A5), "2" for a third interval up (e.g. G4 -> B5).  
 
-### compound (bool)  
+### compound (bool): Managing intervals greater than an octave  
 
-  * The `harmonic()` function contains a parameter `compound`, with a default value of `True`, and can be modified as follows:  
+  * The `melodic()` function contains a parameter `compound`, with a default value of `True`, and can be modified as follows:  
 
-`piece.harmonic(compound = False)`
+`piece.melodic(compound = False)`
 
-  * The default `True` value of this paramter indicates that compound intervals (intervals spanning more than an octave) should be analyzed without this consideration. For example an interval from C4 to D5 would be treated as a diatonic interval of 1, or chromatic interval of 2. By setting this paramter to `False`, this same interval would instead be considerd a diatonic interval of 8, or chromatic interval of 14.
+  * The default `True` value of this paramter indicates that compound intervals (intervals spanning more than an octave) should be analyzed as if the second note in the interval was its equivalent pitch within the octave of the first note. For example, by default an interval from C4 to D5 would be treated as a diatonic interval of 1, or chromatic interval of 2, since although the actual interval is greater than an octave, the pitch itself is simply C -> D. By setting this paramter to `False`, however, this same interval would instead be considerd a diatonic interval of 8, or chromatic interval of 14, reflecting the fact that the interval spans more than an octave.  
+  * Note that intervals of exactly an octave will always reflect this distance regardless of how the `compound` parameter's value, rather than becoming an interval of distance 0.  
 
 ## `fillna()` and `dropna()` Functions  
 

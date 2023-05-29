@@ -1,33 +1,55 @@
 # Introduction
 
-## Importing a piece
+## File Types Compatible with CRIM Intervals
+
+  * Since CRIM Intervals is based on music21, all the file types read by music21 will work with CRIM Intervals.  Be sure to include the appropriate file extension as part of each file name:  '.mei', '.mid', '.midi', '.abc', '.xml', '.musicxml'
+  * Note that the lyrcs functions are untested with midi and abc files
+
+## Importing a Piece:  `importScore()`
 
   * CRIM Intervals begins by importing one or more MEI, MusicXML, or MIDI Files. This can be done directly, as shown:  
 `piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')`
-  * The field within the `importScore()` function can be either a url or local file path, and must be surrounded by quotes as shown  
-  * After importing a piece from a url or local path, the piece's successful import can be confirmed by printing out its metadata:   
-`print(piece.metadata)`  
-  * By adding the parameter `verbose = True` to the `importScore()` function, the code will automatically provide information to the user as it runs about whether or not it was able to successfully import the given piece.  
+  * The field within the `importScore()` function can be either a url or local file path, and must be surrounded by quotes as shown
+  * Note that the **local file path must also be preceded by a `/` [forward slash]**, for example `piece = importScore('/path/to/mei/file2.mei')`
 
-## Importing multiple pieces at once
+### Check Metadata for Imported Piece
+  * To confirm successful import, view the metadata: `print(piece.metadata)`
+  * Alternatively, add the parameter `verbose = True` to the `importScore()` function. CRIM Intervals will automatically provide information to the user as it runs about whether or not it was able to successfully import the given piece.  For example: `piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei', verbose = True)`.  Note that import errors will be reported even if `verbose = False`
+  
 
+## Importing Multiple Pieces at Once `CorpusBase()`
+
+  * If you pass `importScore()` a **path to a directory** it will import all the files in that directory, for example: `pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder')`.  
+  * Adding the parameter `recursive = True` will in turn import all of the pieces in the main directory and any subdirectories, for example: `pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder', recursive=True)`
+  * And as with a single piece, the parameter `verbose=True` will the status of each attempted import
   * The CRIM Interval library also allows the user to import multiple pieces at once through the `CorpusBase()` function  
-  * This function operates similarly to the `importPiece()` function, but accepts a list of piece urls or paths instead of a single one  
-  * Note that the function must be formatted as follows, including quotes surrounding each name, [brackets] to indicate that the input is a list, commas in between each item in the list, and a /slash at the beginning of any local path. Otherwise, the local path will be read as an online url, and the piece will not be found.  
-`corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', '/path/to/mei/file1.mei', '/path/to/mei/file2.mei'])`  
-  * The CRIM Interval functions will allow the same examinations of a group of pieces as they would of a single piece  
+  * This function operates similarly to the `importPiece()` function, but accepts a **list of piece urls or paths** instead of a single url or path  
+  * The individual items in the Python list must be:
+  - surrounded by quotation marks (remember the `/` at the start of any time coming from a local path)
+  - separated by commas (but no comma after the last item in the list)
+  * And then the entire list must be surrounded in square brackets. 
+  * The complete import statement will look like this: `corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', '/path/to/mei/file1.mei', '/path/to/mei/file2.mei'])`  
+  * Note that there is a special format required when a given CRIM Intervals function (such as melodic(), or harmonic() is applied to a **corpus** object.  See details below.
 
-## Operations applied to pieces
-  * Once one or more pieces have been imported, they can be examined and analyzed through a wide variety of different functions. Most of these functions follows one of a few common formats:  
-`piece.func()`  
-OR  
-`piece.func(parameter)`  
-OR  
-`piece.func(param_1 = True, param_2 = "d" ...)`  
-  * If the function does not require any parameter inputs, or you do not wish to modify any of the function's default parameters, the parentheses may be left blank, but must still be included. Ommitting any parameter from a function will apply the function's default setting for that parameter  
-  * The specific details of how to format the function will be dependent on the function. The function's documentation can be read to view the details associated with how to apply a given function.  
+## Using CRIM Intervals Functions with One or More Pieces
+  * Once one or more pieces have been imported, they can be examined and analyzed through a wide variety of different functions that find the notes, durations, melodic intervals, harmonic intervals, and so on. Most of these functions follows one of a few common formats:  
+  
+    `piece.func()`   
 
-## Exporting  
+OR  
+
+    `piece.func(some_parameter)`  
+
+OR  
+
+    `piece.func(param_1 = True, param_2 = "d" ...)`  
+
+  * Except in the case of a **corpus** of pieces, the parentheses that follow the function are *always required*. Most functions have parameters that can be adjusted (for instance, the choice of diatonic or chromatic intervals). It is always possible simply to accept the default settings (no need to pass a parameter).  Or the parameters can be adjusted. 
+  * The specific details of how to format the function will be dependent on the function. The choices and common settings for each function are detailed in the pages of this guide.  It is also possible to read the built-in documentation as explained below under **Help and Documentation**.
+
+## Exporting CRIM Intervals Results
+
+  * CRIM Intervals is a Python library.  But it also makes extensive use of PANDAS (Python for Data Analysis).  The most common output for the CRIM Intervals functions is thus a **DataFrame**.  These can be viewed in output window of VS-Code (or similar IDE where CRIM Intervals is running), or can be seen in Juypyter Notebooks.  There are nevertheless two useful ways to download results for later use:
 
 ### Export to CSV:  
 

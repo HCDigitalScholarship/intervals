@@ -17,7 +17,7 @@
   * Alternatively, add the parameter `verbose = True` to the `importScore()` function. CRIM Intervals will automatically provide information to the user as it runs about whether or not it was able to successfully import the given piece.  For example: `piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei', verbose = True)`.  Note that import errors will be reported even if `verbose = False`
   
 
-## Importing Multiple Pieces at Once `CorpusBase()`
+## Importing Multiple Pieces at Once: `CorpusBase()`
 
   * If you pass `importScore()` a **path to a directory** it will import all the files in that directory, for example: `pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder')`.  
   * Adding the parameter `recursive = True` will in turn import all of the pieces in the main directory and any subdirectories, for example: `pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder', recursive=True)`
@@ -25,14 +25,15 @@
   * The CRIM Interval library also allows the user to import multiple pieces at once through the `CorpusBase()` function  
   * This function operates similarly to the `importPiece()` function, but accepts a **list of piece urls or paths** instead of a single url or path  
   * The individual items in the Python list must be:
-  - surrounded by quotation marks (remember the `/` at the start of any time coming from a local path)
-  - separated by commas (but no comma after the last item in the list)
+    + surrounded by quotation marks (remember the `/` at the start of any time coming from a local path)
+    + separated by commas (but no comma after the last item in the list)
   * And then the entire list must be surrounded in square brackets. 
   * The complete import statement will look like this: `corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', '/path/to/mei/file1.mei', '/path/to/mei/file2.mei'])`  
   * Note that there is a special format required when a given CRIM Intervals function (such as melodic(), or harmonic() is applied to a **corpus** object.  See details below.
 
 ## Using CRIM Intervals Functions with One or More Pieces
-  * Once one or more pieces have been imported, they can be examined and analyzed through a wide variety of different functions that find the notes, durations, melodic intervals, harmonic intervals, and so on. Most of these functions follows one of a few common formats:  
+  * Once one or more pieces have been imported, they can be examined and analyzed through a wide variety of different functions that find the notes, durations, melodic intervals, harmonic intervals, and so on. Most of these functions follows one of a few common formats: 
+  
   
     `piece.func()`   
 

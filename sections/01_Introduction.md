@@ -33,15 +33,16 @@
 
 ## Using CRIM Intervals Functions with One or More Pieces
   * Once one or more pieces have been imported, they can be examined and analyzed through a wide variety of different functions that find the notes, durations, melodic intervals, harmonic intervals, and so on. Most of these functions follows one of a few common formats: 
-  
+
+LIKE THIS:
   
     `piece.func()`   
 
-OR  
+OR:  
 
     `piece.func(some_parameter)`  
 
-OR  
+OR:  
 
     `piece.func(param_1 = True, param_2 = "d" ...)`  
 

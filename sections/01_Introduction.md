@@ -85,7 +85,7 @@ And finally run the function with each piece and concatenate them as a single da
   
     list_of_dfs = corpus.batch(func)
 
-Normally parameters are passed to a function within the parentheses (as noted above). But with the batch methods for a corpus the parameters are instead passed as **kwargs** (that is, as a *dictionary of keyword arguments*, with each parameter and its corresponding value formatted as `{key: valule}` pair). 
+Normally parameters are passed to a function within the parentheses (as noted above). But with the batch methods for a corpus the parameters are instead passed as **kwargs** (that is, as a *dictionary of keyword arguments*, with each parameter and its corresponding value formatted as `{key: value}` pair). 
 
 For example see this code for batch processing a corpus with the `melodic` function using some keywords:
   

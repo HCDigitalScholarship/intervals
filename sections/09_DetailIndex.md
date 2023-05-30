@@ -29,35 +29,35 @@ At least **one** of either `measure`, `beat`, or `offset` must be `True`.  If mo
 
 ### The `measure` parameter
 
-If `measure=True`, the dataframe includes measure number as an index column.
+If `measure=True`, the dataframe includes **measure number** as an index column.
 
 ### The `beat` parameter
 
-If `beat=True`, the dataframe includes beat number within the given measure as an index column.
+If `beat=True`, the dataframe includes **beat number within the given measure** as an index column.
 
 ### The `offset` parameter
 
-`True` by default, if `offset=False` then the offset will not be shown in the dataframe.
+`True` by default, if `offset=False` then the **offset will not be shown** in the dataframe.
 
 ### The `t_sig` parameter
 
-If `t_sig=True`, the dataframe includes measure number as an index column.
+If `t_sig=True`, the dataframe includes the **prevailing time signature** at each moment as an index column.
 
 ### The `sounding` parameter
 
-If `sounding=True` the dataframe includes an integer reporting the total number of voices with a non-rest event at this offset.
+If `sounding=True` the dataframe includes an integer reporting the **total number of voices with a non-rest event** at this offset.
 
 ### The `progress` parameter
 
-If `progress=True` the dataframe includes a decimal point (float) that reports the relative position of the event in the piece as whole (with the first note as `0.000000`) and the **onset** of the last note as `1.000000`. 
+If `progress=True` the dataframe includes a decimal point (float) that reports the **relative position of the event in the piece** as whole (with the first note as `0.000000`) and the **onset** of the last note as `1.000000`. 
 
 ### The `lowest` parameter
 
-If `lowest=True` the dataframe includes a column listing the lowest-sounding tone each offset (or beat).
+If `lowest=True` the dataframe includes a column listing the **lowest-sounding tone** at each offset (or beat).
 
 ### The `highest` parameter
 
-If `highest=True` the dataframe includes a column listing the highest-sounding tone each offset (or beat).
+If `highest=True` the dataframe includes a column listing the **highest-sounding tone** at each offset (or beat).
 
 ### The `_all` parameter
 

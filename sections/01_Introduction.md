@@ -47,7 +47,7 @@ OR:
     piece.func(param_1 = True, param_2 = "d") 
 
   * Except in the case of a **corpus** of pieces, the parentheses that follow the function are *always required*. Most functions have parameters that can be adjusted (for instance, the choice of diatonic or chromatic intervals). It is always possible simply to accept the default settings (no need to pass a parameter).  Or the parameters can be adjusted. 
-  * The specific details of how to format the function will be dependent on the function. The choices and common settings for each function are detailed in the pages of this guide.  It is also possible to read the built-in documentation as explained below under **Help and Documentation**.
+  * The specific details of how to format the function varies from case to case. The choices and common settings for each function are detailed in the pages of this guide.  It is also possible to read the built-in documentation as explained below under **Help and Documentation**.
 
 ## Exporting CRIM Intervals Results
 

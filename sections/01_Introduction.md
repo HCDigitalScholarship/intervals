@@ -65,19 +65,21 @@ OR:
   
     list_of_dfs = corpus.batch(func)
 
-  * Normally parameters are passed to a function within the parentheses (as noted above). But with the batch methods for a corpus the parameters are instead passed as **kwargs** (that is, as a *dictionary of keyword arguments*, with each parameter and its corresponding value formatted as `{key: valule}` pair). For example see this code for batch processing a corpus with the `melodic` function using some keywords:
+  * Normally parameters are passed to a function within the parentheses (as noted above). But with the batch methods for a corpus the parameters are instead passed as **kwargs** (that is, as a *dictionary of keyword arguments*, with each parameter and its corresponding value formatted as `{key: valule}` pair). 
+
+For example see this code for batch processing a corpus with the `melodic` function using some keywords:
   
  
-    define the corpus:
+    #define the corpus
     corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
-    specify the function 
+    #specify the function 
     func = ImportedPiece.melodic  # <- NB there are no parentheses here
-    provide the kwargs
+    #provide the kwargs
     kwargs = {'kind': 'c', 'directed': False}
-    build a list of dataframes, one for each piece in the corpus
+    #build a list of dataframes, one for each piece in the corpus
     list_of_dfs = corpus.batch(func, kwargs)
-    concatenate the list to a single dataframe
+    #concatenate the list to a single dataframe
     output = pd.concat(list_of_dfs)
   
 

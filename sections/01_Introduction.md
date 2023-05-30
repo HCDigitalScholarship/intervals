@@ -102,15 +102,51 @@ For example see this code for batch processing a corpus with the `melodic` funct
     #concatenate the list to a single dataframe
     output = pd.concat(list_of_dfs)
   
+### Chaining Together Batch Methods
 
-  ### Chaining Together Batch Methods
+CRIM Intervals functions often need to be chained together, as explained in the individual sections for each function. The results of the first function (which is a list of dataframes) is passed to the second fucntion via the `df` parameter as a `kwarg`
 
-  ### Voice Part Names vs Staff Position in Batch Processing:  the `number_parts` Parameter
+      #define the corpus
+      corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+      #first function
+      func1 = ImportedPiece.melodic
+      #first function results as list of dfs
+      list_of_dfs = corpus.batch(func=func1, kwargs={'end': False}, metadata=False)
+      #second function
+      func2 = ImportedPiece.ngrams
+      #now the list_of_dfs from the first function is passed to the second function as the keyword argument 'df'
+      list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
+
+### Voice Part Names vs Staff Position in Batch Processing:  the `number_parts` Parameter
+
+By default, .batch will replace columns that consist of part names (like `.melodic()` results) or combinations of part names (like `.harmonic()` results) with **staff position numbers**, starting with "1" for the highest part on the staff, "2" for the second highest, etc. This is useful when combining results from pieces with parts that have different names. For example:
+
+      list_of_dfs_with_numbers_for_part_names = corpus.batch(ImportedPiece.melodic)
+
+To keep the **original part names** in the columns, set `number_parts` parameter to False. For example:
+
+      list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, number_parts=False)
 
   ### Piece Metadata and Batch Methods:  the `metadata` Parameter
 
-  ### Tracking Batch Processing Errors:  the `verbose` Parameter
+The `batch` method will normally include `metadata` for each piece. But if the aim is to chain several functions together in a series of batch processes, it is probably best to request the metadata only for the final step:
 
+      #define the corpus
+      corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+      #first function
+      func1 = ImportedPiece.melodic
+      #first function results as list of dfs
+      #notice that 'metadata=False' for this step
+      list_of_dfs = corpus.batch(func=func1, kwargs={'end': False}, metadata=False)
+      #second function
+      func2 = ImportedPiece.ngrams
+      #now the list_of_dfs from the first function is passed to the second function as the keyword argument 'df'
+      #here metadata remains as True (which is the default, and so we can omit the parameter) 
+      list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
+
+  ### Tracking Batch Processing Errors:  the `verbose` Parameter
 
 ## Exporting CRIM Intervals Results
 

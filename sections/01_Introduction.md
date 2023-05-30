@@ -118,17 +118,7 @@ CRIM Intervals functions often need to be chained together, as explained in the 
       #now the list_of_dfs from the first function is passed to the second function as the keyword argument 'df'
       list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
 
-### Voice Part Names vs Staff Position in Batch Processing:  the `number_parts` Parameter
-
-By default, .batch will replace columns that consist of part names (like `.melodic()` results) or combinations of part names (like `.harmonic()` results) with **staff position numbers**, starting with "1" for the highest part on the staff, "2" for the second highest, etc. This is useful when combining results from pieces with parts that have different names. For example:
-
-      list_of_dfs_with_numbers_for_part_names = corpus.batch(ImportedPiece.melodic)
-
-To keep the **original part names** in the columns, set `number_parts` parameter to False. For example:
-
-      list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, number_parts=False)
-
-  ### Piece Metadata and Batch Methods:  the `metadata` Parameter
+### Piece Metadata and Batch Methods:  The `metadata` Parameter
 
 The `batch` method will normally include `metadata` for each piece. But if the aim is to chain several functions together in a series of batch processes, it is probably best to request the metadata only for the final step:
 
@@ -146,7 +136,25 @@ The `batch` method will normally include `metadata` for each piece. But if the a
       #here metadata remains as True (which is the default, and so we can omit the parameter) 
       list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
 
-  ### Tracking Batch Processing Errors:  the `verbose` Parameter
+### Tracking Batch Processing Errors:  The `verbose` Parameter
+
+As in the case of single piece imports, when used as part of a `batch` function, the `verbose=True` provides confirmation that each piece has been successfully imported. This can be useful to pinpoint a piece that is triggering a bug.
+
+    corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+    func = ImportedPiece.notes
+    list_of_dfs = corpus.batch(func, verbose=True)
+
+### Voice Part Names vs Staff Position in Batch Processing:  The `number_parts` Parameter
+
+By default, .batch will replace columns that consist of part names (like `.melodic()` results) or combinations of part names (like `.harmonic()` results) with **staff position numbers**, starting with "1" for the highest part on the staff, "2" for the second highest, etc. This is useful when combining results from pieces with parts that have different names. For example:
+
+      list_of_dfs_with_numbers_for_part_names = corpus.batch(ImportedPiece.melodic)
+
+To keep the **original part names** in the columns, set `number_parts` parameter to False. For example:
+
+      list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, number_parts=False)
+
 
 ## Exporting CRIM Intervals Results
 

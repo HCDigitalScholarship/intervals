@@ -8,19 +8,19 @@ Since CRIM Intervals is based on music21, all the file types read by music21 wil
 
 CRIM Intervals begins by importing one or more MEI, MusicXML, or MIDI Files. This can be done directly, as shown:
 
-`piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')`. 
+  piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei') 
 
 The field within the `importScore()` function can be either a url or local file path, and must be surrounded by quotes as shown.
 
 Note that the **local file path must also be preceded by a `/` [forward slash]**, for example:
 
-  `piece = importScore('/path/to/mei/file2.mei')`.
+  piece = importScore('/path/to/mei/file2.mei')
 
 ### Check Metadata for Imported Piece
 
 To confirm successful import, view the metadata: `print(piece.metadata)`. Alternatively, add the parameter `verbose = True` to the `importScore()` function. CRIM Intervals will automatically provide information to the user as it runs about whether or not it was able to successfully import the given piece.  For example: 
 
-  `piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei', verbose = True)`.  
+  piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei', verbose = True)  
 
 Note that import errors will be reported even if `verbose = False`
   
@@ -29,7 +29,7 @@ Note that import errors will be reported even if `verbose = False`
 
 If you pass `importScore()` a **path to a directory** it will import all the files in that directory, for example:
 
-   `pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder')`.  
+   pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder')  
 
 Adding the parameter `recursive = True` will in turn import all of the pieces in the main directory and any subdirectories, for example: 
 

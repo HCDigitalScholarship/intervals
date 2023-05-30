@@ -29,9 +29,9 @@
     + separated by commas (but no comma after the last item in the list)
   * And then the entire list must be surrounded in square brackets. 
   * The complete import statement will look like this: `corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', '/path/to/mei/file1.mei', '/path/to/mei/file2.mei'])`  
-  * Note that there is a special format required when a given CRIM Intervals function (such as melodic(), or harmonic() is applied to a **corpus** object.  See details below.
+  * Note that there is a special format required when a given CRIM Intervals function (such as melodic(), or harmonic() is applied to a **corpus** object. See below, and also the **batch method** documentation for each individual function.
 
-## Using CRIM Intervals Functions with One or More Pieces
+## Using CRIM Intervals Functions
   * Once one or more pieces have been imported, they can be examined and analyzed through a wide variety of different functions that find the notes, durations, melodic intervals, harmonic intervals, and so on. Most of these functions follows one of a few common formats: 
 
 LIKE THIS:
@@ -46,8 +46,47 @@ OR:
 
     piece.func(param_1 = True, param_2 = "d") 
 
-  * Except in the case of a **corpus** of pieces, the parentheses that follow the function are *always required*. Most functions have parameters that can be adjusted (for instance, the choice of diatonic or chromatic intervals). It is always possible simply to accept the default settings (no need to pass a parameter).  Or the parameters can be adjusted. 
+  * Except in the case of a **corpus** of pieces (see below), the parentheses that follow the function are *always required*. Most functions have parameters that can be adjusted (for instance, the choice of diatonic or chromatic intervals). It is always possible simply to accept the default settings (no need to pass a parameter).  Or the parameters can be adjusted. 
   * The specific details of how to format the function varies from case to case. The choices and common settings for each function are detailed in the pages of this guide.  It is also possible to read the built-in documentation as explained below under **Help and Documentation**.
+
+## Batch Methods for a Corpus of Pieces
+
+  * In the case of a **corpus** of pieces, it is also necessary to use the `batch` function, which applies one of the main functions (such as `notes`, `melodic`, `harmonic`, etc.) to each of the pieces in the corpus in turn, and then assembles the results into a single dataframe. First create the corpus:
+
+    corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+
+  * Then specify the function to be used (NB:  **do not include the parentheses after the function!**):
+  
+    func = ImportedPiece.notes
+
+  * And finally run the function with each piece and concatenate them as a single dataframe:
+  
+    list_of_dfs = corpus.batch(func)
+
+  * Normally parameters are passed to a function within the parentheses (as noted above). But with the batch methods for a corpus the parameters are instead passed as **kwargs** (that is, as a *dictionary of keyword arguments*, with each parameter and its corresponding value formatted as `{key: valule}` pair). For example see this code for batch processing a corpus with the `melodic` function using some keywords:
+    
+    #define the corpus:
+    corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                             'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+    #specify the function
+    func = ImportedPiece.melodic  # <- NB there are no parentheses here
+    #provide the kwargs
+    kwargs = {'kind': 'c', 'directed': False}
+    #build a list of dataframes, one for each piece in the corpus
+    list_of_dfs = corpus.batch(func, kwargs)
+    #concatenate the list to a single dataframe
+    output = pd.concat(list_of_dfs)
+  
+
+  ### Chaining Together Batch Methods
+
+  ### Voice Part Names vs Staff Position in Batch Processing:  the `number_parts` Parameter
+
+  ### Piece Metadata and Batch Methods:  the `metadata` Parameter
+
+  ### Tracking Batch Processing Errors:  the `verbose` Parameter
+
 
 ## Exporting CRIM Intervals Results
 

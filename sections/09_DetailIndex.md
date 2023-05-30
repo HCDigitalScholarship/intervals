@@ -9,13 +9,13 @@ But it is easy to include information about measures and beats (as well as offse
 To use `detailIndex`, simply pass the dataframe from any function (which will have a list of offsets as the Index) to `detailIndex()``.  For instance:
 
     nr = piece.notes()
-    det = piece.detailIndex(nr)
-    det
+    piece.detailIndex(nr)
+
 *or:*
 
     mel = piece.melodic()
-    det = piece.detailIndex(mel)
-    det
+    piece.detailIndex(mel)
+
 
 Indeed, this method works with any dataframe (provided that it relates to a single piece already previously loaded), and so it can be used to find the measure + beat reference for any subset of events that result from filtering or other algorithms.
 

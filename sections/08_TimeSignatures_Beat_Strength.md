@@ -1,6 +1,19 @@
 # Time Signatures
 
-[ ]  
+## View Time Signatures with `timeSignatures()`
+
+For any piece, it is possible to return a dataframe containing each new time signature and the offset at which it appears:
+
+    piece.timeSignatures()
+
+There are no parameters to set with this function.  But it can be called as a parameter from `detailIndex`:
+
+    nr = piece.notes()
+    piece.detailIndex(nr, t_sig=True)
+
+See more at [09_DetailIndex](09_DetailIndex.md).
+
+
 
 -----
 

@@ -2,45 +2,51 @@
 
 ## File Types Compatible with CRIM Intervals
 
-Since CRIM Intervals is based on music21, all the file types read by music21 will work with CRIM Intervals.  Be sure to include the appropriate file extension as part of each file name:  '.mei', '.mid', '.midi', '.abc', '.xml', '.musicxml'
-
-Note that the lyrcs functions are untested with midi and abc files
+Since CRIM Intervals is based on music21, all the file types read by music21 will work with CRIM Intervals.  Be sure to include the appropriate file extension as part of each file name:  '.mei', '.mid', '.midi', '.abc', '.xml', '.musicxml'. Note that the `lyrics` function is untested with midi and abc files.
 
 ## Importing a Piece:  `importScore()`
 
-CRIM Intervals begins by importing one or more MEI, MusicXML, or MIDI Files. This can be done directly, as shown:  
-`piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')`
+CRIM Intervals begins by importing one or more MEI, MusicXML, or MIDI Files. This can be done directly, as shown:
 
-The field within the `importScore()` function can be either a url or local file path, and must be surrounded by quotes as shown
+`piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')`. 
 
-Note that the **local file path must also be preceded by a `/` [forward slash]**, for example `piece = importScore('/path/to/mei/file2.mei')`
+The field within the `importScore()` function can be either a url or local file path, and must be surrounded by quotes as shown.
+
+Note that the **local file path must also be preceded by a `/` [forward slash]**, for example:
+
+  `piece = importScore('/path/to/mei/file2.mei')`.
 
 ### Check Metadata for Imported Piece
 
-To confirm successful import, view the metadata: `print(piece.metadata)`
+To confirm successful import, view the metadata: `print(piece.metadata)`. Alternatively, add the parameter `verbose = True` to the `importScore()` function. CRIM Intervals will automatically provide information to the user as it runs about whether or not it was able to successfully import the given piece.  For example: 
 
-Alternatively, add the parameter `verbose = True` to the `importScore()` function. CRIM Intervals will automatically provide information to the user as it runs about whether or not it was able to successfully import the given piece.  For example: `piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei', verbose = True)`.  Note that import errors will be reported even if `verbose = False`
+  `piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei', verbose = True)`.  
+
+Note that import errors will be reported even if `verbose = False`
   
 
 ## Importing Multiple Pieces at Once: `CorpusBase()`
 
-If you pass `importScore()` a **path to a directory** it will import all the files in that directory, for example: `pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder')`.  
+If you pass `importScore()` a **path to a directory** it will import all the files in that directory, for example:
 
-Adding the parameter `recursive = True` will in turn import all of the pieces in the main directory and any subdirectories, for example: `pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder', recursive=True)`
+   `pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder')`.  
 
-And as with a single piece, the parameter `verbose=True` will the status of each attempted import
+Adding the parameter `recursive = True` will in turn import all of the pieces in the main directory and any subdirectories, for example: 
 
-The CRIM Interval library also allows the user to import multiple pieces at once through the `CorpusBase()` function  
+  `pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder', recursive=True)`
 
-This function operates similarly to the `importPiece()` function, but accepts a **list of piece urls or paths** instead of a single url or path  
+And as with a single piece, the parameter `verbose=True` will the status of each attempted import.
 
-The individual items in the Python list must be:
-    + surrounded by quotation marks (remember the `/` at the start of any time coming from a local path)
-    + separated by commas (but no comma after the last item in the list)
+The CRIM Interval library also allows the user to import multiple pieces at once through the `CorpusBase()` function. This function operates similarly to the `importPiece()` function, but accepts a **list of piece urls or paths** instead of a single url or path. The individual items in the Python list must be:
+
+* surrounded by quotation marks (remember the `/` at the start of any time coming from a local path!)
+* separated by commas (but no comma after the last item in the list)
 
 And then the entire list must be surrounded in square brackets. 
 
-The complete import statement will look like this: `corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', '/path/to/mei/file1.mei', '/path/to/mei/file2.mei'])`  
+The complete import statement will look like this:
+
+  `corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', '/path/to/mei/file1.mei', '/path/to/mei/file2.mei'])`  
 
 Note that there is a special format required when a given CRIM Intervals function (such as melodic(), or harmonic() is applied to a **corpus** object. See below, and also the **batch method** documentation for each individual function.
 

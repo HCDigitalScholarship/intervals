@@ -140,10 +140,10 @@ The `batch` method will normally include `metadata` for each piece. But if the a
 
 As in the case of single piece imports, when used as part of a `batch` function, the `verbose=True` provides confirmation that each piece has been successfully imported. This can be useful to pinpoint a piece that is triggering a bug.
 
-    corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+      corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
-    func = ImportedPiece.notes
-    list_of_dfs = corpus.batch(func, verbose=True)
+      func = ImportedPiece.notes
+      list_of_dfs = corpus.batch(func, verbose=True)
 
 ### Voice Part Names vs Staff Position in Batch Processing:  The `number_parts` Parameter
 
@@ -158,44 +158,46 @@ To keep the **original part names** in the columns, set `number_parts` parameter
 
 ## Exporting CRIM Intervals Results
 
-  * CRIM Intervals is a Python library.  But it also makes extensive use of PANDAS (Python for Data Analysis).  The most common output for the CRIM Intervals functions is thus a **DataFrame**.  These can be viewed in output window of VS-Code (or similar IDE where CRIM Intervals is running), or can be seen in Juypyter Notebooks.  There are nevertheless two useful ways to download results for later use:
+CRIM Intervals is a Python library.  But it also makes extensive use of PANDAS (Python for Data Analysis).  The most common output for the CRIM Intervals functions is thus a **DataFrame**.  These can be viewed in output window of VS-Code (or similar IDE where CRIM Intervals is running), or can be seen in Juypyter Notebooks.  There are nevertheless two useful ways to download results for later use:
 
 ### Export to CSV:  
 
-  * If you are running the Jupyter Hub version of this code, then there should be a folder provided called 'saved_csv'. This is where we will be exporting files, from which you can then download them to your computer.  
-  * If you wish to export a CSV a piece's that has been generated as a DataFrame, you can do so with the following command line:  
+If you are running the Jupyter Hub version of this code, then there should be a folder provided called 'saved_csv'. This is where we will be exporting files, from which you can then download them to your computer.
 
-`notebook_data_frame_name.to_csv('saved_csv/your_file_title.csv')`  
+If you wish to export a CSV a piece's that has been generated as a DataFrame, you can do so with the following command line: 
+  
+    notebook_data_frame_name.to_csv('saved_csv/your_file_title.csv')
 
-  * 'notebook_data_frame_name' should be replaced with the name of your DataFrame. For example, if you had ran the following lines;  
+'notebook_data_frame_name' should be replaced with the name of your DataFrame. For example, if you had ran the following lines:
 
-`piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')`  
-`mel = piece.melodic()`  
+    piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')
+    mel = piece.melodic()  
 
-  * You could then save this model's melodic interval data to a CSV file with the file name 'CRIM_Model_0008.csv' by running the following:  
+You could then save this model's melodic interval data to a CSV file with the file name 'CRIM_Model_0008.csv' by running the following: 
 
-`mel.to_csv('saved_csv/CRIM_Model_0008.csv')`  
+    mel.to_csv('saved_csv/CRIM_Model_0008.csv')  
 
 ### Export to Excel:  
 
-  * Alternatively, a DataFrame can be saved as an Excel file with the following command lines in order, once again replacing 'file_name.xlsx' with your desired file name, replacing 'Sheet1' with your desired sheet name **(in quotes)**, and replacing 'frame_name' in the second line with the name of your DataFrame **(without quotes)**, which was be 'mel' in the last example:  
+Alternatively, a DataFrame can be saved as an Excel file with the following command lines in order, once again replacing 'file_name.xlsx' with your desired file name, replacing 'Sheet1' with your desired sheet name **(in quotes)**, and replacing 'frame_name' in the second line with the name of your DataFrame **(without quotes)**, which was be 'mel' in the last example: 
 
-`writer = pd.ExcelWriter('saved_csv/file_name.xlsx', engine='xlsxwriter')`  
-`frame_name.to_excel(writer, sheet_name='Sheet1')`  
-`writer.save()`  
+    writer = pd.ExcelWriter('saved_csv/file_name.xlsx', engine='xlsxwriter') 
+    frame_name.to_excel(writer, sheet_name='Sheet1')  
+    writer.save()  
 
-Substituting the information from the first example, we could write that same DataFrame to an Excel sheet with the following commands:  
+Substituting the information from the first example, we could write that same DataFrame to an Excel sheet with the following commands: 
 
-`writer = pd.ExcelWriter('saved_csv/CRIM_Model_0008.xlsx', engine = 'xlsxwriter')`  
-`mel.to_excel(writer, sheet_name = 'CRIM Model 0008')`  
-`writer.save()`  
+    writer = pd.ExcelWriter('saved_csv/CRIM_Model_0008.xlsx', engine = 'xlsxwriter')
+    mel.to_excel(writer, sheet_name = 'CRIM Model 0008') 
+    writer.save() 
  
 ## Help and Documentation
 
-  * The documentation associated with each function can be read with a line of the following sample format:  
-`print(piece.notes.__doc__)`
-  * This line would print out the documentation (`.__doc__`) associated with the function `notes()`, a function applicable to the object `piece`
-  * Note that to print the documentation for a function, some object able to utilize that function must be used in the command line as shown above
+The documentation associated with each function can be read with a line of the following sample format: 
+
+    print(piece.notes.__doc__)
+
+This line would print out the documentation (`.__doc__`) associated with the function `notes()`, a function applicable to the object `piece`. Note that to print the documentation for a function, some object able to utilize that function must be used in the command line as shown above.
 
 -----
 

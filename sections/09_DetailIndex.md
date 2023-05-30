@@ -31,35 +31,35 @@ At least **one** of either `measure`, `beat`, or `offset` must be `True`.  If mo
 
 If `measure=True`, the dataframe includes **measure number** as an index column.
 
-### Showing Beats
+#### Showing Beats
 
 If `beat=True`, the dataframe includes **beat number within the given measure** as an index column.
 
-### Hiding Offsets
+#### Hiding Offsets
 
 `True` by default, if `offset=False` then the **offset will not be shown** in the dataframe.
 
-### Showing Time Signatures
+#### Showing Time Signatures
 
 If `t_sig=True`, the dataframe includes the **prevailing time signature** at each moment as an index column.
 
-### Showing Number of Active Voices
+#### Showing Number of Active Voices
 
 If `sounding=True` the dataframe includes an integer reporting the **total number of voices with a non-rest event** at this offset.
 
-### Relative Position ("Progress")
+#### Relative Position ("Progress")
 
 If `progress=True` the dataframe includes a decimal point (float) that reports the **relative position of the event in the piece** as whole (with the first note as `0.000000`) and the **onset** of the last note as `1.000000`. 
 
-### Lowest Sounding Tone
+#### Lowest Sounding Tone
 
 If `lowest=True` the dataframe includes a column listing the **lowest-sounding tone** at each offset (or beat).
 
-### Highest Sounding Tone
+#### Highest Sounding Tone
 
 If `highest=True` the dataframe includes a column listing the **highest-sounding tone** at each offset (or beat).
 
-### Show All of the Above
+#### Show All of the Above
 
 As the name suggests, this sets all parameters as `True`.
 

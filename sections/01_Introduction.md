@@ -53,6 +53,7 @@ OR:
 
   * In the case of a **corpus** of pieces, it is also necessary to use the `batch` function, which applies one of the main functions (such as `notes`, `melodic`, `harmonic`, etc.) to each of the pieces in the corpus in turn, and then assembles the results into a single dataframe. First create the corpus:
 
+
     corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
 

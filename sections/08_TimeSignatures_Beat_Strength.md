@@ -1,4 +1,6 @@
-# Time Signatures
+# Time Signatures, Measure Numbers, Barlines and Beat Strengths
+
+Several of these functions called as parameters `detailIndex()`. See more at [09_DetailIndex](09_DetailIndex.md). But they can be useful on their own, too.
 
 ## View Time Signatures with `timeSignatures()`
 
@@ -11,8 +13,30 @@ There are no parameters to set with this function.  But it can be called as a pa
     nr = piece.notes()
     piece.detailIndex(nr, t_sig=True)
 
-See more at [09_DetailIndex](09_DetailIndex.md).
+## View Measure Numbers with `measures()`
 
+This method returns a dataframe with offsets as the index, and the measure number of each event (note, melodic interval, ngram) in the columns. Thus all columns will frequently be identical. It is not particularly useful on its own, but it might be helpful for situations in which it is important to return all the offsets that correspond to a given measure number.
+
+    piece.measures()
+
+## View Barlines with `barlines()`
+
+This method returns a data frame showing the offsets at which double or final barlines appear in each voice. It does not report normal (single) barlines.  As such it can be helpful in detecting section breaks in a work. Use it in conjunction with `detailIndex` to report measure numbers, too.
+
+    barlines = piece.barlines()
+    piece.detailIndex(barlines)
+
+
+## View Beat Strengths with `beatStrengths()`
+
+music21 has a built-in method that assigns a relative strength for each beat in a bar, depending on the prevailing time signature. The downbeat is equal to 1.0, and all other metric positions in a measure are given smaller numbers approaching zero as their metric weight decreases. To see the results in the context of measures and beats (in order to make sense of the ratings), pass the results of `beatStrengths()` to `detailIndex()`
+
+    bs = piece.beatStrengths()
+    piece.detailIndex(bs)
+
+The resulting dataframe could also be used to filter other results, for instance, by finding all offsets (and voices) where a certain `beatStrength` condition is met.
+
+Results from this method should **not be sent to the `regularize` method**.
 
 
 -----

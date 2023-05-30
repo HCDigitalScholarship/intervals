@@ -63,7 +63,7 @@ If `highest=True` the dataframe includes a column listing the **highest-sounding
 
 As the name suggests, this sets all parameters as `True`.
 
-# [  ]
+
 
 -----
 

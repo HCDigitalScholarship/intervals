@@ -65,7 +65,7 @@ Image that only the "PrimusTenor" and "SecundusTenor" are needed in a new datafr
 
 Note that the information about the columns to select appears to the right of the comma. In this case the `:` to the left of the column means that *all rows* are returned.  But these could be specified, too, as shown above.
 
-**By Position with `iloc` Method
+**By Position with `iloc` Method**
 
 It is also possible to select columns on the basis of their *position* in the dataframe (the first is '0', the last is '-1'). To return just the top and bottom voices (Superius and Bassus from the list above), use the `iloc` function:
 

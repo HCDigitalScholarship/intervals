@@ -122,7 +122,7 @@ This `int_order` can now be used to sort the intervals from smallest to largest,
 
 # Histograms of Notes and Intervals 
 
-Various Python libraries exist to help create graphs and charts. Below is an example of how we might use Matplot to create a histogram of the of how many times each voice sounded each pitch.  This will work in a Jupyter Notebook:
+Various Python libraries exist to help create graphs and charts. Below is an example of how to use Matplot to create a histogram of the of how many times each voice sounded each pitch. This will work in a Jupyter Notebook:
 
     pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
                'C3', 'C#3', 'D3', 'E-3','E3', 'F3', 'F#3', 'G3', 'G#3','A3', 'B-3','B3',
@@ -142,7 +142,7 @@ Various Python libraries exist to help create graphs and charts. Below is an exa
     sns.set(rc={'figure.figsize':(15,9)})  
     nr.set_index('pitch').plot(kind='bar', stacked=True)  
 
-Similarly to how we created a histogram of frequency of pitch usage per voice, we can use the Matplot library to create a chart of the frequence of interval usage: 
+Or use the Matplot library to create a chart of the frequence of interval usage: 
 
     %matplotlib inline
     int_order = ["P1", "m2", "-m2", "M2", "-M2", "m3", "-m3", "M3", "-M3", "P4", "-P4", "P5", "-P5", "m6", "-m6", "M6", "-M6", "m7", "-m7", "M7", "-M7", "P8", "-P8"]

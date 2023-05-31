@@ -68,7 +68,7 @@ Perhaps in turn it might be necessary to rename some or all of the columns.  Thi
 Image that only the "PrimusTenor" and "SecundusTenor" are needed in a new dataframe.  These can be selected with `loc` by name:
 
     nr = piece.notes()
-    nr.loc[:, ['PrimusTenor', 'SecundusTenor']]
+    nr2 = nr.loc[:, ['PrimusTenor', 'SecundusTenor']]
 
 Note that the information about the columns to select appears to the right of the comma. In this case the `:` to the left of the column means that *all rows* are returned.  But these could be specified, too, as shown above.
 

@@ -54,6 +54,13 @@ A list of the columns could be useful as a way to list the voice parts in a comp
     #output as follows
     ['Superius', 'Contratenor', 'PrimusTenor', 'SecundusTenor', 'Bassus']
 
+
+#### Rename Columns
+Perhaps in turn it might be necessary to rename some or all of the columns.  This could be done by passing a Python 'dictionary' in which the old and new voice (column) names are given as `key : value` pairs inside curved braces, separated by commas: `{old_col_1_name : new_col_1_name, old_col_2_name : new_col_2_name }`. It is only necessary to provide dictionaries for the columns to be renamed; the others can be left out. For instance:
+
+    mel.rename(columns = {'Superius':'Soprano', 'Contratenor':'Alto'})
+
+
 #### Selected Columns in New Dataframe
 
 **By Name with `loc` Method**
@@ -75,10 +82,6 @@ It is also possible to select columns on the basis of their *position* in the da
 Note that `iloc` method allows selection of either rows or columns (or both). 
 
 Note that the information about the columns to select appears to the right of the comma. In this case the `:` to the left of the column means that *all rows* are returned.  But these could be specified, too, as shown above.
-
-Perhaps in turn it might be necessary to rename some or all of the columns.  This could be done by passing a Python 'dictionary' in which the old and new voice (column) names are given as `key : value` pairs inside curved braces, separated by commas: `{old_col_1_name : new_col_1_name, old_col_2_name : new_col_2_name }`. It is only necessary to provide dictionaries for the columns to be renamed; the others can be left out. For instance:
-
-    mel.rename(columns = {'Superius':'Soprano', 'Contratenor':'Alto'})
 
 Pandas provides several other ways to rename, select or reorganize columns. See the cheat sheet above.
 

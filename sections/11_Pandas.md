@@ -44,6 +44,9 @@ The `piece.measures()` function returns a df that shows were each new measure be
 
 ### Working With Columns  
 
+
+#### Show Column Names
+
 A list of the columns could be useful as a way to list the voice parts in a composition:
 
     voices = piece.notes().columns.to_list()
@@ -51,11 +54,33 @@ A list of the columns could be useful as a way to list the voice parts in a comp
     #output as follows
     ['Superius', 'Contratenor', 'PrimusTenor', 'SecundusTenor', 'Bassus']
 
-Perhaps in turn it might be necessary to rename some or all of the columns.  This could be done by passing a Python 'dictionary' in which the old and new voice (column) names are given as `key : value` pairs in a list.  For instance:
+#### Selected Columns in New Dataframe
+
+**By Name with `loc` Method**
+
+Image that only the "PrimusTenor" and "SecundusTenor" are needed in a new dataframe.  These can be selected with `loc` by name:
+
+    nr = piece.notes()
+    nr.loc[:, ['PrimusTenor', 'SecundusTenor']]
+
+Note that the information about the columns to select appears to the right of the comma. In this case the `:` to the left of the column means that *all rows* are returned.  But these could be specified, too, as shown above.
+
+**By Position with `iloc` Method
+
+It is also possible to select columns on the basis of their *position* in the dataframe (the first is '0', the last is '-1'). To return just the top and bottom voices (Superius and Bassus from the list above), use the `iloc` function:
+
+    nr = piece.notes()
+    nr2 = nr.iloc[:, [0, -1]]
+
+Note that `iloc` method allows selection of either rows or columns (or both). 
+
+Note that the information about the columns to select appears to the right of the comma. In this case the `:` to the left of the column means that *all rows* are returned.  But these could be specified, too, as shown above.
+
+Perhaps in turn it might be necessary to rename some or all of the columns.  This could be done by passing a Python 'dictionary' in which the old and new voice (column) names are given as `key : value` pairs inside curved braces, separated by commas: `{old_col_1_name : new_col_1_name, old_col_2_name : new_col_2_name }`. It is only necessary to provide dictionaries for the columns to be renamed; the others can be left out. For instance:
 
     mel.rename(columns = {'Superius':'Soprano', 'Contratenor':'Alto'})
 
-Pandas provides several other ways to rename or reorganize columns. See the cheat sheet above.
+Pandas provides several other ways to rename, select or reorganize columns. See the cheat sheet above.
 
 ### Counting and Sorting
 

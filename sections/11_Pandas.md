@@ -1,121 +1,175 @@
 # Pandas  
 
-  * Pandas is a python library which allows for the creation and manipulation of DataFrames, which are two dimensional objects designed to store data. Below are a few of the many ways in which pandas DataFrames can be modified.  
+Pandas is a Python library which allows for the creation and manipulation of DataFrames, which are two dimensional objects designed to store data. Below are a few of the many ways in which pandas DataFrames can be modified, filtered, or transformed. 
 
-## Counting and Sorting Intervals: General pandas operations  
+## Counting and Sorting Intervals: General Pandas Operations  
 
-  * The outputs of the `notes()`, `melodic()`, and `harmonic()` functions are all in the format of a pandas DataFrame. Therefore, they can each be manipulated by the functions built into pandas for this purpose. A cheat sheet of pandas DataFrame operations can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). For the following examples, we can assume that some piece has been imported, and define a variable "mel" as the melodic intervals DataFrame for that piece:  
+The outputs of the `notes()`, `melodic()`, and `harmonic()` functions are all in the format of a pandas DataFrame. Therefore, they can each be manipulated by the functions built into pandas for this purpose. A cheat sheet of pandas DataFrame operations can be [found here](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf). For the following examples, we can assume that some piece has been imported, and define a variable "mel" as the melodic intervals DataFrame for that piece:  
 
-`mel = piece.melodic()`  
+    mel = piece.melodic()  
 
-### Count the number of rows/find the size of the DataFrame  
+### Working with Rows
 
-  * This value will be equal to the number of beats in the piece, since it counts the number of offsets in the piece. The offsets will include every beat, even those without any voice sounding.  
+Dataframes can be **long**, since they will have a row for every event in the composition (beats and subbeats alike).  By default Pandas displays dataframes in an abbreviated view consisting of the first five and last five rows. The last row will be included, so it is easy to see just how long the results are!
 
-> mel.count()  
+But it is possible to show various slices and segments (see the cheatsheet linked above for many examples), such as:
 
-### Rename columns in the DataFrame  
+    piece.notes().head(20)
+    piece.notes().tail(20)
+    piece.notes().sample(20)
 
-Executing the first line of code below will rename the column named '[Superious]' to 'Cantus'. More than one column name could be changed by adding more commands formatted as `'existingColumnName':'newColumnName'` within the curly brackets, separated by commas. Executing the second line of code below will rename the existing column named '[Superious]' to 'Canuts', and rename the existing column named 'Altus' to 'Alto'.  
-> mel.rename(columns = {'[Superious]':'Cantus'})  
-> mel.rename(columns = {'[Superious]':'Cantus', 'Altus':'Alto'})  
+`df.loc[]` and `df.iloc[]` have two different meanings! The first of these selects some range of *specific index values* (`df.loc[10:20]` would in this case return a slice of the frame 'df' where the actual offsets are between 10 (inclusive) and 20 (exclusive).
 
-### Stack all the columns on top of each other to get one list of all the notes. [Flattens table into a single column, but still differentiates based on voice]  
+    nr = piece.notes()
+    nr.loc[10:20]
 
-> mel.stack()  
+On the other hand, the `iloc[]` method with Pandas will select the rows according to their *position in the index* rather than the index values.  So this would report the 10th until the 19th row of the frame for notes and rests:
 
-### Stack and count the number of unique values (which will tell us how many different intervals appear in this piece accross all voices, since they are all now in a single column)  
+    nr = piece.notes()
+    nr.iloc[10:20]
 
-> mel.stack().nunique()  
+### Working With Columns  
 
-### Count the number of times each interval appears in each part  
+A list of the columns could be useful as a way to list the voice parts in a composition:
 
-> mel.apply(pd.Series.value_counts).fillna(0).astype(int)  
+    voices = piece.notes().columns.to_list()
+    voices
+    #output as follows
+    ['Superius', 'Contratenor', 'PrimusTenor', 'SecundusTenor', 'Bassus']
 
-# Application to melodic intervals:  
+Perhaps in turn it might be necessary to rename some or all of the columns.  This could be done by passing a Python 'dictionary' in which the old and new voice (column) names are given as `key : value` pairs in a list.  For instance:
 
-### Count and sort the intervals in a single voice part: 
+    mel.rename(columns = {'Superius':'Soprano', 'Contratenor':'Alto'})
 
-> mel.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values("[Superious]", ascending=False)  
+Pandas provides several other ways to rename or reorganize columns. See the cheat sheet above.
 
-  * Similarly to the note order created when [sorting pitches of notes](02_NotesAndRests.md#sorting-pitches), we can define an order of intervals as follows:  
+### Counting and Sorting Notes (and other Events)
 
-`int_order = ["P1", "m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "-m2", "-M2", "-m3", "-M3", "-P4", "-P5", "-m6", "-M6", "-m7", "-M7", "-P8"]`  
+#### Counting and Sorting Notes
 
-  * This `int_order` can now be used to sort the intervals from smallest to largest, ascending to descending:  
+A count of the *rows* of the dataframe will be in effect a count of the number of offsets.  Pass the entire function to the Python `len` method, for instance:
 
-`mel = piece.melodic().fillna("-")`  
-`mel = mel.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()`  
-`mel.rename(columns = {'index':'interval'}, inplace = True)`  
-`mel['interval'] = pd.Categorical(mel["interval"], categories=int_order)`
-`mel = mel.sort_values(by = "interval").dropna().copy()`
-`mel.reset_index()`  
+    len(piece.notes())
 
-## Charting intervals  
+But it is also possible to count the number of **notes** in each voice (column):
 
-  * Similarly to how we created a histogram of frequency of pitch usage per voice, we can use the Matplot library to create a chart of the frequence of interval usage:  
+    nr = piece.notes() 
+    nr.count()
+    #output as follows:
+    Superius         388
+    Contratenor      448
+    PrimusTenor      373
+    SecundusTenor    377
+    Bassus           337
 
-> %matplotlib inline  
-> int_order = ["P1", "m2", "-m2", "M2", "-M2", "m3", "-m3", "M3", "-M3", "P4", "-P4", "P5", "-P5", "m6", "-m6", "M6", "-M6", "m7", "-m7", "M7", "-M7", "P8", "-P8"]  
-> mel = piece.melodic()  
-> mel = mel.fillna("-")  
-> mel = mel.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
-> mel.rename(columns = {'index':'interval'}, inplace = True)  
-> mel['interval'] = pd.Categorical(mel["interval"], categories=int_order)  
-> mel = mel.sort_values(by = "interval").dropna().copy()  
-> voices = mel.columns.to_list()  
-> md = piece.metadata  
-> for key, value in md.items():  
->    print(key, ':', value)  
+Or `stack()` all the columns on top of each other, then report the total number of unique values (notes):
 
-Graph options:  
-> palette = sns.husl_palette(len(voices), l=.4)  
-> sns.set(rc={'figure.figsize':(15,9)})  
-> mel.set_index('interval').plot(kind='bar', stacked=True)  
+    nr.stack().nunique()
 
-# Application to pitches:  
+Counts of notes in each part, sorted alphabetically by note:
 
-### Sorting pitches  
+    nr.apply(pd.Series.value_counts).fillna(0).astype(int)
 
-We previously saw how to sort the pitches by their frequency in a particular voice. We are also able to declare a **sort order** for the pitches themselves, then organize the entire data frame in that sequence to show the voice ranges of each part. This will providing values of how many times each voice sounded a specific pitch, in a table sorted by pitch order rather than by any voice's requency of pitches.  
-First, create a list of the pitches in order (in this case, from the lowest note to the highest).  Note that music21 (and thus CRIM Intervals) represents **B-flat** as **B-**.  **C-sharp** is **C#**.  
+Or sorted by the counts in the first voice (here the NA's are filled with 0 [zero]):
 
+    nr.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by=nr.columns[0], ascending=False)
 
-  * First, set the order of pitches:  
+But it is also possible to declare a sort order for the pitches themselves, then organize the entire data frame in that sequence. This will show the voice ranges of each part.
 
-`pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
+First, create a list of the pitches in order (from low to high, in this case). Note that music21 (and thus CRIM Intervals) represents B-flat as B-. C-sharp is C#.
+
+    pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
                'C3', 'C#3', 'D3', 'E-3','E3', 'F3', 'F#3', 'G3', 'G#3','A3', 'B-3','B3',
                'C4', 'C#4','D4', 'E-4', 'E4', 'F4', 'F#4','G4', 'A4', 'B-4', 'B4',
-               'C5', 'C#5','D5', 'E-5','E5', 'F5', 'F#5', 'G5', 'A5', 'B-5', 'B5']`  
+               'C5', 'C#5','D5', 'E-5','E5', 'F5', 'F#5', 'G5', 'A5', 'B-5', 'B5']
 
-  * Then, create a dataframe corresponding to our piece, and sort it by pitches, as shown:  
+Then, create a dataframe corresponding to our piece, and sort it by pitches, as shown:
 
-`df = piece.notes().fillna('-')`  
-`df = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()`  
-`df.rename(columns = {'index':'pitch'}, inplace = True)`  
-`df['pitch'] = pd.Categorial(df["pitch"], categories = pitch_order)`  
-`df = df.sort_values(by = "pitch").dropna().copy()`  
+    #find notes, fill NA's
+    df = piece.notes().fillna('-') 
+    #count the values, fill NA's and make a copy for safety
+    df = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy() 
+    #rename the index as 'pitch'
+    df.rename(columns = {'index':'pitch'}, inplace = True) 
+    #assign the order from pitch_order above
+    df['pitch'] = pd.Categorial(df["pitch"], categories = pitch_order)
+    #sort values, drop NA's, and copy 
+    df = df.sort_values(by = "pitch").dropna().copy()
+    #display results as df
+    df
 
-  * Now, running `df` as a command will print a DataFrame where every row is a pitch, sorted in ascending order, and each column represents a voice part. Each element of the table itself is the number of times the voice in its column sounded the pitch in its row.  
+
+# Count and Sort Melodic Melodic Intervals  
+
+Similarly to the note order created when [sorting pitches of notes](02_NotesAndRests.md#sorting-pitches), we can define an order of intervals as follows:  
+
+    int_order = ["P1", "m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "-m2", "-M2", "-m3", "-M3", "-P4", "-P5", "-m6", "-M6", "-m7", "-M7", "-P8"]  
+
+This `int_order` can now be used to sort the intervals from smallest to largest, ascending to descending:
+
+    #df of melodic intervals, NA's filled
+    mel = piece.melodic().fillna("-") 
+    #counting the intervals, NA's filled as 0, and copy the df to avoid problems
+    mel = mel.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()
+    #rename the index as 'interval' 
+    mel.rename(columns = {'index':'interval'}, inplace = True) 
+    #map each interval to the order specified in the "int_order" list above
+    mel['interval'] = pd.Categorical(mel["interval"], categories=int_order)
+    #sort the results, remove NA's, and make a copy to avoid problems
+    mel = mel.sort_values(by = "interval").dropna().copy()
+    #reset the index and display
+    mel.reset_index() 
+
+# Histograms of Notes and Intervals 
+
+Various Python libraries exist to help create graphs and charts. Below is an example of how we might use Matplot to create a histogram of the of how many times each voice sounded each pitch.  This will work in a Jupyter Notebook:
+
+    pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
+               'C3', 'C#3', 'D3', 'E-3','E3', 'F3', 'F#3', 'G3', 'G#3','A3', 'B-3','B3',
+               'C4', 'C#4','D4', 'E-4', 'E4', 'F4', 'F#4','G4', 'A4', 'B-4', 'B4',
+               'C5', 'C#5','D5', 'E-5','E5', 'F5', 'F#5', 'G5', 'A5', 'B-5', 'B5']
+    %matplotlib inline  
+    nr = piece.notes().fillna('-')  
+    nr = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
+    nr.rename(columns = {'index':'pitch'}, inplace = True)  
+    nr['pitch'] = pd.Categorical(nr["pitch"], categories=pitch_order)  
+    nr = nr.sort_values(by = "pitch").dropna().copy()  
+    voices = nr.columns.to_list()  
+    palette = sns.husl_palette(len(voices), l=.4)  
+    md = piece.metadata  
+    for key, value in md.items():  
+        print(key, ':', value)  
+    sns.set(rc={'figure.figsize':(15,9)})  
+    nr.set_index('pitch').plot(kind='bar', stacked=True)  
+
+Similarly to how we created a histogram of frequency of pitch usage per voice, we can use the Matplot library to create a chart of the frequence of interval usage: 
+
+    %matplotlib inline
+    int_order = ["P1", "m2", "-m2", "M2", "-M2", "m3", "-m3", "M3", "-M3", "P4", "-P4", "P5", "-P5", "m6", "-m6", "M6", "-M6", "m7", "-m7", "M7", "-M7", "P8", "-P8"]
+    mel = piece.melodic()
+    mel = mel.fillna("-")
+    #count up the values in each item column--sum for each pitch.  
+    #make a copy 
+    mel = mel.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()
+    #rename the index column to something more useful
+    mel.rename(columns = {'index':'interval'}, inplace = True)
+    #apply the categorical list and sort
+    mel['interval'] = pd.Categorical(mel["interval"], categories=int_order)
+    mel = mel.sort_values(by = "interval").dropna().copy()
+    voices = mel.columns.to_list()
+    #collect and print information about composer and piece
+    md = piece.metadata
+    for key, value in md.items():
+        print(key, ':', value)
+    #set the figure size, type and colors
+    palette = sns.husl_palette(len(voices), l=.4)
+    sns.set(rc={'figure.figsize':(15,9)})
+    mel.set_index('interval').plot(kind='bar', stacked=True)
 
 
-### Graphing pitches  
 
-  * Various python libraries exist to help create graphs and charts. Below is an example of how we might use Matplot to create a historgram of the of how many times each voice sounded each pitch:  
 
-`%matplotlib inline`  
-`nr = piece.notes().fillna('-')`  
-`nr = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()`  
-`nr.rename(columns = {'index':'pitch'}, inplace = True)`  
-`nr['pitch'] = pd.Categorical(nr["pitch"], categories=pitch_order)`  
-`nr = nr.sort_values(by = "pitch").dropna().copy()`  
-`voices = nr.columns.to_list()`  
-`palette = sns.husl_palette(len(voices), l=.4)`  
-`md = piece.metadata`  
-`for key, value in md.items():`  
-`    print(key, ':', value)`  
-`sns.set(rc={'figure.figsize':(15,9)})`  
-`nr.set_index('pitch').plot(kind='bar', stacked=True)`  
+
 
 -----
 

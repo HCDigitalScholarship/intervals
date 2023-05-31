@@ -36,7 +36,7 @@ music21 has a built-in method that assigns a relative strength for each beat in 
 
 The resulting dataframe could also be used to filter other results, for instance, by finding all offsets (and voices) where a certain `beatStrength` condition is met.
 
-Results from this method should **not be sent to the `regularize` method**.
+Results from this method should **not be sent to the `regularize` method**. Read more about `regularize` at [06_Durations](06_Durations.md).
 
 
 -----

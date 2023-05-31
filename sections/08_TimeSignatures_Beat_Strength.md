@@ -34,9 +34,25 @@ music21 has a built-in method that assigns a relative strength for each beat in 
     bs = piece.beatStrengths()
     piece.detailIndex(bs)
 
-The resulting dataframe could also be used to filter other results, for instance, by finding all offsets (and voices) where a certain `beatStrength` condition is met.
+The resulting dataframe could also be used to filter other results, for instance, by finding all offsets (and voices) where a certain `beatStrength` condition is met. For instance, here is a way to filter for 'strong beats', the 'strong notes', the 'strong melodic intervals', and at last the 'ngrams based on strong intervals'.  In brief, **structural tones**:
 
-Results from this method should **not be sent to the `regularize` method**. Read more about `regularize` at [06_Durations](06_Durations.md).
+        #get the notes
+        nr = piece.notes()
+        #stack the voices on top of each other to make a series
+        nr_stacked = nr.stack()
+        #find the beat strengths
+        bs = piece.beatStrengths()
+        #stack and filter the beat strengths according to some threshold
+        strong_beats = bs.stack() > .75
+        #filter the stacked notes and unstack
+        strong_notes = nr_stacked[strong_beats].unstack()
+        #find the melodic intervals among those 'strong' notes
+        mel_strong = piece.melodic(df=strong_notes, kind='d')
+        #and at last find the ngrams for those strong notes
+        strong_ngrams = piece.ngrams(df=mel_strong, n=4, exclude=['Rest']).fillna('')
+        strong_ngrams
+
+Results from the `beatStrengths` method should **not be sent to the `regularize` method**. Read more about `regularize` at [06_Durations](06_Durations.md).
 
 
 -----

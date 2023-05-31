@@ -8,7 +8,7 @@ Since CRIM Intervals is based on music21, all the file types read by music21 wil
 
 CRIM Intervals begins by importing one or more MEI, MusicXML, or MIDI Files. This can be done directly, as shown:
 
-    piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei') 
+    piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')
 
 The field within the `importScore()` function can be either a url or local file path, and must be surrounded by quotes as shown.
 

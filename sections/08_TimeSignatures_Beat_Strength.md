@@ -15,9 +15,34 @@ There are no parameters to set with this function.  But it can be called as a pa
 
 ## View Measure Numbers with `measures()`
 
-This method returns a dataframe with offsets as the index, and the measure number of each event (note, melodic interval, ngram) in the columns. Thus all columns will frequently be identical. It is not particularly useful on its own, but it might be helpful for situations in which it is important to return all the offsets that correspond to a given measure number.
+This method returns a dataframe with offsets as the index, and the measure number of each event (note, melodic interval, ngram) in the columns. Thus all columns will frequently be identical. 
 
     piece.measures()
+
+It is not particularly useful on its own, but it might be helpful for situations in which it is important to return all the offsets that correspond to a given measure number. For example, here is a way to find all of the notes that sound at the start of each measure in a piece:
+
+    #df of measures (that is, where each measure starts)
+    ms = piece.measures()
+    #index of that df as list
+    measure_starts = ms.index.to_list()
+    #df of notes and rests
+    nr = piece.notes()
+    #now filter nr to show only those offsets (=index) that are in the list just made
+    nr2 = nr[nr.index.isin(measure_starts)]
+    nr2
+
+Or another way to do this with the `loc` method of Pandas:
+
+    #df of measures (that is, where each starts)
+    ms = piece.measures()
+    #index of that df as list
+    measure_starts = ms.index.to_list()
+    #df of notes and rests
+    nr = piece.notes()
+    #filter nr to show only those offsets (=index=) that are in the list just made
+    nr2 = nr.loc[nr.index.isin(measure_starts)]
+    nr2
+
 
 ## View Barlines with `barlines()`
 

@@ -28,6 +28,20 @@ On the other hand, the `iloc[]` method with Pandas will select the rows accordin
     nr = piece.notes()
     nr.iloc[10:20]
 
+#### Examples from CRIM Intervals:  Filter df of Notes according to Measure or Beat Strength
+
+The `piece.measures()` function returns a df that shows were each new measure begins.  The index of this df is saved as a list, which in turn is tested against the index of the df for notes to produce a Boolean series: `nr.index.isin(measure_starts)`.  This Boolean is then passed to nr.loc to yield the final dataframe:  `nr2 = nr.loc[nr.index.isin(measure_starts)]`.
+
+    #df of measures (that is, where each starts)
+    ms = piece.measures()
+    #index of that df as list
+    measure_starts = ms.index.to_list()
+    #df of notes and rests
+    nr = piece.notes()
+    #filter nr to show only those offsets (=index=) that are in the list just made
+    notes_at_start_of_measures = nr.loc[nr.index.isin(measure_starts)]
+    notes_at_start_of_measures
+
 ### Working With Columns  
 
 A list of the columns could be useful as a way to list the voice parts in a composition:
@@ -43,10 +57,9 @@ Perhaps in turn it might be necessary to rename some or all of the columns.  Thi
 
 Pandas provides several other ways to rename or reorganize columns. See the cheat sheet above.
 
-### Counting and Sorting Notes (and other Events)
+### Counting and Sorting
 
-#### Counting and Sorting Notes
-
+#### Counting Notes
 A count of the *rows* of the dataframe will be in effect a count of the number of offsets.  Pass the entire function to the Python `len` method, for instance:
 
     len(piece.notes())
@@ -62,21 +75,24 @@ But it is also possible to count the number of **notes** in each voice (column):
     SecundusTenor    377
     Bassus           337
 
-Or `stack()` all the columns on top of each other, then report the total number of unique values (notes):
+Or `stack()` all the columns on top of each other, then report the **total number of unique values** (that is, a count of the unique pitches):
 
     nr.stack().nunique()
 
-Counts of notes in each part, sorted alphabetically by note:
+
+#### Sorting Notes
+
+Count the notes in each voice part, then *sort the df alphabetically by note* (which is the index in this case.  Since music21 names the notes by pitch class and octave, the result is a table from low to high of all the tones in the piece:
 
     nr.apply(pd.Series.value_counts).fillna(0).astype(int)
 
-Or sorted by the counts in the first voice (here the NA's are filled with 0 [zero]):
+Or sorted by the *counts in a particular voice* (here the NA's are filled with 0 [zero]. To select a different column, change `nr.columns[0]` to a different number. To sort them in descending order, try `ascending=True`.
 
     nr.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by=nr.columns[0], ascending=False)
 
-But it is also possible to declare a sort order for the pitches themselves, then organize the entire data frame in that sequence. This will show the voice ranges of each part.
+But it is also possible to *declare a sort order for the pitches* , then organize the entire data frame in that sequence. This will show the voice ranges of each part.
 
-First, create a list of the pitches in order (from low to high, in this case). Note that music21 (and thus CRIM Intervals) represents B-flat as B-. C-sharp is C#.
+First, create a list of the pitches in order (from low to high, in this case). Note that music21 (and thus CRIM Intervals) represents B-flat as `B-`. C-sharp is `C#`.
 
     pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
                'C3', 'C#3', 'D3', 'E-3','E3', 'F3', 'F#3', 'G3', 'G#3','A3', 'B-3','B3',
@@ -99,9 +115,22 @@ Then, create a dataframe corresponding to our piece, and sort it by pitches, as 
     df
 
 
-# Count and Sort Melodic Melodic Intervals  
+#### Counting Melodic Intervals
 
-Similarly to the note order created when [sorting pitches of notes](02_NotesAndRests.md#sorting-pitches), we can define an order of intervals as follows:  
+The same approach could be applied to melodic intervals.  The count of melodic intervals:
+
+    len(piece.melodic())
+
+Melodic intervals in each voice:
+
+    mel = piece.melodic() 
+    mel.count()
+  
+And so on, as above. Remember that it is also possible to specify various parameters for the `melodic()` function, thus reporting different kinds of intervals, qualities, and so on.
+
+#### Sorting Melodic Intervals  
+
+Similar to the note order created above, first define an order of intervals as follows:  
 
     int_order = ["P1", "m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "-m2", "-M2", "-m3", "-M3", "-P4", "-P5", "-m6", "-M6", "-m7", "-M7", "-P8"]  
 
@@ -122,7 +151,7 @@ This `int_order` can now be used to sort the intervals from smallest to largest,
 
 # Histograms of Notes and Intervals 
 
-Various Python libraries exist to help create graphs and charts. Below is an example of how to use Matplot to create a histogram of the of how many times each voice sounded each pitch. This will work in a Jupyter Notebook:
+Various Python libraries exist to help create graphs and charts. Below is an example of how to use Matplot to create a histogram of the of how many times each pitch is heard in each voice of the given piece. This will work in a Jupyter Notebook:
 
     pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
                'C3', 'C#3', 'D3', 'E-3','E3', 'F3', 'F#3', 'G3', 'G#3','A3', 'B-3','B3',

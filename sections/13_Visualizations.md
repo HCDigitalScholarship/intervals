@@ -37,6 +37,10 @@ Note that this will only work in a Jupyter Notebook:
     sns.set(rc={'figure.figsize':(15,9)})  
     nr.set_index('pitch').plot(kind='bar', stacked=True)  
 
+**Sample Output**
+
+![Alt text](images/vis_1.png.png)
+
 #### Histogram of Intervals
 
 Or use the Matplot library to create a chart of the frequence of interval usage: 
@@ -62,6 +66,10 @@ Or use the Matplot library to create a chart of the frequence of interval usage:
     palette = sns.husl_palette(len(voices), l=.4)
     sns.set(rc={'figure.figsize':(15,9)})
     mel.set_index('interval').plot(kind='bar', stacked=True)
+
+
+
+
 
 #### NGram Heat Maps
 

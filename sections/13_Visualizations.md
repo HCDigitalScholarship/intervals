@@ -68,7 +68,9 @@ Or use the Matplot library to create a chart of the frequence of interval usage:
     mel.set_index('interval').plot(kind='bar', stacked=True)
 
 
+**Sample Output**
 
+![Alt text](images/vis_2.png.png)
 
 
 #### NGram Heat Maps

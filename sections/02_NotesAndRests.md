@@ -76,6 +76,10 @@ Additionally, the `combineRests()` and `combineUnisons()` parameters may be chan
 
   * To display DataFrames relative to measures, and beats within measures, rather than offsets across the entire piece, we can use the `detailIndex()` function, which is [documented here](09_DetailIndex.md).  
 
+  **Sample Output**
+
+  ![Alt text](images/notes_2.png)
+
 -----
 
 ## Sections in this guide

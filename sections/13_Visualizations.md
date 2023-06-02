@@ -2,10 +2,10 @@
 
 Various Python libraries exist to help create graphs and charts. To date (as of 2023) the CRIM Intervals team has developed tools for:
 
-* Histograms (to show distribution or ranges of notes and melodic intervals, for example)
-* Ngram Heat Maps (to show distribution of ngrams across a composition)
-* Melodic Families (plots that show melodies as a branching series of intervallic steps)
-* Cadence Radar Plots (circular grids that show the distribution of cadences in one or more pieces)
+* **Histograms** (to show distribution or ranges of notes and melodic intervals, for example)
+* **Ngram Heat Maps** (to show distribution of ngrams across a composition)
+* **Melodic Families** (plots that show melodies as a branching series of intervallic steps)
+* **Cadence Radar Plots** (circular grids that show the distribution of cadences in one or more pieces)
 
 Note that some of these are built in to CRIM Intervals, and called with a simple function.  Others are built up in a series of steps, as shown in the samples below. 
 

@@ -1,5 +1,7 @@
 # Notes and Rests
 
+
+
 ## The `notes()` Function
   * After importing one or more pieces, the `notes()` function can be run to create a table of all of a piece's notes and rests, in order. The `notes()` function may be run in the following format:  
 
@@ -11,6 +13,10 @@
 
 `piece.notes().head(20)` will print only the first 20 rows of the table, while  
 `piece.notes().tail(20)` will print only the last 20 rows of the table.  
+
+**For Example**
+
+![Alt text](images/notes_1.png)
 
 ## `notes()` parameters  
 

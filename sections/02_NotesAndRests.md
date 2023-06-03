@@ -1,20 +1,20 @@
 # Notes and Rests
 
-
-
 ## The `notes()` Function
-  * After importing one or more pieces, the `notes()` function can be run to create a table of all of a piece's notes and rests, in order. The `notes()` function may be run in the following format:  
+
+After importing one or more pieces, the `notes()` function can be run to create a table of all of a piece's notes and rests, in order. The `notes()` function may be run in the following format:  
 
 `piece.notes()`  
-  * These notes will be printed in a table, where each new row represents the fact that any voice has changed its note. The left-most column is an index representing the offset of the change in note, where 0 represents the first note of the piece, and 1 unit of offset represents a single quarter note. Note that this index will not necessarily be regularly spaced.  
-  * Each column of the `notes()` table represents a different voice of the pieces, as indicated by the headings of the table
-  * By default, printing `piece.notes()` will print the first and last five rows of the table. That is, the first and last 5 points in the piece at which any voice changes in note.
-  * To control how many rows are printed;  
+
+* These notes will be printed in a table, where each new row represents the fact that any voice has changed its note. The left-most column is an index representing the offset of the change in note, where 0 represents the first note of the piece, and 1 unit of offset represents a single quarter note. Note that this index will not necessarily be regularly spaced.  
+* Each column of the `notes()` table represents a different voice of the pieces, as indicated by the headings of the table
+* By default, printing `piece.notes()` will print the first and last five rows of the table. That is, the first and last 5 points in the piece at which any voice changes in note.
+* To control how many rows are printed;  
 
 `piece.notes().head(20)` will print only the first 20 rows of the table, while  
 `piece.notes().tail(20)` will print only the last 20 rows of the table.  
 
-**For Example**
+**For Example:**
 
 ![Alt text](images/notes_1.png)
 
@@ -76,7 +76,7 @@ Additionally, the `combineRests()` and `combineUnisons()` parameters may be chan
 
   * To display DataFrames relative to measures, and beats within measures, rather than offsets across the entire piece, we can use the `detailIndex()` function, which is [documented here](09_DetailIndex.md).  
 
-  **Sample Output**
+  **Sample Output:**
 
   ![Alt text](images/notes_2.png)
 

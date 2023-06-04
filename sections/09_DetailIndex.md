@@ -1,5 +1,7 @@
 # Detail Index  
 
+<!-- Add brief description and parameters at a glance -->
+
 ## Showing Measures and Beats:  `detailIndex()`
 
 By default, CRIM Intervals dataframes display results according to the `offset` of each event, which appear as the **Index** for the given dataframe. Each increment of 1.0 corresponds to a single quarter note duration. Remember that the first offset will be 0.0, in accordance with Python series format.
@@ -17,7 +19,12 @@ To use `detailIndex`, simply pass the dataframe from any function (which will ha
     piece.detailIndex(mel)
 
 
-Indeed, this method works with any dataframe (provided that it relates to a single piece already previously loaded), and so it can be used to find the measure + beat reference for any subset of events that result from filtering or other algorithms.
+<!-- add examples -->
+
+
+Indeed, this method works with any dataframe (provided that it relates to a single piece already previously loaded, and provided that the passed dataframe has offsets as its index), and so it can be used to find the measure + beat reference for any subset of events that result from filtering or other algorithms.
+
+<!-- Add examples for these -->
 
 ## Advanced Parameters for `detailIndex`
 

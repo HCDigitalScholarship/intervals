@@ -1,4 +1,6 @@
-# Introduction
+# CRIM Intervals: A Python Library for Analysis
+
+Based on Python, Pandas, and Mike Cuthbert's [music21](http://web.mit.edu/music21/), CRIM Intervals is a pattern finding engine for musical scores, with an emphasis on the kinds of melodic and harmonic patterns found in Renaissance polyphony. It has been developed as a primary data analysis tool for CRIM, but can be applied and adapted to a wide range of styles. Results are reported in Pandas dataframes (and thus exportable in a variety of standard formats for further analysis), and also via several visualizations methods.
 
 ## File Types Compatible with CRIM Intervals
 

@@ -58,7 +58,7 @@ Or, more succinctly:
 
 **Lyric ngrams, cleaned, and as strings (not tuples):**
 
-Remember that the ngrams will be expressed as *tuples of syllables*.  If the plan is to match or search for certain collections of syllables, these will need be transformed as strings. Use a tupleJoin function, like this:
+Remember that the ngrams will be expressed as *tuples of syllables*.  If the plan is to match or search for certain collections of syllables, these will need be transformed as strings. Use a *convertTuple* function, like this:
 
     def convertTuple(tup):
     out = ""

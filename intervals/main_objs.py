@@ -1997,6 +1997,8 @@ class ImportedPiece:
 
         piece.homorhythm() or piece.homorhythm(ngram_length=4, full_hr=True)
 
+        Also see verovioHomorhythm() for a function that prints results.
+
 
         """
         # active version with lyric ngs
@@ -2631,6 +2633,13 @@ class ImportedPiece:
 
         verovioCadences(cadences)
 
+        It is also possible to pass a filtered list of cadences to this function 
+        by specifying a df into verovioCadences() as shown below:
+
+        cadences = piece.cadences()
+        cadences_filtered = cadences[cadences['Tone'] == 'G']
+        piece.verovioCadences(cadences_filtered)
+
 
         """
         if self.path.startswith('Music_Files/'):
@@ -2826,7 +2835,36 @@ class ImportedPiece:
                 display(HTML(music))
 
     # July 2022 Addition for printing hr types with Verovio
-    def verovioHomorhythm(self, ngram_length=4, full_hr=True):
+    def verovioHomorhythm(self, df=None, ngram_length=4, full_hr=True):
+
+        '''
+        Prints HR passages for a given piece with Verovio, based on imported piece and 
+        other parameters.
+
+        Users can supply either of two arguments:
+
+        'ngram_length' (which is 4 by default, and determines the number of durations and syllables that must be in common among the voices in order to be marked as HR);
+
+        'full_hr' (which is True default).  When full_hr=True the method will find any passage where _all active voices_ share the same durational ngram and syllables; if full_hr=False the method will find any passage where even _two voices_ share the same durational ngram and the same syllables.
+
+        Typical use:
+
+        piece.verovioHomorhythm()
+
+        OR with custom parameters
+
+        piece.verovioHomorhythm(ngram_length=5, full_hr=False)
+
+        It is also to run piece.homorhythm(), then filter the results in some way and pass those results to the print function:
+
+        hr = piece.verovioHomorhythm()
+        hr
+
+
+
+
+        
+        '''
         if self.path.startswith('Music_Files/'):
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
@@ -2843,7 +2881,9 @@ class ImportedPiece:
         tk.setOption( "pageWidth", "2500" )
 
         # Now get meas ranges and number of active voices
-        homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr)
+        # 
+        if df is None:
+            homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr)
         hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
         #Get the groupings of consecutive items
         short_list =sorted(list(set(hr_list)))

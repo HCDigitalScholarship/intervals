@@ -2610,7 +2610,7 @@ class ImportedPiece:
             return points_combined
 
     # new print methods with verovio
-    def verovioCadences(self):
+    def verovioCadences(self, df=None):
         """
         This function is used to display the results of the Cadence
         classifier in the Notebook with Verovio.  Each excerpt is
@@ -2647,7 +2647,11 @@ class ImportedPiece:
         tk.setScale(30)
         tk.setOption( "pageHeight", "1500" )
         tk.setOption( "pageWidth", "3000" )
-        cadences = self.cadences()
+        # adding option to import filtered df of cadences
+        if df is None:
+            cadences = self.cadences()
+        else:
+            cadences = df
         for cad in cadences.index:
             c_meas = cadences.loc[cad]["Measure"]
             c_tone = cadences.loc[cad]["Tone"]

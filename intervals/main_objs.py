@@ -2864,14 +2864,14 @@ class ImportedPiece:
                 ma = 0
                 mi = 20
                 for item in homorhythm.loc[n]['hr_voices'].to_list():
-                if len(item) > ma:
-                    ma = len(item)
-                if len(item) < mi:
-                    mi = len(item)
-                if ma > max_hr_count:
-                max_hr_count = ma
-                if mi < min_hr_count:
-                min_hr_count = mi
+                    if len(item) > ma:
+                        ma = len(item)
+                    if len(item) < mi:
+                        mi = len(item)
+                    if ma > max_hr_count:
+                        max_hr_count = ma
+                    if mi < min_hr_count:
+                        min_hr_count = mi
 
         # select verovio measures and redo layout for each passage
             tk.select(str(mdict))

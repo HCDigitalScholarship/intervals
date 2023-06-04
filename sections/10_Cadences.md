@@ -118,16 +118,11 @@ The simplest way to show cadences with Verovio:
 
     piece.verovioCadences()
 
-<!-- the following needs modification to the verovioCadences function.  It will need a new parameter:  cadence_table=None
-Then conditional:  if cadence_table=None, then it just runs the complete cadences function on the piece.  But if cadence_table is specified by passing in some filtered set of results with the same shape as original DF, then it will print only those cadences. -->
-
-Or send a curated list of cadences for printing. Create the cadence table, filter it in some way, and the pass those results to `verovioCadences()`:
+Or send a filtered list of cadences for printing. Create the cadence table, filter it in some way, and the pass those results to `verovioCadences()`:
 
     cadences = piece.cadences()
-    cadences_filtered = cadences.loc['Tone'] = 'G'
-    cadences_filtered
-
-(After filtering): piece.verovioCadences(cadences)
+    cadences_filtered = cadences[cadences['Tone'] == 'G']
+    piece.verovioCadences(cadences_filtered)
 
 Note that pink warning messages in the output can be ignored!
 

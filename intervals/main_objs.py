@@ -1286,7 +1286,7 @@ class ImportedPiece:
         to both `df` and `other`, or leave both as None (default). In
         this case, if the `df` or `other` parameters are left as None, they will
         be replaced with the current piece's harmonic and melodic intervals
-        respectfully. These intervals will be formed according to the
+        respectively. These intervals will be formed according to the
         interval_settings argument, which gets passed to the melodic and
         harmonic methods (see those methods for an explanation of those
         settings). This makes it easy to make contrapuntal-module ngrams, e.g.:
@@ -2636,6 +2636,9 @@ class ImportedPiece:
         if self.path.startswith('Music_Files/'):
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
+        if self.path.startswith('/'):
+            text_file = open(self.path, "r")
+            fetched_mei_string = text_file.read()
         else:
             response = requests.get(self.path)
             fetched_mei_string = response.text
@@ -2687,6 +2690,9 @@ class ImportedPiece:
 
         """
         if self.path.startswith('Music_Files/'):
+            text_file = open(self.path, "r")
+            fetched_mei_string = text_file.read()
+        if self.path.startswith('/'):
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
         else:
@@ -2756,6 +2762,9 @@ class ImportedPiece:
         if self.path.startswith('Music_Files/'):
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
+        if self.path.startswith('/'):
+            text_file = open(self.path, "r")
+            fetched_mei_string = text_file.read()
         else:
             response = requests.get(self.path)
             fetched_mei_string = response.text
@@ -2814,72 +2823,73 @@ class ImportedPiece:
 
     # July 2022 Addition for printing hr types with Verovio
     def verovioHomorhythm(self, ngram_length=4, full_hr=True):
-      if self.path.startswith('Music_Files/'):
-         text_file = open(self.path, "r")
-         fetched_mei_string = text_file.read()
-      else:
-         response = requests.get(self.path)
-         fetched_mei_string = response.text
-      tk = verovio.toolkit()
-      tk.loadData(fetched_mei_string)
-      tk.setScale(30)
-      tk.setOption( "pageHeight", "1500" )
-      tk.setOption( "pageWidth", "2500" )
+        if self.path.startswith('Music_Files/'):
+            text_file = open(self.path, "r")
+            fetched_mei_string = text_file.read()
+        if self.path.startswith('/'):
+            text_file = open(self.path, "r")
+            fetched_mei_string = text_file.read()
+        else:
+            response = requests.get(self.path)
+            fetched_mei_string = response.text
+        tk = verovio.toolkit()
+        tk.loadData(fetched_mei_string)
+        tk.setScale(30)
+        tk.setOption( "pageHeight", "1500" )
+        tk.setOption( "pageWidth", "2500" )
 
-      # Now get meas ranges and number of active voices
-      homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr)
-      hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
-      #Get the groupings of consecutive items
-      short_list =sorted(list(set(hr_list)))
-      li = [list(item) for item in consecutive_groups(short_list)]
+        # Now get meas ranges and number of active voices
+        homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr)
+        hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
+        #Get the groupings of consecutive items
+        short_list =sorted(list(set(hr_list)))
+        li = [list(item) for item in consecutive_groups(short_list)]
 
-      # adjusts number of measures to display based on length of each span
-      # of adjacent bars.
-      # This matters for long 'n'
-      for span in li:
-         if ngram_length > 4:
-             if len(span) == 1:
-                 mr = str(span[0]) + "-" + str(span[0] + 3)
-             else:
-                 mr = str(span[0]) + "-" + str(span[-1] + 1)
-         else:
-             mr = str(span[0]) + "-" + str(span[-1] + 1)
-         mdict = {'measureRange': mr}
-         min_hr_count = 20
-         max_hr_count = 0
+        # adjusts number of measures to display based on length of each span
+        # of adjacent bars.
+        # This matters for long 'n'
+        for span in li:
+            if ngram_length > 4:
+                if len(span) == 1:
+                    mr = str(span[0]) + "-" + str(span[0] + 3)
+                else:
+                    mr = str(span[0]) + "-" + str(span[-1] + 1)
+            else:
+                mr = str(span[0]) + "-" + str(span[-1] + 1)
+            mdict = {'measureRange': mr}
+            min_hr_count = 20
+            max_hr_count = 0
 
-         for n in range(span[0], span[-1]+1):
-            ma = 0
-            mi = 20
-            for item in homorhythm.loc[n]['hr_voices'].to_list():
-               if len(item) > ma:
-                  ma = len(item)
-               if len(item) < mi:
-                  mi = len(item)
-            if ma > max_hr_count:
-               max_hr_count = ma
-            if mi < min_hr_count:
-               min_hr_count = mi
+            for n in range(span[0], span[-1]+1):
+                ma = 0
+                mi = 20
+                for item in homorhythm.loc[n]['hr_voices'].to_list():
+                if len(item) > ma:
+                    ma = len(item)
+                if len(item) < mi:
+                    mi = len(item)
+                if ma > max_hr_count:
+                max_hr_count = ma
+                if mi < min_hr_count:
+                min_hr_count = mi
 
         # select verovio measures and redo layout for each passage
-         tk.select(str(mdict))
-         tk.redoLayout()
-        # get the number of pages and display the music for each passage
-         print("Results:")
-         count = tk.getPageCount()
-         print("File Name: ", self.file_name)
-         print(self.metadata['composer'])
-         print(self.metadata['title'])
-         print("HR Start Measure: ", span[0])
-         print("HR Stop Measure: ", span[-1])
-         print("Minimum Number of HR Voices: ", min_hr_count)
-         print("Maximum Number of HR Voices: ", max_hr_count)
+            tk.select(str(mdict))
+            tk.redoLayout()
+            # get the number of pages and display the music for each passage
+            print("Results:")
+            count = tk.getPageCount()
+            print("File Name: ", self.file_name)
+            print(self.metadata['composer'])
+            print(self.metadata['title'])
+            print("HR Start Measure: ", span[0])
+            print("HR Stop Measure: ", span[-1])
+            print("Minimum Number of HR Voices: ", min_hr_count)
+            print("Maximum Number of HR Voices: ", max_hr_count)
 
-         for c in range(1, count + 1):
-            music = tk.renderToSVG(c)
-
-            display(SVG(music))
-
+            for c in range(1, count + 1):
+                music = tk.renderToSVG(c)
+                display(SVG(music))
 
 # The following are NOT part of piece or other classes
 # These are used part of visualization routines

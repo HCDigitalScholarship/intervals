@@ -120,7 +120,6 @@ In brief, to find cadences in a corpus and report the results as a single datafr
     cadences = piece.cadences(keep_keys=True)
     col_list = ['Measure', 'Beat', 'CadType', 'Pattern', 'Key', 'Tone','LeadingTones', 'CVFs', 'Low','RelLow','RelTone', 'Sounding', 'Progress','SinceLast','ToNext']
     cadences = cadences[col_list]
-
     cadences
 
 ** Group the Cadences by Tone and Type**
@@ -147,9 +146,102 @@ Note that pink warning messages in the output can be ignored!
 <!-- add content here -->
 [ ]  
 
-## Cadence Radar and Progress Plots
+## Cadence Radar Plots for One or Many Pieces:  `piece.cadenceRadarPlot` and `corpus.compareCadenceRadarPlots()` 
 
-<!-- add content here -->
+Radar plots a good way to provide insights about the tonal 'footprint' of one or more pieces. Information derived from the `piece.cadences()` is ploted as a circular graph:  cadence tones (and types, depending on the settings) are indicated at the perimeter. The count of cadences of each tone (or type) is then used as a scalar value (0 is the very center of the plot, with increasing numbers moving out from the center to indicate relative count and therefore weight). 
+
+The plots are interactive:
+
+* Hover to see count details for single piece plots
+* Click to include/exclude individual pieces in corpus comparison plots
+
+### Radar Plot Parameters In Brief
+
+#### For One Piece
+Parameters Overview:
+
+- **combinedType**: if set to True, the Cadences would be classified based on both their Type and Tone. If set to False, only Tone will be used. False by default
+- **sounding**: specify how many voices are sounding (optional). Takes an integer input. Set to None by default
+- **displayAll**: if set to True, the chart will display all pitches in the Default (Fifth) or Custom order
+- **customOrder**: the custom order parameter. Takes in a List of Strings (see below)
+- **renderer**: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc)
+
+Typical use:
+
+    cadenceRadarPlot(combinedType=False, displayAll=True, renderer="iframe")
+
+Default display order (could be modified for `customOrder`)
+
+    order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
+
+Complete function with default settings:
+
+    piece.cadenceRadarPlot(combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe")
+
+#### For A Corpus of Pieces
+
+Parameters Overview:
+
+- **combinedType**: if set to True, the Cadences would be classified based on both their Type and Tone. If set to False, only Tone will be used. False by default
+- **sounding**: specify how many voices are sounding (optional). Takes an integer input. Set to None by default
+- **displayAll**: if set to True, the chart will display all pitches in the Default (Fifth) or Custom order
+- **customOrder**: the custom order parameter. Takes in a List of Strings
+- **renderer**: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc
+
+Typical use:
+
+    compareCadenceRadarPlots(combinedType=False, displayAll=True, renderer="iframe")
+
+Complete default function code:
+
+    compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe")
+
+Default display order (could be modified for `customOrder`)
+
+    order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
+
+## Cadence Progress Plots for One or Many Pieces: 
+
+
+#### For One Piece
+Parameters Overview:
+
+- **includeType**: if set to True, the Cadence markers would be set based on both their Type. If set to False, a universal (round) marker will be used
+- **cadTone**: specify the Tone of cadences to explore. Takes an String input. Set to None by default
+- **cadType**: specify the Type of cadences to explore. Takes an String input. Set to None by default
+- **customOrder**: specify a custom order to be used for the plot, as a dictionary: e.g. {"A":0, "B":1 ...}
+- **includeLegend**: flag to display legend; Default set to True
+- **renderer**: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc)
+
+
+Typical use:
+
+    cadenceProgressPlot(includeType=True)
+
+Complete function with defaults:
+
+    cadenceProgressPlot(self, includeType=False, cadTone=None, cadType=None, customOrder=None, includeLegend=True, renderer="")
+
+#### For A Corpus of Pieces
+
+Parameters Overview:
+
+- **includeType**: if set to True, the Cadence markers would be set based on both their Type. If set to False, a universal (round) marker will be used
+- **cadTone**: specify the Tone of cadences to explore. Takes an String input. Set to None by default
+- **cadType**: specify the Type of cadences to explore. Takes an String input. Set to None by default
+- **customOrder**: specify a custom order to be used for the plot (a dictionary: e.g. {"A":0, "B":1 ...}
+- **includeLegend**: flag to display legend; Default set to True
+
+Typical use:
+
+    compareCadenceProgressPlots(includeType=True)
+
+Complete function with defaults:
+
+    compareCadenceProgressPlots(self, includeType=False, cadTone=None, cadType=None, includeLegend=True, customOrder=None, renderer="")
+
+Default order dictionary (could be modified for `customOrder`)
+    order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "F#":9, "C#":10, "Ab":11}
 -----
 
 ## Sections in this guide

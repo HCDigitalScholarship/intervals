@@ -146,7 +146,7 @@ Note that pink warning messages in the output can be ignored!
 <!-- add content here -->
 [ ]  
 
-## Cadence Radar Plots for One or Many Pieces:  `piece.cadenceRadarPlot` and `corpus.compareCadenceRadarPlots()` 
+## Cadence Radar Plots for One or Many Pieces:  `piece.cadenceRadarPlot()` and `corpus.compareCadenceRadarPlots()` 
 
 Radar plots a good way to provide insights about the tonal 'footprint' of one or more pieces. Information derived from the `piece.cadences()` is ploted as a circular graph:  cadence tones (and types, depending on the settings) are indicated at the perimeter. The count of cadences of each tone (or type) is then used as a scalar value (0 is the very center of the plot, with increasing numbers moving out from the center to indicate relative count and therefore weight). 
 
@@ -200,7 +200,7 @@ Default display order (could be modified for `customOrder`)
 
     order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
 
-## Cadence Progress Plots for One or Many Pieces: 
+## Cadence Progress Plots for One or Many Pieces:  `piece.cadenceProgressPlot()` and `corpus.compareCadenceProgressPlots()` 
 
 
 #### For One Piece

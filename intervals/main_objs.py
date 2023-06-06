@@ -2857,13 +2857,18 @@ class ImportedPiece:
 
         It is also to run piece.homorhythm(), then filter the results in some way and pass those results to the print function:
 
-        hr = piece.verovioHomorhythm()
-        hr
+        #run hr function and convert hr['syllable_set'] to string
+        hr = piece.homorhythm(ngram_length=6, full_hr=True).fillna('')
+        hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
 
-
-
-
+        #supply names of voices.  They must match the voice names in `piece.notes.columns()` 
+        chosen_voices = ["Tenor", "Bassus"]
+        #filter the results for hr passages involving chosen voices:
+        hr_with_chosen_voices = hr[hr.apply(lambda x: hr['hr_voices'].str.contains('|'.join(chosen_voices)))].dropna()
         
+        #render just the hr_with_chosen_voices using `piece.verovioHomorhythm()`:
+        piece.verovioHomorhythm(hr_with_chosen_voices)
+
         '''
         if self.path.startswith('Music_Files/'):
             text_file = open(self.path, "r")
@@ -2883,7 +2888,9 @@ class ImportedPiece:
         # Now get meas ranges and number of active voices
         # 
         if df is None:
-            homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr)
+            homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr
+        else:
+            homorhythm = df
         hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
         #Get the groupings of consecutive items
         short_list =sorted(list(set(hr_list)))

@@ -2888,7 +2888,7 @@ class ImportedPiece:
         # Now get meas ranges and number of active voices
         # 
         if df is None:
-            homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr
+            homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr)
         else:
             homorhythm = df
         hr_list = list(homorhythm.index.get_level_values('Measure').tolist())

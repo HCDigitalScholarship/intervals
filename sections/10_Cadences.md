@@ -93,7 +93,25 @@ There is only one parameter for the `cadences()` function:  `keep_keys`. If `kee
 
 ## Cadences in a Corpus
 
-<!-- add content here -->
+The basic methods of building and working with a corpus are explained in [01_Introduction](01_Introduction.md).
+
+In brief, to find cadences in a corpus and report the results as a single dataframe:
+
+    #build corpus
+    corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                           'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+    #select function.  remember to omit "()"
+    func = ImportedPiece.cadences
+    #run function on each piece; be sure to include keyword arguments
+    list_of_dfs = corpus.batch(func=func, kwargs={'keep_keys': True}, metadata=True)
+    #concatenate the resulting dataframes into one
+    corpus_cadences = pd.concat(list_of_dfs, ignore_index=False)
+    # new order for columns:
+    col_list = ['Composer', 'Title', 'Measure', 'Beat', 'Pattern', 'Key', 'CadType', 'Tone','CVFs',
+                    'LeadingTones', 'Sounding', 'Low','RelLow','RelTone',
+                    'Progress','SinceLast','ToNext']
+    corpus_cadences = corpus_cadences[col_list]
+
 
 ## Summarizing and Grouping Cadence Results
 
@@ -129,6 +147,9 @@ Note that pink warning messages in the output can be ignored!
 <!-- add content here -->
 [ ]  
 
+## Cadence Radar and Progress Plots
+
+<!-- add content here -->
 -----
 
 ## Sections in this guide

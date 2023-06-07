@@ -98,7 +98,7 @@ The `piece.homorhythm()` function identifies passages in which more than one voi
 * gets lyric ngrams, and finds passages in which the same sequence of two syllables are heard successively in at least two voices at the same offsets.
 * checks the number of active voices (in order to count the number moving on coordinated homorhythm)
 
-### What the 'piece.homorhythm()` Columns Mean
+### What the `piece.homorhythm()` Columns Mean
 
 The results of `piece.verovioHomorhythm()` contain a multiIndex as well as several columns, as explained above:
 

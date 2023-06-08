@@ -32,7 +32,7 @@ Note: **Measure** and **Beat** columns are in the *body of the table*, not at th
 
   * **Clausula Vera** is for cadences involving only Cantizans and Tenorizans; 
   * **Authentic** is for Cantizans and Bassizans (and possibly the Tenorizans, too). 
-  * **Phrygian Clausula Vera** is like Clausula Vera but with the half-step motion in the downward-moving (Tenorizans) part. Phrygian corresponds to Authentic, except that the Bassizans of course moves up a fifth or down a fourth, as is normally the case when the Tenorizans descends by half=step. 
+  * **Phrygian Clausula Vera** is like Clausula Vera but with the half-step motion in the downward-moving (Tenorizans) part. Phrygian corresponds to Authentic, except that the Bassizans of course moves up a fifth or down a fourth, as is normally the case when the Tenorizans descends by half = step. 
   * **Altizans Only** is in cases where the Cantizans is missing and the Altizans role moves to a fifth above the lowest voice. 
   <!-- Consider writing out all the other types and their defs -->
   *See `print(piece.cvfs.__doc__)` for other labels.
@@ -89,7 +89,7 @@ in the `.cadences()` method.
 
 There is only one parameter for the `cadences()` function:  `keep_keys`. If `keep_keys` is set to True, the ngrams that triggered each CVF pair will be shown in additional columns in the table. `keep_keys` is False by default.
 
-	`piece.cadences(keep_keys=True)`
+	`piece.cadences(keep_keys = True)`
 
 ## Cadences in a Corpus
 
@@ -103,9 +103,9 @@ In brief, to find cadences in a corpus and report the results as a single datafr
     #select function.  remember to omit "()"
     func = ImportedPiece.cadences
     #run function on each piece; be sure to include keyword arguments
-    list_of_dfs = corpus.batch(func=func, kwargs={'keep_keys': True}, metadata=True)
+    list_of_dfs = corpus.batch(func = func, kwargs = {'keep_keys': True}, metadata = True)
     #concatenate the resulting dataframes into one
-    corpus_cadences = pd.concat(list_of_dfs, ignore_index=False)
+    corpus_cadences = pd.concat(list_of_dfs, ignore_index = False)
     # new order for columns:
     col_list = ['Composer', 'Title', 'Measure', 'Beat', 'Pattern', 'Key', 'CadType', 'Tone','CVFs',
                     'LeadingTones', 'Sounding', 'Low','RelLow','RelTone',
@@ -117,7 +117,7 @@ In brief, to find cadences in a corpus and report the results as a single datafr
 
 **A quick way to reorganize the columns in the output:**
 
-    cadences = piece.cadences(keep_keys=True)
+    cadences = piece.cadences(keep_keys = True)
     col_list = ['Measure', 'Beat', 'CadType', 'Pattern', 'Key', 'Tone','LeadingTones', 'CVFs', 'Low','RelLow','RelTone', 'Sounding', 'Progress','SinceLast','ToNext']
     cadences = cadences[col_list]
     cadences
@@ -125,7 +125,7 @@ In brief, to find cadences in a corpus and report the results as a single datafr
 ** Group the Cadences by Tone and Type**
 
     cadences = piece.cadences()
-    cadences.groupby(['Tone', 'CadType', 'CVFs']).size().reset_index(name='counts')
+    cadences.groupby(['Tone', 'CadType', 'CVFs']).size().reset_index(name = 'counts')
 
 <!-- add content here -->
 
@@ -168,7 +168,7 @@ Parameters Overview:
 
 Typical use:
 
-    cadenceRadarPlot(combinedType=False, displayAll=True, renderer="iframe")
+    cadenceRadarPlot(combinedType = False, displayAll = True, renderer = "iframe")
 
 Default display order (could be modified for `customOrder`)
 
@@ -176,7 +176,7 @@ Default display order (could be modified for `customOrder`)
 
 Complete function with default settings:
 
-    piece.cadenceRadarPlot(combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe")
+    piece.cadenceRadarPlot(combinedType = False, sounding = None, displayAll = True, customOrder = None, renderer = "iframe")
 
 #### For A Corpus of Pieces
 
@@ -190,11 +190,11 @@ Parameters Overview:
 
 Typical use:
 
-    compareCadenceRadarPlots(combinedType=False, displayAll=True, renderer="iframe")
+    compareCadenceRadarPlots(combinedType = False, displayAll = True, renderer = "iframe")
 
 Complete default function code:
 
-    compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe")
+    compareCadenceRadarPlots(self, combinedType = False, sounding = None, displayAll = True, customOrder = None, renderer = "iframe")
 
 Default display order (could be modified for `customOrder`)
 
@@ -216,11 +216,11 @@ Parameters Overview:
 
 Typical use:
 
-    cadenceProgressPlot(includeType=True)
+    cadenceProgressPlot(includeType = True)
 
 Complete function with defaults:
 
-    cadenceProgressPlot(self, includeType=False, cadTone=None, cadType=None, customOrder=None, includeLegend=True, renderer="")
+    cadenceProgressPlot(self, includeType = False, cadTone = None, cadType = None, customOrder = None, includeLegend = True, renderer = "")
 
 #### For A Corpus of Pieces
 
@@ -234,11 +234,11 @@ Parameters Overview:
 
 Typical use:
 
-    compareCadenceProgressPlots(includeType=True)
+    compareCadenceProgressPlots(includeType = True)
 
 Complete function with defaults:
 
-    compareCadenceProgressPlots(self, includeType=False, cadTone=None, cadType=None, includeLegend=True, customOrder=None, renderer="")
+    compareCadenceProgressPlots(self, includeType = False, cadTone = None, cadType = None, includeLegend = True, customOrder = None, renderer = "")
 
 Default order dictionary (could be modified for `customOrder`)
     order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "F#":9, "C#":10, "Ab":11}

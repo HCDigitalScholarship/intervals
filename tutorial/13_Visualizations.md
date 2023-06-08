@@ -27,15 +27,15 @@ Note that this will only work in a Jupyter Notebook:
     nr = piece.notes().fillna('-')  
     nr = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
     nr.rename(columns = {'index':'pitch'}, inplace = True)  
-    nr['pitch'] = pd.Categorical(nr["pitch"], categories=pitch_order)  
+    nr['pitch'] = pd.Categorical(nr["pitch"], categories = pitch_order)  
     nr = nr.sort_values(by = "pitch").dropna().copy()  
     voices = nr.columns.to_list()  
-    palette = sns.husl_palette(len(voices), l=.4)  
+    palette = sns.husl_palette(len(voices), l = .4)  
     md = piece.metadata  
     for key, value in md.items():  
         print(key, ':', value)  
-    sns.set(rc={'figure.figsize':(15,9)})  
-    nr.set_index('pitch').plot(kind='bar', stacked=True)  
+    sns.set(rc = {'figure.figsize':(15,9)})  
+    nr.set_index('pitch').plot(kind = 'bar', stacked = True)  
 
 **Sample Output**
 
@@ -55,7 +55,7 @@ Or use the Matplot library to create a chart of the frequence of interval usage:
     #rename the index column to something more useful
     mel.rename(columns = {'index':'interval'}, inplace = True)
     #apply the categorical list and sort
-    mel['interval'] = pd.Categorical(mel["interval"], categories=int_order)
+    mel['interval'] = pd.Categorical(mel["interval"], categories = int_order)
     mel = mel.sort_values(by = "interval").dropna().copy()
     voices = mel.columns.to_list()
     #collect and print information about composer and piece
@@ -63,9 +63,9 @@ Or use the Matplot library to create a chart of the frequence of interval usage:
     for key, value in md.items():
         print(key, ':', value)
     #set the figure size, type and colors
-    palette = sns.husl_palette(len(voices), l=.4)
-    sns.set(rc={'figure.figsize':(15,9)})
-    mel.set_index('interval').plot(kind='bar', stacked=True)
+    palette = sns.husl_palette(len(voices), l = .4)
+    sns.set(rc = {'figure.figsize':(15,9)})
+    mel.set_index('interval').plot(kind = 'bar', stacked = True)
 
 
 **Sample Output**

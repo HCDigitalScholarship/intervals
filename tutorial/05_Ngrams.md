@@ -40,22 +40,22 @@ Various parameters afford the means to adjust results; some are used only with t
 
 By default, the `ngrams()` function will always find **contrapuntal modules**. These consist of alternating sequences of the harmonic and melodic intervals formed by every pair of voices in a piece. Also by default in the case of these contrapuntal modules, only the melodic motion of the lower voice in the pair is shown (see `show_both` below for how to show the melodic motion of the upper voice, too). 
 
-The result is thus sequence of N items expresses as a string. If n=3, for instance (`piece.ngrams(n=3).fillna('')`, an ngram of '12_4, 10_Held, 8' between two voices means that three harmonic intervals (12, 10, 8) were formed while the lower voice first went up a fourth, then 'held' (via a tie). The melodic motion of the upper part could be inferred from these five pieces of information.  The following example will serve to illustrate:
+The result is thus sequence of N items expresses as a string. If n = 3, for instance (`piece.ngrams(n = 3).fillna('')`, an ngram of '12_4, 10_Held, 8' between two voices means that three harmonic intervals (12, 10, 8) were formed while the lower voice first went up a fourth, then 'held' (via a tie). The melodic motion of the upper part could be inferred from these five pieces of information.  The following example will serve to illustrate:
 
 [PUT EXAMPLE OF SCORE AND DF HERE]
 
 
 ### Modifying Contrapuntal Module `kind`, `compound`, and `directed`: the `interval_settings` parameter  
 
-By default the contrapuntal modules use `kind='diatonic'`, `directed=True`, and `compound=True` for the harmonic and melodic intervals it reports. Of course it is vital that the intervals for both dimensions of these modules always match.  Fortunately the `ngrams` function provides a simple way to do this via the `interval_settings` parameter.  The values must be applied in this order:  **kind, directed, compound** and enclosed in parenthesis as a single parameter called 'interval_settings'.  Here for instance the kind is chromatic, directed is True, and compound is False:
+By default the contrapuntal modules use `kind = 'diatonic'`, `directed = True`, and `compound = True` for the harmonic and melodic intervals it reports. Of course it is vital that the intervals for both dimensions of these modules always match.  Fortunately the `ngrams` function provides a simple way to do this via the `interval_settings` parameter.  The values must be applied in this order:  **kind, directed, compound** and enclosed in parenthesis as a single parameter called 'interval_settings'.  Here for instance the kind is chromatic, directed is True, and compound is False:
 
     piece.ngrams(interval_settings = ('c', True, False))  
 
 This is the equivalent of the rather verbose sequence:
 
-    mel = piece.melodic(kind = "c", directed=True, compound = False)
-    har = piece.harmonic(kind = "c", directed=True, compound = False))
-    ngrams = piece.ngrams(df=har, other=mel)
+    mel = piece.melodic(kind = "c", directed = True, compound = False)
+    har = piece.harmonic(kind = "c", directed = True, compound = False))
+    ngrams = piece.ngrams(df = har, other = mel)
     ngrams  
 
 See more about combining different dataframes into ngrams below.
@@ -64,7 +64,7 @@ See more about combining different dataframes into ngrams below.
 
 * **contrapuntal ngrams** (since they contain an odd number of harmonic 'slices' and even number of intervening melodic 'motions') are best used with **odd-numbered values for 'n'**.  See more about setting `n` below.
 * **Melodic unisons in the lower part of a contrapuntal pair** are by default reported as 'held'. To substitue another string for these situations (such as "1", or "0"), used the `held` parameter: `piece.ngrams(held = '1')` [note that the value must be passed as a string]
-* **showing melodic motion in both voices of a contrapuntal module** is made possible by setting *two* parameters:  use `exclude=[]` (since otherwise all rests will be excluded from the results) and `show_both=True`.  The full function will thus be: `piece.ngrams(exclude=[], show_both=True)`
+* **showing melodic motion in both voices of a contrapuntal module** is made possible by setting *two* parameters:  use `exclude = []` (since otherwise all rests will be excluded from the results) and `show_both = True`.  The full function will thus be: `piece.ngrams(exclude = [], show_both = True)`
 
 
 ### Melodic, Harmonic, Lyric, and Durational Ngrams:  Using the `df` Parameter
@@ -78,12 +78,12 @@ Ngrams that represent a **single dimension of the score** are build by passing a
 
 *Adjust the parameters of the original function first!* For instance to find **melodic ngrams with combined unisons and chromatic intervals**, first specify the relevant parameters with `piece.melodic()`, and then pass those results to `piece.ngrams()` with the `df` parameter:
 
-    mel = piece.melodic(combineUnisons=True, kind = 'c')
+    mel = piece.melodic(combineUnisons = True, kind = 'c')
     mel_ngrams = piece.ngrams(df = mel)  
 
 Similar strategies would work for harmonic, durations, or lyrics:
 
-    har = piece.harmonic(compound=False)
+    har = piece.harmonic(compound = False)
     har_ngrams = piece.ngrams(df = mel)
 
 Or:
@@ -127,13 +127,13 @@ For example, the following line of code will produce **ngrams of length 5 contai
 
 Or, more directly:  
 
-    ng = piece.ngrams(df=piece.lyrics(), other=piece.durations(), n = 5)  
+    ng = piece.ngrams(df = Piece.lyrics(), other = piece.durations(), n = 5)  
 
 ### nGrams at Using Regularized Durations: The `unit` Parameter  
 
 By default, applying the `ngrams()` function to a piece will produce ngrams the actual note values found in the piece. It is nevertheless possible to determine the ngrams according to some fixed number of offsets using the `unit` parameter, which will force the function to only output ngrams found at a given regular interval. This can be helpful for applications such as only finding ngrams which begin on the first beat of a measure, or other similar situations where regularity is helpful. 
 
-It would probably make little sense to use '1.0' or some other tiny unit, since this would result in a vast number of unisons or static harmonic passages as longer notes are sampled multiple times.  But setting `unit=2.0` would correspond to the half-note (minim), a common basic pace of melodic and harmonic motion in Renaissance counterpoint.  Larger units might also be revealing of large=scale sequences.
+It would probably make little sense to use '1.0' or some other tiny unit, since this would result in a vast number of unisons or static harmonic passages as longer notes are sampled multiple times.  But setting `unit = 2.0` would correspond to the half-note (minim), a common basic pace of melodic and harmonic motion in Renaissance counterpoint.  Larger units might also be revealing of large = scale sequences.
 
     piece.ngrams(unit = 4)  
   
@@ -155,15 +155,15 @@ By default, the `ngrams()` function will find every single series of intervals o
 This output can then be passed to yet another function as a `df` value. For example, we can sum the durations of each cell together to find the overall *durations of melodic ngrams* with the following:  
 
     # get notes, either combining unisons or not
-    nr = piece.notes(combineUnisons=True)
-    # get melodic intervals based on previous, plus settings.  Note end=False so that we associate the interval with the starting note
-    mel = piece.melodic(df=nr, kind='d', end=False)
+    nr = piece.notes(combineUnisons = True)
+    # get melodic intervals based on previous, plus settings.  Note end = False so that we associate the interval with the starting note
+    mel = piece.melodic(df = nr, kind = 'd', end = False)
     # now the mel ngrams, based on that starting position, etc
-    mel_ng = piece.ngrams(df=mel, n=4)
+    mel_ng = piece.ngrams(df = mel, n = 4)
     # and instead of the moving window, we mask them off to entries only
     entries = piece.entries(mel_ng)
     # now the total durations of those entries. note that passing a df to duration will make a sum of all the values in each cell
-    ng_durs = piece.durations(df=entries)
+    ng_durs = piece.durations(df = entries)
 
 ## Tuple Trouble, and How to Fix It
 
@@ -178,7 +178,7 @@ Note that the output of `ngrams()` for *any of the single-feature types* (melodi
     
     #find mel ngrams
     mel = piece.melodic()
-    mel_ngrams = piece.ngrams(df=mel)
+    mel_ngrams = piece.ngrams(df = mel)
 
     #apply function to all cells
     mel_ngrams_no_tuples = mel_ngrams.applymap(convertTuple)

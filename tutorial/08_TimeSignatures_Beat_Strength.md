@@ -11,7 +11,7 @@ For any piece, it is possible to return a dataframe containing each new time sig
 There are no parameters to set with this function.  But it can be called as a parameter from `detailIndex`:
 
     nr = piece.notes()
-    piece.detailIndex(nr, t_sig=True)
+    piece.detailIndex(nr, t_sig = True)
 
 ## View Measure Numbers with `measures()`
 
@@ -39,7 +39,7 @@ Or another way to do this with the `loc` method of Pandas:
     measure_starts = ms.index.to_list()
     #df of notes and rests
     nr = piece.notes()
-    #filter nr to show only those offsets (=index=) that are in the list just made
+    #filter nr to show only those offsets (=index) that are in the list just made
     nr2 = nr.loc[nr.index.isin(measure_starts)]
     nr2
 
@@ -72,9 +72,9 @@ The resulting dataframe could also be used to filter other results, for instance
         #filter the stacked notes and unstack
         strong_notes = nr_stacked[strong_beats].unstack()
         #find the melodic intervals among those 'strong' notes
-        mel_strong = piece.melodic(df=strong_notes, kind='d')
+        mel_strong = piece.melodic(df = strong_notes, kind = 'd')
         #and at last find the ngrams for those strong notes
-        strong_ngrams = piece.ngrams(df=mel_strong, n=4, exclude=['Rest']).fillna('')
+        strong_ngrams = piece.ngrams(df = mel_strong, n = 4, exclude = ['Rest']).fillna('')
         strong_ngrams
 
 Results from the `beatStrengths` method should **not be sent to the `regularize` method**. Read more about `regularize` at [06_Durations](06_Durations.md).

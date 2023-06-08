@@ -38,7 +38,7 @@ The `piece.measures()` function returns a df that shows were each new measure be
     measure_starts = ms.index.to_list()
     #df of notes and rests
     nr = piece.notes()
-    #filter nr to show only those offsets (=index=) that are in the list just made
+    #filter nr to show only those offsets (=index) that are in the list just made
     notes_at_start_of_measures = nr.loc[nr.index.isin(measure_starts)]
     notes_at_start_of_measures
 
@@ -114,9 +114,9 @@ Count the notes in each voice part, then *sort the df alphabetically by note* (w
 
     nr.apply(pd.Series.value_counts).fillna(0).astype(int)
 
-Or sorted by the *counts in a particular voice* (here the NA's are filled with 0 [zero]. To select a different column, change `nr.columns[0]` to a different number. To sort them in descending order, try `ascending=True`.
+Or sorted by the *counts in a particular voice* (here the NA's are filled with 0 [zero]. To select a different column, change `nr.columns[0]` to a different number. To sort them in descending order, try `ascending = True`.
 
-    nr.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by=nr.columns[0], ascending=False)
+    nr.apply(pd.Series.value_counts).fillna(0).astype(int).sort_values(by = nr.columns[0], ascending = False)
 
 But it is also possible to *declare a sort order for the pitches* , then organize the entire data frame in that sequence. This will show the voice ranges of each part.
 
@@ -171,7 +171,7 @@ This `int_order` can now be used to sort the intervals from smallest to largest,
     #rename the index as 'interval' 
     mel.rename(columns = {'index':'interval'}, inplace = True) 
     #map each interval to the order specified in the "int_order" list above
-    mel['interval'] = pd.Categorical(mel["interval"], categories=int_order)
+    mel['interval'] = pd.Categorical(mel["interval"], categories = int_order)
     #sort the results, remove NA's, and make a copy to avoid problems
     mel = mel.sort_values(by = "interval").dropna().copy()
     #reset the index and display

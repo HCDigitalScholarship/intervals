@@ -6,7 +6,7 @@ The `piece.lyrics()` function does not take any parameters.  But `piece.homorhyt
 
 * `ngram_length` (which is 4 by default, and determines the number of durations and syllables that must be in common among the voices in order to be marked as HR);
 
-* `full_hr` (which is True by default).  When `full_hr=True` the method will find any passage where *all active voices* share the same durational ngram and syllables; if `full_hr=False` the method will find *any passage where even two voices share the same durational ngram and the same syllables*. 
+* `full_hr` (which is True by default).  When `full_hr = True` the method will find any passage where *all active voices* share the same durational ngram and syllables; if `full_hr = False` the method will find *any passage where even two voices share the same durational ngram and the same syllables*. 
 
 See more below for details on the meaning of the columns reported by `piece.homorhythm()`
 
@@ -16,7 +16,7 @@ By default, applying the `lyrics()` function to a piece will generate a DataFram
 
     lyrics = piece.lyrics()  
 
-As opposed to integers or floats, the DataFrame produced by the `lyrics()` function will be in the form of **text strings**. Also unlike other functions, the `lyrics()` function has no parameters, and therefore can only be executed in one way. Its usage, however, can still be varied based on the other functions with which it is combined. Note, for instance, that piece.`piece.ngrams(df=piece.lyrics())` will result in a dataframe that contains cells of *tuples*, just as the ngrams() function will for any other musical feature.
+As opposed to integers or floats, the DataFrame produced by the `lyrics()` function will be in the form of **text strings**. Also unlike other functions, the `lyrics()` function has no parameters, and therefore can only be executed in one way. Its usage, however, can still be varied based on the other functions with which it is combined. Note, for instance, that piece.`piece.ngrams(df = Piece.lyrics())` will result in a dataframe that contains cells of *tuples*, just as the ngrams() function will for any other musical feature.
 
 ## Alphabetical Characters Only?  How to Remove Punctuation Marks from Results
 
@@ -39,7 +39,7 @@ To find N-grams of length 5 (groupings of 5 consectuive syllables found in the l
 Or, more succinctly:
 
     n = _n
-    piece.ngrams(df=piece.lyrics(), n = _N)
+    piece.ngrams(df = Piece.lyrics(), n = _N)
 
 ## Cleaning Up Lyrics:  Dealing with Punctuation, Hyphens, etc
 
@@ -80,7 +80,7 @@ Then use `applymap()` on the entire dataframe of ngrams:
     #select length of ngrams
     n = _n
     #make the ngrams
-    lyric_ngs = piece.ngrams(df=piece.lyrics(), n = _N)
+    lyric_ngs = piece.ngrams(df = Piece.lyrics(), n = _N)
     #convert them to tuples
     lyric_ngs_strings = lyric_ngs.applymap(convertTuple)
 
@@ -88,7 +88,7 @@ Or more succinctly:
 
     n = _n
     #make the ngrams
-    lyric_ngs_strings = piece.ngrams(df=piece.lyrics(), n = _N).applymap(convertTuple)
+    lyric_ngs_strings = piece.ngrams(df = Piece.lyrics(), n = _N).applymap(convertTuple)
 
 ## Predicting Homorhythmic Passages:  `piece.homorhythm()`
 
@@ -118,7 +118,7 @@ Users can supply either of two arguments:
 
 * `ngram_length` (which is 4 by default, and determines the number of durations and syllables that must be in common among the voices in order to be marked as HR);
 
-* `full_hr` (which is True by default).  When `full_hr=True` the method will find any passage where *all active voices* share the same durational ngram and syllables; if `full_hr=False` the method will find *any passage where even two voices share the same durational ngram and the same syllables*.
+* `full_hr` (which is True by default).  When `full_hr = True` the method will find any passage where *all active voices* share the same durational ngram and syllables; if `full_hr = False` the method will find *any passage where even two voices share the same durational ngram and the same syllables*.
 
 ### Typical Use of 'piece.homorhythm()`
 
@@ -126,7 +126,7 @@ Users can supply either of two arguments:
     
 Or 
 
-    piece.homorhythm(ngram_length=4, full_hr=True)
+    piece.homorhythm(ngram_length = 4, full_hr = True)
 
 ### Filtering Homorhythm Results:  Voices, lists, and more
 
@@ -134,14 +134,14 @@ As a first step it will necessary to `fillna()`:
 
 Note that it is probably a good idea to `fillna('')`:
 
-    hr = piece.homorhythm(ngram_length=4, full_hr=True).fillna('')
+    hr = piece.homorhythm(ngram_length = 4, full_hr = True).fillna('')
 
 **Search for Lyrics**
 
 If the plan is to search for a *particular word or words* in the lyric ngrams, it would be good to convert the *tuples of the *syllable_set* into *a string*.  Note that in the updated results, all of the syllables will be run together as a single string.
 
     #run hr function and convert hr['syllable_set'] to string
-    hr = piece.homorhythm(ngram_length=6, full_hr=True).fillna('')
+    hr = piece.homorhythm(ngram_length = 6, full_hr = True).fillna('')
     hr['syllable_set'] = hr['syllable_set'].apply(lambda x: ''.join(map(str, x[0]))).copy()
 
     #supply the list of words.  Capitalization matters!
@@ -159,7 +159,7 @@ If the plan is to search for a *particular word or words* in the lyric ngrams, i
 And if the plan is to search for the presence of a particular voice in the hr results, then the *lists of voices* in the *hr_voices* column will need to be converted into strings, too:
 
     #run hr function and convert hr['syllable_set'] to string
-    hr = piece.homorhythm(ngram_length=6, full_hr=True).fillna('')
+    hr = piece.homorhythm(ngram_length = 6, full_hr = True).fillna('')
     hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
 
     #supply names of voices.  They must match the voice names in `piece.notes.columns()` 
@@ -187,13 +187,13 @@ To use the function, pass the piece, homorhythm data frame, url of the piece, an
 
 The same parameters noted above can also be used here, then passed to the `verovioHomorhythm()` function for rendering:
 
-    hr = piece.homorhythm(ngram_length=4, full_hr=True)
+    hr = piece.homorhythm(ngram_length = 4, full_hr = True)
     piece.verovioHomorhythm(hr)
 
 And it is possible to pass a *filtered set of results* to `piece.verovioHomorhythm()`.  For example, with chosen voices:
 
     #run hr function and convert hr['syllable_set'] to string
-    hr = piece.homorhythm(ngram_length=6, full_hr=True).fillna('')
+    hr = piece.homorhythm(ngram_length = 6, full_hr = True).fillna('')
     hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
 
     #supply names of voices.  They must match the voice names in `piece.notes.columns()` 

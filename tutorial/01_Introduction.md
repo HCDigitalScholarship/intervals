@@ -35,9 +35,9 @@ If you pass `importScore()` a **path to a directory** it will import all the fil
 
 Adding the parameter `recursive = True` will in turn import all of the pieces in the main directory and any subdirectories, for example: 
 
-    pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder', recursive=True)
+    pieces = importScore('/Users/rfreedma/Downloads/MEI_Folder', recursive = True)
 
-And as with a single piece, the parameter `verbose=True` will the status of each attempted import.
+And as with a single piece, the parameter `verbose = True` will the status of each attempted import.
 
 The CRIM Interval library also allows the user to import multiple pieces at once through the `CorpusBase()` function. This function operates similarly to the `importPiece()` function, but accepts a **list of piece urls or paths** instead of a single url or path. The individual items in the Python list must be:
 
@@ -114,11 +114,11 @@ CRIM Intervals functions often need to be chained together, as explained in the 
     #first function
     func1 = ImportedPiece.melodic
     #first function results as list of dfs
-    list_of_dfs = corpus.batch(func=func1, kwargs={'end': False}, metadata=False)
+    list_of_dfs = corpus.batch(func = func1, kwargs = {'end': False}, metadata = False)
     #second function
     func2 = ImportedPiece.ngrams
     #now the list_of_dfs from the first function is passed to the second function as the keyword argument 'df'
-    list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
+    list_of_melodic_ngrams = corpus.batch(func = func2, kwargs = {'n': 4, 'df': list_of_dfs})
 
 ### Piece Metadata and Batch Methods:  The `metadata` Parameter
 
@@ -130,22 +130,22 @@ The `batch` method will normally include `metadata` for each piece. But if the a
     #first function
     func1 = ImportedPiece.melodic
     #first function results as list of dfs
-    #notice that 'metadata=False' for this step
-    list_of_dfs = corpus.batch(func=func1, kwargs={'end': False}, metadata=False)
+    #notice that 'metadata = False' for this step
+    list_of_dfs = corpus.batch(func = func1, kwargs = {'end': False}, metadata = False)
     #second function
     func2 = ImportedPiece.ngrams
     #now the list_of_dfs from the first function is passed to the second function as the keyword argument 'df'
     #here metadata remains as True (which is the default, and so we can omit the parameter) 
-    list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
+    list_of_melodic_ngrams = corpus.batch(func = func2, kwargs = {'n': 4, 'df': list_of_dfs})
 
 ### Tracking Batch Processing Errors:  The `verbose` Parameter
 
-As in the case of single piece imports, when used as part of a `batch` function, the `verbose=True` provides confirmation that each piece has been successfully imported. This can be useful to pinpoint a piece that is triggering a bug.
+As in the case of single piece imports, when used as part of a `batch` function, the `verbose = True` provides confirmation that each piece has been successfully imported. This can be useful to pinpoint a piece that is triggering a bug.
 
     corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                            'https://crimproject.org/mei/CRIM_Model_0009.mei'])
     func = ImportedPiece.notes
-    list_of_dfs = corpus.batch(func, verbose=True)
+    list_of_dfs = corpus.batch(func, verbose = True)
 
 ### Voice Part Names vs Staff Position in Batch Processing:  The `number_parts` Parameter
 
@@ -155,7 +155,7 @@ By default, .batch will replace columns that consist of part names (like `.melod
 
 To keep the **original part names** in the columns, set `number_parts` parameter to False. For example:
 
-    list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, number_parts=False)
+    list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, number_parts = False)
 
 
 ## Exporting CRIM Intervals Results
@@ -183,8 +183,8 @@ You could then save this model's melodic interval data to a CSV file with the fi
 
 Alternatively, a DataFrame can be saved as an Excel file with the following command lines in order, once again replacing 'file_name.xlsx' with your desired file name, replacing 'Sheet1' with your desired sheet name **(in quotes)**, and replacing 'frame_name' in the second line with the name of your DataFrame **(without quotes)**, which was be 'mel' in the last example: 
 
-    writer = pd.ExcelWriter('saved_csv/file_name.xlsx', engine='xlsxwriter') 
-    frame_name.to_excel(writer, sheet_name='Sheet1')  
+    writer = pd.ExcelWriter('saved_csv/file_name.xlsx', engine = 'xlsxwriter') 
+    frame_name.to_excel(writer, sheet_name = 'Sheet1')  
     writer.save()  
 
 Substituting the information from the first example, we could write that same DataFrame to an Excel sheet with the following commands: 

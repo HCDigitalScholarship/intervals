@@ -115,7 +115,7 @@ Of course there might be other situations in which a special DataFrame of notes 
 
 Unlike the `notes()` functions, the `melodic()` function does not contain `combineUnisons` or `combineRests` parameters. These parameters, however, can still be used in conjunction with the `melodic()` function as follows:  
 
-    nr_no_unisons = piece.notes(combineUnisons=True)
+    nr_no_unisons = piece.notes(combineUnisons = True)
     piece.melodic(df = nr_no_unisons)  
 
 Or (though less useful),  

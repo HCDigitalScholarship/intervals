@@ -42,8 +42,7 @@ By default, the `ngrams()` function will always find **contrapuntal modules**. T
 
 The result is thus sequence of N items expresses as a string. If n = 3, for instance (`piece.ngrams(n = 3).fillna('')`, an ngram of '12_4, 10_Held, 8' between two voices means that three harmonic intervals (12, 10, 8) were formed while the lower voice first went up a fourth, then 'held' (via a tie). The melodic motion of the upper part could be inferred from these five pieces of information.  The following example will serve to illustrate:
 
-[PUT EXAMPLE OF SCORE AND DF HERE]
-
+![Alt text](images/ng_1.png)
 
 ### Modifying Contrapuntal Module `kind`, `compound`, and `directed`: the `interval_settings` parameter  
 
@@ -51,10 +50,12 @@ By default the contrapuntal modules use `kind = 'diatonic'`, `directed = True`, 
 
     piece.ngrams(interval_settings = ('c', True, False))  
 
+![Alt text](images/ng_2.png)
+
 This is the equivalent of the rather verbose sequence:
 
     mel = piece.melodic(kind = "c", directed = True, compound = False)
-    har = piece.harmonic(kind = "c", directed = True, compound = False))
+    har = piece.harmonic(kind = "c", directed = True, compound = False)
     ngrams = piece.ngrams(df = har, other = mel)
     ngrams  
 
@@ -64,8 +65,12 @@ See more about combining different dataframes into ngrams below.
 
 * **contrapuntal ngrams** (since they contain an odd number of harmonic 'slices' and even number of intervening melodic 'motions') are best used with **odd-numbered values for 'n'**.  See more about setting `n` below.
 * **Melodic unisons in the lower part of a contrapuntal pair** are by default reported as 'held'. To substitue another string for these situations (such as "1", or "0"), used the `held` parameter: `piece.ngrams(held = '1')` [note that the value must be passed as a string]
+
+![Alt text](images/ng_3.png)
+
 * **showing melodic motion in both voices of a contrapuntal module** is made possible by setting *two* parameters:  use `exclude = []` (since otherwise all rests will be excluded from the results) and `show_both = True`.  The full function will thus be: `piece.ngrams(exclude = [], show_both = True)`
 
+![Alt text](images/ng_4.png)
 
 ### Melodic, Harmonic, Lyric, and Durational Ngrams:  Using the `df` Parameter
 

@@ -8,6 +8,8 @@ Harmony is one of the most important elements of music, and of musical similarit
 
     piece.harmonic()  
 
+![Alt text](images/har_1.png)
+
 The function can, however, be modified by each of its parameters:  
 * `kind`, for controlling if diatonic, chromatic, or other types of intervals are reported; default is diatonic  
 * `directed`, for controlling whether the report is simply a raw interval, or also reports whether it goes up or down (indicated with a '-' if down); default includes direction  
@@ -27,6 +29,8 @@ The `harmonic()` function contains a parameter `kind`, which has a default value
 **Diatonic without qualities**. Provides outputs such as "8" for an octave, and "3" for a third interval:  
 
     piece.harmonic(kind = "d")  
+
+![Alt text](images/har_2.png)
 
 **Chromatic**. Simply the difference in pitch including all intermediary notes. Outputs "12" for an octave interval (e.g. C4 -> C5), "6" for a tritone interval (e.g. C5 -> F#5), and "0" for a unison (e.g. C5 -> C5):  
 
@@ -59,11 +63,15 @@ The `harmonic()` function contains a parameter `compound`, with a default value 
 
 Using `piece.harmonic(compound = False)`, in contrast, analyzes all intervals as if they are within a octave (what musicians call the 'simple' intervallic distances). In this case the interval from C4 to E5 would be a diatonic 3, a chromatic 4, M3 using 'with quality', and 2 using 'zero-based with quality'. Note that an octave itself is not reduced to a unison.  
 
+![Alt text](images/har_3.png)
+
 ### Harmony Between All Voice Pairs, or Only Comparing to the Lowest Voice? The `againstLow` Parameter  
 
 By default, `harmonic()` generates a DataFrame of the harmonic intervals between **ALL** voice pairs present at a given offset. This is the case when the `againstLow` parameter is set to its default, `False`. Alternatively, however, we may wish to explore each voice's harmonic relationship only to the lowest voice present at each offset, and not need other harmonic pairs creating clutter in our DataFrame output. When changed to `True`, harmonic intervals will only be shown between the lowest voice and each other voice at a given offset:  
 
     piece.harmonic(againstLow = True)  
+
+![Alt text](images/har_4.png)
 
 This means that if a piece contained a Bass, Tenor, Alto, and Soprano voice, all four voices were sounding, and `againstLow` was set to **True**, `harmonic()` will generate the interval between the Bass and the Tenor, the Bass and the Alto, and the Bass and the Soprano. It will **NOT** generate any harmonic interval between the Tenor and Alto, Tenor and Soprano, or Alto and Soprano. The same logic would also apply even if the Bass was not present, where only the harmonic intervals appearing would be between the Tenor and Alto voices, and between the Tenor and Soprano voices.  
 

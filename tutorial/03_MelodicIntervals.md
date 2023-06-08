@@ -9,6 +9,8 @@ In its simplest form, `piece.melodic()` returns a DataFrame of diatonic interval
 Default usage:  
 
     piece.melodic()  
+
+![Alt text](images/mel_1.png)
 ​
 The most important parameters:
 * `kind`, for controlling if diatonic, chromatic, or other types of intervals are reported; default is diatonic  
@@ -34,6 +36,8 @@ Diatonic with quality. This refers to "P8" for a perfect octave (e.g. C4 -> C5),
 **Diatonic without quality**. Provides outputs such as "8" for an octave, and "3" for a third interval.  
 
     piece.melodic(kind = "d")  
+
+![Alt text](images/mel_2.png)
 
 **Chromatic**. The difference between two pitches in semitones. Outputs "12" for an octave interval (e.g. C4 -> C5), "6" for a tritone interval (e.g. C5 -> F#5), and "0" for a unison (e.g. C5 -> C5):  
 
@@ -76,6 +80,8 @@ In most cases, the `melodic()` function will be used to trace movement at each n
     #possible replacement values:  
     piece.melodic(unit = 1)  
     piece.melodic(unit = 4)  
+
+![Alt text](images/mel_3.png)
 ​
 Setting `unit` to a small value might be helpful in comparing the degree of movement in several voices.
 ​
@@ -97,6 +103,8 @@ Alternate value, which would return an interval on **beat 1**:
 
     piece.melodic(end = False)  
 
+![Alt text](images/mel_4.png)
+
 ### Applying `melodic()` to a Custom Set of Notes: The `df` Parameter  
 
 Normally `melodic()` will be used with a complete piece, as in `piece.melodic()`, along with any special parameters needed. Sometimes, however, it might be useful to provide a special set of notes to melodic. For example, to run `melodic()` on the piece with combined unisons, it will first be necessary to create a DataFrame of the piece with combined unisons, and in turn pass that DataFrame to the `melodic()` function via the `df` parameter:  
@@ -117,6 +125,8 @@ Unlike the `notes()` functions, the `melodic()` function does not contain `combi
 
     nr_no_unisons = piece.notes(combineUnisons = True)
     piece.melodic(df = nr_no_unisons)  
+
+![Alt text](images/mel_5.png)
 
 Or (though less useful),  
 

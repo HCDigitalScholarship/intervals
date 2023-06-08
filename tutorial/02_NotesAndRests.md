@@ -31,6 +31,8 @@ A unison is when a new note is sounded, but the pitch remains the same (e.g. a C
     #Or, the default value:  
     piece.notes(combineUnisons = False)   
 
+![Alt text](images/notes_2.png)
+
 The `head()` function can be combined with `notes(combineUnisons = True)` as shown in the following examples:  
 
     whole_piece = piece.notes(combineUnisons = True)
@@ -50,6 +52,8 @@ The `combineRests` parameter operates similarly to the `combineUnisons` paramete
     #Or, the default value:  
     piece.notes(combineRests = True)  
 
+![Alt text](images/_notes_3.png)
+
 Or, once again, incorporated with the `head()` function;  
 
     piece_separate_rests = piece.notes(combineRests = False)  
@@ -66,6 +70,8 @@ It is important to realize that in code, '0' is not the same as Nothing. Where t
     piece.notes().fillna('')  
     piece.notes().fillna('-')  
     piece.notes().fillna(0)  
+
+![Alt text](images/notes_4.png)
 
 Note that the parameter of the `fillna()` function is not necessarily a text string, as any valid data could be provided, such as an integer value in place of the text field. Later, we will examples of cases where replacing 'NaN' values with 0 rather than a text string is optimal, but in many cases, it is simply beneficial to pass some discrete symbol to the `fillna()` function for the benefit of a human reader.  
 

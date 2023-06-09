@@ -183,9 +183,22 @@ Compare results with and without regularization (unit = 2):
 
 An ngram can be placed within the DataFrame at one of two offsets. By default, the `offsets` parameter is set equal to `"first"`.  In this case the ngram will be associated with the offset of the first element in it (such as the first interval or first lyric syllable). Alternatively, setting the parameter to `"last"` will place it at the offset of its last element.  
 
-    mel = piece.melodic(kind = "c", compound = False)
-    mel_ngrams_lastOffset = piece.ngrams(df = mel, n = 5, offsets = "last")
+Melodic ngrams at offset at start of first note (note settings for both mel and ngrams!):
+
+    mel = piece.melodic(kind = "c", end = False)
+    mel_ngrams_lastOffset = piece.ngrams(df = mel, n = 5, offsets = "first").fillna('')
     mel_ngrams_lastOffset 
+
+
+Melodic ngrams at offset at end of last note (note settings for both mel and ngrams!):
+
+    mel = piece.melodic(kind = "c", end = True)
+    mel_ngrams_lastOffset = piece.ngrams(df = mel, n = 5, offsets = "last").fillna('')
+    mel_ngrams_lastOffset 
+
+
+![Alt text](images/ng_12.png)
+
 
 ## All ngrams or Entries Only? The `entries()` Function  
 

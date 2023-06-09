@@ -211,21 +211,42 @@ Note that:
 
 There are several other possible parameters for `entries()`:
 
-- If `thematic` is set to True, this method returns all instances of entries
-that happen at least twice anywhere in the piece. This means
+- If `thematic` is set to **True**, this method returns all instances of entries
+that happen *at least twice anywhere in the piece*. This means
 that a melody must happen at least once coming from a rest, and at least
-one more time, though the additional time doesn't have to be after a rest.
+one more time, though the additional time doesn't have to be after a rest. 
+Setting this to False will return 'singleton' entries:  melodies that come after a rest
+but occur only once in the piece.  
 - If `anywhere` is set to True, the final results returned include all
 instances of entry melodies, whether they come from rests or not.
 - If `fermatas` is set to True (default), any melody starting immediately
 after a fermata will also be counted as an entry.
 
-Thus:
+Thus compare *moving window of melodic ngrams*:
+
+    mel = piece.melodic(kind = 'd', end=False)
+    mel_ngrams = piece.ngrams(df = mel, n=4, offsets = 'first').fillna('')
+    piece.detailIndex(mel_ngrams, offset=True).head(10)
+
+![Alt text](images/ng_13.png)
+
+With results *limited to entries*:
+
 
     mel = piece.melodic(kind = 'd', end = False)
     mel_ngrams = piece.ngrams(df = mel, n = 4, offsets = 'first')
     entries = piece.entries(df = mel_ngrams, thematic=False, anywhere=False, fermatas=True, exclude=[]).fillna('')
     entries  
+
+![Alt text](images/ng_14.png)
+
+And compare results of *limited to entries allowing singletons* via `thematic = False`
+
+![Alt text](images/ng_15.png)
+
+With results of *limited to entries allowing only entries that occur more than once* (but at least once after a rest) vis `thematic = True`:
+
+![Alt text](images/ng_16.png)
 
 This output can then be passed to yet another function as a `df` value. For example, we can sum the durations of each cell together to find the overall *durations of melodic ngrams* with the following:  
 

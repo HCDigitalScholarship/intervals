@@ -204,10 +204,28 @@ Melodic ngrams at offset at end of last note (note settings for both mel and ngr
 
 By default, the `ngrams()` function will find every single series of intervals of its given length, creating a moving window that will find not only the ngrams representing the beginnings of melody lines, but also those same ngrams starting from the second interval, and from the third, and so on. We can include only the ngrams of melodic intervals which begin after a rest, section break, or fermata with the `entries()` function.  
 
-    mel = piece.melodic(kind = "c", compound = False)
-    mel_ngrams = piece.ngrams(df = mel, n = -1)
-    entries = piece.entries(df = mel_ngrams)
-    entries 
+Note that:
+
+- if passing melodic intervals they must be with `end = False`, since the entries are also calculated this way
+- the ngrams created from the df of melodic intervals just also be set with `offsets = 'first'` (this is the default), since the entries are found this way
+
+There are several other possible parameters for `entries()`:
+
+- If `thematic` is set to True, this method returns all instances of entries
+that happen at least twice anywhere in the piece. This means
+that a melody must happen at least once coming from a rest, and at least
+one more time, though the additional time doesn't have to be after a rest.
+- If `anywhere` is set to True, the final results returned include all
+instances of entry melodies, whether they come from rests or not.
+- If `fermatas` is set to True (default), any melody starting immediately
+after a fermata will also be counted as an entry.
+
+Thus:
+
+    mel = piece.melodic(kind = 'd', end = False)
+    mel_ngrams = piece.ngrams(df = mel, n = 4, offsets = 'first')
+    entries = piece.entries(df = mel_ngrams, thematic=False, anywhere=False, fermatas=True, exclude=[]).fillna('')
+    entries  
 
 This output can then be passed to yet another function as a `df` value. For example, we can sum the durations of each cell together to find the overall *durations of melodic ngrams* with the following:  
 
@@ -216,7 +234,7 @@ This output can then be passed to yet another function as a `df` value. For exam
     # get melodic intervals based on previous, plus settings.  Note end = False so that we associate the interval with the starting note
     mel = piece.melodic(df = nr, kind = 'd', end = False)
     # now the mel ngrams, based on that starting position, etc
-    mel_ng = piece.ngrams(df = mel, n = 4)
+    mel_ng = piece.ngrams(df = mel, n = 4).fillna(')
     # and instead of the moving window, we mask them off to entries only
     entries = piece.entries(mel_ng)
     # now the total durations of those entries. note that passing a df to duration will make a sum of all the values in each cell

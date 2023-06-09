@@ -1,6 +1,6 @@
 # Finding ngrams and Entries with CRIM Intervals 
 
-An **n-gram** (hereafter simply 'ngram') is a commonly used linguistic term for a continuous string of characters or events. A series of any musical expressions in pieces of music, specifically of some length *N*, can similarly be refered to as an **ngram**. With the `ngrams()` function we are able to represent various different types of ngrams depending on the data input type **[PHOTOS NEEDED for each example]**:  
+An **n-gram** (hereafter simply 'ngram') is a commonly used linguistic term for a continuous string of characters or events. A series of any musical expressions in pieces of music, specifically of some length *N*, can similarly be refered to as an **ngram**. With the `ngrams()` function we are able to represent various different types of ngrams depending on the data input type:
 
 * An ngram of notes, harmonic intervals, durations, or lyrics will involve *N* notes, or in the case of harmonic (vertical) intervals, *N* pairs of notes  
 * An ngram of melodic intervals will involve (*N* + 1) notes, since it involves *N* **lateral intervals between** notes
@@ -120,7 +120,7 @@ Remember that modifications to the particular type of feature in question needs 
 * In the case of melodic ngrams, the presence of any `Rest` means that the ngram will 'break' at that point (since there is no melodic interval between a note and a rest). The treatment of rests for other kinds of ngrams is determined by the `exclude` parameter, as explained below.
 * To find *melodic ngrams of the maximum length* until a rest is found, set `n = -1`. 
 
-### Combination ngrams:  using `df` and `other` Parameters Together **NEEDS PICTURE**  
+### Combination ngrams:  using `df` and `other` Parameters Together  
 
 The default 'contrapuntal module' ngram is in fact a combination of two different dataframes:  one for the harmonic intervals and the other for the melodic ones. But it is possible to create other combinations by passing *both `df` and `other` to `ngrams()`, provided that the `df` and `other` parameters have the same shape (overall number of rows and columns). 
 

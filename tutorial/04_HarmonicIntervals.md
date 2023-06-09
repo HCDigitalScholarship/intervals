@@ -65,7 +65,7 @@ Using `piece.harmonic(compound = False)`, in contrast, analyzes all intervals as
 
 ![Alt text](images/har_3.png)
 
-### Harmony Between All Voice Pairs, or Only Comparing to the Lowest Voice? The `againstLow` Parameter  
+### Harmonic Intervals Between All Voice Pairs, or Only Comparing to the Lowest Voice? The `againstLow` Parameter  
 
 By default, `harmonic()` generates a DataFrame of the harmonic intervals between **ALL** voice pairs present at a given offset. This is the case when the `againstLow` parameter is set to its default, `False`. Alternatively, however, we may wish to explore each voice's harmonic relationship only to the lowest voice present at each offset, and not need other harmonic pairs creating clutter in our DataFrame output. When changed to `True`, harmonic intervals will only be shown between the lowest voice and each other voice at a given offset:  
 

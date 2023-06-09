@@ -79,27 +79,43 @@ Note:  Ngrams produced in the following ways will be dataframes of 'tuples'.  Se
 Ngrams that represent a **single dimension of the score** are build by passing a dataframe to the `ngram()` function via the `df` parameter. For example, the following code will find the **melodic ngrams** in a piece:  
 
     mel = piece.melodic()
-    mel_ngrams = piece.ngrams(df = mel)  
+    mel_ngrams = piece.ngrams(df = mel)
+    mel_ngrams  
+
+![Alt text](images/ng_5.png)
 
 *Adjust the parameters of the original function first!* For instance to find **melodic ngrams with combined unisons and chromatic intervals**, first specify the relevant parameters with `piece.melodic()`, and then pass those results to `piece.ngrams()` with the `df` parameter:
 
-    mel = piece.melodic(combineUnisons = True, kind = 'c')
-    mel_ngrams = piece.ngrams(df = mel)  
+    nr = piece.notes(combineUnisons = True)
+    mel = piece.melodic(df = nr, end = False)
+    mel_ng = piece.ngrams(df = mel, n = 4) 
+    mel_ng
+
+![Alt text](images/ng_6.png)
 
 Similar strategies would work for harmonic, durations, or lyrics:
 
     har = piece.harmonic(compound = False)
-    har_ngrams = piece.ngrams(df = mel)
+    har_ngrams = piece.ngrams(df = har).fillna('')
+    har_ngrams
+
+![Alt text](images/ng_7.png)
 
 Or:
 
     lyr = piece.lyrics()
-    lyr_ngrams = piece.ngrams(df = lyr)
+    lyr_ngrams = piece.ngrams(df = lyr, n=5).fillna('')
+    lyr_ngrams
+
+![Alt text](images/ng_8.png)
 
 Or:
 
     dur = piece.durations()
-    dur_ngrams = piece.durations(df = dur)
+    dur_ngrams = piece.durations(df = dur).fillna('')
+    dur_ngrams
+
+![Alt text](images/ng_9.png)
 
 -->
 ### Setting ngram Length: the `n` Parameter  
@@ -107,12 +123,14 @@ Or:
 When gathering ngrams, we can either search for ngrams of a specific length (default = 3). It can be set via the `n  parameter:
 
     mel = piece.melodic()
-    ngrams = piece.ngrams(df = mel, n = 5)  
+    ngrams = piece.ngrams(df = mel, n = 5)
+    ngrams 
 
 Remember that modifications to the particular type of feature in question needs to be made when applying that function.  The type of melodic interval, for instance, is set, here in `melodic()`.  The length of the ngrams is set in `ngrams()`:
 
     mel = piece.melodic(kind = "c", compound = False)
-    ngrams = piece.ngrams(df = mel, n = 5)  
+    ngrams = piece.ngrams(df = mel, n = 5) 
+    ngrams 
 
 #### Also note that: 
 
@@ -128,26 +146,46 @@ For example, the following line of code will produce **ngrams of length 5 contai
 
     lyr = piece.lyrics()  
     dur = piece.durations()  
-    lyr_dur_ngrams = piece.ngrams(df = lyr, other = dur, n = 5)  
+    lyr_dur_ngrams = piece.ngrams(df = lyr, other = dur, n = 5)
+    lyr_dur_ngrams  
 
 Or, more directly:  
 
-    ng = piece.ngrams(df = Piece.lyrics(), other = piece.durations(), n = 5)  
+    ng = piece.ngrams(df = Piece.lyrics(), other = piece.durations(), n = 5)
+    ng 
+
+![Alt text](images/ng_10.png)
 
 ### nGrams at Using Regularized Durations: The `unit` Parameter  
 
-By default, applying the `ngrams()` function to a piece will produce ngrams the actual note values found in the piece. It is nevertheless possible to determine the ngrams according to some fixed number of offsets using the `unit` parameter, which will force the function to only output ngrams found at a given regular interval. This can be helpful for applications such as only finding ngrams which begin on the first beat of a measure, or other similar situations where regularity is helpful. 
+By default, applying the `ngrams()` function to a piece will produce ngrams the **actual note values** found in the piece. It is nevertheless possible to determine the ngrams according to some fixed number of offsets using the `unit` parameter, which will force the function to only output ngrams found at a given regular interval. This can be helpful for applications such as only finding ngrams which begin on the first beat of a measure, or other similar situations where regularity is helpful. 
 
 It would probably make little sense to use '1.0' or some other tiny unit, since this would result in a vast number of unisons or static harmonic passages as longer notes are sampled multiple times.  But setting `unit = 2.0` would correspond to the half-note (minim), a common basic pace of melodic and harmonic motion in Renaissance counterpoint.  Larger units might also be revealing of large = scale sequences.
 
+The 'unit' parameter only works with contrapuntal ngrams:
+
     piece.ngrams(unit = 4)  
+
+If regularized melodic ngrams (or some other type) are needed, it will be necessary to use the `regularize()` function:
+
+    nr = piece.notes()
+    reg = piece.regularize(nr, unit = 2)
+    mel = piece.melodic(df = reg, kind = 'd')
+    piece.ngrams(df = mel)
+
+Compare results with and without regularization (unit = 2):
+
+
+![Alt text](images/ng_11.png)
+
   
 ### ngram Reference Points: the `offsets` Parameter  
 
 An ngram can be placed within the DataFrame at one of two offsets. By default, the `offsets` parameter is set equal to `"first"`.  In this case the ngram will be associated with the offset of the first element in it (such as the first interval or first lyric syllable). Alternatively, setting the parameter to `"last"` will place it at the offset of its last element.  
 
     mel = piece.melodic(kind = "c", compound = False)
-    mel_ngrams_lastOffset = piece.ngrams(df = mel, n = 5, offsets = "last")  
+    mel_ngrams_lastOffset = piece.ngrams(df = mel, n = 5, offsets = "last")
+    mel_ngrams_lastOffset 
 
 ## All ngrams or Entries Only? The `entries()` Function  
 
@@ -155,7 +193,8 @@ By default, the `ngrams()` function will find every single series of intervals o
 
     mel = piece.melodic(kind = "c", compound = False)
     mel_ngrams = piece.ngrams(df = mel, n = -1)
-    entries = piece.entries(df = mel_ngrams)  
+    entries = piece.entries(df = mel_ngrams)
+    entries 
 
 This output can then be passed to yet another function as a `df` value. For example, we can sum the durations of each cell together to find the overall *durations of melodic ngrams* with the following:  
 
@@ -169,6 +208,7 @@ This output can then be passed to yet another function as a `df` value. For exam
     entries = piece.entries(mel_ng)
     # now the total durations of those entries. note that passing a df to duration will make a sum of all the values in each cell
     ng_durs = piece.durations(df = entries)
+    ng_durs
 
 ## Tuple Trouble, and How to Fix It
 
@@ -195,7 +235,8 @@ It is **not** necessary to treat the contrapuntal ngrams in this way, as the def
 
 Similarly to other functions previously discussed in this documentation, ngram DataFrams can be cleaned up using the `dropna()` and `fillna()` functions to drop all rows filled with only "NaN" values, and replace the remaining "NaN" values with blank spaces so that the table may be read more easily:  
 
-    cleaned_entries = entries.dropna(how = "all").fillna(' ')  
+    cleaned_entries = entries.dropna(how = "all").fillna(' ')
+    cleaned_entries  
 
 ## Organizing by Measures and beats  
 

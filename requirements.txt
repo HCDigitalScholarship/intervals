@@ -26,7 +26,7 @@ seaborn==0.11.2
 six==1.15.0
 sniffio==1.2.0
 textdistance==4.2.1
-xlsxwriter==3.0.2
+# xlsxwriter==3.0.2
 webcolors==1.11.1
 requests==2.27.0
 verovio==3.10.0

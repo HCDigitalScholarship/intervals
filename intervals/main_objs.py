@@ -67,6 +67,7 @@ def importScore(path, recurse=False, verbose=False):
     if path in pathDict and verbose:
         print('Previously imported piece detected.')
     else:
+        mei_doc = None
         if path.startswith('http'):
             if verbose:
                 print('Downloading remote score...')
@@ -77,7 +78,7 @@ def importScore(path, recurse=False, verbose=False):
                 print('Error downloading',  str(path) + ', please check',
                       'your url and try again. Continuing to next file.')
                 return None
-        else:
+        elif os.path.isfile(path):  # `path` is formatted like a file path
             ending = path.rsplit('.', 1)[1]
             if ending not in accepted_filetypes:
                 return None
@@ -90,7 +91,13 @@ def importScore(path, recurse=False, verbose=False):
                     print('Error reading the mei file tree of {}'.format(path), err, sep='\n')
             else:
                 to_import = path
-                mei_doc = None
+        else: # `path` is actually the string of an entire piece, used for user-supplied piece in streamlit
+            to_import = path
+            if '<mei' in path[:1000]: # is an <mei> element in the beginning of the piece?
+                try:
+                    mei_doc = ET.fromstring(to_import)
+                except ET.ParseError as err:
+                    print('Error reading this mei file:'.format(path[:200], err, sep='\n'))
         try:
             if mei_doc is not None:
                 to_import = re.sub(suppliedPattern, '\\1', to_import)
@@ -100,9 +107,9 @@ def importScore(path, recurse=False, verbose=False):
             score = converter.parse(to_import)
             pathDict[path] = ImportedPiece(score, path, mei_doc, date)
             if verbose:
-                print("Successfully imported", path)
+                print("Successfully imported", path[:80])
         except:
-            print("Import of", str(path), "failed, please check your file path/url.")
+            print("Import of", str(path[:80]), "failed, please check your file, path, or url.")
             return None
 
     return pathDict[path]

@@ -20,7 +20,6 @@ import matplotlib.cm as cm
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import plotly.express as px
-import pdb
 from glob import glob
 from IPython.display import SVG, HTML
 cwd = os.path.dirname(intervals.__file__)
@@ -1207,21 +1206,20 @@ class ImportedPiece:
         """
         Generate a list of series that align the notes from one ngrams according
         to the first or the last note's offset.
-         :param pandas.Series col: A column that originally contains
-         notes and rests.
-         :param int n: The size of the ngram.
-         :param str offsets: We could input 'first' if we want to group
-         the ngrams by their first note's offset, 'last' if we
-         want to group the ngram by the last note's offset, or 'both' if we
-         want to multi-index on both of these simultaneously.
-        :return pandas.Series: a list of shifted series that could be grouped by
-        first or the last note's offset.
+            :param pandas.Series col: A column that originally contains
+                notes and rests.
+            :param int n: The size of the ngram.
+            :param str offsets: We could input 'first' if we want to group
+                the ngrams by their first note's offset, 'last' if we
+                want to group the ngram by the last note's offset, or 'both' if we
+                want to multi-index on both of these simultaneously.
+            :return pandas.DataFrame: a DataFrame of ngrams sorted by the
+                first or last note's offset, or by both with a multi-index.
         """
         if offsets == 'both':
             first = pd.concat([col.shift(-i) for i in range(_n)], axis=1)
             last = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1)
-            # pdb.set_trace()
-            mi = pd.MultiIndex.from_arrays([first.index[:-_n], last.index[_n:]], names=['Start', 'End'])
+            mi = pd.MultiIndex.from_arrays([first.index[:-_n], last.index[_n:]], names=['First', 'Last'])
             chunks = first.iloc[:-_n].copy()
             chunks.index = mi
         elif offsets == 'last':
@@ -1380,8 +1378,7 @@ class ImportedPiece:
                 if offsets == 'last':
                     col.index = ends.index
                 elif offsets == 'both':
-                    pdb.set_trace()
-                    col.index = ends.index
+                    col.index = pd.MultiIndex.from_arrays([starts.index, ends.index], names=['First', 'Last'])
                 else: # offsets == 'first'
                     col.index = starts.index
             else:  # n >= 1

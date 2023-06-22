@@ -20,6 +20,7 @@ import matplotlib.cm as cm
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import plotly.express as px
+import pdb
 from glob import glob
 from IPython.display import SVG, HTML
 cwd = os.path.dirname(intervals.__file__)
@@ -1202,7 +1203,7 @@ class ImportedPiece:
 
         return entry_modules
 
-    def _ngrams_offsets_helper(col, n, offsets):
+    def _ngrams_offsets_helper(col, _n, offsets):
         """
         Generate a list of series that align the notes from one ngrams according
         to the first or the last note's offset.
@@ -1210,15 +1211,23 @@ class ImportedPiece:
          notes and rests.
          :param int n: The size of the ngram.
          :param str offsets: We could input 'first' if we want to group
-         the ngrams by their first note's offset, or 'last' if we
-         want to group the ngram by the last note's offset.
+         the ngrams by their first note's offset, 'last' if we
+         want to group the ngram by the last note's offset, or 'both' if we
+         want to multi-index on both of these simultaneously.
         :return pandas.Series: a list of shifted series that could be grouped by
         first or the last note's offset.
         """
-        if offsets == 'first':
-            chunks = [col.shift(-i) for i in range(n)]
-        else:  # offsets == 'last':
-            chunks = [col.shift(i) for i in range(n - 1, -1, -1)]
+        if offsets == 'both':
+            first = pd.concat([col.shift(-i) for i in range(_n)], axis=1)
+            last = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1)
+            # pdb.set_trace()
+            mi = pd.MultiIndex.from_arrays([first.index[:-_n], last.index[_n:]], names=['Start', 'End'])
+            chunks = first.iloc[:-_n].copy()
+            chunks.index = mi
+        elif offsets == 'last':
+            chunks = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1)
+        else: # offsets == 'first'
+            chunks = pd.concat([col.shift(-i) for i in range(_n)], axis=1)
         return chunks
 
     def _ngramHelper(col, n, exclude, offsets):
@@ -1234,8 +1243,9 @@ class ImportedPiece:
             ser = pd.Series(vals, name=col.name, index=ind)
             return ser
 
-        chunks = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
-        chains = pd.concat(chunks, axis=1)
+        chains = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
+        if offsets != 'both':
+            chains = pd.concat(chunks, axis=1)
         if len(exclude):
             chains = chains[chains.apply(lambda row: row.str.contains('|'.join(exclude), regex=True)) == False]
         chains.dropna(inplace=True)
@@ -1293,7 +1303,8 @@ class ImportedPiece:
         The `offset` setting can have two modes. If "first" is selected (default option),
         the returned ngrams will be grouped according to their first notes' offsets,
         while if "last" is selected, the returned ngrams will be grouped according
-        to the last notes' offsets.
+        to the last notes' offsets. You can also set offsets to "both" in which case a
+        dataframe with a multi-index of both the starting and ending offsets will be returned.
 
         If you want want "module" ngrams taken at a regular durational interval,
         you can omit passing `df` and `other` dataframes and instead pass the
@@ -1366,17 +1377,19 @@ class ImportedPiece:
                                          for cell in row][2:-1])  # innermost loop
                        for i in range(len(si))]  # outermost loop
                 col = pd.Series(col)
-                if offsets == 'first':
-                    col.index = starts.index
-                else:
+                if offsets == 'last':
                     col.index = ends.index
+                elif offsets == 'both':
+                    pdb.set_trace()
+                    col.index = ends.index
+                else: # offsets == 'first'
+                    col.index = starts.index
             else:  # n >= 1
                 lastIndex = -1
                 if n == 1:
                     lastIndex = -3
                     n = 2
                 combo = ImportedPiece._ngrams_offsets_helper(combo, n, offsets)
-                combo = pd.concat(combo, axis=1)
                 col = combo.iloc[:, 2:lastIndex].dropna().apply(lambda row: ''.join(row), axis=1)
                 if exclude:
                     mask = col.apply(lambda cell: all([excl not in cell for excl in exclude]))

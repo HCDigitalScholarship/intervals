@@ -1240,6 +1240,8 @@ class ImportedPiece:
                 ind = ends.index
             elif offsets == 'both':
                 ind = pd.MultiIndex.from_arrays([starts.index, ends.index], names=['First', 'Last'])
+            else: # offsets == 'first'
+                ind = starts.index
             vals = [', '.join(col.iloc[si[i]: ei[i]]) for i in range(len(si))]
             ser = pd.Series(vals, name=col.name, index=ind)
             return ser

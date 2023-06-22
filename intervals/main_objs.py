@@ -1236,14 +1236,15 @@ class ImportedPiece:
             ends = col[(col != 'Rest') & (col.shift(-1).isin(('Rest', np.nan)))]
             si = tuple(col.index.get_loc(i) for i in starts.index)
             ei = tuple(col.index.get_loc(i) + 1 for i in ends.index)
-            ind = starts.index if offsets == 'first' else ends.index
+            if offsets == 'last':
+                ind = ends.index
+            elif offsets == 'both':
+                ind = pd.MultiIndex.from_arrays([starts.index, ends.index], names=['First', 'Last'])
             vals = [', '.join(col.iloc[si[i]: ei[i]]) for i in range(len(si))]
             ser = pd.Series(vals, name=col.name, index=ind)
             return ser
 
         chains = ImportedPiece._ngrams_offsets_helper(col, n, offsets)
-        if offsets != 'both':
-            chains = pd.concat(chunks, axis=1)
         if len(exclude):
             chains = chains[chains.apply(lambda row: row.str.contains('|'.join(exclude), regex=True)) == False]
         chains.dropna(inplace=True)

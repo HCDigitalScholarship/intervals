@@ -1918,7 +1918,7 @@ class ImportedPiece:
         if renderer == "streamlit":
             return plt
         else:
-            plt.show()
+            plt.show(renderer=renderer)
 
     def markFourths(self):
         '''

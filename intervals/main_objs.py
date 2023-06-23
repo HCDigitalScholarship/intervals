@@ -242,8 +242,9 @@ class ImportedPiece:
         if you don't want your original df to get changed.'''
         _dict = self._getPartNumberDict()
         cols = ['_'.join(_dict.get(part, part) for part in col.split('_')) for col in df.columns]
-        df.columns = cols
-        return df
+        res = df.copy()
+        res.columns = cols
+        return res
 
     def _getM21Objs(self):
         if 'M21Objs' not in self.analyses:
@@ -531,7 +532,7 @@ class ImportedPiece:
         beats = idf.applymap(lambda i: _beats[i])
         res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1)
         res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
-        self.numberParts(ret)
+        ret = self.numberParts(ret)
         res = pd.concat([res, ret], axis=1)
         return res.apply(self._emaRowHelper, axis=1)
 

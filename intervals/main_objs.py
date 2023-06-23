@@ -237,12 +237,13 @@ class ImportedPiece:
     def numberParts(self, df):
         '''
         Return the passed df with the part names in the columns replaced with numbers
-        where 1 is the highest staff.'''
+        where 1 is the highest staff. Works with single parts and multi-part column names.
+        The df's column names are changed in place, so make a copy before calling this method
+        if you don't want your original df to get changed.'''
         _dict = self._getPartNumberDict()
         cols = ['_'.join(_dict.get(part, part) for part in col.split('_')) for col in df.columns]
-        res = df.copy()
-        res.columns = cols
-        return res
+        df.columns = cols
+        return df
 
     def _getM21Objs(self):
         if 'M21Objs' not in self.analyses:
@@ -492,6 +493,47 @@ class ImportedPiece:
             highLine.name = 'High Line'
             self.analyses['HighLine'] = highLine[highLine != highLine.shift()]
         return self.analyses['HighLine']
+
+    def _emaRowHelper(self, row):
+        measures = list(range(row[0], row[2] + 1))
+        ends = (row[0], row[2])
+        mCount = row[2] - row[0] + 1
+        parts = row.iloc[4:].dropna().index
+        part_strings = '+'.join(parts)
+        active_parts = '+'.join([part_strings])
+
+        beats = []
+        for meas in measures:
+            if meas == row[0] and meas == row[2]:
+                beats.append('+'.join(['@{}-{}'.format(row[1], row[3])]*len(parts)))
+            elif meas == row[0]:  # meas < row[2]
+                beats.append('+'.join(['@{}-end'.format(row[1])]*len(parts)))
+            elif meas > row[0] and meas < row[2]:
+                beats.append('+'.join(['@all']*len(parts)))
+            else: # meas > row[0] and meas == row[2]
+                beats.append('+'.join(['@start-{}'.format(row[3])]*len(parts)))
+
+        post = ['{}-{}'.format(row[0], row[2]), # measures
+            ','.join([active_parts]*mCount),    # parts
+            ','.join(beats)]                    # beats
+        return '/'.join(post)
+
+    def emaAddresses(self, df):
+        '''
+        Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
+        like melodic ngrams.
+        '''
+        ret = df.copy()
+        idf = ret.index.to_frame()
+        _measures = self.measures().iloc[:, 0]
+        measures = idf.applymap(lambda i: _measures.loc[:i].iat[-1])
+        _beats = self.beatIndex()
+        beats = idf.applymap(lambda i: _beats[i])
+        res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1)
+        res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
+        self.numberParts(ret)
+        res = pd.concat([res, ret], axis=1)
+        return res.apply(self._emaRowHelper, axis=1)
 
     def _getBeatUnit(self):
         '''
@@ -3021,7 +3063,7 @@ class CorpusBase:
             largs = {key: val[i] for key, val in list_args.items()}
             df = func(score, **_kwargs, **largs)
             if number_parts:
-                df = score.numberParts(df)
+                score.numberParts(df)
             if isinstance(df, pd.DataFrame):
                 if metadata:
                     df[['Composer', 'Title', 'Date']] = score.metadata['composer'], score.metadata['title'], score.metadata['date']

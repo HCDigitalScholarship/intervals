@@ -519,12 +519,23 @@ class ImportedPiece:
             ','.join(beats)]                    # beats
         return '/'.join(post)
 
-    def emaAddresses(self, df):
+    def emaAddresses(self, df, mode=''):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
         like melodic ngrams.
         '''
         ret = df.copy()
+        if mode == 'melodic':
+            newCols = []
+            for i in range(len(ret.columns)):
+                part = ret.iloc[:, i].dropna()
+                notes = self.notes().iloc[:, i].dropna()
+                new_index = []
+                for i, (_first, _last) in enumerate(part.index):
+                    new_index.append((notes.loc[:_first].index[-2], _last))
+                part.index = pd.MultiIndex.from_tuples(new_index, names=part.index.names)
+                newCols.append(part)
+            ret = pd.concat(newCols, axis=1)
         idf = ret.index.to_frame()
         _measures = self.measures().iloc[:, 0]
         measures = idf.applymap(lambda i: _measures.loc[:i].iat[-1])
@@ -1344,7 +1355,7 @@ class ImportedPiece:
         dataframe will have ngrams of length varying between 1 and the longest
         ngram in the piece.
 
-        The `offset` setting can have two modes. If "first" is selected (default option),
+        The `offset` setting can have three modes. If "first" is selected (default option),
         the returned ngrams will be grouped according to their first notes' offsets,
         while if "last" is selected, the returned ngrams will be grouped according
         to the last notes' offsets. You can also set offsets to "both" in which case a

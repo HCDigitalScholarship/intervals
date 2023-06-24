@@ -522,7 +522,7 @@ class ImportedPiece:
     def emaAddresses(self, df, mode=''):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
-        like melodic ngrams.
+        like melodic ngrams. Specifically for melodic ngrams, you have to set mode='melodic'.
         '''
         ret = df.copy()
         if mode == 'melodic':

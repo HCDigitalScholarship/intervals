@@ -500,8 +500,7 @@ class ImportedPiece:
         ends = (row[0], row[2])
         mCount = row[2] - row[0] + 1
         parts = row.iloc[4:].dropna().index
-        part_strings = '+'.join(parts)
-        active_parts = '+'.join([part_strings])
+        part_strings = '+'.join({part for combo in parts for part in combo.split('_')})
 
         beats = []
         for meas in measures:
@@ -515,7 +514,7 @@ class ImportedPiece:
                 beats.append('+'.join(['@start-{}'.format(row[3])]*len(parts)))
 
         post = ['{}-{}'.format(row[0], row[2]), # measures
-            ','.join([active_parts]*mCount),    # parts
+            ','.join([part_strings]*mCount),    # parts
             ','.join(beats)]                    # beats
         return '/'.join(post)
 
@@ -1273,8 +1272,8 @@ class ImportedPiece:
         if offsets == 'both':
             first = pd.concat([col.shift(-i) for i in range(_n)], axis=1)
             last = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1)
-            mi = pd.MultiIndex.from_arrays([first.index[:-_n], last.index[_n:]], names=['First', 'Last'])
-            chunks = first.iloc[:-_n].copy()
+            mi = pd.MultiIndex.from_arrays([first.index[:-_n + 1], last.index[_n - 1:]], names=['First', 'Last'])
+            chunks = first.iloc[:-_n + 1].copy()
             chunks.index = mi
         elif offsets == 'last':
             chunks = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1)

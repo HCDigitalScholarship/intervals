@@ -1,16 +1,6 @@
-### Using Jupyter Notebooks and Pandas to Work with Data
-## A. Introduction
+# Python Basics
 
-
-* **Jupyter Notebooks** allow anyone to run **Python** code in any browser, without the need to use the terminal or command line
-
-* **Jupyter Notebooks** are organized as 'cells', which can be **commentary** (like this one, which is static), or **code** (those below, which produce dyanmic output in the form of charts or tabular data frames.  
-
-* To run an individual cell, use the **`arrow/run`** command at the top of the Notebook, or just press **`Shift + Enter`** on your keyboard.
-
-
-    print("This is my First Notebook")
-# Introduction
+## Introduction
 In Python, like other programming languages, we declare **variables**, then use **functions** transform them in various ways.  There are functions (and libraries) that help us work with numbers, text, statistics, graphs, etc.
 
 Read more about [Python with w3school reference guide](https://www.w3schools.com/python/python_intro.asp)
@@ -19,7 +9,7 @@ Read more about [Python with w3school reference guide](https://www.w3schools.com
 ---
 
 
-# Data Types
+## Data Types
 It's important to understand **data types**:
 
 *   **integer**:  any whole number, such as 1, 2, 10
@@ -30,7 +20,7 @@ It's important to understand **data types**:
 *   **Boolean**:  True or False (in fact these are reserved words in Python and should not be used beyond Boolean functions)
 
 ---
-# Collections
+## Collections
 
 These can also be combined as various kind of **collections**:
 
@@ -44,7 +34,7 @@ Read more about [Python data types at the w3schools resource](https://www.w3scho
 
 ---
 
-# Checking Data Types
+## Checking Data Types
 
 Check the **data type** of any item:
 
@@ -68,7 +58,7 @@ or just write it as the last line in the cell:
     my_variable
 
 ---
-# Numbers, Strings, Floats, and Booleans
+## Numbers, Strings, Floats, and Booleans
 Depending on the data type, it's possible to perform various **operations** on them.
 
 * You **can** add/subtract **integers** and **floats** to each other
@@ -102,7 +92,7 @@ See more [about strings at w3schools](https://www.w3schools.com/python/python_st
 
 
 
-# Collections:  Lists, Dictionaries, Sets, and Tuples
+## Collections:  Lists, Dictionaries, Sets, and Tuples
 
 In Python, items gathered together are called a **collection**. There are four types, each with its own properties: 
 
@@ -144,7 +134,7 @@ my_dict = {"artist_first_name" : "Wolfgang Amadeus",
 
 ---
 
-# Working with Lists
+## Working with Lists
 In the case of lists, we often need to:
 * **Add or remove items**, as in `my_list.append(another_item)` or `my_list.remove(some_item)`
 * Find out **how many items** are in a list (that is, the "length"), such as `len(my_list)`
@@ -166,7 +156,7 @@ Read more about [working with **Lists** at w3schools](https://www.w3schools.com/
 
 ---
 
-# Working with Dictionaries
+## Working with Dictionaries
 You can think of a dictionary like a small catalog, with a series of unique "keys" and their associated "values", like:
 
 ```
@@ -243,7 +233,7 @@ my_concert['work_1']["librettist"] = 'Schickaneder'
 ---
 
 
-# "If" Statements
+## "If" Statements
 
 "If" statements allow you to perform **logical tests** on your data, such as:
 
@@ -276,14 +266,9 @@ if group_name.startswith("B"):
 Note that "if" statements can be multi-stage, with **"if"** followed by **"elif"** (another condition to test if the first condition is not met), and **"else"** (a default result if none of the previous tests are true). 
 
 More about "if" statements [here](https://www.w3schools.com/python/python_conditions.asp).
-# Your Turn with "if" Statements
 
-Create some **variables of your own** and try **various logical tests** to determine whether:
 
-* integers or other values in the list are above or below a given threshold
-* text strings begin or end with certain letters (or do not)
-
-# "For" Loops
+## "For" Loops
 "For" loops allow you to iterate over the items in any collection, performing the same operation or function on each.
 
 **Note** loops like are very helpful when working with individual lists or dictionaries.  But you will want to **avoid** attempting to use them directly on a **Pandas column**.  Instead, write the function by "apply" it to that column for all rows in the dataframe.  More about that in Notebook B!
@@ -321,7 +306,7 @@ More about **list comprehension** [here](https://www.w3schools.com/python/python
 
 ---
 
-### For Loops with Nested Dictionaries
+## For Loops with Nested Dictionaries
 
 Now create a **nested** dictionary based on the one you made above.  This could be a *series of related items* (like songs on a playlist, or instruments in a collection, or scores on your shelf). The id's (or keys) for each item will need to be unique at the highest level, but the keys within each item can repeat.  
 
@@ -359,7 +344,7 @@ for work_id, work_info in my_concert.items():
 ```
 
 ---
-# Functions
+## Functions
 
 Functions are just what they sound like:  a short series of steps that can be applied to 
 some data, and **return** various results depending on the logic you apply.

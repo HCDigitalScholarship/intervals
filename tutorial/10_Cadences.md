@@ -24,17 +24,22 @@ Note: **Measure** and **Beat** columns are in the *body of the table*, not at th
 
 ## The Column Headings for `piece.cadences()` Output in Detail:
 
-<!-- Need sample image -->
+![cad_1.png](images%2Fcad_1.png)
 
 * The **Key** column is the string used by the classifier to determine the label. "BC1" for instance, means "bassus, cantus, and one leading tone". Note that these letters appear in alphabetical order, not the order of the voices in the score.
 <!-- check spelling of the types -->
 * The **CadType** is a high-level label: 
 
-  * **Clausula Vera** is for cadences involving only Cantizans and Tenorizans; 
-  * **Authentic** is for Cantizans and Bassizans (and possibly the Tenorizans, too). 
-  * **Phrygian Clausula Vera** is like Clausula Vera but with the half-step motion in the downward-moving (Tenorizans) part. Phrygian corresponds to Authentic, except that the Bassizans of course moves up a fifth or down a fourth, as is normally the case when the Tenorizans descends by half = step. 
-  * **Altizans Only** is in cases where the Cantizans is missing and the Altizans role moves to a fifth above the lowest voice. 
-  <!-- Consider writing out all the other types and their defs -->
+  * **Clausula Vera** is for cadences involving only Cantizans and Tenorizans, which move via suspension formula to unison or octave; 
+  * **Authentic** is for Cantizans and Bassizans (and possibly the Tenorizans, too); check the CVFs (cadential voice functions to see if the Tenorizans is present. 
+  * **Phrygian Clausula Vera** is like Clausula Vera but with the half-step motion in the downward-moving (Tenorizans) part. 
+  * **Phrygian** corresponds to Authentic, except that the Bassizans of course moves up a fifth or down a fourth, as is normally the case when the Tenorizans descends by half-step.  Check the Cadential Voice Functions (CVFs) in the output table to see whether the Tenorizans is present. 
+  * **Altizans Only** is in cases where the Cantizans is missing and the Altizans role moves to a fifth above the lowest voice.
+  * **Double Leading Tone** is heard frequently in fifteenth-century repertories, but rarely in the sixteenth century; the Contratenor voice sits between the Tenorizans and Cantizans, moving in parallel fourths with the latter and arriving at a tone a fifth above the final.  In order to avoid a tritone between it and the Cantizans, it moves by half step, thus producing the 'double leading tone' effect.
+  * **Leaping Contratenor**
+  * **Quince** is best understood as an irregular Clausula Vera, but the Tenorizans part leaps down a fifth to end on a tone a fifth above the final in the Canitzans.  Hence the name:  "Quince".
+  * **Evaded and Abandoned** indicate either irregular motion or some number of voices that drop out.  These are noted for **Clausula Vera**, **Authentic**, and **Double Leading Tone** types
+  *
   *See `print(piece.cvfs.__doc__)` for other labels.
   * 
 * **Leading Tones** is the count of leading tones motions
@@ -53,10 +58,10 @@ View the **Cadential Voice Function** and **Cadence Label** tables [here](https:
 
 ## The Cadential Voice Functions Explained
 
+The high-level labels explained above are just that:  convenient terms that distinguish the main forms of contrapuntal closure.  Of course different analysts will want to use different terms, or consider more or fewer distinctions among types.  But all of the concepts are abstractions based on *combinations* of the **cadential voice functions** (CVFs).  Including these in the reports of cadences can be a good way to understand the subtleties of the individual subtypes, particularly since CVF results are presented *according to their position in the score*, from highest to lowest.
+
 <!-- They all need examples! -->
 
-
-<!-- Check to see that these are current! -->
 **Realized Cadential Voice Functions:**
 
 * "C": cantizans motion up a step (can also be ornamented e.g. Landini)
@@ -100,18 +105,27 @@ In brief, to find cadences in a corpus and report the results as a single datafr
     #build corpus
     corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                            'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+    
     #select function.  remember to omit "()"
     func = ImportedPiece.cadences
+
     #run function on each piece; be sure to include keyword arguments
     list_of_dfs = corpus.batch(func = func, kwargs = {'keep_keys': True}, metadata = True)
+
     #concatenate the resulting dataframes into one
     corpus_cadences = pd.concat(list_of_dfs, ignore_index = False)
+
     # new order for columns:
     col_list = ['Composer', 'Title', 'Measure', 'Beat', 'Pattern', 'Key', 'CadType', 'Tone','CVFs',
                     'LeadingTones', 'Sounding', 'Low','RelLow','RelTone',
                     'Progress','SinceLast','ToNext']
+
     corpus_cadences = corpus_cadences[col_list]
 
+    # show the results
+    corpus_cadences
+
+![cad_12.png](images%2Fcad_12.png)
 
 ## Summarizing and Grouping Cadence Results
 
@@ -127,7 +141,7 @@ In brief, to find cadences in a corpus and report the results as a single datafr
     cadences = piece.cadences()
     cadences.groupby(['Tone', 'CadType', 'CVFs']).size().reset_index(name = 'counts')
 
-<!-- add content here -->
+![cad_6.png](images%2Fcad_6.png)
 
 ## Cadence Results in Score with `verovioprintCadences`
 
@@ -141,19 +155,24 @@ Or send a filtered list of cadences for printing. Create the cadence table, filt
     cadences_filtered = cadences[cadences['Tone'] == 'G']
     piece.verovioCadences(cadences_filtered)
 
-Note that pink warning messages in the output can be ignored!
+![cad_11.png](images%2Fcad_11.png)
 
-<!-- add content here -->
-[ ]  
+Note that pink warning messages that sometimes appear in Jupyter notebooks can be ignored!
+
+
 
 ## Cadence Radar Plots for One or Many Pieces:  `piece.cadenceRadarPlot()` and `corpus.compareCadenceRadarPlots()` 
 
-Radar plots a good way to provide insights about the tonal 'footprint' of one or more pieces. Information derived from the `piece.cadences()` is ploted as a circular graph:  cadence tones (and types, depending on the settings) are indicated at the perimeter. The count of cadences of each tone (or type) is then used as a scalar value (0 is the very center of the plot, with increasing numbers moving out from the center to indicate relative count and therefore weight). 
+Radar plots a good way to provide insights about the tonal 'footprint' of one or more pieces. Information derived from the `piece.cadences()` is plotted as a circular graph:  cadence tones (and types, depending on the settings) are indicated at the perimeter. The count of cadences of each tone (or type) is then used as a scalar value (0 is the very center of the plot, with increasing numbers moving out from the center to indicate relative count and therefore weight). 
 
 The plots are interactive:
 
 * Hover to see count details for single piece plots
 * Click to include/exclude individual pieces in corpus comparison plots
+
+![cad_2.png](images%2Fcad_2.png)
+
+![cad_3.png](images%2Fcad_3.png)
 
 ### Radar Plot Parameters In Brief
 
@@ -190,18 +209,21 @@ Parameters Overview:
 
 Typical use:
 
-    compareCadenceRadarPlots(combinedType = False, displayAll = True, renderer = "iframe")
+    corpus.compareCadenceRadarPlots(combinedType = False, displayAll = True, renderer = "iframe")
 
 Complete default function code:
 
-    compareCadenceRadarPlots(self, combinedType = False, sounding = None, displayAll = True, customOrder = None, renderer = "iframe")
+    corpus.compareCadenceRadarPlots(self, combinedType = False, sounding = None, displayAll = True, customOrder = None, renderer = "iframe")
 
 Default display order (could be modified for `customOrder`)
 
     order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
 
-## Cadence Progress Plots for One or Many Pieces:  `piece.cadenceProgressPlot()` and `corpus.compareCadenceProgressPlots()` 
+![cad_7.png](images%2Fcad_7.png)
 
+![cad_8.png](images%2Fcad_8.png)
+
+## Cadence Progress Plots for One or Many Pieces:  `piece.cadenceProgressPlot()` and `corpus.compareCadenceProgressPlots()`
 
 #### For One Piece
 Parameters Overview:
@@ -216,11 +238,15 @@ Parameters Overview:
 
 Typical use:
 
-    cadenceProgressPlot(includeType = True)
+    piece.cadenceProgressPlot(includeType = True)
 
 Complete function with defaults:
 
-    cadenceProgressPlot(self, includeType = False, cadTone = None, cadType = None, customOrder = None, includeLegend = True, renderer = "")
+    piece.cadenceProgressPlot(self, includeType = False, cadTone = None, cadType = None, customOrder = None, includeLegend = True, renderer = "")
+
+![cad_4.png](images%2Fcad_4.png)
+
+![cad_5.png](images%2Fcad_5.png)
 
 #### For A Corpus of Pieces
 
@@ -234,15 +260,20 @@ Parameters Overview:
 
 Typical use:
 
-    compareCadenceProgressPlots(includeType = True)
+    corpus.compareCadenceProgressPlots(includeType = True)
 
 Complete function with defaults:
 
-    compareCadenceProgressPlots(self, includeType = False, cadTone = None, cadType = None, includeLegend = True, customOrder = None, renderer = "")
+    corpus.compareCadenceProgressPlots(self, includeType = False, cadTone = None, cadType = None, includeLegend = True, customOrder = None, renderer = "")
 
 Default order dictionary (could be modified for `customOrder`)
 
     order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "F#":9, "C#":10, "Ab":11}
+
+
+![cad_9.png](images%2Fcad_9.png)
+
+![cad_10.png](images%2Fcad_10.png)
 -----
 
 ## Sections in this guide

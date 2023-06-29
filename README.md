@@ -62,5 +62,5 @@ All CRIM intervals tools are available via a **Creative Commons** license (Attri
   * [08_TimeSignatures_BeatStrength](tutorial/08_TimeSignatures_BeatStrength.md)
   * [09_DetailIndex](tutorial/09_DetailIndex.md)
   * [10_Cadences](tutorial/10_Cadences.md)
-  * [11_Pandas](tutorial/11_Pandas.md)
+  * [11_Pandas](tutorial/15_Pandas_Basics.md)
   * [12_Modules](tutorial/12_Modules.md)

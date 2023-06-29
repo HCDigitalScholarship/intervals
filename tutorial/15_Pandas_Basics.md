@@ -195,4 +195,4 @@ This `int_order` can now be used to sort the intervals from smallest to largest,
   * [08_Time-Signatures](08_TimeSignatures.md)
   * [09_DetailIndex](09_DetailIndex.md)
   * [10_Cadences](10_Cadences.md)
-  * [11_Pandas](11_Pandas.md)
+  * [11_Pandas](15_Pandas_Basics.md)

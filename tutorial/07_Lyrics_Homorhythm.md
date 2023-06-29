@@ -229,5 +229,5 @@ And need to check for batch!
   * [08_TimeSignatures_BeatStrength](08_TimeSignatures_BeatStrength.md)
   * [09_DetailIndex](09_DetailIndex.md)
   * [10_Cadences](10_Cadences.md)
-  * [11_Pandas](11_Pandas.md)
+  * [11_Pandas](15_Pandas_Basics.md)
   * [12_Modules](12_Modules.md)

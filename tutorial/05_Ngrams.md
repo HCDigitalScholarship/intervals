@@ -296,7 +296,7 @@ To display DataFrames relative to measures, and beats within measures, rather th
 
 ## Counting ngrams  
 
-After using the `ngrams()` function to identify all of the ngrams in a piece, they can be counted and sorted by their frequency in the piece overall using some [general pandas functions](11_Pandas.md):  
+After using the `ngrams()` function to identify all of the ngrams in a piece, they can be counted and sorted by their frequency in the piece overall using some [general pandas functions](15_Pandas_Basics.md):  
 
     mel = piece.melodic(kind = "c", compound = False)
     melNgrams = mel.ngrams(n = 4)
@@ -323,5 +323,5 @@ After using the `ngrams()` function to identify all of the ngrams in a piece, th
   * [08_TimeSignatures_BeatStrength](08_TimeSignatures_BeatStrength.md)
   * [09_DetailIndex](09_DetailIndex.md)
   * [10_Cadences](10_Cadences.md)
-  * [11_Pandas](11_Pandas.md)
+  * [11_Pandas](15_Pandas_Basics.md)
   * [12_Modules](12_Modules.md)

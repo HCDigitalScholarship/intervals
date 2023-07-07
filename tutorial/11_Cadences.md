@@ -136,7 +136,7 @@ In brief, to find cadences in a corpus and report the results as a single datafr
     cadences = cadences[col_list]
     cadences
 
-** Group the Cadences by Tone and Type**
+**Group the Cadences by Tone and Type**
 
     cadences = piece.cadences()
     cadences.groupby(['Tone', 'CadType', 'CVFs']).size().reset_index(name = 'counts')
@@ -158,8 +158,6 @@ Or send a filtered list of cadences for printing. Create the cadence table, filt
 ![cad_11.png](images%2Fcad_11.png)
 
 Note that pink warning messages that sometimes appear in Jupyter notebooks can be ignored!
-
-
 
 ## Cadence Radar Plots for One or Many Pieces:  `piece.cadenceRadarPlot()` and `corpus.compareCadenceRadarPlots()` 
 

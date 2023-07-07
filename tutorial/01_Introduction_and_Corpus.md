@@ -181,7 +181,7 @@ You could then save this model's melodic interval data to a CSV file with the fi
 
 ### Export to Excel:  
 
-Alternatively, a DataFrame can be saved as an Excel file with the following command lines in order, once again replacing 'file_name.xlsx' with your desired file name, replacing 'Sheet1' with your desired sheet name **(in quotes)**, and replacing 'frame_name' in the second line with the name of your DataFrame **(without quotes)**, which was be 'mel' in the last example: 
+Alternatively, a DataFrame can be saved as an Excel file with the following command lines in order, once again replacing 'file_name.xlsx' with your desired file name, replacing 'Sheet1' with your desired sheet name **(in quotes)**, and replacing 'frame_name' in the second line with the name of your DataFrame **(without quotes)**, which was 'mel' in the last example: 
 
     writer = pd.ExcelWriter('saved_csv/file_name.xlsx', engine = 'xlsxwriter') 
     frame_name.to_excel(writer, sheet_name = 'Sheet1')  

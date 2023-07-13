@@ -597,7 +597,9 @@ class ImportedPiece:
     def emaAddresses(self, df=None, mode=''):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
-        like melodic ngrams. Specifically for melodic ngrams, you have to set mode='melodic'.
+        like melodic ngrams. Specifically for melodic ngrams, you have to set mode='melodic'. If
+        you want the emaAddresses of a cvfs dataframe, you can set mode='cvfs' and passing a 
+        dataframe to the df parameter is optional in this case.
         '''
         mode = mode.lower()
         if isinstance(df, pd.DataFrame):

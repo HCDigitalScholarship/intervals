@@ -18,7 +18,7 @@ def test_classifyCadences():
     analysis results have been stored to a table and this test reruns their analyses
     to verify that they still match the stored results."""
     corpus = CorpusBase(TEST_FILES_CC)
-    cvfs = corpus.batch(ImportedPiece.cvfs, metadata=False)
+    cvfs = corpus.batch(ImportedPiece.cvfs, metadata=False, kwargs={'offsets': 'last'})
     cads = corpus.batch(ImportedPiece.cadences, metadata=False)
     analysisNow = []
     for i, cad in enumerate(cads):
@@ -34,13 +34,15 @@ def test_classifyCadences():
     # You can use the next line to overwrite the ground truth when adding new pieces etc.
     # analysisNow.to_csv('./intervals/data/cadences/groundTruth.csv', index=False)
     groundTruth = pd.read_csv('./intervals/data/cadences/groundTruth.csv')
-    groundTruth = groundTruth.astype(analysisNow.dtypes, copy=False)
+    groundTruth = groundTruth.astype(analysisNow.dtypes.values, copy=False)
     # Ignore the url columns in case the test is being run with local files
     analysisNow.drop(columns='URL', inplace=True)
+    analysisNow.rename(columns={'Last': 'index'}, inplace=True)
     groundTruth.drop(columns='URL', inplace=True)
     # an = analysisNow.copy()
     # gt = groundTruth.copy()
-    isEqual = analysisNow.equals(groundTruth)
+    print('Comparing current cadential analysis and ground truth...')
+    isEqual = analysisNow.fillna('-').equals(groundTruth.fillna('-'))
     # Try to give feedback if the test fails
     if not isEqual:
         firstCVFCol = groundTruth.columns.get_loc('0')
@@ -56,7 +58,6 @@ def test_classifyCadences():
             if not colsEqual:
                 print('\n*********\nThere is a discrepancy in the {} column.\n*********\n'.format(col))
 
-    print('Comparing current cadential analysis and ground truth...')
     assert(isEqual)
     print('All analysis values are unchanged so the test was successful.')
 

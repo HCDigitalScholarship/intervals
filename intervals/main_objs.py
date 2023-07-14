@@ -501,29 +501,108 @@ class ImportedPiece:
         mCount = row[2] - row[0] + 1
         parts = row.iloc[4:].dropna().index
         part_strings = '+'.join({part for combo in parts for part in combo.split('_')})
+        num_parts = part_strings.count('+') + 1
 
         beats = []
         for meas in measures:
             if meas == row[0] and meas == row[2]:
-                beats.append('+'.join(['@{}-{}'.format(row[1], row[3])]*len(parts)))
+                beats.append('+'.join(['@{}-{}'.format(row[1], row[3])]*num_parts))
             elif meas == row[0]:  # meas < row[2]
-                beats.append('+'.join(['@{}-end'.format(row[1])]*len(parts)))
+                beats.append('+'.join(['@{}-end'.format(row[1])]*num_parts))
             elif meas > row[0] and meas < row[2]:
-                beats.append('+'.join(['@all']*len(parts)))
+                beats.append('+'.join(['@all']*num_parts))
             else: # meas > row[0] and meas == row[2]
-                beats.append('+'.join(['@start-{}'.format(row[3])]*len(parts)))
+                beats.append('+'.join(['@start-{}'.format(row[3])]*num_parts))
 
         post = ['{}-{}'.format(row[0], row[2]), # measures
             ','.join([part_strings]*mCount),    # parts
             ','.join(beats)]                    # beats
         return '/'.join(post)
 
-    def emaAddresses(self, df, mode=''):
+    def combineEmaAddresses(self, emas):
+        '''
+        Given a list of EMA addresses, `emas`, return a single ema address that combines them into one.
+        '''
+        if isinstance(emas, str):
+            return emas
+        if len(emas) == 1:
+            return emas[0]
+        chunks = []
+        num_parts = len(self._getPartNames())
+        last_m = self.measures().iat[-1, 0]
+        for ema in emas:
+            ema = ema.replace('start', '1')
+            print(ema)
+            _measures, _parts, _beats = ema.split('/')
+            _beats = _beats.replace('1.0-', '1-')
+            _beats = _beats.replace('1.0@', '1@')
+            measures, parts, beats = _measures.split(','), _parts.split(','), _beats.split(',') 
+            for i, meas in enumerate(measures):
+                # handle measures
+                if meas == 'all':
+                    meas == '1-{}'.format(last_m)  # measures 1 through the final measure
+                meas = meas.replace('end', str(last_m))
+                if '-' in meas:   # this is a measure range, e.g. 9-12
+                    start, end = meas.split('-')
+                    ms = [str(m) for m in range(int(start), int(end) + 1)]
+                    meas = ms[0]
+                    measures[i+1:i+1] = ms[1:]
+                # handle beats
+                if beats[i] == '@all' or beats[i] == '@1-end':
+                    bs = '@all'
+                else:
+                    bs = beats[i].split('+')
+                # handle parts
+                if parts[i] == 'all':
+                    ps = [str(x) for x in range(1, num_parts + 1)]
+                else:
+                    ps = parts[i].replace('end', str(num_parts))
+                    ps = ps.split('+')
+                    for _j, _p in enumerate(ps):
+                        if '-' in _p:
+                            start, end = _p.split('-')
+                            if end == 'end':
+                                end = num_parts
+                            parts_in_range = [str(part) for part in range(int(start), int(end) + 1)]
+                            for part in parts_in_range:
+                                if isinstance(bs, str):
+                                    chunks.append((meas, part, bs))
+                                else:
+                                    chunks.append((meas, part, bs[_j]))
+                        if isinstance(bs, str):
+                            chunks.append((meas, _p, bs))
+                        else:
+                            chunks.append((meas, _p, bs[_j]))
+                                    
+        # collect the beats for the addresses at the same measure and part
+        mp2bs = {}
+        for chunk in chunks:
+            key = (chunk[0], chunk[1])
+            if key not in mp2bs:
+                mp2bs[key] = [chunk[2]]
+            else:
+                mp2bs[key].append(chunk[2])
+
+        # combine the beats into one for each measure-part combo
+        slices = [(*mp, '@all') if '@all' in bs else (*mp, ''.join(set(bs))) for mp, bs in mp2bs.items()]
+        # sort by part number, then by measure so the slices are ordered by measure then part number
+        df = pd.DataFrame(slices, columns=['Measure', 'Part', 'Beat']).sort_values(['Measure', 'Part'])
+        mpost = df.Measure.unique()
+        ppost = ','.join(['+'.join(df.loc[df.Measure == _m, 'Part']) for _m in mpost])
+        bpost = ','.join(['+'.join(df.loc[df.Measure == _m, 'Beat']) for _m in mpost])
+        mpost = ','.join(mpost)
+        return '/'.join((mpost, ppost, bpost))
+
+    def emaAddresses(self, df=None, mode=''):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
-        like melodic ngrams. Specifically for melodic ngrams, you have to set mode='melodic'.
+        like melodic ngrams. Specifically for melodic ngrams, you have to set mode='melodic'. If
+        you want the emaAddresses of a cvfs dataframe, you can set mode='cvfs' and passing a 
+        dataframe to the df parameter is optional in this case.
         '''
-        ret = df.copy()
+        mode = mode.lower()
+        if isinstance(df, pd.DataFrame):
+            ret = df.copy()
         if mode == 'melodic':
             newCols = []
             for i in range(len(ret.columns)):
@@ -535,6 +614,20 @@ class ImportedPiece:
                 part.index = pd.MultiIndex.from_tuples(new_index, names=part.index.names)
                 newCols.append(part)
             ret = pd.concat(newCols, axis=1)
+        elif mode.startswith('cv'):  # cvfs mode
+            ret = self.cvfs(keep_keys=True, offsets='both').copy()
+            ngrams = ret.iloc[:, len(self._getPartNames()):]
+            addresses = self.emaAddresses(df=ngrams, mode='')
+            if isinstance(df, pd.DataFrame) and ('First' in df.index.names and 'Last' in df.index.names):
+                return addresses
+            else:
+                uni = addresses.index.levels[-1].unique()
+                ret = pd.Series(index=uni, name='EMA').astype(str)
+                for un in uni:
+                    val = self.combineEmaAddresses(addresses.loc[(slice(None), un)].to_list())
+                    ret.at[un] = val
+                return ret
+
         idf = ret.index.to_frame()
         _measures = self.measures().iloc[:, 0]
         measures = idf.applymap(lambda i: _measures.loc[:i].iat[-1])
@@ -544,7 +637,9 @@ class ImportedPiece:
         res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
         ret = self.numberParts(ret)
         res = pd.concat([res, ret], axis=1)
-        return res.apply(self._emaRowHelper, axis=1)
+        res = res.apply(self._emaRowHelper, axis=1)
+        res.name = 'EMA'
+        return res
 
     def _getBeatUnit(self):
         '''
@@ -1544,13 +1639,13 @@ class ImportedPiece:
         any pair to overwrite the label from a previous pair. The one exception is
         that a Cantizans can't overwrite an Altizans, and if it tries to, the
         accompanying Bassizans gets rewritten to be a Qunitizans.'''
-        if (row.name in df.index and df.at[row.name, row.UpperVoice] == 'A'
+        if (row.name in df.index and 'A' in df.loc[(slice(None), row.name[1]), row.UpperVoice].values
             and row.LowerCVF == 'B' and row.UpperCVF == 'C'):
             df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = ('Q', 'A')
-        elif (row.name in df.index and df.at[row.name, row.LowerVoice] == 'A'
+        elif (row.name in df.index and 'A' in df.loc[(slice(None), row.name[1]), row.LowerVoice].values
             and row.LowerCVF == 'C' and row.UpperCVF == 'B'):
             df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = ('A', 'Q')
-        elif (row.name in df.index and df.at[row.name, row.UpperVoice] == 'A'
+        elif (row.name in df.index and 'A' in df.loc[(slice(None), row.name[1]), row.UpperVoice].values
             and row.UpperCVF == 'C'):
             df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, 'A')
         else:
@@ -1590,11 +1685,14 @@ class ImportedPiece:
         elif 'A' in row.values:
             return nr.at[row.name, row.index[np.where(row == 'A')[0][0]]][:-1]
 
-    def cvfs(self, keep_keys=False):
+    def cvfs(self, keep_keys=False, offsets='last'):
         '''
         Return a dataframe of cadential voice functions in the piece. If
         `keep_keys` is set to True, the ngrams that triggered each CVF pair
-        will be shown in additional columns in the table.
+        will be shown in additional columns in the table. If offsets='last'
+        (default) the last offset of the cvfs will be shown. If offsets is
+        set to anything else the table will be returned with a multi-index
+        for First and Last offsets for the module patterns.
 
         Each CVF is represented with a single-character label as follows:
 
@@ -1633,42 +1731,66 @@ class ImportedPiece:
         '''
         if len(self._getPartNames()) < 2:
             return pd.DataFrame()
-        if not keep_keys and 'CVF' in self.analyses:
-            return self.analyses['CVF']
+        key = ('CVF', keep_keys, offsets)
+        if key in self.analyses:
+            return self.analyses[key]
         cadences = _getCVFTable()
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         harmonic = self.markFourths()
         melodic = self.melodic('d', True, False)
-        ngrams = {n: self.ngrams(how='modules', df=harmonic, other=melodic, n=n, offsets='last',
+        ngrams = {n: self.ngrams(how='modules', df=harmonic, other=melodic, n=n, offsets='both',
                   held='1', exclude=[], show_both=True).stack() for n in cadences.N.unique()}
         hits = [ser[ser.str.contains('|'.join(cadences[cadences.N == n].index), regex=True)]
                 for n, ser in ngrams.items() if not ser.empty]
         hits = pd.concat(hits)
-        hits.sort_index(level=0, inplace=True)
+        hits.sort_index(level=1, inplace=True)
         hits = hits[~hits.index.duplicated('last')]
         if keep_keys:
-            ngramKeys = hits.unstack(level=1)
+            ngramKeys = hits.unstack(level=-1)
         hits.name = 'Ngram'
         df = pd.DataFrame(hits)
         df['Pattern'] = df.Ngram.replace(cadences.index, cadences.index, regex=True)
         df = df.join(cadences, on='Pattern')
-        voices = [pair.split('_') for pair in df.index.get_level_values(1)]
+        voices = [pair.split('_') for pair in df.index.get_level_values(2)]
         df[['LowerVoice', 'UpperVoice']] = voices
-        df.index = df.index.get_level_values(0)
-        df.index.names = ('Offset',)
-        cvfs = pd.DataFrame(columns=self._getPartNames())
+        df.index = df.index.droplevel(2)
+        cvfs = pd.DataFrame(columns=self._getPartNames(), index=pd.MultiIndex.from_arrays([[], []], names=df.index.names))
         df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
-        mel = self.melodic('c', True, True)
-        mel = mel[cvfs.notnull()].dropna(how='all')
         cvfs = cvfs.apply(self._cvf_disambiguate_h, axis=1).dropna(how='all')
         cvfs = cvfs.astype('object', copy=False)
-        cvfs[(cvfs == 'x') & mel.isin(('5', '-7'))] = 'B'
-        cvfs[(cvfs == 'y') & mel.isin(('1', '2'))] = 'C'
-        cvfs[(cvfs == 'z') & mel.isin(('-1', '-2'))] = 'T'
-        self.analyses['CVF'] = cvfs
+        mel = self.melodic('c', True, True)
+        for _index in cvfs.index:
+            for _voice in cvfs.columns:
+                if cvfs.at[_index, _voice] == 'x' and mel.at[_index[1], _voice] in ('5', '-7'):
+                    cvfs.at[_index, _voice] = 'B'
+                    continue
+                if cvfs.at[_index, _voice] == 'y' and mel.at[_index[1], _voice] in ('1', '2'):
+                    cvfs.at[_index, _voice] = 'C'
+                    continue
+                if cvfs.at[_index, _voice] == 'z' and mel.at[_index[1], _voice] in ('-1', '-2'):
+                    cvfs.at[_index, _voice] = 'T'
         if keep_keys:
             cvfs = pd.concat([cvfs, ngramKeys], axis=1)
+        if offsets == 'last':
+            _cvfs = cvfs.copy()
+            cvfs = self.condenseMultiIndex(cvfs)
+        self.analyses[key] = cvfs
         return cvfs
+
+    def condenseMultiIndex(self, df, to_drop=0):
+        '''
+        Take a df with a 'First' and 'Last' multi-index and return a copy condensed such that 
+        the `to_drop` index is dropped.
+        '''
+        if isinstance(df, pd.core.series.Series):
+            df = pd.DataFrame(df)
+        ret = df.droplevel(to_drop)
+        dup_mask = ret.index.duplicated()
+        dups = ret.index[dup_mask]
+        ret = ret[~dup_mask]
+        for dup in dups:
+            ret.loc[dup, :] = df.loc[(slice(None), dup), :].ffill().iloc[-1, :].values
+        return ret
 
     def morleyCadences(self):
         '''
@@ -1772,7 +1894,7 @@ class ImportedPiece:
             else:
                 return self.analyses['Cadences'].drop(['Pattern', 'Key'], axis=1)
 
-        cvfs = self.cvfs()
+        cvfs = self.cvfs(offsets='last')
         mel = self.melodic('c', True, True)
         mel = mel[cvfs.notnull()].dropna(how='all')
         if len(cvfs.index):

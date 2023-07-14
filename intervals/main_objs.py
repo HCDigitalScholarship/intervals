@@ -20,7 +20,6 @@ import matplotlib.cm as cm
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import plotly.express as px
-import pdb
 from glob import glob
 from IPython.display import SVG, HTML
 cwd = os.path.dirname(intervals.__file__)
@@ -1640,13 +1639,13 @@ class ImportedPiece:
         any pair to overwrite the label from a previous pair. The one exception is
         that a Cantizans can't overwrite an Altizans, and if it tries to, the
         accompanying Bassizans gets rewritten to be a Qunitizans.'''
-        if (row.name in df.index and 'A' in df.loc[(slice(None), row.name[1]), row.UpperVoice]
+        if (row.name in df.index and 'A' in df.loc[(slice(None), row.name[1]), row.UpperVoice].values
             and row.LowerCVF == 'B' and row.UpperCVF == 'C'):
             df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = ('Q', 'A')
-        elif (row.name in df.index and 'A' in df.loc[(slice(None), row.name[1]), row.LowerVoice]
+        elif (row.name in df.index and 'A' in df.loc[(slice(None), row.name[1]), row.LowerVoice].values
             and row.LowerCVF == 'C' and row.UpperCVF == 'B'):
             df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = ('A', 'Q')
-        elif (row.name in df.index and 'A' in df.loc[(slice(None), row.name[1]), row.UpperVoice]
+        elif (row.name in df.index and 'A' in df.loc[(slice(None), row.name[1]), row.UpperVoice].values
             and row.UpperCVF == 'C'):
             df.loc[row.name, [row.LowerVoice, row.UpperVoice]] = (row.LowerCVF, 'A')
         else:
@@ -1732,8 +1731,9 @@ class ImportedPiece:
         '''
         if len(self._getPartNames()) < 2:
             return pd.DataFrame()
-        if not keep_keys and 'CVF' in self.analyses:
-            return self.analyses['CVF']
+        key = ('CVF', keep_keys, offsets)
+        if key in self.analyses:
+            return self.analyses[key]
         cadences = _getCVFTable()
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         harmonic = self.markFourths()
@@ -1769,11 +1769,12 @@ class ImportedPiece:
                     continue
                 if cvfs.at[_index, _voice] == 'z' and mel.at[_index[1], _voice] in ('-1', '-2'):
                     cvfs.at[_index, _voice] = 'T'
-        self.analyses['CVF'] = cvfs
         if keep_keys:
             cvfs = pd.concat([cvfs, ngramKeys], axis=1)
         if offsets == 'last':
+            _cvfs = cvfs.copy()
             cvfs = self.condenseMultiIndex(cvfs)
+        self.analyses[key] = cvfs
         return cvfs
 
     def condenseMultiIndex(self, df, to_drop=0):
@@ -1893,7 +1894,7 @@ class ImportedPiece:
             else:
                 return self.analyses['Cadences'].drop(['Pattern', 'Key'], axis=1)
 
-        cvfs = self.cvfs()
+        cvfs = self.cvfs(offsets='last')
         mel = self.melodic('c', True, True)
         mel = mel[cvfs.notnull()].dropna(how='all')
         if len(cvfs.index):

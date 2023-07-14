@@ -597,8 +597,10 @@ class ImportedPiece:
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
         like melodic ngrams. Specifically for melodic ngrams, you have to set mode='melodic'. If
-        you want the emaAddresses of a cvfs dataframe, you can set mode='cvfs' and passing a 
-        dataframe to the df parameter is optional in this case.
+        you want the emaAddresses of a cvfs dataframe, you can set mode='cvfs' or mode='cadences'
+        and passing a dataframe to the df parameter is optional in this case. CVFS and cadences
+        have the same EMA addresses so the results will be the same with mode='cvfs' and
+        mode='cadences'.
         '''
         mode = mode.lower()
         if isinstance(df, pd.DataFrame):
@@ -614,7 +616,7 @@ class ImportedPiece:
                 part.index = pd.MultiIndex.from_tuples(new_index, names=part.index.names)
                 newCols.append(part)
             ret = pd.concat(newCols, axis=1)
-        elif mode.startswith('cv'):  # cvfs mode
+        elif mode.startswith('c'):  # cvfs mode
             ret = self.cvfs(keep_keys=True, offsets='both').copy()
             ngrams = ret.iloc[:, len(self._getPartNames()):]
             addresses = self.emaAddresses(df=ngrams, mode='')

@@ -596,8 +596,16 @@ class ImportedPiece:
     def emaAddresses(self, df=None, mode=''):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
-        like melodic ngrams. Specifically for melodic ngrams, you have to set mode='melodic'. If
-        you want the emaAddresses of a cvfs dataframe, you can set mode='cvfs' or mode='cadences'
+        like melodic ngrams. Specifically for melodic ngrams, you have to set mode='melodic'.
+        Here's an example of that workflow for an imported piece called `piece`.
+
+        ***Example***
+        mel = piece.melodic()
+        ng = piece.ngrams(df=mel, n=4, offsets='both')
+        ema = piece.emaAddresses(df=ng, mode='melodic')
+        ***
+
+        If you want the emaAddresses of a cvfs dataframe, you can set mode='cvfs' or mode='cadences'
         and passing a dataframe to the df parameter is optional in this case. CVFS and cadences
         have the same EMA addresses so the results will be the same with mode='cvfs' and
         mode='cadences'.
@@ -611,7 +619,7 @@ class ImportedPiece:
                 part = ret.iloc[:, i].dropna()
                 notes = self.notes().iloc[:, i].dropna()
                 new_index = []
-                for i, (_first, _last) in enumerate(part.index):
+                for (_first, _last) in part.index:
                     new_index.append((notes.loc[:_first].index[-2], _last))
                 part.index = pd.MultiIndex.from_tuples(new_index, names=part.index.names)
                 newCols.append(part)

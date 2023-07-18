@@ -648,6 +648,7 @@ class ImportedPiece:
         # hr mode--works with HR dataframe, adding ema address to each hr passage (= row).  
         # pass in hr as the df and set mode = 'hr'
         elif mode.startswith('h'): # hr mode
+            hr = df
             ngram_length = hr.iloc[0]['ngram_length']
             nr = self.notes()
             dur = self.durations(df = nr)

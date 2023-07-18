@@ -649,7 +649,7 @@ class ImportedPiece:
         # pass in hr as the df and set mode = 'hr'
         elif mode.startswith('h'): # hr mode
             hr = df
-            ngram_length = int(hr.iloc[0]['ngram_length'])
+            ngram_length = hr.iloc[0]['ngram_length']
             nr = self.notes()
             dur = self.durations(df = nr)
             ngrams = self.ngrams(df = dur, n = ngram_length, offsets = 'both', exclude=[])
@@ -2276,7 +2276,7 @@ class ImportedPiece:
         # the intersection of coordinated durations and coordinate lyrics
         hr['voice_match'] = hr['active_voices'] == hr['active_syll_voices']
         # retain ngram length for use with ema
-        hr['ngram_length'] = ngram_length
+        hr['ngram_length'] = int(ngram_length)
 
         result = self.detailIndex(hr, offset=True)
 

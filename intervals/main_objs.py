@@ -600,6 +600,13 @@ class ImportedPiece:
         full_ema = full_ema.reset_index()
         ema = full_ema['EMA']
         return ema
+    
+    def _ptype_ema_helper(self, row, ngrams):
+        this_point = row["Offsets"]
+        ret = ngrams.loc[this_point]
+        addresses = self.emaAddresses(df=ret, mode='')
+        full_ema = self.combineEmaAddresses(addresses)
+        return full_ema
 
     def emaAddresses(self, df=None, mode=''):
         '''
@@ -646,7 +653,7 @@ class ImportedPiece:
                     ret.at[un] = val
                 return ret
         # hr mode--works with HR dataframe, adding ema address to each hr passage (= row).  
-        # pass in hr as the df and set mode = 'hr'
+        # pass in output of hr = piece.homorhythm() as the df and set mode = 'hr'
         elif mode.startswith('h'): # hr mode
             hr = df
             ngram_length = int(hr.iloc[0]['ngram_length'])
@@ -657,6 +664,16 @@ class ImportedPiece:
             hr['ema'] = hr.apply(lambda row: self._hr_helper(row, ngrams), axis=1)
             hr.set_index(['Measure', 'Beat', 'Offset'], inplace=True)
             return hr  
+        # for ptypes output
+        # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
+
+        elif mode.startswith('p'): # p_type mode
+            p_types = df
+            ngram_length = len(p_types.iloc[0]['Soggetti'][0])
+            mel = self.melodic(end=False)
+            ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)
+            p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
+            return p_types
         
         idf = ret.index.to_frame()
         _measures = self.measures().iloc[:, 0]

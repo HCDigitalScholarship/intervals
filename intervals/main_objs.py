@@ -2123,6 +2123,7 @@ class ImportedPiece:
         hr = pd.merge(ng, hr_sylls_mask, left_index=True, right_index=True)
         # the intersection of coordinated durations and coordinate lyrics
         hr['voice_match'] = hr['active_voices'] == hr['active_syll_voices']
+        hr['ngram_length'] = ngram_length
 
         result = self.detailIndex(hr, offset=True)
 

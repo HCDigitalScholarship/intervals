@@ -649,7 +649,7 @@ class ImportedPiece:
         # pass in hr as the df and set mode = 'hr'
         elif mode.startswith('h'): # hr mode
             hr = df
-            ngram_length = hr.iloc[0]['ngram_length']
+            ngram_length = int(hr.iloc[0]['ngram_length'])
             nr = self.notes()
             dur = self.durations(df = nr)
             ngrams = self.ngrams(df = dur, n = ngram_length, offsets = 'both', exclude=[])

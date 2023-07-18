@@ -593,6 +593,14 @@ class ImportedPiece:
         mpost = ','.join(mpost)
         return '/'.join((mpost, ppost, bpost))
 
+    def _hr_helper(self, row, ngrams):
+        this_hr = row["Offset"]
+        ret = ngrams.loc[[this_hr]]
+        full_ema = self.emaAddresses(df=ret, mode='')
+        full_ema = full_ema.reset_index()
+        ema = full_ema['EMA']
+        return ema
+
     def emaAddresses(self, df=None, mode=''):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
@@ -637,7 +645,18 @@ class ImportedPiece:
                     val = self.combineEmaAddresses(addresses.loc[(slice(None), un)].to_list())
                     ret.at[un] = val
                 return ret
-
+        # hr mode--works with HR dataframe, adding ema address to each hr passage (= row).  
+        # pass in hr as the df and set mode = 'hr'
+        elif mode.startswith('h'): # hr mode
+            ngram_length = hr.iloc[0]['ngram_length']
+            nr = self.notes()
+            dur = self.durations(df = nr)
+            ngrams = self.ngrams(df = dur, n = ngram_length, offsets = 'both', exclude=[])
+            hr = hr.reset_index()
+            hr['ema'] = hr.apply(lambda row: self._hr_helper(row, ngrams), axis=1)
+            hr.set_index(['Measure', 'Beat', 'Offset'], inplace=True)
+            return hr  
+        
         idf = ret.index.to_frame()
         _measures = self.measures().iloc[:, 0]
         measures = idf.applymap(lambda i: _measures.loc[:i].iat[-1])
@@ -2255,6 +2274,7 @@ class ImportedPiece:
         hr = pd.merge(ng, hr_sylls_mask, left_index=True, right_index=True)
         # the intersection of coordinated durations and coordinate lyrics
         hr['voice_match'] = hr['active_voices'] == hr['active_syll_voices']
+        # retain ngram length for use with ema
         hr['ngram_length'] = ngram_length
 
         result = self.detailIndex(hr, offset=True)

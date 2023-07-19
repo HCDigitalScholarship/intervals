@@ -2294,6 +2294,8 @@ class ImportedPiece:
         hr['voice_match'] = hr['active_voices'] == hr['active_syll_voices']
         # retain ngram length for use with ema
         hr['ngram_length'] = int(ngram_length)
+        hr["Progress"] = (hr["First_Offset"] / self.notes().index[-1])
+
 
         result = self.detailIndex(hr, offset=True)
 

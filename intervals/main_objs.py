@@ -2654,7 +2654,6 @@ class ImportedPiece:
         b = '_'.join(map(str, a))
         return b
 
-
     def presentationTypes(self, melodic_ngram_length=4, limit_to_entries=True,
                           body_flex=0, head_flex=1, include_hidden_types=False,
                           combine_unisons=False):

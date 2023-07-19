@@ -2775,7 +2775,7 @@ class ImportedPiece:
             points["Count_Offsets"] = points["Offsets"].apply(set).apply(len)
             points = points[points["Count_Offsets"] > 1]
             if len(points) == 0:
-                print("No Presentation Types Found in This Piece")
+                print("No Presentation Types Found in " + self.metadata)
             else:
                 points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
                 # applying various private functions for overlapping entry tests.
@@ -2828,7 +2828,7 @@ class ImportedPiece:
             points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
             points_combined = points_combined[points_combined["Count_Offsets"] > 1]
             if len(points) == 0:
-                print("No Presentation Types Found in This Piece")
+                print("No Presentation Types Found in " + self.metadata)
             else:
                 # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
                 points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)

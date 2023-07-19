@@ -2772,16 +2772,20 @@ class ImportedPiece:
             points["Number_Entries"] = points["Offsets"].apply(len)
             points["Count_Offsets"] = points["Offsets"].apply(set).apply(len)
             points = points[points["Count_Offsets"] > 1]
-            points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-            # applying various private functions for overlapping entry tests.
-            # note that ng_durs must be passed to the first of these, via args
-            points["Entry_Durs"] = points[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
-            points["Overlaps"] = points[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
-            points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
-            points.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
+            if len(points) == 0:
+                print("No Presentation Types Found in This Piece")
+            else:
+                points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+                # applying various private functions for overlapping entry tests.
+                # note that ng_durs must be passed to the first of these, via args
+                points["Entry_Durs"] = points[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
+                points["Overlaps"] = points[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
+                points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
+                points.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
+                points["Progress"] = (points["First_Offset"] / self.notes().index[-1])
 
-            self.analyses[memo_key] = points
-            return points
+                self.analyses[memo_key] = points
+                return points
 
         # classification with hidden types
         elif include_hidden_types == True:
@@ -2821,17 +2825,21 @@ class ImportedPiece:
             points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
             points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
             points_combined = points_combined[points_combined["Count_Offsets"] > 1]
-            # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
-            points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-            points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
-            # applying various private functions for overlapping entry tests.
-            # note that ng_durs must be passed to the first of these, via args
-            points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
-            points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
-            points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
-            points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
-            self.analyses[memo_key] = points_combined
-            return points_combined
+            if len(points) == 0:
+                print("No Presentation Types Found in This Piece")
+            else:
+                # points_combined = points_combined.sort_values("First_Offset").reset_index(drop=True)
+                points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+                points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
+                # applying various private functions for overlapping entry tests.
+                # note that ng_durs must be passed to the first of these, via args
+                points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
+                points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
+                points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
+                points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
+                points_combined["Progress"] = (points_combined["First_Offset"] / self.notes().index[-1])
+                self.analyses[memo_key] = points_combined
+                return points_combined
 
     # new print methods with verovio
     def verovioCadences(self, df=None):

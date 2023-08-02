@@ -603,7 +603,7 @@ class ImportedPiece:
     
     def _ptype_ema_helper(self, row, ngrams):
         this_point = row["Offsets"]
-        ret = ngrams.loc[this_point]
+        ret = ngrams.loc[set(this_point)]
         addresses = self.emaAddresses(df=ret, mode='')
         full_ema = self.combineEmaAddresses(addresses)
         return full_ema

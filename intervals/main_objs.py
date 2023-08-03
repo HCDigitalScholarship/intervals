@@ -606,7 +606,7 @@ class ImportedPiece:
         ret = ngrams.loc[set(this_point)]
         addresses = self.emaAddresses(df=ret, mode='')
         full_ema = self.combineEmaAddresses(addresses)
-        # return full_ema
+        return full_ema
 
     def emaAddresses(self, df=None, mode=''):
         '''
@@ -673,7 +673,7 @@ class ImportedPiece:
             mel = self.melodic(end=False)
             ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)
             p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
-            return p_types
+            # return p_types
         
         if mode.startswith('p'):
             pass

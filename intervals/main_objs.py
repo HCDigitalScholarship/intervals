@@ -2921,7 +2921,7 @@ class ImportedPiece:
                             for r in range(3, 6):
                                 list_combinations = list(combinations(item, r))
                                 for slist in list_combinations:
-                                    df = entry_array.loc[slist].reset_index()
+                                    df = entry_array.loc(axis=0)[slist].reset_index()
                                     temp = self._temp_dict_of_details(df, det, matches)
                                     temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
                                     if 'PEN' in temp["Presentation_Type"]:

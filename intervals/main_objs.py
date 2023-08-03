@@ -2518,138 +2518,137 @@ class ImportedPiece:
         # array = df[df.index.get_level_values(0).isin(slist)]
         short_offset_list = df['index'].to_list()
         voice_list = df['voice'].to_list()
-        if len(set(voice_list)) > 1:
 
-            # check length vs set to know whether there are repeating offsets
-            if len(short_offset_list) > 2 and len(short_offset_list) > len(set(short_offset_list)):
-                # print(short_offset_list)
-                parallel_entries = True
-                # if yes, then get the offsets that repeat
-                repeating_offsets = ([offset for offset, count in collections.Counter(short_offset_list).items() if count > 1])
-                # find the index position of each repeating offset
-                # then look ahead and back to get the next voice and the 'referring' entry
-                # check that the duplicate is not the first entry!
-                # if the dups are in the first position, check to make sure they are not the last too!
-                # this is the last pair, then we leave, as this is not even a three-voice pattern
-                for repeated_offset in repeating_offsets:
-                    # print(reptead)
-                    first_dup_index = short_offset_list.index(repeated_offset)
-                    second_dup_index = first_dup_index + 1
+        # check length vs set to know whether there are repeating offsets
+        if len(short_offset_list) > 2 and len(short_offset_list) > len(set(short_offset_list)):
+            # print(short_offset_list)
+            parallel_entries = True
+            # if yes, then get the offsets that repeat
+            repeating_offsets = ([offset for offset, count in collections.Counter(short_offset_list).items() if count > 1])
+            # find the index position of each repeating offset
+            # then look ahead and back to get the next voice and the 'referring' entry
+            # check that the duplicate is not the first entry!
+            # if the dups are in the first position, check to make sure they are not the last too!
+            # this is the last pair, then we leave, as this is not even a three-voice pattern
+            for repeated_offset in repeating_offsets:
+                # print(reptead)
+                first_dup_index = short_offset_list.index(repeated_offset)
+                second_dup_index = first_dup_index + 1
 
-                    # assuming more than two voices, then resume testing
-                    if first_dup_index == 0 and second_dup_index != len(short_offset_list)-1:
-                        # next voice details:
-                        next_real_entry_index = first_dup_index + 2
-                        next_real_entry_offset = short_offset_list[next_real_entry_index]
-                        next_real_entry_voice = voice_list[next_real_entry_index]
-                        # first voice details
-                        first_dup_voice = voice_list[first_dup_index]
-                        first_dup_voices_list = [first_dup_voice, next_real_entry_voice]
-                        # first pair coordinates
-                        first_dup_offset_list = [repeated_offset, next_real_entry_offset]
-                        first_dup_tone_coordinates =  list(zip(first_dup_offset_list, first_dup_voices_list))
-                        # second voice details and coordinates
-                        second_dup_voice = voice_list[second_dup_index]
-                        second_dup_voices_list = [second_dup_voice, next_real_entry_voice]
-                        second_dup_offset_list = [repeated_offset, next_real_entry_offset]
-                        second_dup_tone_coordinates = list(zip(second_dup_offset_list, second_dup_voices_list))
-                        # get the intervals
-                        first_mel_ints = self._find_entry_int_distance(first_dup_tone_coordinates)
-                        second_mel_ints = self._find_entry_int_distance(second_dup_tone_coordinates)
-                        #  print("First Pair: ", first_mel_ints, "Second Pair:", second_mel_ints)
+                # assuming more than two voices, then resume testing
+                if first_dup_index == 0 and second_dup_index != len(short_offset_list)-1:
+                    # next voice details:
+                    next_real_entry_index = first_dup_index + 2
+                    next_real_entry_offset = short_offset_list[next_real_entry_index]
+                    next_real_entry_voice = voice_list[next_real_entry_index]
+                    # first voice details
+                    first_dup_voice = voice_list[first_dup_index]
+                    first_dup_voices_list = [first_dup_voice, next_real_entry_voice]
+                    # first pair coordinates
+                    first_dup_offset_list = [repeated_offset, next_real_entry_offset]
+                    first_dup_tone_coordinates =  list(zip(first_dup_offset_list, first_dup_voices_list))
+                    # second voice details and coordinates
+                    second_dup_voice = voice_list[second_dup_index]
+                    second_dup_voices_list = [second_dup_voice, next_real_entry_voice]
+                    second_dup_offset_list = [repeated_offset, next_real_entry_offset]
+                    second_dup_tone_coordinates = list(zip(second_dup_offset_list, second_dup_voices_list))
+                    # get the intervals
+                    first_mel_ints = self._find_entry_int_distance(first_dup_tone_coordinates)
+                    second_mel_ints = self._find_entry_int_distance(second_dup_tone_coordinates)
+                    #  print("First Pair: ", first_mel_ints, "Second Pair:", second_mel_ints)
 
-                    # As long as the dups are not in the first position in the list:
-                    if first_dup_index != 0:
-                        prior_entry_index = first_dup_index - 1
-                        # prior voice details
-                        prior_voice_offset = short_offset_list[prior_entry_index]
-                        prior_entry_voice = voice_list[prior_entry_index]
-                        # first voice details
-                        first_dup_voice = voice_list[first_dup_index]
-                        first_dup_voices_list = [prior_entry_voice, first_dup_voice]
-                        # first pair coordinates
-                        first_dup_offset_list = [prior_voice_offset, repeated_offset]
-                        first_dup_tone_coordinates =  list(zip(first_dup_offset_list, first_dup_voices_list))
-                        # second voice details and coordinates
-                        second_dup_voice = voice_list[second_dup_index]
-                        second_dup_voices_list = [prior_entry_voice, second_dup_voice]
-                        second_dup_offset_list = [prior_voice_offset, repeated_offset]
-                        second_dup_tone_coordinates = list(zip(second_dup_offset_list, second_dup_voices_list))
-                        # get the intervals
-                        first_mel_ints = self._find_entry_int_distance(first_dup_tone_coordinates)
-                        second_mel_ints = self._find_entry_int_distance(second_dup_tone_coordinates)
-                        # print("First Pair: ", first_mel_ints, "Second Pair:", second_mel_ints)
+                # As long as the dups are not in the first position in the list:
+                if first_dup_index != 0:
+                    prior_entry_index = first_dup_index - 1
+                    # prior voice details
+                    prior_voice_offset = short_offset_list[prior_entry_index]
+                    prior_entry_voice = voice_list[prior_entry_index]
+                    # first voice details
+                    first_dup_voice = voice_list[first_dup_index]
+                    first_dup_voices_list = [prior_entry_voice, first_dup_voice]
+                    # first pair coordinates
+                    first_dup_offset_list = [prior_voice_offset, repeated_offset]
+                    first_dup_tone_coordinates =  list(zip(first_dup_offset_list, first_dup_voices_list))
+                    # second voice details and coordinates
+                    second_dup_voice = voice_list[second_dup_index]
+                    second_dup_voices_list = [prior_entry_voice, second_dup_voice]
+                    second_dup_offset_list = [prior_voice_offset, repeated_offset]
+                    second_dup_tone_coordinates = list(zip(second_dup_offset_list, second_dup_voices_list))
+                    # get the intervals
+                    first_mel_ints = self._find_entry_int_distance(first_dup_tone_coordinates)
+                    second_mel_ints = self._find_entry_int_distance(second_dup_tone_coordinates)
+                    # print("First Pair: ", first_mel_ints, "Second Pair:", second_mel_ints)
 
-                    # list of preferred intervals for selecting entry (the other will become 'parallel')
-                    preferred_list = ["P1", "P4", "P-4", "P5", "P-5", "P8", "P-8", "P12", "P-12"]
-                    # if both entries are preferred intervals, take the first (top) one
-                    if first_mel_ints[0] and second_mel_ints[0] in preferred_list:
-                        #  print("First Pair")
-                        short_offset_list.pop(second_dup_index)
-                        time_intervals = np.diff(short_offset_list).tolist()
-                        parallel_voice = voice_list[second_dup_index]
-                        voice_list.pop(second_dup_index)
-                        tone_coordinates = list(zip(short_offset_list, voice_list))
-                        melodic_intervals = self._find_entry_int_distance(tone_coordinates)
+                # list of preferred intervals for selecting entry (the other will become 'parallel')
+                preferred_list = ["P1", "P4", "P-4", "P5", "P-5", "P8", "P-8", "P12", "P-12"]
+                # if both entries are preferred intervals, take the first (top) one
+                if first_mel_ints[0] and second_mel_ints[0] in preferred_list:
+                    #  print("First Pair")
+                    short_offset_list.pop(second_dup_index)
+                    time_intervals = np.diff(short_offset_list).tolist()
+                    parallel_voice = voice_list[second_dup_index]
+                    voice_list.pop(second_dup_index)
+                    tone_coordinates = list(zip(short_offset_list, voice_list))
+                    melodic_intervals = self._find_entry_int_distance(tone_coordinates)
 
-                    # if the first is preferred, take it
-                    elif first_mel_ints[0] in preferred_list:
-                        # print("First Pair")
-                        short_offset_list.pop(second_dup_index)
-                        time_intervals = np.diff(short_offset_list).tolist()
-                        parallel_voice = voice_list[second_dup_index]
-                        voice_list.pop(second_dup_index)
-                        tone_coordinates = list(zip(short_offset_list, voice_list))
-                        melodic_intervals = self._find_entry_int_distance(tone_coordinates)
+                # if the first is preferred, take it
+                elif first_mel_ints[0] in preferred_list:
+                    # print("First Pair")
+                    short_offset_list.pop(second_dup_index)
+                    time_intervals = np.diff(short_offset_list).tolist()
+                    parallel_voice = voice_list[second_dup_index]
+                    voice_list.pop(second_dup_index)
+                    tone_coordinates = list(zip(short_offset_list, voice_list))
+                    melodic_intervals = self._find_entry_int_distance(tone_coordinates)
 
-                    # if the second is preferred, take it
-                    elif second_mel_ints[0] in preferred_list:
-                        short_offset_list.pop(first_dup_index)
-                        time_intervals = np.diff(short_offset_list).tolist()
-                        parallel_voice = voice_list[first_dup_index]
-                        voice_list.pop(first_dup_index)
-                        tone_coordinates = list(zip(short_offset_list, voice_list))
-                        melodic_intervals = self._find_entry_int_distance(tone_coordinates)
-                        #  print("Second Pair")
+                # if the second is preferred, take it
+                elif second_mel_ints[0] in preferred_list:
+                    short_offset_list.pop(first_dup_index)
+                    time_intervals = np.diff(short_offset_list).tolist()
+                    parallel_voice = voice_list[first_dup_index]
+                    voice_list.pop(first_dup_index)
+                    tone_coordinates = list(zip(short_offset_list, voice_list))
+                    melodic_intervals = self._find_entry_int_distance(tone_coordinates)
+                    #  print("Second Pair")
 
-                    # if neither is preferred, take the first
-                    else:
-                        short_offset_list.pop(second_dup_index)
-                        time_intervals = np.diff(short_offset_list).tolist()
-                        parallel_voice = voice_list[second_dup_index]
-                        voice_list.pop(second_dup_index)
-                        tone_coordinates = list(zip(short_offset_list, voice_list))
-                        melodic_intervals = self._find_entry_int_distance(tone_coordinates)
-            # if there are no parallel entries, simply find the time intervals and melodic intervals
-            # between entries
-            else:
-                parallel_entries = False
-                parallel_voice = None
-                # array = df[df.index.get_level_values(0).isin(slist)]
-                short_offset_list = df['index'].to_list()
-                time_intervals = np.diff(df['index']).tolist()
-                voice_list = df['voice'].to_list()
-                tone_coordinates =  list(zip(short_offset_list, voice_list))
-                melodic_intervals = self._find_entry_int_distance(tone_coordinates)
+                # if neither is preferred, take the first
+                else:
+                    short_offset_list.pop(second_dup_index)
+                    time_intervals = np.diff(short_offset_list).tolist()
+                    parallel_voice = voice_list[second_dup_index]
+                    voice_list.pop(second_dup_index)
+                    tone_coordinates = list(zip(short_offset_list, voice_list))
+                    melodic_intervals = self._find_entry_int_distance(tone_coordinates)
+        # if there are no parallel entries, simply find the time intervals and melodic intervals
+        # between entries
+        else:
+            parallel_entries = False
+            parallel_voice = None
+            # array = df[df.index.get_level_values(0).isin(slist)]
+            short_offset_list = df['index'].to_list()
+            time_intervals = np.diff(df['index']).tolist()
+            voice_list = df['voice'].to_list()
+            tone_coordinates =  list(zip(short_offset_list, voice_list))
+            melodic_intervals = self._find_entry_int_distance(tone_coordinates)
 
-            meas_beat = det[det.index.get_level_values('Offset').isin(short_offset_list)]
-            mb2 = meas_beat.reset_index()
-            mb2['mb'] = mb2["Measure"].astype(str) + "/" + mb2["Beat"].astype(str)
-            meas_beat_list = mb2['mb'].to_list()
+        meas_beat = det[det.index.get_level_values('Offset').isin(short_offset_list)]
+        mb2 = meas_beat.reset_index()
+        mb2['mb'] = mb2["Measure"].astype(str) + "/" + mb2["Beat"].astype(str)
+        meas_beat_list = mb2['mb'].to_list()
 
-            # temp results for this set
-            temp = {"Composer": self.metadata["composer"],
-                    "Title": self.metadata["title"],
-                    'First_Offset': short_offset_list[0],
-                    'Offsets': short_offset_list,
-                    'Measures_Beats': meas_beat_list,
-                    "Soggetti": matches,
-                    'Voices': voice_list,
-                    'Time_Entry_Intervals': time_intervals,
-                    'Melodic_Entry_Intervals': melodic_intervals,
-                    "Parallel_Entries": parallel_entries,
-                    "Parallel_Voice": parallel_voice}
-            return temp
+        # temp results for this set
+        temp = {"Composer": self.metadata["composer"],
+                "Title": self.metadata["title"],
+                'First_Offset': short_offset_list[0],
+                'Offsets': short_offset_list,
+                'Measures_Beats': meas_beat_list,
+                "Soggetti": matches,
+                'Voices': voice_list,
+                'Time_Entry_Intervals': time_intervals,
+                'Melodic_Entry_Intervals': melodic_intervals,
+                "Parallel_Entries": parallel_entries,
+                "Parallel_Voice": parallel_voice}
+        return temp
     
     def _offset_joiner(self, a):
 

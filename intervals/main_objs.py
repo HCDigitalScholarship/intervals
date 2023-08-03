@@ -2995,8 +2995,12 @@ class ImportedPiece:
 
             for nim in temporary_nim_list:
                 points_combined = points_combined.append(nim, ignore_index=True)
-            points_combined = points_combined.sort_values("Progress")
-            points_combined = points_combined.reset_index(drop=True)
+            if len(points_combined) == 0:
+                print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
+            else:
+                points_combined = points_combined.sort_values("Progress")
+                points_combined = points_combined.reset_index(drop=True)
+                
             self.analyses[memo_key] = points_combined
             return points_combined
 

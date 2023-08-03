@@ -606,7 +606,7 @@ class ImportedPiece:
         ret = ngrams.loc[set(this_point)]
         addresses = self.emaAddresses(df=ret, mode='')
         full_ema = self.combineEmaAddresses(addresses)
-        return full_ema
+        # return full_ema
 
     def emaAddresses(self, df=None, mode=''):
         '''

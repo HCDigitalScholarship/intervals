@@ -2650,7 +2650,7 @@ class ImportedPiece:
                 "Parallel_Voice": parallel_voice}
         return temp
     
-    def _offset_joiner(a):
+    def _offset_joiner(self, a):
 
         '''
         This private function is used to turn the offset diffs and melodic entry intervals and melodies into strings for the network

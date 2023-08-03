@@ -2876,9 +2876,8 @@ class ImportedPiece:
 
             for nim in temporary_nim_list:
                 points = points.append(nim, ignore_index=True)
-            if len(points) == 0:
-                points = points.sort_values("Progress")
-                points = points.reset_index(drop=True)
+            points = points.sort_values("Progress")
+            points = points.reset_index(drop=True)
 
             self.analyses[memo_key] = points
             return points

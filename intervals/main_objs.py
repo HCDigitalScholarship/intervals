@@ -2500,7 +2500,8 @@ class ImportedPiece:
             return 'FUGA'
 
     # July 2022:  This Replaces the Previous helper
-    def _temp_dict_of_details(self, slist, entry_array, det, matches):
+    def _temp_dict_of_details(self, df, det, matches):
+    
 
         """
         This helper function is used as part of presentationTypes.
@@ -2514,9 +2515,9 @@ class ImportedPiece:
         The other parallel entry is marked and noted in a separate field.
 
         """
-        array = entry_array[entry_array.index.get_level_values(0).isin(slist)]
-        short_offset_list = array.index.to_list()
-        voice_list = array['voice'].to_list()
+        # array = df[df.index.get_level_values(0).isin(slist)]
+        short_offset_list = df['index'].to_list()
+        voice_list = df['voice'].to_list()
 
         # check length vs set to know whether there are repeating offsets
         if len(short_offset_list) > 2 and len(short_offset_list) > len(set(short_offset_list)):
@@ -2623,10 +2624,10 @@ class ImportedPiece:
         else:
             parallel_entries = False
             parallel_voice = None
-            array = entry_array[entry_array.index.get_level_values(0).isin(slist)]
-            short_offset_list = array.index.to_list()
-            time_intervals = np.diff(array.index).tolist()
-            voice_list = array['voice'].to_list()
+            # array = df[df.index.get_level_values(0).isin(slist)]
+            short_offset_list = df['index'].to_list()
+            time_intervals = np.diff(df['index']).tolist()
+            voice_list = df['voice'].to_list()
             tone_coordinates =  list(zip(short_offset_list, voice_list))
             melodic_intervals = self._find_entry_int_distance(tone_coordinates)
 
@@ -2648,11 +2649,57 @@ class ImportedPiece:
                 "Parallel_Entries": parallel_entries,
                 "Parallel_Voice": parallel_voice}
         return temp
-    # #  the following are used to turn the offset diffs and melodic entry intervals
-    # # and melodies into strings for the network
+    
     def _offset_joiner(a):
+
+        '''
+        This private function is used to turn the offset diffs and melodic entry intervals and melodies into strings for the network
+        '''
         b = '_'.join(map(str, a))
         return b
+    
+    def _split_dataframe(self, column, threshold):
+
+        '''
+        This private helper function is used with the results of p types in ordeer to identify NIMs.
+        '''
+        # Sort the DataFrame based on the given column
+        df = df.reset_index()
+        # Calculate the absolute difference between consecutive values in the column
+        diff = df[column].diff().abs()
+        # Create a boolean mask where the absolute difference exceeds the threshold
+        mask = diff > threshold
+        # Identify the indices where the mask is True
+        split_indices = mask[mask == True].index
+        # Split the DataFrame into multiple frames based on the identified indices
+        frames = []
+        start_idx = 0
+        for idx in split_indices:
+            frames.append(df[start_idx:idx])
+            start_idx = idx 
+        # Include the remaining portion of the DataFrame as the final frame
+        frames.append(df[start_idx:])
+        final_frames = []
+        for frame in frames:
+            if len(frame) > 1:
+                final_frames.append(frame)
+        
+        return final_frames
+    
+    def _parallel_voice_check(this_row_parallel_voice, next_row_parallel_voice):
+        '''
+        This private function is used with to help find NIMs as part of the final dictionary of temporary values.
+        It checks whether there are "None" values in any of the p type results used to process the fugas.
+        '''
+        if this_row_parallel_voice is not None and next_row_parallel_voice is not None:
+            parallel_voice = this_row_parallel_voice + next_row_parallel_voice
+        elif this_row_parallel_voice is not None:
+            parallel_voice = this_row_parallel_voice
+        elif next_row_parallel_voice is not None:
+            parallel_voice = next_row_parallel_voice
+        else:
+            parallel_voice = None
+        return parallel_voice
 
     def presentationTypes(self, melodic_ngram_length=4, limit_to_entries=True,
                           body_flex=0, head_flex=1, include_hidden_types=False,
@@ -2710,7 +2757,6 @@ class ImportedPiece:
             entries = self.entries(mel_ng)
         else:
             entries = self.ngrams(df=mel, exclude=['Rest'], n=melodic_ngram_length)
-        # return entries
         # get ngram durs to use for overlap check as part of _temp files
         ng_durs = self.durations(df=entries)
 
@@ -2744,35 +2790,36 @@ class ImportedPiece:
         # gets flexed and other similar soggetti
         dist = self.flexed_distance(head_flex, entries)
         dist_stack = dist.stack().to_frame()
-
-        # filter distances to threshold.  <2 is good
+        # # filter distances to threshold.  <2 is good
         distance_factor = body_flex + 1
         filtered_dist_stack = dist_stack[dist_stack[0] < distance_factor]
         filtered_dist = filtered_dist_stack.reset_index()
         filtered_dist.rename(columns =  {'level_0':"source", 'level_1':'match'}, inplace = True)
 
-        # Group the filtered distanced patterns
+        # # Group the filtered distanced patterns
         full_list_of_matches = filtered_dist.groupby('source')['match'].apply(list).reset_index()
-        # classification without hidden types
+
+        # # classification without hidden types
         if include_hidden_types == False:
+            list_temps = []
             for matches in full_list_of_matches["match"]:
                 related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
                 entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
-                offset_list = entry_array.index.to_list()
-                split_list = list(ImportedPiece._split_by_threshold(offset_list))
+                dfs = self._split_dataframe(entry_array, "index", 70)
                 # classification of the full set
-                for item in split_list:
-                    temp = self._temp_dict_of_details(item, entry_array, det, matches)
-                    points = points.append(temp, ignore_index=True)
-                    points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-                    points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-                    points = points[points['Offsets'].apply(len) > 1]
-
-            points["Offsets_Key"] = points["Offsets"].apply(ImportedPiece._offset_joiner)
+                for df in dfs:
+                    temp = self._temp_dict_of_details(df, det, matches)
+                    # print(temp)
+                    list_temps.append(temp)
+            points = pd.DataFrame(list_temps)          
+            points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
+            points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
             points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
             points["Number_Entries"] = points["Offsets"].apply(len)
             points["Count_Offsets"] = points["Offsets"].apply(set).apply(len)
             points = points[points["Count_Offsets"] > 1]
+            points["Count_Voices"] = points["Voices"].apply(set).apply(len)
+            points = points[points["Count_Voices"] > 1]
             if len(points) == 0:
                 print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
             else:
@@ -2784,16 +2831,72 @@ class ImportedPiece:
                 points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
                 points.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
                 points["Progress"] = (points["First_Offset"] / self.notes().index[-1])
+            
+            # NIM test.  Here we check for interlocking fugas that are really nims:
+            fugas = points[points["Presentation_Type"] == 'FUGA']
+            fuga_index_list = fugas.index.tolist()
+            temporary_nim_list = []
+            for this_item in fuga_index_list:
+                if fuga_index_list.index(this_item) != len(fuga_index_list)- 1:
+                    next_item_index = fuga_index_list.index(this_item) + 1
+                    next_item = fuga_index_list[next_item_index]
+                    # check time entry intervals of the two fugas match
+                    if fugas.loc[this_item]['Time_Entry_Intervals'] == fugas.loc[next_item]['Time_Entry_Intervals']:
+                        # check if the first offsets interlock
+                        if fugas.loc[this_item]['Offsets'][0] <= fugas.loc[next_item]['Offsets'][0]:
+                            # get data for melodic intervals between the NIMS
+                            voices_for_melodic_ints = fugas.loc[this_item]['Voices']
+                            offsets_for_melodic_ints = fugas.loc[this_item]['Offsets']
+                            coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
+                            melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
+                            temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
+                                "Title": fugas.loc[this_item]['Title'],
+                                'First_Offset': fugas.loc[this_item]['First_Offset'],
+                                # here we need to combine and sort lists of offsets
+                                'Offsets': sorted(fugas.loc[this_item]['Offsets'] + fugas.loc[next_item]['Offsets']),
+                                # here we need to combine and sort lists of meas and beats
+                                'Measures_Beats': sorted(fugas.loc[this_item]['Measures_Beats'] + fugas.loc[next_item]['Measures_Beats']),
+                                # here we need to combine and sort lists of soggette
+                                "Soggetti": [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair],
+                                # here we need to combine and sort lists of voices
+                                'Voices': [val for pair in zip(fugas.loc[this_item]['Voices'], fugas.loc[next_item]['Voices']) for val in pair],
+                                'Time_Entry_Intervals': fugas.loc[this_item]['Time_Entry_Intervals'],
+                                'Melodic_Entry_Intervals': melodic_intervals_between_nims,
+                                'Number_Entries': fugas.loc[this_item]['Number_Entries'] + fugas.loc[next_item]['Number_Entries'],
+                                'Presentation_Type' : 'NIM',
+                                'Flexed_Entries': True if fugas.loc[this_item]['Flexed_Entries'] == True | fugas.loc[next_item]['Flexed_Entries'] == True else False,
+                                'Parallel_Entries': True if fugas.loc[this_item]['Parallel_Entries'] == True | fugas.loc[next_item]['Parallel_Entries'] == True else False,
+                                'Parallel_Voice': self._parallel_voice_check(fugas.loc[this_item]['Parallel_Voice'], fugas.loc[next_item]['Parallel_Voice']),
+                                'Count_Non_Overlaps': fugas.loc[this_item]['Count_Non_Overlaps'] + fugas.loc[next_item]['Count_Non_Overlaps'],
+                                'Progress' : fugas.loc[this_item]['Progress']
+                                }
+                            temporary_nim_list.append(temp_nim_details)
+                            points = points.drop(this_item)
+                            points = points.drop(next_item)
 
-                self.analyses[memo_key] = points
-                return points
+            for nim in temporary_nim_list:
+                points = points.append(nim, ignore_index=True)
+            points = points.sort_values("Progress")
+            points = points.reset_index(drop=True)
+
+            self.analyses[memo_key] = points
+            return points
 
         # classification with hidden types
         elif include_hidden_types == True:
             # hidden_types_list = ["PEN", "ID"]
+            list_temps = []
             for matches in full_list_of_matches["match"]:
                 related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
                 entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
+                dfs = self._split_dataframe(entry_array, "index", 70)
+                # classification of the full set
+                for df in dfs:
+                    temp = self._temp_dict_of_details(df, det, matches)
+                    # print(temp)
+                    list_temps.append(temp)
+                points = pd.DataFrame(list_temps) 
+
                 offset_list = entry_array.index.to_list()
                 split_list = list(ImportedPiece._split_by_threshold(offset_list))
                 # the initial classification of the full set
@@ -2839,8 +2942,54 @@ class ImportedPiece:
                 points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
                 points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
                 points_combined["Progress"] = (points_combined["First_Offset"] / self.notes().index[-1])
-                self.analyses[memo_key] = points_combined
-                return points_combined
+            # NIM test.  Here we check for interlocking fugas that are really nims:
+            fugas = points[points["Presentation_Type"] == 'FUGA']
+            fuga_index_list = fugas.index.tolist()
+            temporary_nim_list = []
+            for this_item in fuga_index_list:
+                if fuga_index_list.index(this_item) != len(fuga_index_list)- 1:
+                    next_item_index = fuga_index_list.index(this_item) + 1
+                    next_item = fuga_index_list[next_item_index]
+                    # check time entry intervals of the two fugas match
+                    if fugas.loc[this_item]['Time_Entry_Intervals'] == fugas.loc[next_item]['Time_Entry_Intervals']:
+                        # check if the first offsets interlock
+                        if fugas.loc[this_item]['Offsets'][0] <= fugas.loc[next_item]['Offsets'][0]:
+                            # get data for melodic intervals between the NIMS
+                            voices_for_melodic_ints = fugas.loc[this_item]['Voices']
+                            offsets_for_melodic_ints = fugas.loc[this_item]['Offsets']
+                            coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
+                            melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
+                            temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
+                                "Title": fugas.loc[this_item]['Title'],
+                                'First_Offset': fugas.loc[this_item]['First_Offset'],
+                                # here we need to combine and sort lists of offsets
+                                'Offsets': sorted(fugas.loc[this_item]['Offsets'] + fugas.loc[next_item]['Offsets']),
+                                # here we need to combine and sort lists of meas and beats
+                                'Measures_Beats': sorted(fugas.loc[this_item]['Measures_Beats'] + fugas.loc[next_item]['Measures_Beats']),
+                                # here we need to combine and sort lists of soggette
+                                "Soggetti": [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair],
+                                # here we need to combine and sort lists of voices
+                                'Voices': [val for pair in zip(fugas.loc[this_item]['Voices'], fugas.loc[next_item]['Voices']) for val in pair],
+                                'Time_Entry_Intervals': fugas.loc[this_item]['Time_Entry_Intervals'],
+                                'Melodic_Entry_Intervals': melodic_intervals_between_nims,
+                                'Number_Entries': fugas.loc[this_item]['Number_Entries'] + fugas.loc[next_item]['Number_Entries'],
+                                'Presentation_Type' : 'NIM',
+                                'Flexed_Entries': True if fugas.loc[this_item]['Flexed_Entries'] == True | fugas.loc[next_item]['Flexed_Entries'] == True else False,
+                                'Parallel_Entries': True if fugas.loc[this_item]['Parallel_Entries'] == True | fugas.loc[next_item]['Parallel_Entries'] == True else False,
+                                'Parallel_Voice': self._parallel_voice_check(fugas.loc[this_item]['Parallel_Voice'], fugas.loc[next_item]['Parallel_Voice']),
+                                'Count_Non_Overlaps': fugas.loc[this_item]['Count_Non_Overlaps'] + fugas.loc[next_item]['Count_Non_Overlaps'],
+                                'Progress' : fugas.loc[this_item]['Progress']
+                                }
+                            temporary_nim_list.append(temp_nim_details)
+                            points = points.drop(this_item)
+                            points = points.drop(next_item)
+
+            for nim in temporary_nim_list:
+                points = points.append(nim, ignore_index=True)
+            points = points.sort_values("Progress")
+            points = points.reset_index(drop=True)
+            self.analyses[memo_key] = points_combined
+            return points_combined
 
     # new print methods with verovio
     def verovioCadences(self, df=None):

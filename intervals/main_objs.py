@@ -673,7 +673,7 @@ class ImportedPiece:
             mel = self.melodic(end=False)
             ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)
             p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
-            # return p_types
+            return p_types
         
         if mode.startswith('p'):
             pass
@@ -689,7 +689,7 @@ class ImportedPiece:
             res = pd.concat([res, ret], axis=1)
             res = res.apply(self._emaRowHelper, axis=1)
             res.name = 'EMA'
-            return res
+            # return res
 
     def _getBeatUnit(self):
         '''

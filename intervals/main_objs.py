@@ -2877,6 +2877,8 @@ class ImportedPiece:
             for nim in temporary_nim_list:
                 points = points.append(nim, ignore_index=True)
             if len(points) == 0:
+                print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
+            else:
                 points = points.sort_values("Progress")
                 points = points.reset_index(drop=True)
 

@@ -2658,7 +2658,7 @@ class ImportedPiece:
         b = '_'.join(map(str, a))
         return b
     
-    def _split_dataframe(self, column, threshold):
+    def _split_dataframe(self, df, column, threshold):
 
         '''
         This private helper function is used with the results of p types in ordeer to identify NIMs.

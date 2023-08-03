@@ -2949,7 +2949,7 @@ class ImportedPiece:
                 points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
                 points_combined["Progress"] = (points_combined["First_Offset"] / self.notes().index[-1])
             # NIM test.  Here we check for interlocking fugas that are really nims:
-            fugas = points[points["Presentation_Type"] == 'FUGA']
+            fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']
             fuga_index_list = fugas.index.tolist()
             temporary_nim_list = []
             for this_item in fuga_index_list:
@@ -2987,13 +2987,13 @@ class ImportedPiece:
                                 'Progress' : fugas.loc[this_item]['Progress']
                                 }
                             temporary_nim_list.append(temp_nim_details)
-                            points = points.drop(this_item)
-                            points = points.drop(next_item)
+                            points_combined = points_combined.drop(this_item)
+                            points_combined = points_combined.drop(next_item)
 
             for nim in temporary_nim_list:
-                points = points.append(nim, ignore_index=True)
-            points = points.sort_values("Progress")
-            points = points.reset_index(drop=True)
+                points_combined = points_combined.append(nim, ignore_index=True)
+            points_combined = points_combined.sort_values("Progress")
+            points_combined = points_combined.reset_index(drop=True)
             self.analyses[memo_key] = points_combined
             return points_combined
 

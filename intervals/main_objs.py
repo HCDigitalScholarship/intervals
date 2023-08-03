@@ -2900,7 +2900,10 @@ class ImportedPiece:
                 for df in dfs:
                     temp = self._temp_dict_of_details(df, det, matches)
                     # print(temp)
-                    list_temps.append(temp)
+                    if temp in list_temps:
+                        pass
+                    else:
+                        list_temps.append(temp)
                 points = pd.DataFrame(list_temps) 
 
                 offset_list = entry_array.index.to_list()

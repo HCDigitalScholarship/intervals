@@ -2906,8 +2906,8 @@ class ImportedPiece:
                     points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
                     # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
                     points = points[points['Offsets'].apply(len) > 1]
-            # this return is just for testing
-            # return(points)
+                # this return is just for testing
+                # return(points)
                 # now the test for hidden types via 'combinations' of all entries in the full set
                 for item in split_list:
                     temp = self._temp_dict_of_details(item, entry_array, det, matches)

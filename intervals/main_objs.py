@@ -2295,7 +2295,7 @@ class ImportedPiece:
         # retain ngram length for use with ema
         hr['ngram_length'] = int(ngram_length)
         result = self.detailIndex(hr, offset=True)
-        hr["Progress"] = (hr.index.get_level_values(2) / self.notes().index[-1])
+        result["Progress"] = (result.index.get_level_values(2) / self.notes().index[-1])
 
 
         

@@ -2930,7 +2930,7 @@ class ImportedPiece:
                                         points2 = points2.append(temp, ignore_index=True)
 
             points_combined = points.append(points2, ignore_index=True)
-            points_combined["Offsets_Key"] = points_combined["Offsets"].apply(ImportedPiece._offset_joiner)
+            points_combined["Offsets_Key"] = points_combined["Offsets"].apply(self._offset_joiner)
             points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
             points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
             points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)

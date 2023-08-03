@@ -2901,27 +2901,31 @@ class ImportedPiece:
                 split_list = list(ImportedPiece._split_by_threshold(offset_list))
                 # the initial classification of the full set
                 for item in split_list:
-                    temp = self._temp_dict_of_details(item, det, matches)
-                    points = points.append(temp, ignore_index=True)
-                    points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
+                    df = entry_array.loc[item].reset_index()
+                    if len(df) > 1:
+                    # df = df.reset_index()
+                        temp = self._temp_dict_of_details(df, det, matches)
+                        points = points.append(temp, ignore_index=True)
+                        points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
                     # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-                    points = points[points['Offsets'].apply(len) > 1]
+                    # points = points[points['Offsets'].apply(len) > 1]
                 # this return is just for testing
                 # return(points)
                 # now the test for hidden types via 'combinations' of all entries in the full set
                 for item in split_list:
-                    temp = self._temp_dict_of_details(item, entry_array, det, matches)
-                    lto = len(temp["Offsets"])
-                    if lto > 2 :
-                        for r in range(3, 6):
-                            list_combinations = list(combinations(item, r))
-                            for slist in list_combinations:
-                                temp = self._temp_dict_of_details(slist, entry_array, det, matches)
-                                temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
-                                if 'PEN' in temp["Presentation_Type"]:
-                                    points2 = points2.append(temp, ignore_index=True)
-                                if 'ID' in temp["Presentation_Type"]:
-                                    points2 = points2.append(temp, ignore_index=True)
+                    if len(item) > 1:
+                        temp = self._temp_dict_of_details(item, entry_array, det, matches)
+                        lto = len(temp["Offsets"])
+                        if lto > 2 :
+                            for r in range(3, 6):
+                                list_combinations = list(combinations(item, r))
+                                for slist in list_combinations:
+                                    temp = self._temp_dict_of_details(slist, entry_array, det, matches)
+                                    temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
+                                    if 'PEN' in temp["Presentation_Type"]:
+                                        points2 = points2.append(temp, ignore_index=True)
+                                    if 'ID' in temp["Presentation_Type"]:
+                                        points2 = points2.append(temp, ignore_index=True)
 
             points_combined = points.append(points2, ignore_index=True)
             points_combined["Offsets_Key"] = points_combined["Offsets"].apply(ImportedPiece._offset_joiner)

@@ -2944,6 +2944,7 @@ class ImportedPiece:
             points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
             points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
             points_combined = points_combined[points_combined["Count_Offsets"] > 1]
+            points_combined = points_combined[points_combined["Voices"].apply(len(set)) > 1]
             if len(points_combined) == 0:
                 print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
             else:

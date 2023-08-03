@@ -2958,6 +2958,7 @@ class ImportedPiece:
                 points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
                 points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
                 points_combined["Progress"] = (points_combined["First_Offset"] / self.notes().index[-1])
+                points_combined["Presentation_Type"].fillna("FUGA", inplace=True)
             # NIM test.  Here we check for interlocking fugas that are really nims:
             # if len(points_combined) >= 1:
             #     fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']

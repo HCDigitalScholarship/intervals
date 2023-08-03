@@ -2993,7 +2993,7 @@ class ImportedPiece:
                                     'Number_Entries': fugas.loc[this_item]['Number_Entries'] + fugas.loc[next_item]['Number_Entries'],
                                     'Presentation_Type' : 'NIM',
                                     'Flexed_Entries': True if fugas.loc[this_item]['Flexed_Entries'] == True | fugas.loc[next_item]['Flexed_Entries'] == True else False,
-                                    'Parallel_Entries': True if fugas.loc[this_item]['Parallel_Entries'] == True | fugas.loc[next_item]['Parallel_Entries'] == True else False,
+                                    'Parallel_Entries': True if (fugas.loc[this_item]['Parallel_Entries'] == True) | (fugas.loc[next_item]['Parallel_Entries'] == True) else False,
                                     'Parallel_Voice': self._parallel_voice_check(fugas.loc[this_item]['Parallel_Voice'], fugas.loc[next_item]['Parallel_Voice']),
                                     'Count_Non_Overlaps': fugas.loc[this_item]['Count_Non_Overlaps'] + fugas.loc[next_item]['Count_Non_Overlaps'],
                                     'Progress' : fugas.loc[this_item]['Progress']

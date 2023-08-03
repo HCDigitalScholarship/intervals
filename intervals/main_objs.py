@@ -2901,7 +2901,7 @@ class ImportedPiece:
                 split_list = list(ImportedPiece._split_by_threshold(offset_list))
                 # the initial classification of the full set
                 for item in split_list:
-                    temp = self._temp_dict_of_details(item, entry_array, det, matches)
+                    temp = self._temp_dict_of_details(item, det, matches)
                     points = points.append(temp, ignore_index=True)
                     points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
                     # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)

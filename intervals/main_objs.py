@@ -2686,7 +2686,7 @@ class ImportedPiece:
         
         return final_frames
     
-    def _parallel_voice_check(this_row_parallel_voice, next_row_parallel_voice):
+    def _parallel_voice_check(self, this_row_parallel_voice, next_row_parallel_voice):
         '''
         This private function is used with to help find NIMs as part of the final dictionary of temporary values.
         It checks whether there are "None" values in any of the p type results used to process the fugas.

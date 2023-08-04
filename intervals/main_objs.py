@@ -613,19 +613,19 @@ class ImportedPiece:
             if f not in dictionary:
                 dictionary[f] = []
             dictionary[f].append(s)
-        # use dict values to build offset and column sets
-            for offset, voice_list in dictionary.items():
-                columns_to_replace = ngrams.columns.difference(voice_list)
-            # Replace the values with NaN
-                ngrams.loc[offset, columns_to_replace] = np.nan
-                if len(final_df) == 0:
-                    final_df = ngrams
-                else:
-                    result = pd.concat([final_df, ngrams])
+    # use dict values to build offset and column sets
+        for offset, voice_list in dictionary.items():
+            columns_to_replace = ngrams.columns.difference(voice_list)
+        # Replace the values with NaN
+            ngrams.loc[offset, columns_to_replace] = np.nan
+            if len(final_df) == 0:
+                final_df = ngrams
+            else:
+                result = pd.concat([final_df, ngrams])
 
-            emas = self.emaAddresses(df=result, mode='')
-            complete_ema = self.combineEmaAddresses(emas)
-            return complete_ema
+        emas = self.emaAddresses(df=result, mode='')
+        complete_ema = self.combineEmaAddresses(emas)
+        return complete_ema
         
 
         this_point = row["Offsets"]

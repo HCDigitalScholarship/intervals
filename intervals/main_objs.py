@@ -614,7 +614,7 @@ class ImportedPiece:
                 dictionary[f] = []
             dictionary[f].append(s)
         # slice of ngrams corresponding to this point
-        short_ngrams = ngrams.loc[offsets]
+        short_ngrams = ngrams.loc[set(offsets)]
         # use dict values to build offset and column sets
         for offset, voice_list in dictionary.items():
             exclude_columns = ['[Superius]', 'Altus']

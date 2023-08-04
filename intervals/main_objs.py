@@ -622,6 +622,7 @@ class ImportedPiece:
                 final_df = ngrams
             else:
                 result = pd.concat([final_df, ngrams])
+                result.drop_duplicates(inplace=True)
 
         emas = self.emaAddresses(df=result, mode='')
         complete_ema = self.combineEmaAddresses(emas)

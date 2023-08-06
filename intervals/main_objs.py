@@ -3033,6 +3033,7 @@ class ImportedPiece:
                 if len(fugas) >= 1:
                     fuga_index_list = fugas.index.tolist()
                     temp_fuga_drop_list = []
+                    filtered_dist['pairs'] = filtered_dist.apply(lambda row: list((row['source'], row['match'])), axis=1)
                     
                     for this_item in fuga_index_list:
                         if fuga_index_list.index(this_item) != len(fuga_index_list)-1:

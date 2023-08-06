@@ -686,8 +686,8 @@ class ImportedPiece:
         # hr mode--works with HR dataframe, adding ema address to each hr passage (= row).  
         # pass in output of hr = piece.homorhythm() as the df and set mode = 'hr'
         elif mode.startswith('h'): # hr mode
-            hr = df
-            if len(hr) >= 1:
+            if isinstance(df, pd.DataFrame):
+                hr = df
                 ngram_length = int(hr.iloc[0]['ngram_length'])
                 nr = self.notes()
                 dur = self.durations(df = nr)
@@ -700,8 +700,8 @@ class ImportedPiece:
         # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
 
         elif mode.startswith('p'): # p_type mode
-            p_types = df
-            if len(p_types) >= 1:
+            if isinstance(df, pd.DataFrame):
+                p_types = df
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
                 mel = self.melodic(end=False)
                 ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)

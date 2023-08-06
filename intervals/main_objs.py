@@ -687,24 +687,26 @@ class ImportedPiece:
         # pass in output of hr = piece.homorhythm() as the df and set mode = 'hr'
         elif mode.startswith('h'): # hr mode
             hr = df
-            ngram_length = int(hr.iloc[0]['ngram_length'])
-            nr = self.notes()
-            dur = self.durations(df = nr)
-            ngrams = self.ngrams(df = dur, n = ngram_length, offsets = 'both', exclude=[])
-            hr = hr.reset_index()
-            hr['ema'] = hr.apply(lambda row: self._hr_helper(row, ngrams), axis=1)
-            hr.set_index(['Measure', 'Beat', 'Offset'], inplace=True)
-            return hr  
+            if len(hr) >= 1:
+                ngram_length = int(hr.iloc[0]['ngram_length'])
+                nr = self.notes()
+                dur = self.durations(df = nr)
+                ngrams = self.ngrams(df = dur, n = ngram_length, offsets = 'both', exclude=[])
+                hr = hr.reset_index()
+                hr['ema'] = hr.apply(lambda row: self._hr_helper(row, ngrams), axis=1)
+                hr.set_index(['Measure', 'Beat', 'Offset'], inplace=True)
+                return hr  
         # for ptypes output
         # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
 
         elif mode.startswith('p'): # p_type mode
             p_types = df
-            ngram_length = len(p_types.iloc[0]['Soggetti'][0])
-            mel = self.melodic(end=False)
-            ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)
-            p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
-            return p_types
+            if len(p_types) >= 1:
+                ngram_length = len(p_types.iloc[0]['Soggetti'][0])
+                mel = self.melodic(end=False)
+                ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)
+                p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
+                return p_types
         
     
         idf = ret.index.to_frame()

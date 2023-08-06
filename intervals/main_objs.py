@@ -3054,8 +3054,9 @@ class ImportedPiece:
                                     # filter out Fugas that involve the same pair of voices
                                     if (fugas.loc[this_item]['Voices'][0] == fugas.loc[next_item]['Voices'][0]) | (fugas.loc[this_item]['Voices'][1] == fugas.loc[next_item]['Voices'][1]):
                                         pass
-                                    # # if nim_sogs_as_strings not in filtered_dist['pairs'].tolist():
-                                    # #     pass
+
+                                    # if nim_sogs_as_strings not in filtered_dist['pairs'].tolist():
+                                    #     pass
                                     else:
                                         temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
                                             "Title": fugas.loc[this_item]['Title'],
@@ -3082,34 +3083,32 @@ class ImportedPiece:
                                         # remove fugas that are nims from points
                                         temp_fuga_drop_list.append(fugas.loc[this_item])
                                         temp_fuga_drop_list.append(fugas.loc[next_item])
-                    return temp_fuga_drop_list
-                #     fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
-                #     list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
-                #                     'Offsets', 'Soggetti',
-                #                     'Time_Entry_Intervals', 'Voices']
-                #     for col in list_columns:
-                #         points_combined.loc[:, col] = points_combined[col].apply(tuple)
-                #         fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
-                #     merged = points_combined.merge(fugas_2_drop, how='outer', indicator=True)
-                #     # keep only the rows that are in the left dataframe only
-                #     points_combined = merged.loc[merged['_merge'] == 'left_only'].copy()
-                #     # drop the _merge column
-                #     points_combined = points_combined.drop('_merge', axis=1).copy()
-                #     # convert tuple columns back to lists
-                #     for col in list_columns:
-                #         points_combined.loc[:, col] = points_combined[col].apply(list)
-
-
-                # if len(temporary_nim_list) >=1:
-                #     for nim in temporary_nim_list:
-                #         points_combined = points_combined.append(nim, ignore_index=True)
+                    fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
+                    list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
+                                    'Offsets', 'Soggetti',
+                                    'Time_Entry_Intervals', 'Voices']
+                    for col in list_columns:
+                        points_combined.loc[:, col] = points_combined[col].apply(tuple)
+                        fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
+                    merged = points_combined.merge(fugas_2_drop, how='outer', indicator=True)
+                    # keep only the rows that are in the left dataframe only
+                    points_combined = merged.loc[merged['_merge'] == 'left_only'].copy()
+                    # drop the _merge column
+                    points_combined = points_combined.drop('_merge', axis=1).copy()
+                    # convert tuple columns back to lists
+                    for col in list_columns:
+                        points_combined.loc[:, col] = points_combined[col].apply(list)
             
-                # points_combined = points_combined.sort_values("Progress")
-                # points_combined = points_combined.reset_index(drop=True)
+                # len test
+                if len(temporary_nim_list) >= 1:
+                    for nim in temporary_nim_list:
+                        points_combined = points_combined.append(nim, ignore_index=True)
                 
-                # self.analyses[memo_key] = points_combined
-                # return points_combined
+                points_combined = points_combined.sort_values("Progress")
+                points_combined = points_combined.reset_index(drop=True)
 
+                self.analyses[memo_key] = points
+                return points_combined
     # new print methods with verovio
     def verovioCadences(self, df=None):
         """

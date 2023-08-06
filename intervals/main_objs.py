@@ -3070,7 +3070,7 @@ class ImportedPiece:
                                     for col in list_columns:
                                         points_combined.loc[:, col] = points_combined[col].apply(tuple)
                                         fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
-                                    merged = points.merge(fugas_2_drop, how='outer', indicator=True)
+                                    merged = points_combined.merge(fugas_2_drop, how='outer', indicator=True)
                                     # keep only the rows that are in the left dataframe only
                                     points_combined = merged.loc[merged['_merge'] == 'left_only'].copy()
                                     # drop the _merge column

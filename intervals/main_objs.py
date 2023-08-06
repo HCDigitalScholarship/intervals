@@ -2875,73 +2875,71 @@ class ImportedPiece:
                 points["Progress"] = (points["First_Offset"] / self.notes().index[-1])
             
             # NIM test.  Here we check for interlocking fugas that are really nims:
-            fugas = points[points["Presentation_Type"] == 'FUGA']
-            temporary_nim_list = []
-            if len(fugas) >= 1:
-                fuga_index_list = fugas.index.tolist()
-                temp_fuga_drop_list = []
-                
-                for this_item in fuga_index_list:
-                    if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
-                        next_item_index = fuga_index_list.index(this_item) + 1
-                        next_item = fuga_index_list[next_item_index]
-                        # check time entry intervals of the two fugas match
-                        if fugas.loc[this_item]['Time_Entry_Intervals'] == fugas.loc[next_item]['Time_Entry_Intervals']:
-                            # check if the first offsets interlock
-                            if fugas.loc[this_item]['Offsets'][0] <= fugas.loc[next_item]['Offsets'][0]:
-                                # get data for melodic intervals between the NIMS
-                                voices_for_melodic_ints = fugas.loc[this_item]['Voices']
-                                offsets_for_melodic_ints = fugas.loc[this_item]['Offsets']
-                                coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
-                                melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
-                                temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
-                                    "Title": fugas.loc[this_item]['Title'],
-                                    'First_Offset': fugas.loc[this_item]['First_Offset'],
-                                    # here we need to combine and sort lists of offsets
-                                    'Offsets': sorted(fugas.loc[this_item]['Offsets'] + fugas.loc[next_item]['Offsets']),
-                                    # here we need to combine and sort lists of meas and beats
-                                    'Measures_Beats': sorted(fugas.loc[this_item]['Measures_Beats'] + fugas.loc[next_item]['Measures_Beats']),
-                                    # here we need to combine and sort lists of soggette
-                                    "Soggetti": [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair],
-                                    # here we need to combine and sort lists of voices
-                                    'Voices': [val for pair in zip(fugas.loc[this_item]['Voices'], fugas.loc[next_item]['Voices']) for val in pair],
-                                    'Time_Entry_Intervals': fugas.loc[this_item]['Time_Entry_Intervals'],
-                                    'Melodic_Entry_Intervals': melodic_intervals_between_nims,
-                                    'Number_Entries': fugas.loc[this_item]['Number_Entries'] + fugas.loc[next_item]['Number_Entries'],
-                                    'Presentation_Type' : 'NIM',
-                                    'Flexed_Entries': True if fugas.loc[this_item]['Flexed_Entries'] == True | fugas.loc[next_item]['Flexed_Entries'] == True else False,
-                                    'Parallel_Entries': True if (fugas.loc[this_item]['Parallel_Entries'] == True) | (fugas.loc[next_item]['Parallel_Entries'] == True) else False,
-                                    'Parallel_Voice': self._parallel_voice_check(fugas.loc[this_item]['Parallel_Voice'], fugas.loc[next_item]['Parallel_Voice']),
-                                    'Count_Non_Overlaps': fugas.loc[this_item]['Count_Non_Overlaps'] + fugas.loc[next_item]['Count_Non_Overlaps'],
-                                    'Progress' : fugas.loc[this_item]['Progress']
-                                    }
-                                temporary_nim_list.append(temp_nim_details)
-                                # remove fugas that are nims from points
-                                temp_fuga_drop_list.append(fugas.loc[this_item])
-                                temp_fuga_drop_list.append(fugas.loc[next_item])
-                                fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
-                                list_columns = ['Measures_Beats','Melodic_Entry_Intervals', 
-                                                'Offsets', 'Soggetti',
-                                                'Time_Entry_Intervals', 'Voices']
-                                for col in list_columns:
-                                    points.loc[:, col] = points[col].apply(tuple)
-                                    fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
-                                merged = points.merge(fugas_2_drop, how='outer', indicator=True)
-                                # keep only the rows that are in the left dataframe only
-                                points = merged.loc[merged['_merge'] == 'left_only'].copy()
-                                # drop the _merge column
-                                points = points.drop('_merge', axis=1).copy()
-                                # convert tuple columns back to lists
-                                for col in list_columns:
-                                    points.loc[:, col] = points[col].apply(list)
+                fugas = points[points["Presentation_Type"] == 'FUGA']
+                temporary_nim_list = []
+                if len(fugas) >= 1:
+                    fuga_index_list = fugas.index.tolist()
+                    temp_fuga_drop_list = []
+                    
+                    for this_item in fuga_index_list:
+                        if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
+                            next_item_index = fuga_index_list.index(this_item) + 1
+                            next_item = fuga_index_list[next_item_index]
+                            # check time entry intervals of the two fugas match
+                            if fugas.loc[this_item]['Time_Entry_Intervals'] == fugas.loc[next_item]['Time_Entry_Intervals']:
+                                # check if the first offsets interlock
+                                if fugas.loc[this_item]['Offsets'][0] <= fugas.loc[next_item]['Offsets'][0]:
+                                    # get data for melodic intervals between the NIMS
+                                    voices_for_melodic_ints = fugas.loc[this_item]['Voices']
+                                    offsets_for_melodic_ints = fugas.loc[this_item]['Offsets']
+                                    coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
+                                    melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
+                                    temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
+                                        "Title": fugas.loc[this_item]['Title'],
+                                        'First_Offset': fugas.loc[this_item]['First_Offset'],
+                                        # here we need to combine and sort lists of offsets
+                                        'Offsets': sorted(fugas.loc[this_item]['Offsets'] + fugas.loc[next_item]['Offsets']),
+                                        # here we need to combine and sort lists of meas and beats
+                                        'Measures_Beats': sorted(fugas.loc[this_item]['Measures_Beats'] + fugas.loc[next_item]['Measures_Beats']),
+                                        # here we need to combine and sort lists of soggette
+                                        "Soggetti": [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair],
+                                        # here we need to combine and sort lists of voices
+                                        'Voices': [val for pair in zip(fugas.loc[this_item]['Voices'], fugas.loc[next_item]['Voices']) for val in pair],
+                                        'Time_Entry_Intervals': fugas.loc[this_item]['Time_Entry_Intervals'],
+                                        'Melodic_Entry_Intervals': melodic_intervals_between_nims,
+                                        'Number_Entries': fugas.loc[this_item]['Number_Entries'] + fugas.loc[next_item]['Number_Entries'],
+                                        'Presentation_Type' : 'NIM',
+                                        'Flexed_Entries': True if fugas.loc[this_item]['Flexed_Entries'] == True | fugas.loc[next_item]['Flexed_Entries'] == True else False,
+                                        'Parallel_Entries': True if (fugas.loc[this_item]['Parallel_Entries'] == True) | (fugas.loc[next_item]['Parallel_Entries'] == True) else False,
+                                        'Parallel_Voice': self._parallel_voice_check(fugas.loc[this_item]['Parallel_Voice'], fugas.loc[next_item]['Parallel_Voice']),
+                                        'Count_Non_Overlaps': fugas.loc[this_item]['Count_Non_Overlaps'] + fugas.loc[next_item]['Count_Non_Overlaps'],
+                                        'Progress' : fugas.loc[this_item]['Progress']
+                                        }
+                                    temporary_nim_list.append(temp_nim_details)
+                                    # remove fugas that are nims from points
+                                    temp_fuga_drop_list.append(fugas.loc[this_item])
+                                    temp_fuga_drop_list.append(fugas.loc[next_item])
+                                    fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
+                                    list_columns = ['Measures_Beats','Melodic_Entry_Intervals', 
+                                                    'Offsets', 'Soggetti',
+                                                    'Time_Entry_Intervals', 'Voices']
+                                    for col in list_columns:
+                                        points.loc[:, col] = points[col].apply(tuple)
+                                        fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
+                                    merged = points.merge(fugas_2_drop, how='outer', indicator=True)
+                                    # keep only the rows that are in the left dataframe only
+                                    points = merged.loc[merged['_merge'] == 'left_only'].copy()
+                                    # drop the _merge column
+                                    points = points.drop('_merge', axis=1).copy()
+                                    # convert tuple columns back to lists
+                                    for col in list_columns:
+                                        points.loc[:, col] = points[col].apply(list)
             
-            # len test
-            if len(temporary_nim_list) >= 1:
-                for nim in temporary_nim_list:
-                    points = points.append(nim, ignore_index=True)
-            if len(points) == 0:
-                print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
-            else:
+                # len test
+                if len(temporary_nim_list) >= 1:
+                    for nim in temporary_nim_list:
+                        points = points.append(nim, ignore_index=True)
+                
                 points = points.sort_values("Progress")
                 points = points.reset_index(drop=True)
 
@@ -3020,73 +3018,72 @@ class ImportedPiece:
                 points_combined["Progress"] = (points_combined["First_Offset"] / self.notes().index[-1])
                 points_combined["Presentation_Type"].fillna("FUGA", inplace=True)
 
-            # NIM test.  Here we check for interlocking fugas that are really nims:
-            fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']
-            temporary_nim_list = []
-            if len(fugas) >= 1:
-                fuga_index_list = fugas.index.tolist()
-                temp_fuga_drop_list = []
+                # NIM test.  Here we check for interlocking fugas that are really nims:
+                fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']
+                temporary_nim_list = []
+                if len(fugas) >= 1:
+                    fuga_index_list = fugas.index.tolist()
+                    temp_fuga_drop_list = []
+                    
+                    for this_item in fuga_index_list:
+                        if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
+                            next_item_index = fuga_index_list.index(this_item) + 1
+                            next_item = fuga_index_list[next_item_index]
+                            # check time entry intervals of the two fugas match
+                            if fugas.loc[this_item]['Time_Entry_Intervals'] == fugas.loc[next_item]['Time_Entry_Intervals']:
+                                # check if the first offsets interlock
+                                if fugas.loc[this_item]['Offsets'][0] <= fugas.loc[next_item]['Offsets'][0]:
+                                    # get data for melodic intervals between the NIMS
+                                    voices_for_melodic_ints = fugas.loc[this_item]['Voices']
+                                    offsets_for_melodic_ints = fugas.loc[this_item]['Offsets']
+                                    coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
+                                    melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
+                                    temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
+                                        "Title": fugas.loc[this_item]['Title'],
+                                        'First_Offset': fugas.loc[this_item]['First_Offset'],
+                                        # here we need to combine and sort lists of offsets
+                                        'Offsets': sorted(fugas.loc[this_item]['Offsets'] + fugas.loc[next_item]['Offsets']),
+                                        # here we need to combine and sort lists of meas and beats
+                                        'Measures_Beats': sorted(fugas.loc[this_item]['Measures_Beats'] + fugas.loc[next_item]['Measures_Beats']),
+                                        # here we need to combine and sort lists of soggette
+                                        "Soggetti": [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair],
+                                        # here we need to combine and sort lists of voices
+                                        'Voices': [val for pair in zip(fugas.loc[this_item]['Voices'], fugas.loc[next_item]['Voices']) for val in pair],
+                                        'Time_Entry_Intervals': fugas.loc[this_item]['Time_Entry_Intervals'],
+                                        'Melodic_Entry_Intervals': melodic_intervals_between_nims,
+                                        'Number_Entries': fugas.loc[this_item]['Number_Entries'] + fugas.loc[next_item]['Number_Entries'],
+                                        'Presentation_Type' : 'NIM',
+                                        'Flexed_Entries': True if fugas.loc[this_item]['Flexed_Entries'] == True | fugas.loc[next_item]['Flexed_Entries'] == True else False,
+                                        'Parallel_Entries': True if (fugas.loc[this_item]['Parallel_Entries'] == True) | (fugas.loc[next_item]['Parallel_Entries'] == True) else False,
+                                        'Parallel_Voice': self._parallel_voice_check(fugas.loc[this_item]['Parallel_Voice'], fugas.loc[next_item]['Parallel_Voice']),
+                                        'Count_Non_Overlaps': fugas.loc[this_item]['Count_Non_Overlaps'] + fugas.loc[next_item]['Count_Non_Overlaps'],
+                                        'Progress' : fugas.loc[this_item]['Progress']
+                                        }
+                                    temporary_nim_list.append(temp_nim_details)
+                                    # remove fugas that are nims from points
+                                    temp_fuga_drop_list.append(fugas.loc[this_item])
+                                    temp_fuga_drop_list.append(fugas.loc[next_item])
+                                    fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
+                                    list_columns = ['Measures_Beats','Melodic_Entry_Intervals', 
+                                                    'Offsets', 'Soggetti',
+                                                    'Time_Entry_Intervals', 'Voices']
+                                    for col in list_columns:
+                                        points_combined.loc[:, col] = points_combined[col].apply(tuple)
+                                        fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
+                                    merged = points.merge(fugas_2_drop, how='outer', indicator=True)
+                                    # keep only the rows that are in the left dataframe only
+                                    points_combined = merged.loc[merged['_merge'] == 'left_only'].copy()
+                                    # drop the _merge column
+                                    points_combined = points_combined.drop('_merge', axis=1).copy()
+                                    # convert tuple columns back to lists
+                                    for col in list_columns:
+                                        points_combined.loc[:, col] = points_combined[col].apply(list)
                 
-                for this_item in fuga_index_list:
-                    if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
-                        next_item_index = fuga_index_list.index(this_item) + 1
-                        next_item = fuga_index_list[next_item_index]
-                        # check time entry intervals of the two fugas match
-                        if fugas.loc[this_item]['Time_Entry_Intervals'] == fugas.loc[next_item]['Time_Entry_Intervals']:
-                            # check if the first offsets interlock
-                            if fugas.loc[this_item]['Offsets'][0] <= fugas.loc[next_item]['Offsets'][0]:
-                                # get data for melodic intervals between the NIMS
-                                voices_for_melodic_ints = fugas.loc[this_item]['Voices']
-                                offsets_for_melodic_ints = fugas.loc[this_item]['Offsets']
-                                coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
-                                melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
-                                temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
-                                    "Title": fugas.loc[this_item]['Title'],
-                                    'First_Offset': fugas.loc[this_item]['First_Offset'],
-                                    # here we need to combine and sort lists of offsets
-                                    'Offsets': sorted(fugas.loc[this_item]['Offsets'] + fugas.loc[next_item]['Offsets']),
-                                    # here we need to combine and sort lists of meas and beats
-                                    'Measures_Beats': sorted(fugas.loc[this_item]['Measures_Beats'] + fugas.loc[next_item]['Measures_Beats']),
-                                    # here we need to combine and sort lists of soggette
-                                    "Soggetti": [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair],
-                                    # here we need to combine and sort lists of voices
-                                    'Voices': [val for pair in zip(fugas.loc[this_item]['Voices'], fugas.loc[next_item]['Voices']) for val in pair],
-                                    'Time_Entry_Intervals': fugas.loc[this_item]['Time_Entry_Intervals'],
-                                    'Melodic_Entry_Intervals': melodic_intervals_between_nims,
-                                    'Number_Entries': fugas.loc[this_item]['Number_Entries'] + fugas.loc[next_item]['Number_Entries'],
-                                    'Presentation_Type' : 'NIM',
-                                    'Flexed_Entries': True if fugas.loc[this_item]['Flexed_Entries'] == True | fugas.loc[next_item]['Flexed_Entries'] == True else False,
-                                    'Parallel_Entries': True if (fugas.loc[this_item]['Parallel_Entries'] == True) | (fugas.loc[next_item]['Parallel_Entries'] == True) else False,
-                                    'Parallel_Voice': self._parallel_voice_check(fugas.loc[this_item]['Parallel_Voice'], fugas.loc[next_item]['Parallel_Voice']),
-                                    'Count_Non_Overlaps': fugas.loc[this_item]['Count_Non_Overlaps'] + fugas.loc[next_item]['Count_Non_Overlaps'],
-                                    'Progress' : fugas.loc[this_item]['Progress']
-                                    }
-                                temporary_nim_list.append(temp_nim_details)
-                                # remove fugas that are nims from points
-                                temp_fuga_drop_list.append(fugas.loc[this_item])
-                                temp_fuga_drop_list.append(fugas.loc[next_item])
-                                fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
-                                list_columns = ['Measures_Beats','Melodic_Entry_Intervals', 
-                                                'Offsets', 'Soggetti',
-                                                'Time_Entry_Intervals', 'Voices']
-                                for col in list_columns:
-                                    points_combined.loc[:, col] = points_combined[col].apply(tuple)
-                                    fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
-                                merged = points.merge(fugas_2_drop, how='outer', indicator=True)
-                                # keep only the rows that are in the left dataframe only
-                                points_combined = merged.loc[merged['_merge'] == 'left_only'].copy()
-                                # drop the _merge column
-                                points_combined = points_combined.drop('_merge', axis=1).copy()
-                                # convert tuple columns back to lists
-                                for col in list_columns:
-                                    points_combined.loc[:, col] = points_combined[col].apply(list)
-            
 
-                for nim in temporary_nim_list:
-                    points_combined = points_combined.append(nim, ignore_index=True)
-            if len(points_combined) == 0:
-                print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
-            else:
+                if len(temporary_nim_list) >=1:
+                    for nim in temporary_nim_list:
+                        points_combined = points_combined.append(nim, ignore_index=True)
+            
                 points_combined = points_combined.sort_values("Progress")
                 points_combined = points_combined.reset_index(drop=True)
                 

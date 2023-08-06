@@ -708,19 +708,19 @@ class ImportedPiece:
                 p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
                 return p_types
         
-    
-        idf = ret.index.to_frame()
-        _measures = self.measures().iloc[:, 0]
-        measures = idf.applymap(lambda i: _measures.loc[:i].iat[-1])
-        _beats = self.beatIndex()
-        beats = idf.applymap(lambda i: _beats[i])
-        res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1)
-        res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
-        ret = self.numberParts(ret)
-        res = pd.concat([res, ret], axis=1)
-        res = res.apply(self._emaRowHelper, axis=1)
-        res.name = 'EMA'
-        return res
+        if isinstance(df, pd.DataFrame):
+            idf = ret.index.to_frame()
+            _measures = self.measures().iloc[:, 0]
+            measures = idf.applymap(lambda i: _measures.loc[:i].iat[-1])
+            _beats = self.beatIndex()
+            beats = idf.applymap(lambda i: _beats[i])
+            res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1)
+            res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
+            ret = self.numberParts(ret)
+            res = pd.concat([res, ret], axis=1)
+            res = res.apply(self._emaRowHelper, axis=1)
+            res.name = 'EMA'
+            return res
 
     def _getBeatUnit(self):
         '''

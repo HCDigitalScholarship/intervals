@@ -2918,7 +2918,7 @@ class ImportedPiece:
                                 temporary_nim_list.append(temp_nim_details)
                                 # remove fugas that are nims from points
                                 temp_fuga_drop_list.append(fugas.loc[this_item])
-                                temp_fuga_drop_list.append(fugas.loc[this_item])
+                                temp_fuga_drop_list.append(fugas.loc[next_item])
                                 fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
                                 list_columns = ['Measures_Beats','Melodic_Entry_Intervals', 
                                                 'Offsets', 'Soggetti',

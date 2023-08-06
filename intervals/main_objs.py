@@ -3107,15 +3107,15 @@ class ImportedPiece:
                         points_combined.loc[:, col] = points_combined[col].apply(list)
                 
                 # len test
-                if len(temporary_nim_list) >= 1:
-                    for nim in temporary_nim_list:
-                        points_combined = points_combined.append(nim, ignore_index=True)
-                
-                points_combined = points_combined.sort_values("Progress")
-                points_combined = points_combined.reset_index(drop=True)
+                    if len(temporary_nim_list) >= 1:
+                        for nim in temporary_nim_list:
+                            points_combined = points_combined.append(nim, ignore_index=True)
+                    
+                    points_combined = points_combined.sort_values("Progress")
+                    points_combined = points_combined.reset_index(drop=True)
 
-                self.analyses[memo_key] = points
-                return points_combined
+                    self.analyses[memo_key] = points
+                    return points_combined
     # new print methods with verovio
     def verovioCadences(self, df=None):
         """

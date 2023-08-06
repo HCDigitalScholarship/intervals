@@ -708,7 +708,7 @@ class ImportedPiece:
                 p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
                 return p_types
         
-        if isinstance(df, pd.DataFrame):
+        if isinstance(df, pd.DataFrame) & len(df) >= 1:
             idf = ret.index.to_frame()
             _measures = self.measures().iloc[:, 0]
             measures = idf.applymap(lambda i: _measures.loc[:i].iat[-1])

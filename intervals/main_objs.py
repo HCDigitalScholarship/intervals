@@ -686,7 +686,7 @@ class ImportedPiece:
         # hr mode--works with HR dataframe, adding ema address to each hr passage (= row).  
         # pass in output of hr = piece.homorhythm() as the df and set mode = 'hr'
         elif mode.startswith('h'): # hr mode
-            if len(df) >= 1:
+            if isinstance(df, pd.DataFrame) and len(df) >= 1:
                 hr = df
                 ngram_length = int(hr.iloc[0]['ngram_length'])
                 nr = self.notes()

@@ -2928,13 +2928,13 @@ class ImportedPiece:
                                         # remove fugas that are nims from points
                                         temp_fuga_drop_list.append(fugas.loc[this_item])
                                         temp_fuga_drop_list.append(fugas.loc[next_item])
-                                        fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
-                                        list_columns = ['Measures_Beats','Melodic_Entry_Intervals', 
-                                                        'Offsets', 'Soggetti',
-                                                        'Time_Entry_Intervals', 'Voices']
-                                        for col in list_columns:
-                                            points.loc[:, col] = points[col].apply(tuple)
-                                            fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
+                    fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
+                    list_columns = ['Measures_Beats','Melodic_Entry_Intervals', 
+                                    'Offsets', 'Soggetti',
+                                    'Time_Entry_Intervals', 'Voices']
+                    for col in list_columns:
+                        points.loc[:, col] = points[col].apply(tuple)
+                        fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
                     merged = points.merge(fugas_2_drop, how='outer', indicator=True)
                     # keep only the rows that are in the left dataframe only
                     points = merged.loc[merged['_merge'] == 'left_only'].copy()
@@ -3081,7 +3081,7 @@ class ImportedPiece:
                                         # remove fugas that are nims from points
                                         temp_fuga_drop_list.append(fugas.loc[this_item])
                                         temp_fuga_drop_list.append(fugas.loc[next_item])
-                                        fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
+                    fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
                     list_columns = ['Measures_Beats','Melodic_Entry_Intervals', 
                                     'Offsets', 'Soggetti',
                                     'Time_Entry_Intervals', 'Voices']

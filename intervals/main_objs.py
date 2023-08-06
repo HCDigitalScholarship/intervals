@@ -3090,7 +3090,7 @@ class ImportedPiece:
                     if len(temp_fuga_drop_list) >= 1:
                         for fuga in temp_fuga_drop_list:
                             fugas_2_drop.append(fuga, ignore_index=True)
-                    points_combined = points_combined.append(nim, ignore_index=True)
+
                     list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
                                     'Offsets', 'Soggetti',
                                     'Time_Entry_Intervals', 'Voices']

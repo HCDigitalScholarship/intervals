@@ -3033,13 +3033,11 @@ class ImportedPiece:
                 # NIM test.  Here we check for interlocking fugas that are really nims:
                 fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']
                 fugas_2_drop = pd.DataFrame(columns=fugas.columns)
-                # return fugas
                 temporary_nim_list = []
                 if len(fugas) >= 1:
                     fuga_index_list = fugas.index.tolist()
                     temp_fuga_drop_list = []
                     filtered_dist['pairs'] = filtered_dist.apply(lambda row: list((row['source'], row['match'])), axis=1)
-                    
                     for this_item in fuga_index_list:
                         if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
                             next_item_index = fuga_index_list.index(this_item) + 1
@@ -3088,9 +3086,8 @@ class ImportedPiece:
                                         temp_fuga_drop_list.append(fugas.loc[this_item])
                                         temp_fuga_drop_list.append(fugas.loc[next_item])
                     if len(temp_fuga_drop_list) >= 1:
-                        for fuga in temp_fuga_drop_list:
-                            fugas_2_drop.append(fuga, ignore_index=True)
-
+                            for fuga in temp_fuga_drop_list:
+                                fugas_2_drop.append(fuga, ignore_index=True)
                     list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
                                     'Offsets', 'Soggetti',
                                     'Time_Entry_Intervals', 'Voices']
@@ -3105,17 +3102,17 @@ class ImportedPiece:
                     # convert tuple columns back to lists
                     for col in list_columns:
                         points_combined.loc[:, col] = points_combined[col].apply(list)
-                
+            
                 # len test
-                    if len(temporary_nim_list) >= 1:
-                        for nim in temporary_nim_list:
-                            points_combined = points_combined.append(nim, ignore_index=True)
-                    
-                    points_combined = points_combined.sort_values("Progress")
-                    points_combined = points_combined.reset_index(drop=True)
+                if len(temporary_nim_list) >= 1:
+                    for nim in temporary_nim_list:
+                        points_combined = points_combined.append(nim, ignore_index=True)
+                
+                points_combined = points_combined.sort_values("Progress")
+                points_combined = points_combined.reset_index(drop=True)
 
-                    self.analyses[memo_key] = points
-                    return points_combined
+                self.analyses[memo_key] = points_combined
+                return points_combined
     # new print methods with verovio
     def verovioCadences(self, df=None):
         """

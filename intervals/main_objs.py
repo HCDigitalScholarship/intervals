@@ -2919,7 +2919,7 @@ class ImportedPiece:
                                 temp_fuga_drop_list.append(fugas.loc[this_item])
                                 temp_fuga_drop_list.append(fugas.loc[this_item])
                                 fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
-                                fugas
+                                return fugas
             #                     points.loc[~points.isin(fugas_2_drop).all(1)]
             #                     # matches = points.isin(fugas_2_drop)
                                 # row_matches = matches.all(axis=1)

@@ -2795,7 +2795,7 @@ class ImportedPiece:
         if limit_to_entries:
             entries = self.entries(mel_ng)
         else:
-            dis
+            entries = self.ngrams(df=mel, exclude=['Rest'], n=melodic_ngram_length)
         # get ngram durs to use for overlap check as part of _temp files
         ng_durs = self.durations(df=entries)
 
@@ -2880,7 +2880,7 @@ class ImportedPiece:
                 if len(fugas) >= 1:
                     fuga_index_list = fugas.index.tolist()
                     temp_fuga_drop_list = []
-                    
+                    filtered_dist['pairs'] = filtered_dist.apply(lambda row: list((row['source'], row['match'])), axis=1)
                     for this_item in fuga_index_list:
                         if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
                             next_item_index = fuga_index_list.index(this_item) + 1
@@ -2896,6 +2896,11 @@ class ImportedPiece:
                                     melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
                                     # filter out Fugas that involve the same pair of voices
                                     if (fugas.loc[this_item]['Voices'][0] == fugas.loc[next_item]['Voices'][0]) | (fugas.loc[this_item]['Voices'][1] == fugas.loc[next_item]['Voices'][1]):
+                                        pass
+                                    # if the pairs of soggetti in the nims would otherwise be distance edit matches according to flex thresholds, pass
+                                    nim_soggetti = [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair]
+                                    nim_sogs_as_strings = [tuple(str(x) for x in tuple_of_strings) for tuple_of_strings in nim_soggetti]
+                                    if nim_sogs_as_strings in filtered_dist['pairs'].tolist():
                                         pass
                                     else:
                                         temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
@@ -3043,6 +3048,11 @@ class ImportedPiece:
                                     coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
                                     melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
                                     if (fugas.loc[this_item]['Voices'][0] == fugas.loc[next_item]['Voices'][0]) | (fugas.loc[this_item]['Voices'][1] == fugas.loc[next_item]['Voices'][1]):
+                                        pass
+                                    # if the pairs of soggetti in the nims would otherwise be distance edit matches according to flex thresholds, pass
+                                    nim_soggetti = [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair]
+                                    nim_sogs_as_strings = [tuple(str(x) for x in tuple_of_strings) for tuple_of_strings in nim_soggetti]
+                                    if nim_sogs_as_strings in filtered_dist['pairs'].tolist():
                                         pass
                                     else:
                                         temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],

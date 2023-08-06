@@ -2897,11 +2897,7 @@ class ImportedPiece:
                                     nim_soggetti = [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair]
                                     nim_sogs_as_strings = [tuple(str(x) for x in tuple_of_strings) for tuple_of_strings in nim_soggetti]
                                     # filter out Fugas that involve the same pair of voices
-                                    if (fugas.loc[this_item]['Voices'][0] == fugas.loc[next_item]['Voices'][0]) | (fugas.loc[this_item]['Voices'][1] == fugas.loc[next_item]['Voices'][1]):
-                                        pass
-                                    # if the pairs of soggetti in the nims would otherwise be distance edit matches according to flex thresholds, pass
-                                    elif nim_sogs_as_strings in filtered_dist['pairs'].tolist():
-                                        pass
+                                    e
                                     else:
                                         temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
                                             "Title": fugas.loc[this_item]['Title'],
@@ -3051,11 +3047,9 @@ class ImportedPiece:
                                     nim_soggetti = [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair]
                                     nim_sogs_as_strings = [tuple(str(x) for x in tuple_of_strings) for tuple_of_strings in nim_soggetti]
                                     # filter out Fugas that involve the same pair of voices
-                                    if (fugas.loc[this_item]['Voices'][0] == fugas.loc[next_item]['Voices'][0]) | (fugas.loc[this_item]['Voices'][1] == fugas.loc[next_item]['Voices'][1]):
-                                        pass
-                                    # if the pairs of soggetti in the nims would otherwise be distance edit matches according to flex thresholds, pass
-                                    elif nim_sogs_as_strings in filtered_dist['pairs'].tolist():
-                                        pass
+                                    if (fugas.loc[this_item]['Voices'][0] != fugas.loc[next_item]['Voices'][0]) & (fugas.loc[this_item]['Voices'][1] != fugas.loc[next_item]['Voices'][1]):
+                                        if nim_sogs_as_strings not in filtered_dist['pairs'].tolist():
+                                            pass
                                     else:
                                         temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
                                             "Title": fugas.loc[this_item]['Title'],

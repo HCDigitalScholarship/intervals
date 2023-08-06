@@ -3032,7 +3032,7 @@ class ImportedPiece:
 
                 # NIM test.  Here we check for interlocking fugas that are really nims:
                 fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']
-                return fugas
+                return points_combined
                 # fugas_2_drop = pd.DataFrame(columns=fugas.columns)
                 # temporary_nim_list = []
                 # if len(fugas) >= 1:

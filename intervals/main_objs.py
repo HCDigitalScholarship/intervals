@@ -2928,9 +2928,9 @@ class ImportedPiece:
                                 # points = points.drop(next_item)
 
             # len test
-            if len(temporary_nim_list) >= 1:
-                for nim in temporary_nim_list:
-                    points = points.append(nim, ignore_index=True)
+            # if len(temporary_nim_list) >= 1:
+            #     for nim in temporary_nim_list:
+            #         points = points.append(nim, ignore_index=True)
             if len(points) == 0:
                 print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
             else:

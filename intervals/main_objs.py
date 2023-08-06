@@ -2916,10 +2916,24 @@ class ImportedPiece:
                                     'Progress' : fugas.loc[this_item]['Progress']
                                     }
                                 temporary_nim_list.append(temp_nim_details)
+                                # remove fugas that are nims from points
                                 temp_fuga_drop_list.append(fugas.loc[this_item])
                                 temp_fuga_drop_list.append(fugas.loc[this_item])
                                 fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
-                                return fugas
+                                list_columns = ['Measures_Beats','Melodic_Entry_Intervals', 
+                                                'Offsets', 'Soggetti',
+                                                'Time_Entry_Intervals', 'Voices']
+                                for col in list_columns:
+                                    points.loc[:, col] = points[col].apply(tuple)
+                                    fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
+                                merged = points.merge(fugas_2_drop, how='outer', indicator=True)
+                                # keep only the rows that are in the left dataframe only
+                                points = merged.loc[merged['_merge'] == 'left_only'].copy()
+                                # drop the _merge column
+                                points = points.drop('_merge', axis=1).copy()
+                                # convert tuple columns back to lists
+                                for col in list_columns:
+                                    points.loc[:, col] = points[col].apply(list)
             #                     points.loc[~points.isin(fugas_2_drop).all(1)]
             #                     # matches = points.isin(fugas_2_drop)
                                 # row_matches = matches.all(axis=1)
@@ -2929,17 +2943,17 @@ class ImportedPiece:
                                 # points = points.drop(next_item)
 
             # len test
-            # if len(temporary_nim_list) >= 1:
-            #     for nim in temporary_nim_list:
-            #         points = points.append(nim, ignore_index=True)
-            # if len(points) == 0:
-            #     print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
-            # else:
-            #     points = points.sort_values("Progress")
-            #     points = points.reset_index(drop=True)
+            if len(temporary_nim_list) >= 1:
+                for nim in temporary_nim_list:
+                    points = points.append(nim, ignore_index=True)
+            if len(points) == 0:
+                print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
+            else:
+                points = points.sort_values("Progress")
+                points = points.reset_index(drop=True)
 
-            #     self.analyses[memo_key] = points
-            #     return points
+                self.analyses[memo_key] = points
+                return points
 
         # classification with hidden types
         elif include_hidden_types == True:

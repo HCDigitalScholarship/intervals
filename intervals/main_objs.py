@@ -2900,8 +2900,8 @@ class ImportedPiece:
                                     if (fugas.loc[this_item]['Voices'][0] != fugas.loc[next_item]['Voices'][0]) & (fugas.loc[this_item]['Voices'][1] != fugas.loc[next_item]['Voices'][1]):
                                         pass
 
-                                    if nim_sogs_as_strings not in filtered_dist['pairs'].tolist():
-                                        pass
+                                    # if nim_sogs_as_strings not in filtered_dist['pairs'].tolist():
+                                    #     pass
                                     else:
                                         temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
                                             "Title": fugas.loc[this_item]['Title'],
@@ -3053,8 +3053,8 @@ class ImportedPiece:
                                     # filter out Fugas that involve the same pair of voices
                                     if (fugas.loc[this_item]['Voices'][0] != fugas.loc[next_item]['Voices'][0]) & (fugas.loc[this_item]['Voices'][1] != fugas.loc[next_item]['Voices'][1]):
                                         pass
-                                    if nim_sogs_as_strings not in filtered_dist['pairs'].tolist():
-                                        pass
+                                    # if nim_sogs_as_strings not in filtered_dist['pairs'].tolist():
+                                    #     pass
                                     else:
                                         temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
                                             "Title": fugas.loc[this_item]['Title'],

@@ -2920,8 +2920,8 @@ class ImportedPiece:
                 points = points.sort_values("Progress")
                 points = points.reset_index(drop=True)
 
-            self.analyses[memo_key] = points
-            return points
+                self.analyses[memo_key] = points
+                return points
 
         # classification with hidden types
         elif include_hidden_types == True:
@@ -3048,8 +3048,8 @@ class ImportedPiece:
                 points_combined = points_combined.sort_values("Progress")
                 points_combined = points_combined.reset_index(drop=True)
                 
-            self.analyses[memo_key] = points_combined
-            return points_combined
+                self.analyses[memo_key] = points_combined
+                return points_combined
 
     # new print methods with verovio
     def verovioCadences(self, df=None):

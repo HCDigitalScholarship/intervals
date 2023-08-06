@@ -2934,14 +2934,7 @@ class ImportedPiece:
                                 # convert tuple columns back to lists
                                 for col in list_columns:
                                     points.loc[:, col] = points[col].apply(list)
-            #                     points.loc[~points.isin(fugas_2_drop).all(1)]
-            #                     # matches = points.isin(fugas_2_drop)
-                                # row_matches = matches.all(axis=1)
-                                # points = points.drop(points[row_matches].index)
-
-                                # points = points.drop(this_item)
-                                # points = points.drop(next_item)
-
+            
             # len test
             if len(temporary_nim_list) >= 1:
                 for nim in temporary_nim_list:
@@ -3026,13 +3019,16 @@ class ImportedPiece:
                 points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
                 points_combined["Progress"] = (points_combined["First_Offset"] / self.notes().index[-1])
                 points_combined["Presentation_Type"].fillna("FUGA", inplace=True)
+
             # NIM test.  Here we check for interlocking fugas that are really nims:
-            if len(points_combined) >= 1:
-                fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']
+            fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']
+            temporary_nim_list = []
+            if len(fugas) >= 1:
                 fuga_index_list = fugas.index.tolist()
-                temporary_nim_list = []
+                temp_fuga_drop_list = []
+                
                 for this_item in fuga_index_list:
-                    if fuga_index_list.index(this_item) != len(fuga_index_list)- 1:
+                    if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
                         next_item_index = fuga_index_list.index(this_item) + 1
                         next_item = fuga_index_list[next_item_index]
                         # check time entry intervals of the two fugas match
@@ -3065,12 +3061,26 @@ class ImportedPiece:
                                     'Count_Non_Overlaps': fugas.loc[this_item]['Count_Non_Overlaps'] + fugas.loc[next_item]['Count_Non_Overlaps'],
                                     'Progress' : fugas.loc[this_item]['Progress']
                                     }
-                                if temp_nim_details in temporary_nim_list:
-                                    pass
-                                else:
-                                    temporary_nim_list.append(temp_nim_details)
-                                    points_combined = points_combined.drop(this_item)
-                                    points_combined = points_combined.drop(next_item)
+                                temporary_nim_list.append(temp_nim_details)
+                                # remove fugas that are nims from points
+                                temp_fuga_drop_list.append(fugas.loc[this_item])
+                                temp_fuga_drop_list.append(fugas.loc[next_item])
+                                fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
+                                list_columns = ['Measures_Beats','Melodic_Entry_Intervals', 
+                                                'Offsets', 'Soggetti',
+                                                'Time_Entry_Intervals', 'Voices']
+                                for col in list_columns:
+                                    points_combined.loc[:, col] = points_combined[col].apply(tuple)
+                                    fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
+                                merged = points.merge(fugas_2_drop, how='outer', indicator=True)
+                                # keep only the rows that are in the left dataframe only
+                                points_combined = merged.loc[merged['_merge'] == 'left_only'].copy()
+                                # drop the _merge column
+                                points_combined = points_combined.drop('_merge', axis=1).copy()
+                                # convert tuple columns back to lists
+                                for col in list_columns:
+                                    points_combined.loc[:, col] = points_combined[col].apply(list)
+            
 
                 for nim in temporary_nim_list:
                     points_combined = points_combined.append(nim, ignore_index=True)

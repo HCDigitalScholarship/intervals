@@ -2331,10 +2331,13 @@ class ImportedPiece:
         result = self.detailIndex(hr, offset=True)
         result["Progress"] = (result.index.get_level_values(2) / self.notes().index[-1])
 
+        if len(result) == 0:
+            print ("No HR passages found in " + self.metadata['composer'] + ":" + self.metadata['title'])
+        else:
 
         
 
-        return result
+            return result
 
     def _entryHelper(self, col, fermatas=True):
         """

@@ -2879,9 +2879,10 @@ class ImportedPiece:
             # len test
             if len(fugas) >= 1:
                 fuga_index_list = fugas.index.tolist()
+                temp_fuga_drop_list = []
                 temporary_nim_list = []
                 for this_item in fuga_index_list:
-                    if fuga_index_list.index(this_item) != len(fuga_index_list)- 1:
+                    if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
                         next_item_index = fuga_index_list.index(this_item) + 1
                         next_item = fuga_index_list[next_item_index]
                         # check time entry intervals of the two fugas match
@@ -2915,8 +2916,15 @@ class ImportedPiece:
                                     'Progress' : fugas.loc[this_item]['Progress']
                                     }
                                 temporary_nim_list.append(temp_nim_details)
-                                points = points.drop(this_item)
-                                points = points.drop(next_item)
+                                temp_fuga_drop_list.append(fugas.loc[this_item])
+                                temp_fuga_drop_list.append(fugas.loc[this_item])
+                                fugas_2_drop = pd.DataFrame(temp_fuga_drop_list)
+                                matches = points.isin(fugas_2_drop)
+                                row_matches = matches.all(axis=1)
+                                points = points.drop(points[row_matches].index)
+
+                                # points = points.drop(this_item)
+                                # points = points.drop(next_item)
 
             # len test
             if len(temporary_nim_list) >= 1:

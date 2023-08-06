@@ -2876,11 +2876,11 @@ class ImportedPiece:
             
             # NIM test.  Here we check for interlocking fugas that are really nims:
             fugas = points[points["Presentation_Type"] == 'FUGA']
-            
+            temporary_nim_list = []
             if len(fugas) >= 1:
                 fuga_index_list = fugas.index.tolist()
                 temp_fuga_drop_list = []
-                temporary_nim_list = []
+                
                 for this_item in fuga_index_list:
                     if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
                         next_item_index = fuga_index_list.index(this_item) + 1

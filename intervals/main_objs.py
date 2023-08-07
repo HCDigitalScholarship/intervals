@@ -3031,8 +3031,8 @@ class ImportedPiece:
 
                 # NIM test.  Here we check for interlocking fugas that are really nims:
                 fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']
+                fugas_2_drop = pd.DataFrame(columns=fugas.columns)
                 temporary_nim_list = []
-                temp_fuga_drop_list = []
                 if len(fugas) >= 1:
                     fuga_index_list = fugas.index.tolist()
                     filtered_dist['pairs'] = filtered_dist.apply(lambda row: list((row['source'], row['match'])), axis=1)
@@ -3049,8 +3049,8 @@ class ImportedPiece:
                                     offsets_for_melodic_ints = fugas.loc[this_item]['Offsets']
                                     coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
                                     melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
-                                # 	nim_soggetti = [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair]
-                                # 	nim_sogs_as_strings = [tuple(str(x) for x in tuple_of_strings) for tuple_of_strings in nim_soggetti]
+                                	nim_soggetti = [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair]
+                                	nim_sogs_as_strings = [tuple(str(x) for x in tuple_of_strings) for tuple_of_strings in nim_soggetti]
                                 # 	# filter out Fugas that involve the same pair of voices
                                     if (fugas.loc[this_item]['Voices'][0] == fugas.loc[next_item]['Voices'][0]) | (fugas.loc[this_item]['Voices'][1] == fugas.loc[next_item]['Voices'][1]):
                                         pass
@@ -3085,26 +3085,26 @@ class ImportedPiece:
                                         temp_fuga_drop_list.append(fugas.loc[next_item].to_dict())
                 
                 # remove the fugas that were identified as nims
-                # if len(temp_fuga_drop_list) >= 1:
-                #     fugas2drop = pd.DataFrame(temp_fuga_drop_list)
-                #     list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
-                #                 'Offsets', 'Soggetti',
-                #                 'Time_Entry_Intervals', 'Voices']
-                #     for col in list_columns:
-                #         points_combined.loc[:, col] = points_combined[col].apply(tuple)
-                #         fugas2drop.loc[:, col] = fugas2drop[col].apply(tuple)
-                #     merged = points_combined.merge(fugas2drop, how='outer', indicator=True)
-                #     # keep only the rows that are in the left dataframe only
-                #     points_combined = merged.loc[merged['_merge'] == 'left_only'].copy()
-                #     # drop the _merge column
-                #     points_combined = points_combined.drop('_merge', axis=1).copy()
-                #     # convert tuple columns back to lists
-                #     for col in list_columns:
-                #         points_combined.loc[:, col] = points_combined[col].apply(list)
+                if len(temp_fuga_drop_list) >= 1:
+                    fugas2drop = pd.DataFrame(temp_fuga_drop_list)
+                    list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
+                                'Offsets', 'Soggetti',
+                                'Time_Entry_Intervals', 'Voices']
+                    for col in list_columns:
+                        points_combined.loc[:, col] = points_combined[col].apply(tuple)
+                        fugas2drop.loc[:, col] = fugas2drop[col].apply(tuple)
+                    merged = points_combined.merge(fugas2drop, how='outer', indicator=True)
+                    # keep only the rows that are in the left dataframe only
+                    points_combined = merged.loc[merged['_merge'] == 'left_only'].copy()
+                    # drop the _merge column
+                    points_combined = points_combined.drop('_merge', axis=1).copy()
+                    # convert tuple columns back to lists
+                    for col in list_columns:
+                        points_combined.loc[:, col] = points_combined[col].apply(list)
                 # and add the nims
-                if len(temporary_nim_list) >= 1:
-                    for nim in temporary_nim_list:
-                        points_combined = points_combined.append(nim, ignore_index=True)
+                # if len(temporary_nim_list) >= 1:
+                #     for nim in temporary_nim_list:
+                #         points_combined = points_combined.append(nim, ignore_index=True)
 
                 points_combined = points_combined.sort_values("Progress")
                 points_combined = points_combined.reset_index(drop=True)

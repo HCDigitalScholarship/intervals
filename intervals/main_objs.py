@@ -2930,8 +2930,9 @@ class ImportedPiece:
                                         temp_fuga_drop_list.append(fugas.loc[this_item].to_dict())
                                         temp_fuga_drop_list.append(fugas.loc[next_item].to_dict())
                     if len(temp_fuga_drop_list) >= 1:
-                        for fuga in temp_fuga_drop_list:
-                            fugas_2_drop.append(fuga, ignore_index=True)
+                        fugas2drop = pd.DataFrame(temp_fuga_drop_list)
+                        # for fuga in temp_fuga_drop_list:
+                        #     fugas_2_drop.append(fuga, ignore_index=True)
                         list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
                                         'Offsets', 'Soggetti',
                                         'Time_Entry_Intervals', 'Voices']

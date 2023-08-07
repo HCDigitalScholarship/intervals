@@ -2984,7 +2984,8 @@ class ImportedPiece:
                         temp = self._temp_dict_of_details(df, det, matches)
                         lto = len(temp["Offsets"])
                         if lto > 2 :
-                            for r in range(3, 6):
+                            # make range from 2 to allow for fugas needed in NIMs
+                            for r in range(2, 6):
                                 list_combinations = list(combinations(item, r))
                                 for slist in list_combinations:
                                     df = entry_array.loc(axis=0)[slist].reset_index()

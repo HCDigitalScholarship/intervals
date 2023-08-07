@@ -2931,33 +2931,34 @@ class ImportedPiece:
                                         temp_fuga_drop_list.append(fugas.loc[next_item].to_dict())
                     if len(temp_fuga_drop_list) >= 1:
                         fugas2drop = pd.DataFrame(temp_fuga_drop_list)
+                        return fugas2drop
                         # for fuga in temp_fuga_drop_list:
                         #     fugas_2_drop.append(fuga, ignore_index=True)
-                        list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
-                                        'Offsets', 'Soggetti',
-                                        'Time_Entry_Intervals', 'Voices']
-                        for col in list_columns:
-                            points.loc[:, col] = points[col].apply(tuple)
-                            fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
-                        merged = points.merge(fugas_2_drop, how='outer', indicator=True)
-                        # keep only the rows that are in the left dataframe only
-                        points = merged.loc[merged['_merge'] == 'left_only'].copy()
-                        # drop the _merge column
-                        points = points.drop('_merge', axis=1).copy()
-                        # convert tuple columns back to lists
-                        for col in list_columns:
-                            points.loc[:, col] = points[col].apply(list)
+                #         list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
+                #                         'Offsets', 'Soggetti',
+                #                         'Time_Entry_Intervals', 'Voices']
+                #         for col in list_columns:
+                #             points.loc[:, col] = points[col].apply(tuple)
+                #             fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
+                #         merged = points.merge(fugas_2_drop, how='outer', indicator=True)
+                #         # keep only the rows that are in the left dataframe only
+                #         points = merged.loc[merged['_merge'] == 'left_only'].copy()
+                #         # drop the _merge column
+                #         points = points.drop('_merge', axis=1).copy()
+                #         # convert tuple columns back to lists
+                #         for col in list_columns:
+                #             points.loc[:, col] = points[col].apply(list)
             
-                # len test
-                if len(temporary_nim_list) >= 1:
-                    for nim in temporary_nim_list:
-                        points = points.append(nim, ignore_index=True)
+                # # len test
+                # if len(temporary_nim_list) >= 1:
+                #     for nim in temporary_nim_list:
+                #         points = points.append(nim, ignore_index=True)
                 
-                points = points.sort_values("Progress")
-                points = points.reset_index(drop=True)
+                # points = points.sort_values("Progress")
+                # points = points.reset_index(drop=True)
 
-                self.analyses[memo_key] = points
-                return points
+                # self.analyses[memo_key] = points
+                # return points
 
         # classification with hidden types
         elif include_hidden_types == True:

@@ -3011,7 +3011,7 @@ class ImportedPiece:
                 print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
             else:
                 points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-                points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
+                # points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
                 # applying various private functions for overlapping entry tests.
                 # note that ng_durs must be passed to the first of these, via args
                 points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)

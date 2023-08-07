@@ -2929,15 +2929,15 @@ class ImportedPiece:
                                         # remove fugas that are nims from points
                                         temp_fuga_drop_list.append(fugas.loc[this_item].to_dict())
                                         temp_fuga_drop_list.append(fugas.loc[next_item].to_dict())
-                    if len(temp_fuga_drop_list) >= 1:
-                        fugas2drop = pd.DataFrame(temp_fuga_drop_list)
-                        cols = points.columns.to_list()
-                        points = points[~points[cols].isin(fugas2drop[cols])].dropna(how='all')
+                    # if len(temp_fuga_drop_list) >= 1:
+                    #     fugas2drop = pd.DataFrame(temp_fuga_drop_list)
+                    #     cols = points.columns.to_list()
+                    #     points = points[~points[cols].isin(fugas2drop[cols])].dropna(how='all')
                         
-                # # len test
-                # if len(temporary_nim_list) >= 1:
-                #     for nim in temporary_nim_list:
-                #         points = points.append(nim, ignore_index=True)
+                # len test
+                if len(temporary_nim_list) >= 1:
+                    for nim in temporary_nim_list:
+                        points = points.append(nim, ignore_index=True)
                 
                 points = points.sort_values("Progress")
                 points = points.reset_index(drop=True)

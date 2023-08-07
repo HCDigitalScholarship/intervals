@@ -2927,8 +2927,8 @@ class ImportedPiece:
                                             }
                                         temporary_nim_list.append(temp_nim_details)
                                         # remove fugas that are nims from points
-                                        temp_fuga_drop_list.append(fugas.loc[this_item])
-                                        temp_fuga_drop_list.append(fugas.loc[next_item])
+                                        temp_fuga_drop_list.append(fugas.loc[this_item].to_dict())
+                                        temp_fuga_drop_list.append(fugas.loc[next_item].to_dict())
                     if len(temp_fuga_drop_list) >= 1:
                         for fuga in temp_fuga_drop_list:
                             fugas_2_drop.append(fuga, ignore_index=True)

@@ -3033,6 +3033,7 @@ class ImportedPiece:
                 fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']
                 fugas_2_drop = pd.DataFrame(columns=fugas.columns)
                 temporary_nim_list = []
+                temp_fuga_drop_list = []
                 if len(fugas) >= 1:
                     fuga_index_list = fugas.index.tolist()
                     filtered_dist['pairs'] = filtered_dist.apply(lambda row: list((row['source'], row['match'])), axis=1)

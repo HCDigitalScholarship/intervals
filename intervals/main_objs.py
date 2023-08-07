@@ -3087,20 +3087,20 @@ class ImportedPiece:
                 # remove the fugas that were identified as nims
                 if len(temp_fuga_drop_list) >= 1:
                     fugas2drop = pd.DataFrame(temp_fuga_drop_list)
-                list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
-                            'Offsets', 'Soggetti',
-                            'Time_Entry_Intervals', 'Voices']
-                for col in list_columns:
-                    points_combined.loc[:, col] = points_combined[col].apply(tuple)
-                    fugas2drop.loc[:, col] = fugas2drop[col].apply(tuple)
-                merged = points_combined.merge(fugas2drop, how='outer', indicator=True)
-                # keep only the rows that are in the left dataframe only
-                points_combined = merged.loc[merged['_merge'] == 'left_only'].copy()
-                # drop the _merge column
-                points_combined = points_combined.drop('_merge', axis=1).copy()
-                # convert tuple columns back to lists
-                for col in list_columns:
-                    points_combined.loc[:, col] = points_combined[col].apply(list)
+                    list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
+                                'Offsets', 'Soggetti',
+                                'Time_Entry_Intervals', 'Voices']
+                    for col in list_columns:
+                        points_combined.loc[:, col] = points_combined[col].apply(tuple)
+                        fugas2drop.loc[:, col] = fugas2drop[col].apply(tuple)
+                    merged = points_combined.merge(fugas2drop, how='outer', indicator=True)
+                    # keep only the rows that are in the left dataframe only
+                    points_combined = merged.loc[merged['_merge'] == 'left_only'].copy()
+                    # drop the _merge column
+                    points_combined = points_combined.drop('_merge', axis=1).copy()
+                    # convert tuple columns back to lists
+                    for col in list_columns:
+                        points_combined.loc[:, col] = points_combined[col].apply(list)
                 # and add the nims
                 if len(temporary_nim_list) >= 1:
                     for nim in temporary_nim_list:

@@ -2931,9 +2931,11 @@ class ImportedPiece:
                                         temp_fuga_drop_list.append(fugas.loc[next_item].to_dict())
                     if len(temp_fuga_drop_list) >= 1:
                         fugas2drop = pd.DataFrame(temp_fuga_drop_list)
-                        return fugas2drop
-                        # for fuga in temp_fuga_drop_list:
-                        #     fugas_2_drop.append(fuga, ignore_index=True)
+                        # Merge the two DataFrames based on the subset of columns
+                        merged_df = pd.merge(points, fugas2drop, on=['Presentation_Type', 'Number_Entries', "Progress"], how='left')
+
+                        # Drop the rows with matching values in the subset of columns
+                        points = merged_df.dropna(subset=['C_y'])
                 #         list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
                 #                         'Offsets', 'Soggetti',
                 #                         'Time_Entry_Intervals', 'Voices']
@@ -2949,16 +2951,16 @@ class ImportedPiece:
                 #         for col in list_columns:
                 #             points.loc[:, col] = points[col].apply(list)
             
-                # # len test
-                # if len(temporary_nim_list) >= 1:
-                #     for nim in temporary_nim_list:
-                #         points = points.append(nim, ignore_index=True)
+                # len test
+                if len(temporary_nim_list) >= 1:
+                    for nim in temporary_nim_list:
+                        points = points.append(nim, ignore_index=True)
                 
-                # points = points.sort_values("Progress")
-                # points = points.reset_index(drop=True)
+                points = points.sort_values("Progress")
+                points = points.reset_index(drop=True)
 
-                # self.analyses[memo_key] = points
-                # return points
+                self.analyses[memo_key] = points
+                return points
 
         # classification with hidden types
         elif include_hidden_types == True:

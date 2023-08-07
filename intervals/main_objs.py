@@ -2994,6 +2994,9 @@ class ImportedPiece:
                                         points2 = points2.append(temp, ignore_index=True)
                                     if 'ID' in temp["Presentation_Type"]:
                                         points2 = points2.append(temp, ignore_index=True)
+                                        # add fuga (so nim will work)
+                                    if 'FUGA' in temp["Presentation_Type"]:
+                                        points2 = points2.append(temp, ignore_index=True)
 
             points_combined = points.append(points2, ignore_index=True)
             points_combined["Offsets_Key"] = points_combined["Offsets"].apply(self._offset_joiner)

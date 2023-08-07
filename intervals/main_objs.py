@@ -3048,7 +3048,7 @@ class ImportedPiece:
                                     voices_for_melodic_ints = fugas.loc[this_item]['Voices']
                                     offsets_for_melodic_ints = fugas.loc[this_item]['Offsets']
                                     coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
-                                	melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
+                                    melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
                                 # 	nim_soggetti = [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair]
                                 # 	nim_sogs_as_strings = [tuple(str(x) for x in tuple_of_strings) for tuple_of_strings in nim_soggetti]
                                 # 	# filter out Fugas that involve the same pair of voices

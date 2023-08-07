@@ -3006,20 +3006,21 @@ class ImportedPiece:
             points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
             points_combined = points_combined[points_combined["Count_Offsets"] > 1]
             points_combined = points_combined[points_combined["Voices"].apply(set).apply(len) > 1]
-            return points_combined
-            # if len(points_combined) == 0:
-            #     print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
-            # else:
-            #     points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-            #     points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
-            #     # applying various private functions for overlapping entry tests.
-            #     # note that ng_durs must be passed to the first of these, via args
-            #     points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
-            #     points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
-            #     points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
-            #     points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
-            #     points_combined["Progress"] = (points_combined["First_Offset"] / self.notes().index[-1])
-            #     points_combined["Presentation_Type"].fillna("FUGA", inplace=True)
+            # return points_combined
+            if len(points_combined) == 0:
+                print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
+            else:
+                points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+                points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
+                # applying various private functions for overlapping entry tests.
+                # note that ng_durs must be passed to the first of these, via args
+                points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
+                points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
+                points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
+                points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
+                points_combined["Progress"] = (points_combined["First_Offset"] / self.notes().index[-1])
+                points_combined["Presentation_Type"].fillna("FUGA", inplace=True)
+                return points_combined
 
             #     # NIM test.  Here we check for interlocking fugas that are really nims:
             #     fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']

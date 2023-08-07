@@ -2934,10 +2934,10 @@ class ImportedPiece:
                         cols = points.columns.to_list()
                         points = points[~points[cols].isin(fugas2drop[cols])].dropna(how='all')
                         
-                # len test
-                if len(temporary_nim_list) >= 1:
-                    for nim in temporary_nim_list:
-                        points = points.append(nim, ignore_index=True)
+                # # len test
+                # if len(temporary_nim_list) >= 1:
+                #     for nim in temporary_nim_list:
+                #         points = points.append(nim, ignore_index=True)
                 
                 points = points.sort_values("Progress")
                 points = points.reset_index(drop=True)

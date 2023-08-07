@@ -2931,26 +2931,9 @@ class ImportedPiece:
                                         temp_fuga_drop_list.append(fugas.loc[next_item].to_dict())
                     if len(temp_fuga_drop_list) >= 1:
                         fugas2drop = pd.DataFrame(temp_fuga_drop_list)
-                        # Merge the two DataFrames based on the subset of columns
-                        merged_df = pd.merge(points, fugas2drop, on=['Presentation_Type', 'Number_Entries', "Progress"], how='left')
-
-                        # Drop the rows with matching values in the subset of columns
-                        points = merged_df.dropna(subset=['C_y'])
-                #         list_columns = ['Measures_Beats', 'Melodic_Entry_Intervals', 
-                #                         'Offsets', 'Soggetti',
-                #                         'Time_Entry_Intervals', 'Voices']
-                #         for col in list_columns:
-                #             points.loc[:, col] = points[col].apply(tuple)
-                #             fugas_2_drop.loc[:, col] = fugas_2_drop[col].apply(tuple)
-                #         merged = points.merge(fugas_2_drop, how='outer', indicator=True)
-                #         # keep only the rows that are in the left dataframe only
-                #         points = merged.loc[merged['_merge'] == 'left_only'].copy()
-                #         # drop the _merge column
-                #         points = points.drop('_merge', axis=1).copy()
-                #         # convert tuple columns back to lists
-                #         for col in list_columns:
-                #             points.loc[:, col] = points[col].apply(list)
-            
+                        cols = points.columns.to_list()
+                        points = points[~points[cols].isin(fugas2drop[cols])].dropna(how='all')
+                        
                 # len test
                 if len(temporary_nim_list) >= 1:
                     for nim in temporary_nim_list:

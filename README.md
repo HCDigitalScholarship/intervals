@@ -29,7 +29,7 @@ CRIM Intervals begins by importing one (or more) MEI, MusicXML, and MIDI files, 
 
 There are many ways to configure these basic methods. For instance intervals can be diatonic, or chromatic, or with (and without) 'quality' (such as M3 vs m3). They can also be simple or compound (a tenth in the latter would be a third in the former).Unisons can be combined (something helpful for comparing similar melodies), or events can be taken at actual durations or 'sampled' at some regular durational span.
 
-Complete documentation of each method capacities is available via doc.strings via this command print(model.YourMethod.__doc__), where you will replace 'YourMethod' with the name of the individual method, for example print(piece.melodic.__doc__).
+Complete documentation of each method capacities is available via doc.strings via this command `print(model.YourMethod.__doc__)`, where you will replace 'YourMethod' with the name of the individual method, for example `print(piece.melodic.__doc__)`.
 
 Results are reported in **Pandas** dataframes (and thus exportable in a variey of standard formats for further analysis), and also via several visualizations methods.
 

@@ -1,11 +1,12 @@
 [tool.poetry]
-name = "intervals"
-version = "0.1.0"
-description = "crim intervals package"
+name = "crim-intervals"
+version = "2.0.2"
+description = "CRIM intervals package"
+readme = "README.md"
 authors = ["Richard Freedman <rfreedma@haverford.edu>"]
 license = "creative commons"
 packages = [
-    { include = "intervals" },
+    { include = "crim-intervals" },
 ]
 
 [tool.poetry.dependencies]

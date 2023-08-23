@@ -41,8 +41,6 @@ jobs:
           TWINE_USERNAME: __token__  # Replace with your PyPI username or token
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}  # Add this token as a GitHub repository secret
         run: |
-          ls
-          pwd
           poetry build
           ls
           pwd

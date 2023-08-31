@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "intervals"
-version = "0.1.0"
-description = "crim intervals package"
+name = "crim_intervals"
+version = "2.0.7"
+description = "CRIM intervals package"
 authors = ["Richard Freedman <rfreedma@haverford.edu>"]
 license = "creative commons"
 packages = [
@@ -36,8 +36,24 @@ textdistance = "4.2.1"
 XlsxWriter = "3.0.2"
 webcolors = "1.11.1"
 
+
+[tool.poetry.group.dev.dependencies]
+poetry-bumpversion = "^0.3.1"
+
+[[tool.poetry_bumpversion.replacements]]
+files = ["intervals/__init__.py"]
+search = '__version__ = "{current_version}"'
+replace = '__version__ = "{new_version}"'
+
+[[tool.poetry_bumpversion.replacements]]
+files = ["README.md"]
+search = 'Version: {current_version}'
+replace = 'Version: {new_version}'
+
 [tool.poetry.dev-dependencies]
 
 [build-system]
 requires = ["setuptools","poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+

@@ -4,7 +4,6 @@ on: [ push ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -31,3 +30,28 @@ jobs:
         run: |
           pytest  --cov visualizations --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
           pytest  --cov main_objs --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      POETRY_VIRTUALENVS_CREATE: "false"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+
+      - name: Install poetry
+        run: |
+          pip install poetry
+          pip install poetry-bumpversion
+          poetry self add poetry-bumpversion
+
+      - name: Build
+        run: |
+          poetry version patch
+          poetry build
+
+      - name: Publish
+        run: |
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+          poetry publish
+          

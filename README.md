@@ -1,6 +1,6 @@
 # CRIM Intervals:  Python Tools for the Analysis of Encoded Music Scores
 
-### Current Version: 2.0.1
+### Current Version: 2.0.3
 
 [CRIM Intervals on github](https://github.com/HCDigitalScholarship/intervals/tree/main)
 
@@ -102,21 +102,21 @@ All CRIM intervals tools are available via a **Creative Commons** license (Attri
 
 ## Sections in this guide
 
-  * [01_Introduction_and_Corpus](tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](tutorial/02_Notes_Rests.md)
-  * [03_Durations](tutorial/03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](tutorial/04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](tutorial/05_Detail_Index.md)
-  * [06_Melodic_Intervals](tutorial/06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](tutorial/07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](tutorial/08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](tutorial/09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](tutorial/10_Lyrics_Homorhythm.md)
-  * [11_Cadences](tutorial/11_Cadences.md)
-  * [12_Presentation_Types](tutorial/12_Presentation_Types.md)
-  * [13_Model_Finder](tutorial/13_Model_Finder.md)
-  * [14_Visualizations_Summary](tutorial/14_Visualizations_Summary.md)
-  * [15_Network_Graphs](tutorial/15_Network_Graphs.md)
-  * [16_Python_Basics](tutorial/16_Python_Basics.md)
-  * [17_Pandas_Basics](tutorial/17_Pandas_Basics.md)
-  * [18_Music21_Basics](tutorial/18_Music21_Basics.md)
+  * [01_Introduction_and_Corpus](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/01_Introduction_and_Corpus.md)
+  * [02_Notes_Rests](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/02_Notes_Rests.md)
+  * [03_Durations](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/03_Durations.md) 
+  * [04_TimeSignatures_Beat_Strength](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/07_Harmonic_Intervals.md)
+  * [08_Contrapuntal_Modules](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/08_Contrapuntal_Modules.md)
+  * [09_Ngrams_Heat_Maps](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/09_Ngrams_Heat_Maps.md)
+  * [10_Lyrics_Homorhythm](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/12_Presentation_Types.md)
+  * [13_Model_Finder](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/13_Model_Finder.md)
+  * [14_Visualizations_Summary](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/14_Visualizations_Summary.md)
+  * [15_Network_Graphs](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/17_Pandas_Basics.md)
+  * [18_Music21_Basics](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/18_Music21_Basics.md)

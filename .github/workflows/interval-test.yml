@@ -31,3 +31,17 @@ jobs:
         run: |
           pytest  --cov visualizations --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
           pytest  --cov main_objs --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
+      - name: Install poetry and twine
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          pip install twine
+      - name: Build and publish to PyPI
+        env:
+          TWINE_USERNAME: __token__  # Replace with your PyPI username or token
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}  # Add this token as a GitHub repository secret
+        run: |
+          poetry build
+          ls
+          pwd
+          twine upload *

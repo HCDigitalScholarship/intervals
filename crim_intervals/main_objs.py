@@ -11,7 +11,7 @@ from more_itertools import consecutive_groups
 import os
 import re
 import requests
-import intervals
+import crim_intervals
 import collections
 import verovio
 import seaborn as sns

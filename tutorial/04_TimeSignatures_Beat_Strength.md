@@ -13,6 +13,8 @@ There are no parameters to set with this function.  But it can be called as a pa
     nr = piece.notes()
     piece.detailIndex(nr, t_sig = True)
 
+![Alt text](images/tsig.png)
+
 ## View Measure Numbers with `measures()`
 
 This method returns a dataframe with offsets as the index, and the measure number of each event (note, melodic interval, ngram) in the columns. Thus all columns will frequently be identical. 
@@ -30,6 +32,8 @@ It is not particularly useful on its own, but it might be helpful for situations
     #now filter nr to show only those offsets (=index) that are in the list just made
     nr2 = nr[nr.index.isin(measure_starts)]
     nr2
+
+![Alt text](images/measure_starts.png)
 
 Or another way to do this with the `loc` method of Pandas:
 
@@ -51,6 +55,7 @@ This method returns a data frame showing the offsets at which double or final ba
     barlines = piece.barlines()
     piece.detailIndex(barlines)
 
+![Alt text](images/barlines.png)
 
 ## View Beat Strengths with `beatStrengths()`
 
@@ -58,6 +63,8 @@ music21 has a built-in method that assigns a relative strength for each beat in 
 
     bs = piece.beatStrengths()
     piece.detailIndex(bs)
+
+![Alt text](images/bs.png)
 
 The resulting dataframe could also be used to filter other results, for instance, by finding all offsets (and voices) where a certain `beatStrength` condition is met. For instance, here is a way to filter for 'strong beats', the 'strong notes', the 'strong melodic intervals', and at last the 'ngrams based on strong intervals'.  In brief, **structural tones**:
 
@@ -76,6 +83,8 @@ The resulting dataframe could also be used to filter other results, for instance
         #and at last find the ngrams for those strong notes
         strong_ngrams = piece.ngrams(df = mel_strong, n = 4, exclude = ['Rest']).fillna('')
         strong_ngrams
+
+![Alt text](images/beat_strength_ng.png)
 
 Results from the `beatStrengths` method should **not be sent to the `regularize` method**. Read more about `regularize` at [06_Durations](06_Durations.md).
 

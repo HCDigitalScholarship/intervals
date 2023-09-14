@@ -62,6 +62,30 @@ Or the same for harmonic ngrams:
     har_ngram_Durations = piece.durations(df = har, n = _n, mask_df = har_ngrams).fillna('')
     har_ngram_Durations  
 
+## Durational Ratios
+
+Durational ratios are a good way to measure the 'temporal distance' from one note to the next.
+
+Since these can be irrational numbers (as when a quarter note follows a dotted half), we can round the results to any given number of decimal places:
+
+    piece.durationalRatios().round(2)
+
+![Alt text](images/dur_rat.png)
+
+And these could in turn be used as the basis of ngrams (to find rhythmic motives), or combined with melodic intervals to describe motives in great detail.
+
+But in this case we need to use Python `applymap(str)` to transform the original durational ratios (which are floats) into strings.  You might also need to dropna values.
+
+
+```
+dur_rat = piece.durationalRatios().fillna('').round(2).applymap(str)
+ng = piece.ngrams(df=dur_rat)
+ng
+```
+
+![Alt text](images/ng_dur_rat.png)
+
+
 ## More About Measures, Beats, and Offsets: The `detailIndex()` Function  
 
 By default, the `durations()` function returns a DataFrame which indexes by offsets: That is, events in the piece are counted by which overall beat in the piece they fall on. This is useful for measuring time distances between events, but not for a human reader to refer back to the musical score itself. It is easy to include measure and beat indexes by passing the result of the function to the `detailIndex()` function as shown:  

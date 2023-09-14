@@ -33,7 +33,7 @@ def test_classifyCadences():
     analysisNow = analysisNow.round(3)
     # You can use the next line to overwrite the ground truth when adding new pieces etc.
     # analysisNow.to_csv('./intervals/data/cadences/groundTruth.csv', index=False)
-    groundTruth = pd.read_csv('./intervals/data/cadences/groundTruth.csv')
+    groundTruth = pd.read_csv('./crim_intervals/data/cadences/groundTruth.csv')
     groundTruth = groundTruth.astype(analysisNow.dtypes.values, copy=False)
     # Ignore the url columns in case the test is being run with local files
     analysisNow.drop(columns='URL', inplace=True)

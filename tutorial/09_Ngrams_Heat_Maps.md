@@ -142,7 +142,20 @@ Remember that modifications to the particular type of feature in question needs 
 
 The default 'contrapuntal module' ngram is in fact a combination of two different dataframes:  one for the harmonic intervals and the other for the melodic ones. But it is possible to create other combinations by passing *both `df` and `other` to `ngrams()`, provided that the `df` and `other` parameters have the same shape (overall number of rows and columns). 
 
-For example, the following line of code will produce **ngrams of length 5 containing the information associated with both the melodic intervals and durations at each subsequent offset in a piece:**  
+For example, the following line of code will produce **ngrams of length 5** containing the information associated with **both the melodic intervals and the durational ratios** at each subsequent offset in a piece:**  
+
+```
+n = 5
+dur_rat = piece.durationalRatios().round(2)
+mel = piece.melodic()
+ngrams = piece.ngrams(df=mel, other=dur_rat)
+ngrams
+```
+
+![Alt text](images/ng_mel_dur_rat.png)
+
+Or here we **combine durations with lyrics**, which in turn would tell us when voices are singing the same syllables to the same durations
+
 
     lyr = piece.lyrics()  
     dur = piece.durations()  

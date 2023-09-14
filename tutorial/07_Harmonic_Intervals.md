@@ -92,10 +92,26 @@ compound='simple'
 One additional parameter, `sort`, determines the *order* of the intervals.  If `sort=True` (which is the default), then the intervals will be sorted from largest to smallest.  Duplicates and unisons will be removed.  
 
 
+    `piece.sonorities(sort=True)`
+
+![Alt text](images/sonoroties_t.png)
 
 But if `sort=False`, then *all* intervals will be reported (unisons and duplicates included), and they will appear in order from top staff to bottom.
 
-sort=True
+    `piece.sonorities(sort=False)`
+
+![Alt text](images/sonorities_f.png)
+
+It would also be possible to pass these to the ngram method to see higher level patterns:
+
+```
+son = piece.sonorities(sort=False)
+piece.ngrams(df = son)
+```
+
+
+
+![Alt text](images/sonoritie_ngrams.png)
 
 ### Dealing with Consecutive Pitch Repetition/Rests: The `combineUnisons` and `combineRests` Parameters:  
 

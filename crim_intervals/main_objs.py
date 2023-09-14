@@ -22,7 +22,7 @@ import matplotlib.lines as mlines
 import plotly.express as px
 from glob import glob
 from IPython.display import SVG, HTML
-cwd = os.path.dirname(intervals.__file__)
+cwd = os.path.dirname(crim_intervals.__file__)
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI

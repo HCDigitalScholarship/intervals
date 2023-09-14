@@ -75,6 +75,28 @@ By default, `harmonic()` generates a DataFrame of the harmonic intervals between
 
 This means that if a piece contained a Bass, Tenor, Alto, and Soprano voice, all four voices were sounding, and `againstLow` was set to **True**, `harmonic()` will generate the interval between the Bass and the Tenor, the Bass and the Alto, and the Bass and the Soprano. It will **NOT** generate any harmonic interval between the Tenor and Alto, Tenor and Soprano, or Alto and Soprano. The same logic would also apply even if the Bass was not present, where only the harmonic intervals appearing would be between the Tenor and Alto voices, and between the Tenor and Soprano voices.  
 
+### The `sonority` Function:  Reporting All Harmonic Intervals in One Column
+
+There is also a separate `sonority` function, which in turn uses the results from harmonic to produce a single column representing all of the vertical intervals heard at each 'onset' of any note throughout the piece.  The result is something like a figured bass representation of the harmonies at each moment.
+
+In its simplest form, we call this on piece as follows:
+
+    piece.sonority()
+
+There are also several parameters.  The first three are simply those used with `harmonic`, as described above.  There are their defaults:
+
+kind='d'
+directed=True
+compound='simple'
+
+One additional parameter, `sort`, determines the *order* of the intervals.  If `sort=True` (which is the default), then the intervals will be sorted from largest to smallest.  Duplicates and unisons will be removed.  
+
+
+
+But if `sort=False`, then *all* intervals will be reported (unisons and duplicates included), and they will appear in order from top staff to bottom.
+
+sort=True
+
 ### Dealing with Consecutive Pitch Repetition/Rests: The `combineUnisons` and `combineRests` Parameters:  
 
 Unlike the `notes()` functions, the `harmonic()` function does not contain `combineUnisons` or `combineRests` parameters. These parameters, however, can still be used in conjunction with the `harmonic()` function as follows:  
@@ -86,6 +108,8 @@ Or (though less useful),
 
     nr_separate_rests = piece.notes(combineRests = False)  
     piece.harmonic(df = nr_separate_rests)  
+
+## 
 
 ## `fillna()` and `dropna()` Functions  
 

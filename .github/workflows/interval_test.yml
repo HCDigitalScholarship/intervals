@@ -43,4 +43,4 @@ jobs:
           poetry build
           ls
           pwd
-          twine upload crim_intervals
+          twine upload ./crim_intervals

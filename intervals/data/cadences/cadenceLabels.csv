@@ -31,7 +31,7 @@ Key,CadType,LeadingTones
 ^C(2|4)PT-1z?$,Phrygian,1
 ^BC(1|3)x?z?$,Authentic,1
 ^BC(2|4)x?z?$,Authentic,0
-^C1u-(3|4)$,Evaded Authentic,1
+^C1(t1|t2)?u-(1|2|3|4)$,Evaded Authentic,1
 ^C2u-(3|4)$,Evaded Authentic,0
 ^C1T-2u-3$,Clausula Vera,1
 ^C1T-2u-3x$,Evaded Authentic,1

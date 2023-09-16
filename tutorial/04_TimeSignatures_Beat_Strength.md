@@ -13,6 +13,8 @@ There are no parameters to set with this function.  But it can be called as a pa
     nr = piece.notes()
     piece.detailIndex(nr, t_sig = True)
 
+![Alt text](images/tsig.png)
+
 ## View Measure Numbers with `measures()`
 
 This method returns a dataframe with offsets as the index, and the measure number of each event (note, melodic interval, ngram) in the columns. Thus all columns will frequently be identical. 
@@ -30,6 +32,8 @@ It is not particularly useful on its own, but it might be helpful for situations
     #now filter nr to show only those offsets (=index) that are in the list just made
     nr2 = nr[nr.index.isin(measure_starts)]
     nr2
+
+![Alt text](images/measure_starts.png)
 
 Or another way to do this with the `loc` method of Pandas:
 
@@ -51,6 +55,7 @@ This method returns a data frame showing the offsets at which double or final ba
     barlines = piece.barlines()
     piece.detailIndex(barlines)
 
+![Alt text](images/barlines.png)
 
 ## View Beat Strengths with `beatStrengths()`
 
@@ -58,6 +63,8 @@ music21 has a built-in method that assigns a relative strength for each beat in 
 
     bs = piece.beatStrengths()
     piece.detailIndex(bs)
+
+![Alt text](images/bs.png)
 
 The resulting dataframe could also be used to filter other results, for instance, by finding all offsets (and voices) where a certain `beatStrength` condition is met. For instance, here is a way to filter for 'strong beats', the 'strong notes', the 'strong melodic intervals', and at last the 'ngrams based on strong intervals'.  In brief, **structural tones**:
 
@@ -77,26 +84,29 @@ The resulting dataframe could also be used to filter other results, for instance
         strong_ngrams = piece.ngrams(df = mel_strong, n = 4, exclude = ['Rest']).fillna('')
         strong_ngrams
 
+![Alt text](images/beat_strength_ng.png)
+
 Results from the `beatStrengths` method should **not be sent to the `regularize` method**. Read more about `regularize` at [06_Durations](06_Durations.md).
 
 
 -----
 ## Sections in this guide
 
-  * [01_Introduction_and_Corpus](01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](02_Notes_Rests.md)
-  * [03_Durations](03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](04_TimeSignatures_Beat_Strength.md)
-  * [05_DetailIndex](05_DetailIndex.md)
-  * [06_MelodicIntervals](06_MelodicIntervals.md)
-  * [07_HarmonicIntervals](07_HarmonicIntervals.md)
-  * [08_Contrapuntal_Modules](08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](10_Lyrics_Homorhythm.md)
-  * [11_Cadences](11_Cadences.md)
-  * [12_Presentation_Types](12_Presentation_Types.md)
-  * [13_Model_Finder](13_Model_Finder.md)
-  * [14_Visualizations_Summary](14_Visualizations_Summary.md)
-  * [15_Network_Graphs](15_Network_Graphs.md)
-  * [16_Python_Basics](16_Python_Basics.md)
-  * [17_Pandas_Basics](17_Pandas_Basics.md)
+  * [01_Introduction_and_Corpus](tutorial/01_Introduction_and_Corpus.md)
+  * [02_Notes_Rests](tutorial/02_Notes_Rests.md)
+  * [03_Durations](tutorial/03_Durations.md) 
+  * [04_TimeSignatures_Beat_Strength](tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals](tutorial/07_Harmonic_Intervals.md)
+  * [08_Contrapuntal_Modules](tutorial/08_Contrapuntal_Modules.md)
+  * [09_Ngrams_Heat_Maps](tutorial/09_Ngrams_Heat_Maps.md)
+  * [10_Lyrics_Homorhythm](tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](tutorial/11_Cadences.md)
+  * [12_Presentation_Types](tutorial/12_Presentation_Types.md)
+  * [13_Model_Finder](tutorial/13_Model_Finder.md)
+  * [14_Visualizations_Summary](tutorial/14_Visualizations_Summary.md)
+  * [15_Network_Graphs](tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](tutorial/17_Pandas_Basics.md)
+  * [18_Music21_Basics](tutorial/18_Music21_Basics.md)

@@ -142,7 +142,20 @@ Remember that modifications to the particular type of feature in question needs 
 
 The default 'contrapuntal module' ngram is in fact a combination of two different dataframes:  one for the harmonic intervals and the other for the melodic ones. But it is possible to create other combinations by passing *both `df` and `other` to `ngrams()`, provided that the `df` and `other` parameters have the same shape (overall number of rows and columns). 
 
-For example, the following line of code will produce **ngrams of length 5 containing the information associated with both the melodic intervals and durations at each subsequent offset in a piece:**  
+For example, the following line of code will produce **ngrams of length 5** containing the information associated with **both the melodic intervals and the durational ratios** at each subsequent offset in a piece:**  
+
+```
+n = 5
+dur_rat = piece.durationalRatios().round(2)
+mel = piece.melodic()
+ngrams = piece.ngrams(df=mel, other=dur_rat)
+ngrams
+```
+
+![Alt text](images/ng_mel_dur_rat.png)
+
+Or here we **combine durations with lyrics**, which in turn would tell us when voices are singing the same syllables to the same durations
+
 
     lyr = piece.lyrics()  
     dur = piece.durations()  
@@ -313,20 +326,21 @@ After using the `ngrams()` function to identify all of the ngrams in a piece, th
 
 ## Sections in this guide
 
-  * [01_Introduction_and_Corpus](01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](02_Notes_Rests.md)
-  * [03_Durations](03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](04_TimeSignatures_Beat_Strength.md)
-  * [05_DetailIndex](05_DetailIndex.md)
-  * [06_MelodicIntervals](06_MelodicIntervals.md)
-  * [07_HarmonicIntervals](07_HarmonicIntervals.md)
-  * [08_Contrapuntal_Modules](08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](10_Lyrics_Homorhythm.md)
-  * [11_Cadences](11_Cadences.md)
-  * [12_Presentation_Types](12_Presentation_Types.md)
-  * [13_Model_Finder](13_Model_Finder.md)
-  * [14_Visualizations_Summary](14_Visualizations_Summary.md)
-  * [15_Network_Graphs](15_Network_Graphs.md)
-  * [16_Python_Basics](16_Python_Basics.md)
-  * [17_Pandas_Basics](17_Pandas_Basics.md)
+  * [01_Introduction_and_Corpus](tutorial/01_Introduction_and_Corpus.md)
+  * [02_Notes_Rests](tutorial/02_Notes_Rests.md)
+  * [03_Durations](tutorial/03_Durations.md) 
+  * [04_TimeSignatures_Beat_Strength](tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals](tutorial/07_Harmonic_Intervals.md)
+  * [08_Contrapuntal_Modules](tutorial/08_Contrapuntal_Modules.md)
+  * [09_Ngrams_Heat_Maps](tutorial/09_Ngrams_Heat_Maps.md)
+  * [10_Lyrics_Homorhythm](tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](tutorial/11_Cadences.md)
+  * [12_Presentation_Types](tutorial/12_Presentation_Types.md)
+  * [13_Model_Finder](tutorial/13_Model_Finder.md)
+  * [14_Visualizations_Summary](tutorial/14_Visualizations_Summary.md)
+  * [15_Network_Graphs](tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](tutorial/17_Pandas_Basics.md)
+  * [18_Music21_Basics](tutorial/18_Music21_Basics.md)

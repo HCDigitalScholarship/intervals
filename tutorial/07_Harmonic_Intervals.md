@@ -75,6 +75,44 @@ By default, `harmonic()` generates a DataFrame of the harmonic intervals between
 
 This means that if a piece contained a Bass, Tenor, Alto, and Soprano voice, all four voices were sounding, and `againstLow` was set to **True**, `harmonic()` will generate the interval between the Bass and the Tenor, the Bass and the Alto, and the Bass and the Soprano. It will **NOT** generate any harmonic interval between the Tenor and Alto, Tenor and Soprano, or Alto and Soprano. The same logic would also apply even if the Bass was not present, where only the harmonic intervals appearing would be between the Tenor and Alto voices, and between the Tenor and Soprano voices.  
 
+### The `sonority` Function:  Reporting All Harmonic Intervals in One Column
+
+There is also a separate `sonority` function, which in turn uses the results from harmonic to produce a single column representing all of the vertical intervals heard at each 'onset' of any note throughout the piece.  The result is something like a figured bass representation of the harmonies at each moment.
+
+In its simplest form, we call this on piece as follows:
+
+    piece.sonority()
+
+There are also several parameters.  The first three are simply those used with `harmonic`, as described above.  There are their defaults:
+
+kind='d'
+directed=True
+compound='simple'
+
+One additional parameter, `sort`, determines the *order* of the intervals.  If `sort=True` (which is the default), then the intervals will be sorted from largest to smallest.  Duplicates and unisons will be removed.  
+
+
+    `piece.sonorities(sort=True)`
+
+![Alt text](images/sonoroties_t.png)
+
+But if `sort=False`, then *all* intervals will be reported (unisons and duplicates included), and they will appear in order from top staff to bottom.
+
+    `piece.sonorities(sort=False)`
+
+![Alt text](images/sonorities_f.png)
+
+It would also be possible to pass these to the ngram method to see higher level patterns:
+
+```
+son = piece.sonorities(sort=False)
+piece.ngrams(df = son)
+```
+
+
+
+![Alt text](images/sonoritie_ngrams.png)
+
 ### Dealing with Consecutive Pitch Repetition/Rests: The `combineUnisons` and `combineRests` Parameters:  
 
 Unlike the `notes()` functions, the `harmonic()` function does not contain `combineUnisons` or `combineRests` parameters. These parameters, however, can still be used in conjunction with the `harmonic()` function as follows:  
@@ -86,6 +124,8 @@ Or (though less useful),
 
     nr_separate_rests = piece.notes(combineRests = False)  
     piece.harmonic(df = nr_separate_rests)  
+
+## 
 
 ## `fillna()` and `dropna()` Functions  
 
@@ -118,20 +158,21 @@ For more information about the `detailIndex` function, consult [the function's d
 
 ## Sections in this guide
 
-  * [01_Introduction_and_Corpus](01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](02_Notes_Rests.md)
-  * [03_Durations](03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](04_TimeSignatures_Beat_Strength.md)
-  * [05_DetailIndex](05_DetailIndex.md)
-  * [06_MelodicIntervals](06_MelodicIntervals.md)
-  * [07_HarmonicIntervals](07_HarmonicIntervals.md)
-  * [08_Contrapuntal_Modules](08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](10_Lyrics_Homorhythm.md)
-  * [11_Cadences](11_Cadences.md)
-  * [12_Presentation_Types](12_Presentation_Types.md)
-  * [13_Model_Finder](13_Model_Finder.md)
-  * [14_Visualizations_Summary](14_Visualizations_Summary.md)
-  * [15_Network_Graphs](15_Network_Graphs.md)
-  * [16_Python_Basics](16_Python_Basics.md)
-  * [17_Pandas_Basics](17_Pandas_Basics.md)
+  * [01_Introduction_and_Corpus](tutorial/01_Introduction_and_Corpus.md)
+  * [02_Notes_Rests](tutorial/02_Notes_Rests.md)
+  * [03_Durations](tutorial/03_Durations.md) 
+  * [04_TimeSignatures_Beat_Strength](tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals](tutorial/07_Harmonic_Intervals.md)
+  * [08_Contrapuntal_Modules](tutorial/08_Contrapuntal_Modules.md)
+  * [09_Ngrams_Heat_Maps](tutorial/09_Ngrams_Heat_Maps.md)
+  * [10_Lyrics_Homorhythm](tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](tutorial/11_Cadences.md)
+  * [12_Presentation_Types](tutorial/12_Presentation_Types.md)
+  * [13_Model_Finder](tutorial/13_Model_Finder.md)
+  * [14_Visualizations_Summary](tutorial/14_Visualizations_Summary.md)
+  * [15_Network_Graphs](tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](tutorial/17_Pandas_Basics.md)
+  * [18_Music21_Basics](tutorial/18_Music21_Basics.md)

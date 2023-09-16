@@ -1,4 +1,4 @@
-from intervals.main_objs import *
+from crim_intervals.main_objs import *
 from test_constants import *
 
 

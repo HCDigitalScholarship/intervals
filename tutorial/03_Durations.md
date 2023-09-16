@@ -62,6 +62,30 @@ Or the same for harmonic ngrams:
     har_ngram_Durations = piece.durations(df = har, n = _n, mask_df = har_ngrams).fillna('')
     har_ngram_Durations  
 
+## Durational Ratios
+
+Durational ratios are a good way to measure the 'temporal distance' from one note to the next.
+
+Since these can be irrational numbers (as when a quarter note follows a dotted half), we can round the results to any given number of decimal places:
+
+    piece.durationalRatios().round(2)
+
+![Alt text](images/dur_rat.png)
+
+And these could in turn be used as the basis of ngrams (to find rhythmic motives), or combined with melodic intervals to describe motives in great detail.
+
+But in this case we need to use Python `applymap(str)` to transform the original durational ratios (which are floats) into strings.  You might also need to dropna values.
+
+
+```
+dur_rat = piece.durationalRatios().fillna('').round(2).applymap(str)
+ng = piece.ngrams(df=dur_rat)
+ng
+```
+
+![Alt text](images/ng_dur_rat.png)
+
+
 ## More About Measures, Beats, and Offsets: The `detailIndex()` Function  
 
 By default, the `durations()` function returns a DataFrame which indexes by offsets: That is, events in the piece are counted by which overall beat in the piece they fall on. This is useful for measuring time distances between events, but not for a human reader to refer back to the musical score itself. It is easy to include measure and beat indexes by passing the result of the function to the `detailIndex()` function as shown:  
@@ -74,20 +98,21 @@ For more information about the `detailIndex` function, consult [the function's d
 -----
 ## Sections in this guide
 
-  * [01_Introduction_and_Corpus](01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](02_Notes_Rests.md)
-  * [03_Durations](03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](04_TimeSignatures_Beat_Strength.md)
-  * [05_DetailIndex](05_DetailIndex.md)
-  * [06_MelodicIntervals](06_MelodicIntervals.md)
-  * [07_HarmonicIntervals](07_HarmonicIntervals.md)
-  * [08_Contrapuntal_Modules](08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](10_Lyrics_Homorhythm.md)
-  * [11_Cadences](11_Cadences.md)
-  * [12_Presentation_Types](12_Presentation_Types.md)
-  * [13_Model_Finder](13_Model_Finder.md)
-  * [14_Visualizations_Summary](14_Visualizations_Summary.md)
-  * [15_Network_Graphs](15_Network_Graphs.md)
-  * [16_Python_Basics](16_Python_Basics.md)
-  * [17_Pandas_Basics](17_Pandas_Basics.md)
+  * [01_Introduction_and_Corpus](tutorial/01_Introduction_and_Corpus.md)
+  * [02_Notes_Rests](tutorial/02_Notes_Rests.md)
+  * [03_Durations](tutorial/03_Durations.md) 
+  * [04_TimeSignatures_Beat_Strength](tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals](tutorial/07_Harmonic_Intervals.md)
+  * [08_Contrapuntal_Modules](tutorial/08_Contrapuntal_Modules.md)
+  * [09_Ngrams_Heat_Maps](tutorial/09_Ngrams_Heat_Maps.md)
+  * [10_Lyrics_Homorhythm](tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](tutorial/11_Cadences.md)
+  * [12_Presentation_Types](tutorial/12_Presentation_Types.md)
+  * [13_Model_Finder](tutorial/13_Model_Finder.md)
+  * [14_Visualizations_Summary](tutorial/14_Visualizations_Summary.md)
+  * [15_Network_Graphs](tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](tutorial/17_Pandas_Basics.md)
+  * [18_Music21_Basics](tutorial/18_Music21_Basics.md)

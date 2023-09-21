@@ -39,20 +39,18 @@ jobs:
           pip install poetry
           poetry self add poetry-bumpversion
           poetry version patch
-          
-      
-      - name: Build
-        run: |
-          poetry build
-      
-      - uses: actions/checkout@v3
-      - uses: stefanzweifel/git-auto-commit-action@v4
-      
       - name: Publish to Pypi
         if: ${{ matrix.python-version == 3.9 }}
         run: |
           poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
-          poetry publish 
+          poetry publish --build
+        
+      - uses: actions/checkout@v3
+      - uses: stefanzweifel/git-auto-commit-action@v4
+
+
+
+          
       # - name: Build and publish to PyPI
       #   env:
       #     TWINE_USERNAME: __token__  # Replace with your PyPI username or token

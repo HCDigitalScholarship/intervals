@@ -34,13 +34,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install poetry
+          poetry self add poetry-bumpversion
           pip install twine
-      - name: Build and publish to PyPI
-        env:
-          TWINE_USERNAME: __token__  # Replace with your PyPI username or token
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}  # Add this token as a GitHub repository secret
+      
+      - name: Publish package
         run: |
-          poetry build
-          ls
-          pwd
-          twine upload ./crim_intervals
+          poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
+          poetry version patch
+          poetry publish --build
+      # - name: Build and publish to PyPI
+      #   env:
+      #     TWINE_USERNAME: __token__  # Replace with your PyPI username or token
+      #     TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}  # Add this token as a GitHub repository secret
+        # run: |
+        #   poetry build
+        #   twine upload ./crim_intervals

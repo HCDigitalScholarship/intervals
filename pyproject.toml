@@ -36,6 +36,8 @@ sniffio = "^1.2.0"
 textdistance = "4.2.1"
 XlsxWriter = "3.0.2"
 webcolors = "1.11.1"
+verovio = "3.10.0"
+plotly-express = "^0.4.1"
 
 [[tool.poetry_bumpversion.replacements]]
 files = ["crim_intervals/__init__.py"]

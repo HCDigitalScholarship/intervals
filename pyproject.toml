@@ -37,6 +37,7 @@ textdistance = "4.2.1"
 XlsxWriter = "3.0.2"
 webcolors = "1.11.1"
 verovio = "3.10.0"
+statsmodels
 plotly = "5.11.0"
 plotly-express = "0.4.0"
 

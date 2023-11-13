@@ -200,7 +200,7 @@ Parameters Overview:
 Typical use:
 
 ```python
-cadenceRadarPlot(combinedType = False, displayAll = True, renderer = "iframe")
+piece.cadenceRadarPlot(combinedType = False, displayAll = True, renderer = "iframe")
 ```
 
 Default display order (could be modified for `customOrder`)

@@ -14,7 +14,9 @@ See more below for details on the meaning of the columns reported by `piece.homo
 
 By default, applying the `lyrics()` function to a piece will generate a DataFrame containing the lyrics at each relevant offset, for each voice part.  
 
-    lyrics = piece.lyrics()  
+```python
+lyrics = piece.lyrics() 
+``` 
 
 As opposed to integers or floats, the DataFrame produced by the `lyrics()` function will be in the form of **text strings**. Also unlike other functions, the `lyrics()` function has no parameters, and therefore can only be executed in one way. Its usage, however, can still be varied based on the other functions with which it is combined. Note, for instance, that piece.`piece.ngrams(df = Piece.lyrics())` will result in a dataframe that contains cells of *tuples*, just as the ngrams() function will for any other musical feature.
 
@@ -22,73 +24,89 @@ As opposed to integers or floats, the DataFrame produced by the `lyrics()` funct
 
 Particularly for projects that aim to assemble lyric syllables into words (or at least ngrams), it might be useful to remove from the initial results the various dashes, hyphens, and punctuation marks from the individual cells before assembling them into ngrams. Fortunately Pandas and Python have a convenient *applymap* method that does this with one line of code: 
 
-    lyrics = piece.lyrics()
-    lyrics_cleaned = lyrics.applymap(alpha_only)
+```python
+lyrics = piece.lyrics()
+lyrics_cleaned = lyrics.applymap(alpha_only)
+```
 
 ## Lyric Ngrams 
 
 To find N-grams of length 5 (groupings of 5 consectuive syllables found in the lyrics of a piece):
 
-    # define length of ngrams
-    _n = 5
-    # get the lyrics
-    lyr = piece.lyrics()
-    # get ngrams of lyrics
-    piece.ngrams(df = lyr, n = 5, entries = True)
+```python
+# define length of ngrams
+_n = 5
+# get the lyrics
+lyr = piece.lyrics()
+# get ngrams of lyrics
+piece.ngrams(df = lyr, n = 5, entries = True)
+```
 
 Or, more succinctly:
 
-    n = _n
-    piece.ngrams(df = Piece.lyrics(), n = _N)
+```python
+n = _n
+piece.ngrams(df = Piece.lyrics(), n = _N)
+```
 
 ## Cleaning Up Lyrics:  Dealing with Punctuation, Hyphens, etc
 
 **Lyric ngrams without punctuation and hyphens:**
 
-    #define length of ngrams
-    _n = 5
-    #get the lyrics
-    lyr = piece.lyrics()
-    #clean the lyrics
-    lyrics_cleaned = lyrics.applymap(alpha_only)
-    # get ngrams of cleaned lyrics
-    piece.ngrams(df = lyrics_cleaned, n = _n)
+```python
+#define length of ngrams
+_n = 5
+#get the lyrics
+lyr = piece.lyrics()
+#clean the lyrics
+lyrics_cleaned = lyrics.applymap(alpha_only)
+# get ngrams of cleaned lyrics
+piece.ngrams(df = lyrics_cleaned, n = _n)
+```
 
 **Lyric ngrams, cleaned, entries only:**
 
-    #define length of ngrams
-    _n = 5
-    #get the lyrics
-    lyr = piece.lyrics()
-    #clean the lyrics
-    lyrics_cleaned = lyrics.applymap(alpha_only)
-    # get ngrams of cleaned lyrics, now with entries = True (see ngrams documentation for more detail)
-    piece.ngrams(df = lyrics_cleaned, n = _n, entries = True)
+```python
+#define length of ngrams
+_n = 5
+#get the lyrics
+lyr = piece.lyrics()
+#clean the lyrics
+lyrics_cleaned = lyrics.applymap(alpha_only)
+# get ngrams of cleaned lyrics, now with entries = True (see ngrams documentation for more detail)
+piece.ngrams(df = lyrics_cleaned, n = _n, entries = True)
+```
 
 **Lyric ngrams as strings:  avoiding "Tuple Trouble"**
 
 Remember that the ngrams will be expressed as *tuples of syllables*.  If the plan is to match or search for certain collections of syllables, these will need be transformed as strings. Use a *convertTuple* function, like this:
 
-    def convertTuple(tup):
-    out = ""
-    if isinstance(tup, tuple):
-        out = ', '.join(tup)
-    return out
+```python
+def convertTuple(tup):
+out = ""
+if isinstance(tup, tuple):
+    out = ', '.join(tup)
+return out
+```
 
 Then use `applymap()` on the entire dataframe of ngrams:
 
-    #select length of ngrams
-    n = _n
-    #make the ngrams
-    lyric_ngs = piece.ngrams(df = Piece.lyrics(), n = _N)
-    #convert them to tuples
-    lyric_ngs_strings = lyric_ngs.applymap(convertTuple)
+```python
+#select length of ngrams
+n = _n
+#make the ngrams
+lyric_ngs = piece.ngrams(df = Piece.lyrics(), n = _N)
+#convert them to tuples
+lyric_ngs_strings = lyric_ngs.applymap(convertTuple)
+```
 
 Or more succinctly:
 
-    n = _n
-    #make the ngrams
-    lyric_ngs_strings = piece.ngrams(df = Piece.lyrics(), n = _N).applymap(convertTuple)
+```python
+n = _n
+#make the ngrams
+lyric_ngs_strings = piece.ngrams(df = Piece.lyrics(), n = _N).applymap(convertTuple)
+```
 
 ## Predicting Homorhythmic Passages:  `piece.homorhythm()`
 
@@ -122,11 +140,15 @@ Users can supply either of two arguments:
 
 ### Typical Use of 'piece.homorhythm()`
 
-    piece.homorhythm()
+```python
+piece.homorhythm()
+```
     
 Or 
 
-    piece.homorhythm(ngram_length = 4, full_hr = True)
+```python
+piece.homorhythm(ngram_length = 4, full_hr = True)
+```
 
 ### Filtering Homorhythm Results:  Voices, lists, and more
 
@@ -134,22 +156,27 @@ As a first step it will necessary to `fillna()`:
 
 Note that it is probably a good idea to `fillna('')`:
 
-    hr = piece.homorhythm(ngram_length = 4, full_hr = True).fillna('')
+```python
+hr = piece.homorhythm(ngram_length = 4, full_hr = True).fillna('')
+```
+
 
 **Search for Lyrics**
 
 If the plan is to search for a *particular word or words* in the lyric ngrams, it would be good to convert the *tuples of the *syllable_set* into *a string*.  Note that in the updated results, all of the syllables will be run together as a single string.
 
-    #run hr function and convert hr['syllable_set'] to string
-    hr = piece.homorhythm(ngram_length = 6, full_hr = True).fillna('')
-    hr['syllable_set'] = hr['syllable_set'].apply(lambda x: ''.join(map(str, x[0]))).copy()
+```python
+#run hr function and convert hr['syllable_set'] to string
+hr = piece.homorhythm(ngram_length = 6, full_hr = True).fillna('')
+hr['syllable_set'] = hr['syllable_set'].apply(lambda x: ''.join(map(str, x[0]))).copy()
 
-    #supply the list of words.  Capitalization matters!
-    chosen_words = ["Maria", "immacula"]
+#supply the list of words.  Capitalization matters!
+chosen_words = ["Maria", "immacula"]
 
-    #filter the hr results for rows that contain any of the given words
-    hr_with_chosen_words = hr[hr.apply(lambda x: hr['syllable_set'].str.contains('|'.join(chosen_words)))].dropna()
-    hr_with_chosen_words
+#filter the hr results for rows that contain any of the given words
+hr_with_chosen_words = hr[hr.apply(lambda x: hr['syllable_set'].str.contains('|'.join(chosen_words)))].dropna()
+hr_with_chosen_words
+```
 
 <!-- Show sample -->
 
@@ -158,15 +185,17 @@ If the plan is to search for a *particular word or words* in the lyric ngrams, i
 
 And if the plan is to search for the presence of a particular voice in the hr results, then the *lists of voices* in the *hr_voices* column will need to be converted into strings, too:
 
-    #run hr function and convert hr['syllable_set'] to string
-    hr = piece.homorhythm(ngram_length = 6, full_hr = True).fillna('')
-    hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
+```python
+#run hr function and convert hr['syllable_set'] to string
+hr = piece.homorhythm(ngram_length = 6, full_hr = True).fillna('')
+hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
 
-    #supply names of voices.  They must match the voice names in `piece.notes.columns()` 
-    chosen_voices = ["Tenor", "Bassus"]
-    #filter the results for hr passages involving chosen voices:
-    hr_with_chosen_voices = hr[hr.apply(lambda x: hr['hr_voices'].str.contains('|'.join(chosen_voices)))].dropna()
-    hr_with_chosen_voices
+#supply names of voices.  They must match the voice names in `piece.notes.columns()` 
+chosen_voices = ["Tenor", "Bassus"]
+#filter the results for hr passages involving chosen voices:
+hr_with_chosen_voices = hr[hr.apply(lambda x: hr['hr_voices'].str.contains('|'.join(chosen_voices)))].dropna()
+hr_with_chosen_voices
+```
 
 <!-- Show sample -->
 
@@ -181,28 +210,35 @@ The function also displays metadata about each excerpt: piece ID, composer, titl
 
 To use the function, pass the piece, homorhythm data frame, url of the piece, and mei_file name (all loaded in the first part of this notebook) as follows:
 
-    piece.verovioHomorhythm()
+```python
+piece.verovioHomorhythm()
+```
+
 
 <!-- The following does not work yet! -->
 
 The same parameters noted above can also be used here, then passed to the `verovioHomorhythm()` function for rendering:
 
-    hr = piece.homorhythm(ngram_length = 4, full_hr = True)
-    piece.verovioHomorhythm(hr)
+```python
+hr = piece.homorhythm(ngram_length = 4, full_hr = True)
+piece.verovioHomorhythm(hr)
+```
 
 And it is possible to pass a *filtered set of results* to `piece.verovioHomorhythm()`.  For example, with chosen voices:
 
-    #run hr function and convert hr['syllable_set'] to string
-    hr = piece.homorhythm(ngram_length = 6, full_hr = True).fillna('')
-    hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
+```python
+#run hr function and convert hr['syllable_set'] to string
+hr = piece.homorhythm(ngram_length = 6, full_hr = True).fillna('')
+hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
 
-    #supply names of voices.  They must match the voice names in `piece.notes.columns()` 
-    chosen_voices = ["Tenor", "Bassus"]
-    #filter the results for hr passages involving chosen voices:
-    hr_with_chosen_voices = hr[hr.apply(lambda x: hr['hr_voices'].str.contains('|'.join(chosen_voices)))].dropna()
-    
-    #render just the hr_with_chosen_voices using `piece.verovioHomorhythm()`:
-    piece.verovioHomorhythm(hr_with_chosen_voices)
+#supply names of voices.  They must match the voice names in `piece.notes.columns()` 
+chosen_voices = ["Tenor", "Bassus"]
+#filter the results for hr passages involving chosen voices:
+hr_with_chosen_voices = hr[hr.apply(lambda x: hr['hr_voices'].str.contains('|'.join(chosen_voices)))].dropna()
+
+#render just the hr_with_chosen_voices using `piece.verovioHomorhythm()`:
+piece.verovioHomorhythm(hr_with_chosen_voices)
+```
 
 
 

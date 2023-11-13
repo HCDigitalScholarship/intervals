@@ -4,6 +4,10 @@
 
 [CRIM Intervals on github](https://github.com/HCDigitalScholarship/intervals/tree/main)
 
+## Install CRIM Intervals and its Dependencies
+
+Install with pypi package manager:  `pip install crim_intervals`
+
 ## About CRIM Intervals
 
 Based on [**Python**](https://www.python.org/) and [**Pandas**](https://pandas.pydata.org/), and Mike Cuthbert's excellent **music21** (https://web.mit.edu/music21/), **CRIM Intervals** is a pattern finding engine for musical scores, with an emphasis on the kinds of melodic, harmonic, and contrapuntal patterns found in Renaissance polyphony. It has been developed as a primary data analysis tool for **Citations:  The Renaissance Imitation Mass** (http://crimproject.org and https://sites.google.com/haverford.edu/crim-project/home), directed by Professor Richard Freedman (Haverford College, USA), in partnership with dozens of researchers and students around the world. Contact rfreedma at haverford.edu to learn more about the project, and how you can take part.

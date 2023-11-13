@@ -376,7 +376,19 @@ piece_list = ['CRIM_Model_0019.mei',
                      'CRIM_Mass_0019_5.mei']
 ```
 
-A map for just one piece:
+
+Set parameters for the ngrams (melodic in this case)
+
+
+```python
+# settings for ngrams, unisons and kind
+
+n=4
+combineUnisons=False
+kind='d'
+```
+
+Now a map of melodic ngrams for just one piece:
 
 
 ```python
@@ -402,7 +414,7 @@ display(viz.plot_ngrams_heatmap(mod_entry_ngrams, mod_mel_ngrams_duration,
                         voices=[]))
 ```
 
-![Alt text](images/visualization_1.png)
+![Alt text](images/viz_1.png)
 
 Now for a corpus consisting of a 'model' (the first piece in the list) and any set of other pieces (normally the movements of a Mass). Note that the code below shows only the 'entry' ngrams shared by each pair of pieces.
 
@@ -458,8 +470,7 @@ for movement in mass_movements:
 ```
 Here we show just the first pair:
 
-![Alt text](images/visualization_1.png)
-![Alt text](images/visualization_2.png)
+![Alt text](images/vis_2.png)
 -----
 
 ## Sections in this guide

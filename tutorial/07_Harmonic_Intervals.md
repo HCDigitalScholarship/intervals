@@ -6,7 +6,9 @@ We have just seen how the `melodic()` function allows us to examine the points i
 
 Harmony is one of the most important elements of music, and of musical similarity. By searching for patterns where pieces utilize certain harmonic intervals, we are able to find points of similarity within and between different pieces. In its simplest form, `harmonic()` simply produces a DataFrame of each harmonic interval present in a piece, between all possible voice pairs:  
 
-    piece.harmonic()  
+```python
+piece.harmonic() 
+``` 
 
 ![Alt text](images/har_1.png)
 
@@ -24,33 +26,46 @@ The `harmonic()` function contains a parameter `kind`, which has a default value
 
 **Diatonic with qualities**. These qualities are outputs such as "P8" for a perfect octave (e.g. C4 -> C5), "M3" for a major third interval (e.g. C5 -> E5), and "m3" for minor third interval (e.g. C5 -> E-5):  
 
-    piece.harmonic(kind = 'q')  
+```python
+piece.harmonic(kind = 'q')
+```
 
 **Diatonic without qualities**. Provides outputs such as "8" for an octave, and "3" for a third interval:  
 
-    piece.harmonic(kind = "d")  
+```python
+piece.harmonic(kind = "d")
+```  
 
 ![Alt text](images/har_2.png)
 
 **Chromatic**. Simply the difference in pitch including all intermediary notes. Outputs "12" for an octave interval (e.g. C4 -> C5), "6" for a tritone interval (e.g. C5 -> F#5), and "0" for a unison (e.g. C5 -> C5):  
 
-    piece.harmonic(kind = "c")  
+```python
+piece.harmonic(kind = "c")
+```  
 
 **Zero-based**. Diatonic intervals, begins counting at 0 rather than 1. Outputs "7" for a perfect octave interval up (e.g. D3 -> D4), "-4" for a fifth interval down (e.g. F5 -> A5), "2" for a third interval up (e.g. G4 -> B5):  
 
-    piece.harmonic(kind = "z")  
+```python
+piece.harmonic(kind = "z")
+```
 
 ### Up and Down vs. Aboslute: The `directed` Parameter  
 
 By default, `directed = True`, which causes the melodic intervals to report their direction; "4" is an ascending fourth; "-4" is descending. It might be useful, however, simply to report the absolute distance without direction, such as if the aim is to know how many harmonic intervals of a sixth appear in a piece regardless of their direction.  In this case, use `directed = False`.  
 
-    #Default value:  
-    piece.harmonic(directed = True)  
+```python
+#Default value:  
+piece.harmonic(directed = True)
+``` 
 
 [C5 -> G5] will return a diatonic interval of "4"  
 [G5 -> C5] will return a diatonic interval of "-4"  
 
-    piece.harmonic(directed = False)  
+```python
+piece.harmonic(directed = False)
+```
+
 
 [C5 -> G5] will return a diatonic interval of "4"  
 [G5 -> C5] will return a diatonic interval of "4"  
@@ -59,7 +74,9 @@ By default, `directed = True`, which causes the melodic intervals to report thei
 
 The `harmonic()` function contains a parameter `compound`, with a default value of `True`. This means that intervals with a span greater than an octave will always be returned as such.  The interval from C4 to E5 would be a diatonic 10, a chromatic 16, M10 using 'with quality', and 9 using 'zero-based diatonic'. 
 
-    piece.harmonic(compound = True)
+```python
+piece.harmonic(compound = True)
+```
 
 Using `piece.harmonic(compound = False)`, in contrast, analyzes all intervals as if they are within a octave (what musicians call the 'simple' intervallic distances). In this case the interval from C4 to E5 would be a diatonic 3, a chromatic 4, M3 using 'with quality', and 2 using 'zero-based with quality'. Note that an octave itself is not reduced to a unison.  
 
@@ -69,7 +86,9 @@ Using `piece.harmonic(compound = False)`, in contrast, analyzes all intervals as
 
 By default, `harmonic()` generates a DataFrame of the harmonic intervals between **ALL** voice pairs present at a given offset. This is the case when the `againstLow` parameter is set to its default, `False`. Alternatively, however, we may wish to explore each voice's harmonic relationship only to the lowest voice present at each offset, and not need other harmonic pairs creating clutter in our DataFrame output. When changed to `True`, harmonic intervals will only be shown between the lowest voice and each other voice at a given offset:  
 
-    piece.harmonic(againstLow = True)  
+```python
+piece.harmonic(againstLow = True)
+```
 
 ![Alt text](images/har_4.png)
 
@@ -81,7 +100,9 @@ There is also a separate `sonority` function, which in turn uses the results fro
 
 In its simplest form, we call this on piece as follows:
 
-    piece.sonority()
+```python
+piece.sonority()
+```
 
 There are also several parameters.  The first three are simply those used with `harmonic`, as described above.  There are their defaults:
 
@@ -92,19 +113,23 @@ compound='simple'
 One additional parameter, `sort`, determines the *order* of the intervals.  If `sort=True` (which is the default), then the intervals will be sorted from largest to smallest.  Duplicates and unisons will be removed.  
 
 
-    `piece.sonorities(sort=True)`
+```python
+piece.sonorities(sort=True)
+```
 
 ![Alt text](images/sonoroties_t.png)
 
 But if `sort=False`, then *all* intervals will be reported (unisons and duplicates included), and they will appear in order from top staff to bottom.
 
-    `piece.sonorities(sort=False)`
+```python
+piece.sonorities(sort=False)
+```
 
 ![Alt text](images/sonorities_f.png)
 
 It would also be possible to pass these to the ngram method to see higher level patterns:
 
-```
+```python
 son = piece.sonorities(sort=False)
 piece.ngrams(df = son)
 ```
@@ -117,13 +142,17 @@ piece.ngrams(df = son)
 
 Unlike the `notes()` functions, the `harmonic()` function does not contain `combineUnisons` or `combineRests` parameters. These parameters, however, can still be used in conjunction with the `harmonic()` function as follows:  
 
-    nr_no_unisons = piece.notes(combineUnisons = True)
-    piece.harmonic(df = nr_no_unisons)  
+```python
+nr_no_unisons = piece.notes(combineUnisons = True)
+piece.harmonic(df = nr_no_unisons)
+```
 
 Or (though less useful),  
 
-    nr_separate_rests = piece.notes(combineRests = False)  
-    piece.harmonic(df = nr_separate_rests)  
+```python
+nr_separate_rests = piece.notes(combineRests = False)  
+piece.harmonic(df = nr_separate_rests)
+```  
 
 ## 
 
@@ -131,26 +160,38 @@ Or (though less useful),
 
 We have previously seen the `fillna()` function which, when applied to a DataFrame, replaces all "NaN" objects with the chosen text. For example:  
 
-    piece.harmonic().fillna('-')  
+```python
+piece.harmonic().fillna('-')
+``` 
 
 We are also able to apply the `dropna()` function, which (by default) removes all rows (beats) from the table consisting *entirely* of "NaN" values.  
 
-    piece.harmonic().dropna()  
+```python
+piece.harmonic().dropna()
+```
+
 
 This would be equivalent to specifiying the function as follows:  
 
-    piece.harmonic().dropna(how = 'all')  
+```python
+piece.harmonic().dropna(how = 'all')
+```
+
 
 Alternatively, rows could be dropped if they contian *any* "NaN" values:  
 
-    piece.harmonic().dropna(how = 'any')  
+```python
+piece.harmonic().dropna(how = 'any')
+``` 
 
 ## More About Measures, Beats, and Offsets: The `detailIndex()` Function  
 
 By default, the `harmonic()` function returns a DataFrame which indexes by offsets: That is, events in the piece are counted by which overall beat in the piece they fall on. This is useful for measuring time distances between events, but not for a human reader to refer back to the musical score itself. It is easy to include measure and beat indexes by passing the result of the function to the `detailIndex()` function as shown:  
 
-    har = piece.harmonic()  
-    har_DI = piece.detailIndex(har)  
+```python
+har = piece.harmonic()  
+har_DI = piece.detailIndex(har)
+``` 
 
 For more information about the `detailIndex` function, consult [the function's documentation](09_DetailIndex.md).  
 

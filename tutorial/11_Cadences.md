@@ -6,7 +6,9 @@ CRIM Intervals includes a powerful tool that identifies cadences according to th
 
 For a quick report, run:
 
-	`piece.cadences()`  
+```python
+piece.cadences()
+```  
 
 The dataframe reported by `piece.cadences()` is quite detailed, but includes (most notably):
 
@@ -94,7 +96,9 @@ in the `.cadences()` method.
 
 There is only one parameter for the `cadences()` function:  `keep_keys`. If `keep_keys` is set to True, the ngrams that triggered each CVF pair will be shown in additional columns in the table. `keep_keys` is False by default.
 
-	`piece.cadences(keep_keys = True)`
+```python
+piece.cadences(keep_keys = True)
+```
 
 ## Cadences in a Corpus
 
@@ -102,28 +106,30 @@ The basic methods of building and working with a corpus are explained in [01_Int
 
 In brief, to find cadences in a corpus and report the results as a single dataframe:
 
-    #build corpus
-    corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
-                           'https://crimproject.org/mei/CRIM_Model_0009.mei'])
-    
-    #select function.  remember to omit "()"
-    func = ImportedPiece.cadences
+```python
+#build corpus
+corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
+                        'https://crimproject.org/mei/CRIM_Model_0009.mei'])
 
-    #run function on each piece; be sure to include keyword arguments
-    list_of_dfs = corpus.batch(func = func, kwargs = {'keep_keys': True}, metadata = True)
+#select function.  remember to omit "()"
+func = ImportedPiece.cadences
 
-    #concatenate the resulting dataframes into one
-    corpus_cadences = pd.concat(list_of_dfs, ignore_index = False)
+#run function on each piece; be sure to include keyword arguments
+list_of_dfs = corpus.batch(func = func, kwargs = {'keep_keys': True}, metadata = True)
 
-    # new order for columns:
-    col_list = ['Composer', 'Title', 'Measure', 'Beat', 'Pattern', 'Key', 'CadType', 'Tone','CVFs',
-                    'LeadingTones', 'Sounding', 'Low','RelLow','RelTone',
-                    'Progress','SinceLast','ToNext']
+#concatenate the resulting dataframes into one
+corpus_cadences = pd.concat(list_of_dfs, ignore_index = False)
 
-    corpus_cadences = corpus_cadences[col_list]
+# new order for columns:
+col_list = ['Composer', 'Title', 'Measure', 'Beat', 'Pattern', 'Key', 'CadType', 'Tone','CVFs',
+                'LeadingTones', 'Sounding', 'Low','RelLow','RelTone',
+                'Progress','SinceLast','ToNext']
 
-    # show the results
-    corpus_cadences
+corpus_cadences = corpus_cadences[col_list]
+
+# show the results
+corpus_cadences
+```
 
 ![cad_12.png](images%2Fcad_12.png)
 
@@ -131,15 +137,19 @@ In brief, to find cadences in a corpus and report the results as a single datafr
 
 **A quick way to reorganize the columns in the output:**
 
-    cadences = piece.cadences(keep_keys = True)
-    col_list = ['Measure', 'Beat', 'CadType', 'Pattern', 'Key', 'Tone','LeadingTones', 'CVFs', 'Low','RelLow','RelTone', 'Sounding', 'Progress','SinceLast','ToNext']
-    cadences = cadences[col_list]
-    cadences
+```python
+cadences = piece.cadences(keep_keys = True)
+col_list = ['Measure', 'Beat', 'CadType', 'Pattern', 'Key', 'Tone','LeadingTones', 'CVFs', 'Low','RelLow','RelTone', 'Sounding', 'Progress','SinceLast','ToNext']
+cadences = cadences[col_list]
+cadences
+```
 
 **Group the Cadences by Tone and Type**
 
-    cadences = piece.cadences()
-    cadences.groupby(['Tone', 'CadType', 'CVFs']).size().reset_index(name = 'counts')
+```python
+cadences = piece.cadences()
+cadences.groupby(['Tone', 'CadType', 'CVFs']).size().reset_index(name = 'counts')
+```
 
 ![cad_6.png](images%2Fcad_6.png)
 
@@ -147,13 +157,17 @@ In brief, to find cadences in a corpus and report the results as a single datafr
 
 The simplest way to show cadences with Verovio: 
 
-    piece.verovioCadences()
+```python
+piece.verovioCadences()
+```
 
 Or send a filtered list of cadences for printing. Create the cadence table, filter it in some way, and the pass those results to `verovioCadences()`:
 
-    cadences = piece.cadences()
-    cadences_filtered = cadences[cadences['Tone'] == 'G']
-    piece.verovioCadences(cadences_filtered)
+```python
+cadences = piece.cadences()
+cadences_filtered = cadences[cadences['Tone'] == 'G']
+piece.verovioCadences(cadences_filtered)
+```
 
 ![cad_11.png](images%2Fcad_11.png)
 
@@ -185,15 +199,22 @@ Parameters Overview:
 
 Typical use:
 
-    cadenceRadarPlot(combinedType = False, displayAll = True, renderer = "iframe")
+```python
+cadenceRadarPlot(combinedType = False, displayAll = True, renderer = "iframe")
+```
 
 Default display order (could be modified for `customOrder`)
 
-    order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
+```python
+order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
+```
 
 Complete function with default settings:
 
-    piece.cadenceRadarPlot(combinedType = False, sounding = None, displayAll = True, customOrder = None, renderer = "iframe")
+```python
+piece.cadenceRadarPlot(combinedType = False, sounding = None, displayAll = True, customOrder = None, renderer = "iframe")
+```
+
 
 #### For A Corpus of Pieces
 
@@ -207,15 +228,23 @@ Parameters Overview:
 
 Typical use:
 
-    corpus.compareCadenceRadarPlots(combinedType = False, displayAll = True, renderer = "iframe")
+```python
+corpus.compareCadenceRadarPlots(combinedType = False, displayAll = True, renderer = "iframe")
+```
+
 
 Complete default function code:
 
-    corpus.compareCadenceRadarPlots(self, combinedType = False, sounding = None, displayAll = True, customOrder = None, renderer = "iframe")
+```python
+corpus.compareCadenceRadarPlots(self, combinedType = False, sounding = None, displayAll = True, customOrder = None, renderer = "iframe")
+```
 
 Default display order (could be modified for `customOrder`)
 
-    order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
+```python
+order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
+```
+
 
 ![cad_7.png](images%2Fcad_7.png)
 
@@ -236,11 +265,15 @@ Parameters Overview:
 
 Typical use:
 
-    piece.cadenceProgressPlot(includeType = True)
+```python
+piece.cadenceProgressPlot(includeType = True)
+```
 
 Complete function with defaults:
 
-    piece.cadenceProgressPlot(self, includeType = False, cadTone = None, cadType = None, customOrder = None, includeLegend = True, renderer = "")
+```python
+piece.cadenceProgressPlot(self, includeType = False, cadTone = None, cadType = None, customOrder = None, includeLegend = True, renderer = "")
+```
 
 ![cad_4.png](images%2Fcad_4.png)
 
@@ -258,16 +291,22 @@ Parameters Overview:
 
 Typical use:
 
-    corpus.compareCadenceProgressPlots(includeType = True)
+```python
+corpus.compareCadenceProgressPlots(includeType = True)
+```
+
 
 Complete function with defaults:
 
-    corpus.compareCadenceProgressPlots(self, includeType = False, cadTone = None, cadType = None, includeLegend = True, customOrder = None, renderer = "")
+```python
+corpus.compareCadenceProgressPlots(self, includeType = False, cadTone = None, cadType = None, includeLegend = True, customOrder = None, renderer = "")
+```
 
 Default order dictionary (could be modified for `customOrder`)
 
-    order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "F#":9, "C#":10, "Ab":11}
-
+```python
+order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "F#":9, "C#":10, "Ab":11}
+```
 
 ![cad_9.png](images%2Fcad_9.png)
 

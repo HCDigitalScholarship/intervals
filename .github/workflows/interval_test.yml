@@ -41,7 +41,7 @@ jobs:
           poetry version patch
           
       - name: Publish to Pypi (only if on Master)
-        if: github.ref == 'refs/heads/master' && success()
+        if: github.ref == 'refs/heads/master'
         run: |
           poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
           poetry publish --build
@@ -51,8 +51,6 @@ jobs:
       
       - name: Commit changed files
       - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Automatic Commit (GitHub Actions)
           
       # - name: Build and publish to PyPI
       #   env:

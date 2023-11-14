@@ -1,6 +1,6 @@
 name: interval-test
 
-on: [ push ]
+on: [push]
 
 jobs:
   build-and-test:
@@ -8,7 +8,7 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v3
 
@@ -17,10 +17,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest pytest-cov
           pip install -r requirements.txt
-          
+
       - name: flake8 Testing (Syntax)
         run: flake8 . --exit-zero --max-line-length=127 # run flake8 test
-          
+
       - name: Test Cadences (pytest)
         run: python -m unittest test.test_cadences
 
@@ -32,14 +32,14 @@ jobs:
 
       - name: Test Vis (pytest)
         run: python -m unittest test.test_vis
-        
+
       - name: Install poetry and "patch" the build
         run: |
           python -m pip install --upgrade pip
           pip install poetry
           poetry self add poetry-bumpversion
           poetry version patch
-          
+
       - name: Publish to Pypi (only if on Master)
         if: github.ref == 'refs/heads/master'
         run: |
@@ -47,15 +47,7 @@ jobs:
           poetry publish --build
 
       - name: Checkout code again
-      - uses: actions/checkout@v3
-      
+        uses: actions/checkout@v3
+
       - name: Commit changed files
-      - uses: stefanzweifel/git-auto-commit-action@v4
-          
-      # - name: Build and publish to PyPI
-      #   env:
-      #     TWINE_USERNAME: __token__  # Replace with your PyPI username or token
-      #     TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}  # Add this token as a GitHub repository secret
-        # run: |
-        #   poetry build
-        #   twine upload ./crim_intervals
+        uses: stefanzweifel/git-auto-commit-action@v4

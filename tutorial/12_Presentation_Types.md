@@ -196,14 +196,14 @@ And then run the corpus using the Presentation Type method:
 
 ```python
 # indicate the function
-func = ImportedPiece.PresentationType  # <- NB there are no parentheses here
+func = ImportedPiece.presentationTypes  # <- NB there are no parentheses here
 
 #provide the kwargs
-kwargs = {'limit_to_entries': True, 'head_flex' = 1,
-                                    'body_flex' = 0,
-                                    'include_hidden_types' = False,
-                                    'combine_unisons' = True,
-                                    'melodic_ngram_length' = 4}
+kwargs = {'limit_to_entries': True, 'head_flex' : 1,
+                                    'body_flex' : 0,
+                                    'include_hidden_types' : False,
+                                    'combine_unisons' : True,
+                                    'melodic_ngram_length' :  4}
 
 #build a list of dataframes, one for each piece in the corpus
 list_of_dfs = corpus.batch(func, kwargs)

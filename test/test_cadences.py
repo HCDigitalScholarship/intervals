@@ -1,4 +1,4 @@
-from ..intervals.main_objs import *
+from intervals.main_objs import *
 import numpy as np
 
 

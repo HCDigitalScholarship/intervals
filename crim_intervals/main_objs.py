@@ -3752,7 +3752,7 @@ class CorpusBase:
 
         return res
 
-    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"):
+    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer=""):
 
         '''
         Parameters Overview:
@@ -3835,7 +3835,7 @@ class CorpusBase:
         if renderer == "streamlit":
             return fig
         else:
-            fig.show(renderer=renderer)
+            fig.show()
 
     # setting up the figure size:
     def _plot_default(self):

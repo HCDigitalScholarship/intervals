@@ -28,16 +28,16 @@ jobs:
         run: flake8 . --exit-zero --max-line-length=127 # run flake8 test
 
       - name: Test Cadences (pytest)
-        run: python -m unittest test.test_cadences
+        run: pytest test/test_cadences.py
 
       - name: Test Constants (pytest)
-        run: python -m unittest test.test_constants
+        run: pytest test/test_constants.py
 
       - name: Test Main Objs (pytest)
-        run: python -m unittest test.test_main_objs
+        run: pytest test/test_main_objs.py
 
       - name: Test Vis (pytest)
-        run: python -m unittest test.test_vis
+        run: pytest test/test_vis.py
         
       - name: Install poetry and "patch" the build
         run: |

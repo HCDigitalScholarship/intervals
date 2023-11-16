@@ -15,7 +15,7 @@ jobs:
       - name: Install libxml2 and libxslt development packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y libxml2-dev libxslt-dev
+          sudo apt-get install -y libxml2-dev libxslt-dev libxml-dev
 
       - name: Install dependencies
         run: |

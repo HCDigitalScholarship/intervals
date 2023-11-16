@@ -1,4 +1,3 @@
-import crim_intervals
 from crim_intervals.main_objs import *
 import numpy as np
 

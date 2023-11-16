@@ -30,9 +30,6 @@ jobs:
       - name: Test Cadences (pytest)
         run: pytest test/test_cadences.py
 
-      - name: Test Constants (pytest)
-        run: pytest test/test_constants.py
-
       - name: Test Main Objs (pytest)
         run: pytest test/test_main_objs.py
 

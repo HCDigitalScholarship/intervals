@@ -5,10 +5,12 @@ h11==0.12.0
 httpcore==0.13.2
 httpx==0.18.1
 idna==3.1
+ipykernel==6.1.0
 ipywidgets==7.6.3
-ipython>=7.23.1, <8.0
+ipython==7.34.0
 joblib==1.0.1
 jsonschema==3.2
+jupyter-client==6.1.12
 lxml==4.7.1
 matplotlib==3.5.3
 matplotlib-inline==0.1.6

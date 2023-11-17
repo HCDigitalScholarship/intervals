@@ -2332,6 +2332,8 @@ class ImportedPiece:
         hr['voice_match'] = hr['active_voices'] == hr['active_syll_voices']
         # retain ngram length for use with ema
         hr['ngram_length'] = int(ngram_length)
+        # fix na
+        hr = hr.fillna(0, inplace=True)
         result = self.detailIndex(hr, offset=True)
         # flll na for streamlit error
         result = result.fillna(0, inplace=True)

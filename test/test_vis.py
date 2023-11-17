@@ -179,45 +179,45 @@ def test_plot_close_match_heatmap():
 #     helper_test_generate_ngrams_and_dur(model, mel_chromatic, 5)
 #     # helper_test_generate_ngrams_and_dur(model, mel_chromatic, -1)
 
+# the following are only for vis maps using CRIM Django data.  Not needed for Streamlit
+# def test_comparisons_heatmap():
+#     # pieces
+#     df_relationships = pd.DataFrame(RELATIONSHIPS_DICT_EXAMPLE)
+#     relationships_chart = viz.plot_comparison_heatmap(df_relationships, 'model_observation.ema',
+#                                                       main_category='relationship_type', other_category='observer.name',
+#                                                       heat_map_width=800, heat_map_height=300)
+#     assert isinstance(relationships_chart, alt.VConcatChart)
+#     assert len(relationships_chart.vconcat) == 2
 
-def test_comparisons_heatmap():
-    # pieces
-    df_relationships = pd.DataFrame(RELATIONSHIPS_DICT_EXAMPLE)
-    relationships_chart = viz.plot_comparison_heatmap(df_relationships, 'model_observation.ema',
-                                                      main_category='relationship_type', other_category='observer.name',
-                                                      heat_map_width=800, heat_map_height=300)
-    assert isinstance(relationships_chart, alt.VConcatChart)
-    assert len(relationships_chart.vconcat) == 2
-
-    df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
-    observations_chart = viz.plot_comparison_heatmap(df_observations, 'ema',
-                                                     main_category='musical_type', other_category='observer.name',
-                                                     heat_map_width=800, heat_map_height=300)
-    assert isinstance(observations_chart, alt.VConcatChart)
-    assert len(observations_chart.vconcat) == 2
+#     df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
+#     observations_chart = viz.plot_comparison_heatmap(df_observations, 'ema',
+#                                                      main_category='musical_type', other_category='observer.name',
+#                                                      heat_map_width=800, heat_map_height=300)
+#     assert isinstance(observations_chart, alt.VConcatChart)
+#     assert len(observations_chart.vconcat) == 2
 
 
-def test_generate_networks_and_interactive_df():
-    df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
+# def test_generate_networks_and_interactive_df():
+#     df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
 
-    # time, pe
-    pen_networks, pen_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_pe_tint', 'time',
-                                                                                  'ema')
-    assert pen_networks
-    assert pen_widget
+#     # time, pe
+#     pen_networks, pen_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_pe_tint', 'time',
+#                                                                                   'ema')
+#     assert pen_networks
+#     assert pen_widget
 
-    # melodic, fug
-    fug_networks, fug_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_fg_int',
-                                                                                  'melodic',
-                                                                                  'ema')
-    assert fug_networks
-    assert fug_widget
+#     # melodic, fug
+#     fug_networks, fug_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_fg_int',
+#                                                                                   'melodic',
+#                                                                                   'ema')
+#     assert fug_networks
+#     assert fug_widget
 
-    patterns = df_observations['mt_fg_int'].to_list()
-    fug_networks_filtered, fug_widget_filtered = viz.create_comparisons_networks_and_interactive_df(df_observations,
-                                                                                                    'mt_fg_int',
-                                                                                                    'melodic', 'ema',
-                                                                                                    patterns)
+#     patterns = df_observations['mt_fg_int'].to_list()
+#     fug_networks_filtered, fug_widget_filtered = viz.create_comparisons_networks_and_interactive_df(df_observations,
+#                                                                                                     'mt_fg_int',
+#                                                                                                     'melodic', 'ema',
+#                                                                                                     patterns)
 
-    assert fug_networks_filtered
-    assert fug_widget_filtered
+#     assert fug_networks_filtered
+#     assert fug_widget_filtered

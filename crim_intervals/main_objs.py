@@ -12,7 +12,7 @@ import os
 import re
 import requests
 from . import visualizations as vis
-from . import networks
+# from . import networks
 import collections
 import verovio
 import seaborn as sns

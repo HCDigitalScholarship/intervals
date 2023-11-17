@@ -2192,6 +2192,8 @@ class ImportedPiece:
         har = self.harmonic('d', True, False).copy()
         nr = self.notes().ffill()
         lowLine = self.lowLine()
+        # add sort index for streamlit error
+        lowLine = lowLine.sort_index()
         label = 'D'  # the label to use for fourths against the lowest note
         for col in har.columns:
             for i in har.index:

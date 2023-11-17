@@ -814,6 +814,8 @@ class ImportedPiece:
             names.append('Highest')
         temp = pd.concat(cols, axis=1)
         temp2 = temp.iloc[:, len(df.columns):].ffill()
+        # fix cast type error
+        temp2 = temp2.fillna('', inplace=True)
         if measure:
             temp2.iloc[:, 0] = temp2.iloc[:, 0].astype(int)
         mi = pd.MultiIndex.from_frame(temp2, names=names)

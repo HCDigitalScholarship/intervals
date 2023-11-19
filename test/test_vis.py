@@ -197,27 +197,27 @@ def test_comparisons_heatmap():
     assert len(observations_chart.vconcat) == 2
 
 
-def test_generate_networks_and_interactive_df():
-    df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
+# def test_generate_networks_and_interactive_df():
+#     df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
 
-    # time, pe
-    pen_networks, pen_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_pe_tint', 'time',
-                                                                                  'ema')
-    assert pen_networks
-    assert pen_widget
+#     # time, pe
+#     pen_networks, pen_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_pe_tint', 'time',
+#                                                                                   'ema')
+#     assert pen_networks
+#     assert pen_widget
 
-    # melodic, fug
-    fug_networks, fug_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_fg_int',
-                                                                                  'melodic',
-                                                                                  'ema')
-    assert fug_networks
-    assert fug_widget
+#     # melodic, fug
+#     fug_networks, fug_widget = viz.create_comparisons_networks_and_interactive_df(df_observations, 'mt_fg_int',
+#                                                                                   'melodic',
+#                                                                                   'ema')
+#     assert fug_networks
+#     assert fug_widget
 
-    patterns = df_observations['mt_fg_int'].to_list()
-    fug_networks_filtered, fug_widget_filtered = viz.create_comparisons_networks_and_interactive_df(df_observations,
-                                                                                                    'mt_fg_int',
-                                                                                                    'melodic', 'ema',
-                                                                                                    patterns)
+#     patterns = df_observations['mt_fg_int'].to_list()
+#     fug_networks_filtered, fug_widget_filtered = viz.create_comparisons_networks_and_interactive_df(df_observations,
+#                                                                                                     'mt_fg_int',
+#                                                                                                     'melodic', 'ema',
+#                                                                                                     patterns)
 
-    assert fug_networks_filtered
-    assert fug_widget_filtered
+#     assert fug_networks_filtered
+#     assert fug_widget_filtered

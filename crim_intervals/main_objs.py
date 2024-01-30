@@ -10,7 +10,6 @@ from itertools import combinations_with_replacement as cwr
 from more_itertools import consecutive_groups
 import os
 import re
-import requests
 import crim_intervals
 import collections
 import verovio
@@ -181,14 +180,14 @@ class ImportedPiece:
             ('c', False, False): lambda cell: str(abs(cell.semitones) % 12) if hasattr(cell, 'semitones') else cell
         }
 
-    def _getSemiFlatParts(self):
+    def _getFlatParts(self):
         """
         Return and store flat parts inside a piece using the score attribute.
         """
-        if 'SemiFlatParts' not in self.analyses:
+        if 'FlatParts' not in self.analyses:
             parts = self.score.getElementsByClass(stream.Part)
-            self.analyses['SemiFlatParts'] = [part.semiFlat for part in parts]
-        return self.analyses['SemiFlatParts']
+            self.analyses['FlatParts'] = [part.flatten() for part in parts]
+        return self.analyses['FlatParts']
 
     def _getPartNames(self):
         """
@@ -197,7 +196,7 @@ class ImportedPiece:
         if 'PartNames' not in self.analyses:
             part_names = []
             name_set = set()
-            for i, part in enumerate(self._getSemiFlatParts()):
+            for i, part in enumerate(self._getFlatParts()):
                 name = part.partName or 'Part-' + str(i + 1)
                 if name in name_set:
                     name = 'Part-' + str(i + 1)
@@ -214,7 +213,7 @@ class ImportedPiece:
         if 'PartSeries' not in self.analyses:
             part_series = []
             part_names = self._getPartNames()
-            for i, flat_part in enumerate(self._getSemiFlatParts()):
+            for i, flat_part in enumerate(self._getFlatParts()):
                 notesAndRests = flat_part.getElementsByClass(['Note', 'Rest', 'Chord'])
                 notesAndRests = [max(noteOrRest.notes) if noteOrRest.isChord else noteOrRest for noteOrRest in notesAndRests]
                 ser = pd.Series(notesAndRests, name=part_names[i])
@@ -249,7 +248,8 @@ class ImportedPiece:
     def _getM21Objs(self):
         if 'M21Objs' not in self.analyses:
             part_names = self._getPartNames()
-            self.analyses['M21Objs'] = pd.concat(self._getPartSeries(), names=part_names, axis=1)
+            res = pd.concat(self._getPartSeries(), names=part_names, axis=1)
+            self.analyses['M21Objs'] = res.sort_index()
         return self.analyses['M21Objs']
 
     def _remove_tied(self, noteOrRest):
@@ -259,7 +259,7 @@ class ImportedPiece:
 
     def _getM21ObjsNoTies(self):
         if 'M21ObjsNoTies' not in self.analyses:
-            df = self._getM21Objs().applymap(self._remove_tied).dropna(how='all')
+            df = self._getM21Objs().map(self._remove_tied).dropna(how='all')
             self.analyses['M21ObjsNoTies'] = df
         return self.analyses['M21ObjsNoTies']
 
@@ -373,7 +373,7 @@ class ImportedPiece:
         result = result.astype('float64')
         result.index = result.index.astype('float64')
         if mask_df is not None:
-            mask = mask_df.applymap(lambda cell: True, na_action='ignore')
+            mask = mask_df.map(lambda cell: True, na_action='ignore')
             result = result[mask]
         return result.dropna(how='all')
 
@@ -382,7 +382,7 @@ class ImportedPiece:
         Return a dataframe of the lyrics associated with each note in the piece.
         '''
         if 'Lyric' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(na_action='ignore',
+            df = self._getM21ObjsNoTies().map(na_action='ignore',
                 func=lambda note: note.lyric if note.isNote else None)
             df.fillna(np.nan, inplace=True)
             self.analyses['Lyric'] = df
@@ -412,7 +412,7 @@ class ImportedPiece:
         pitch in a given voice, however, `combineUnisons` defaults to False.
         '''
         if 'Notes' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(self._noteRestHelper, na_action='ignore')
+            df = self._getM21ObjsNoTies().map(self._noteRestHelper, na_action='ignore')
             self.analyses['Notes'] = df
         ret = self.analyses['Notes'].copy()
         if combineRests:
@@ -426,7 +426,7 @@ class ImportedPiece:
         Get all the expressions from music21. This includes fermatas, mordents, etc.
         '''
         if 'm21Expressions' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(lambda noteOrRest: noteOrRest.expressions, na_action='ignore')
+            df = self._getM21ObjsNoTies().map(lambda noteOrRest: noteOrRest.expressions, na_action='ignore')
             self.analyses['m21Expressions'] = df
         return self.analyses['m21Expressions']
 
@@ -435,7 +435,7 @@ class ImportedPiece:
         Get all the fermatas in a piece. A fermata is designated by a True value.
         '''
         if 'Fermatas' not in self.analyses:
-            df = self._m21Expressions().applymap(
+            df = self._m21Expressions().map(
                 lambda exps: any(isinstance(exp, expressions.Fermata) for exp in exps), na_action='ignore')
             self.analyses['Fermatas'] = df
         return self.analyses['Fermatas']
@@ -451,7 +451,7 @@ class ImportedPiece:
             notes = self._getM21ObjsNoTies()
             # you can't compare notes and rests, so replace rests with a really high note
             highNote = note.Note('C9')
-            notes = notes.applymap(lambda n: highNote if n.isRest else n, na_action='ignore')
+            notes = notes.map(lambda n: highNote if n.isRest else n, na_action='ignore')
             notes.ffill(inplace=True)
             lowLine = notes.apply(min, axis=1)
             lowLine = lowLine.apply(lambda n: n.nameWithOctave)
@@ -486,7 +486,7 @@ class ImportedPiece:
             notes = self._getM21ObjsNoTies()
             # you can't compare notes and rests, so replace rests with a really high note
             lowNote = note.Note('C', octave=-9)
-            notes = notes.applymap(lambda n: lowNote if n.isRest else n, na_action='ignore')
+            notes = notes.map(lambda n: lowNote if n.isRest else n, na_action='ignore')
             notes.ffill(inplace=True)
             highLine = notes.apply(max, axis=1)
             highLine = highLine.apply(lambda n: n.nameWithOctave)
@@ -496,25 +496,25 @@ class ImportedPiece:
         return self.analyses['HighLine']
 
     def _emaRowHelper(self, row):
-        measures = list(range(row[0], row[2] + 1))
-        ends = (row[0], row[2])
-        mCount = row[2] - row[0] + 1
+        measures = list(range(row.iat[0], row.iat[2] + 1))
+        ends = (row.iat[0], row.iat[2])
+        mCount = row.iat[2] - row.iat[0] + 1
         parts = row.iloc[4:].dropna().index
         part_strings = '+'.join({part for combo in parts for part in combo.split('_')})
         num_parts = part_strings.count('+') + 1
 
         beats = []
         for meas in measures:
-            if meas == row[0] and meas == row[2]:
-                beats.append('+'.join(['@{}-{}'.format(row[1], row[3])]*num_parts))
-            elif meas == row[0]:  # meas < row[2]
-                beats.append('+'.join(['@{}-end'.format(row[1])]*num_parts))
-            elif meas > row[0] and meas < row[2]:
+            if meas == row.iat[0] and meas == row.iat[2]:
+                beats.append('+'.join(['@{}-{}'.format(row.iat[1], row.iat[3])]*num_parts))
+            elif meas == row.iat[0]:  # meas < row.iat[2]
+                beats.append('+'.join(['@{}-end'.format(row.iat[1])]*num_parts))
+            elif meas > row.iat[0] and meas < row.iat[2]:
                 beats.append('+'.join(['@all']*num_parts))
-            else: # meas > row[0] and meas == row[2]
-                beats.append('+'.join(['@start-{}'.format(row[3])]*num_parts))
+            else: # meas > row.iat[0] and meas == row.iat[2]
+                beats.append('+'.join(['@start-{}'.format(row.iat[3])]*num_parts))
 
-        post = ['{}-{}'.format(row[0], row[2]), # measures
+        post = ['{}-{}'.format(row.iat[0], row.iat[2]), # measures
             ','.join([part_strings]*mCount),    # parts
             ','.join(beats)]                    # beats
         return '/'.join(post)
@@ -712,9 +712,9 @@ class ImportedPiece:
             if len(df) >= 1:
                 idf = ret.index.to_frame()
                 _measures = self.measures().iloc[:, 0]
-                measures = idf.applymap(lambda i: _measures.loc[:i].iat[-1])
+                measures = idf.map(lambda i: _measures.loc[:i].iat[-1])
                 _beats = self.beatIndex()
-                beats = idf.applymap(lambda i: _beats[i])
+                beats = idf.map(lambda i: _beats[i])
                 res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1)
                 res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
                 ret = self.numberParts(ret)
@@ -730,7 +730,7 @@ class ImportedPiece:
         '''
         tsigs = self._getM21TSigObjs()
         tsigs.columns = self._getPartNames()
-        df = tsigs.applymap(lambda tsig: tsig.beatDuration.quarterLength, na_action='ignore')
+        df = tsigs.map(lambda tsig: tsig.beatDuration.quarterLength, na_action='ignore')
         return df
 
     def beats(self):
@@ -758,7 +758,7 @@ class ImportedPiece:
         Return a series of the first valid value in each row of .beats().
         '''
         if 'BeatIndex' not in self.analyses:
-            ser = self.beats().dropna(how='all').apply(lambda row: row.dropna()[0], axis=1)
+            ser = self.beats().dropna(how='all').apply(lambda row: row.dropna().iat[0], axis=1)
             self.analyses['BeatIndex'] = ser
         return self.analyses['BeatIndex']
 
@@ -811,7 +811,7 @@ class ImportedPiece:
         if highest:
             cols.append(self.highLine())
             names.append('Highest')
-        temp = pd.concat(cols, axis=1)
+        temp = pd.concat(cols, axis=1).sort_index()
         temp2 = temp.iloc[:, len(df.columns):].ffill()
         if measure:
             temp2.iloc[:, 0] = temp2.iloc[:, 0].astype(int)
@@ -843,14 +843,14 @@ class ImportedPiece:
         Results from this method should not be sent to the regularize method.
         '''
         if 'BeatStrength' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(self._beatStrengthHelper)
+            df = self._getM21ObjsNoTies().map(self._beatStrengthHelper)
             self.analyses['BeatStrength'] = df
         return self.analyses['BeatStrength']
 
     def _getM21TSigObjs(self):
         if 'M21TSigObjs' not in self.analyses:
             tsigs = []
-            for part in self._getSemiFlatParts():
+            for part in self._getFlatParts():
                 tsigs.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
             df = pd.concat(tsigs, axis=1)
             self.analyses['M21TSigObjs'] = df
@@ -862,7 +862,7 @@ class ImportedPiece:
         """
         if 'TimeSignature' not in self.analyses:
             df = self._getM21TSigObjs()
-            df = df.applymap(lambda ts: ts.ratioString, na_action='ignore')
+            df = df.map(lambda ts: ts.ratioString, na_action='ignore')
             df.columns = self._getPartNames()
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
@@ -872,11 +872,11 @@ class ImportedPiece:
         This method retrieves the offsets of each measure in each voices.
         """
         if "Measure" not in self.analyses:
-            parts = self._getSemiFlatParts()
+            parts = self._getFlatParts()
             partMeasures = []
             for part in parts:
                 partMeasures.append(pd.Series({m.offset: m.measureNumber \
-                    for m in part.getElementsByClass(['Measure'])}))
+                    for m in part.makeMeasures().getElementsByClass(['Measure'])}))
             df = pd.concat(partMeasures, axis=1)
             df.columns = self._getPartNames()
             self.analyses["Measure"] = df
@@ -889,7 +889,7 @@ class ImportedPiece:
         detect section divisions.
         """
         if "Barline" not in self.analyses:
-            parts = self._getSemiFlatParts()
+            parts = self._getFlatParts()
             partBarlines = []
             for part in parts:
                 partBarlines.append(pd.Series({b.offset: b.type \
@@ -925,19 +925,19 @@ class ImportedPiece:
         return str(val + 1)
 
     def _harmonicIntervalHelper(row):
-        if hasattr(row[1], 'isRest') and hasattr(row[0], 'isRest'):
-            if row[1].isRest or row[0].isRest:
+        if hasattr(row.iat[1], 'isRest') and hasattr(row.iat[0], 'isRest'):
+            if row.iat[1].isRest or row.iat[0].isRest:
                 return 'Rest'
-            elif row[1].isNote and row[0].isNote:
-                return interval.Interval(row[0], row[1])
+            elif row.iat[1].isNote and row.iat[0].isNote:
+                return interval.Interval(row.iat[0], row.iat[1])
         return None
 
     def _melodicIntervalHelper(row):
-        if hasattr(row[0], 'isRest'):
-            if row[0].isRest:
+        if hasattr(row.iat[0], 'isRest'):
+            if row.iat[0].isRest:
                 return 'Rest'
-            elif row[0].isNote and hasattr(row[1], 'isNote') and row[1].isNote:
-                return interval.Interval(row[1], row[0])
+            elif row.iat[0].isNote and hasattr(row.iat[1], 'isNote') and row.iat[1].isNote:
+                return interval.Interval(row.iat[1], row.iat[0])
         return None
 
     def _melodifyPart(ser, end):
@@ -963,7 +963,7 @@ class ImportedPiece:
             if df is None:
                 m21Objs = self._getM21ObjsNoTies()
             else:
-                m21Objs = df.applymap(ImportedPiece._strToM21Obj, na_action='ignore')
+                m21Objs = df.map(ImportedPiece._strToM21Obj, na_action='ignore')
             _df = m21Objs.apply(ImportedPiece._melodifyPart, args=(end,))
             if df is not None:
                 return _df
@@ -1087,7 +1087,7 @@ class ImportedPiece:
             df = self.ngrams(df=df, n=n, exclude=['Rest'])
         uni = df.stack().unique()
         ser = pd.Series(uni)
-        if isinstance(uni[0], str):
+        if isinstance(uni.iat[0], str):
             df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
         else:
             df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
@@ -1158,7 +1158,7 @@ class ImportedPiece:
               df = self.ngrams(df=df, n=n, exclude=['Rest'])
           uni = df.stack().unique()
           ser = pd.Series(uni)
-          if isinstance(uni[0], str):
+          if isinstance(uni.iat[0], str):
               df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
           else:
               df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
@@ -1217,9 +1217,9 @@ class ImportedPiece:
         key = ('MelodicIntervals', kind, directed, compound, end)
         if key not in self.analyses or unit or df is not None:
             _df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals(end, df)
-            _df = _df.applymap(self._intervalMethods[settings])
+            _df = _df.map(self._intervalMethods[settings])
             if kind == 'z':
-                _df = _df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+                _df = _df.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
             if unit or df is not None:
                 return _df
             else:
@@ -1391,10 +1391,10 @@ class ImportedPiece:
         key = ('HarmonicIntervals', kind, directed, compound, againstLow)
         if key not in self.analyses:
             df = self._getM21HarmonicIntervals(againstLow)
-            df = df.applymap(self._intervalMethods[settings])
+            df = df.map(self._intervalMethods[settings])
             if kind == 'z':
-                df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
-            self.analyses[key] = df
+                df = df.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+            self.analyses[key] = df.sort_index()
         return self.analyses[key]
     
     def sonorities(self, kind='d', directed=True, compound='simple', sort=True):
@@ -1577,8 +1577,8 @@ class ImportedPiece:
         cols = []
         other = other.fillna(held)
         if '_' not in df.columns[0] and 'Sonority' != df.columns[0]:  # df is not a pair of voices, but rather info about 1 voice at a time
-            _df = df.applymap(str, na_action='ignore')
-            _other = other.applymap(str, na_action='ignore')
+            _df = df.map(str, na_action='ignore')
+            _other = other.map(str, na_action='ignore')
             ret = _df + '_' + _other
             return self.ngrams(df=ret, n=n, exclude=exclude, offsets=offsets)
         for pair in df.columns:
@@ -1593,7 +1593,7 @@ class ImportedPiece:
             combo = pd.concat([lowerMel, df[pair]], axis=1)
             combo.dropna(subset=(pair,), inplace=True)
             filler = held + ':' + held if show_both else held
-            combo[lowerVoice].fillna(filler, inplace=True)
+            combo.fillna({lowerVoice: filler}, inplace=True)
             combo.insert(loc=1, column='Joiner', value=', ')
             combo['_'] = '_'
             if n == -1:
@@ -1708,9 +1708,9 @@ class ImportedPiece:
                 else:
                     val = last_har_int + reference_int + 1
                 return '{}@{}'.format(prefix, val)
-            res1 = ngrams[mask1].dropna(how='all').applymap(_icHelper, na_action='ignore')
+            res1 = ngrams[mask1].dropna(how='all').map(_icHelper, na_action='ignore')
             prefix = 'IC'
-            res2 = ngrams[mask2].dropna(how='all').applymap(_icHelper, na_action='ignore')
+            res2 = ngrams[mask2].dropna(how='all').map(_icHelper, na_action='ignore')
             res1.update(res2)
             return res1
 
@@ -1815,7 +1815,7 @@ class ImportedPiece:
             return pd.DataFrame()
         key = ('CVF', keep_keys, offsets)
         if key in self.analyses:
-            return self.analyses[key]
+            return self.analyses[key].copy()
         cadences = _getCVFTable()
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         harmonic = self.markFourths()
@@ -1853,11 +1853,10 @@ class ImportedPiece:
                     cvfs.at[_index, _voice] = 'T'
         if keep_keys:
             cvfs = pd.concat([cvfs, ngramKeys], axis=1)
-        if offsets == 'last':
-            _cvfs = cvfs.copy()
+        if offsets == 'last' and len(cvfs.index.levels) > 1:
             cvfs = self.condenseMultiIndex(cvfs)
         self.analyses[key] = cvfs
-        return cvfs
+        return cvfs.copy()
 
     def condenseMultiIndex(self, df, to_drop=0):
         '''
@@ -1866,12 +1865,16 @@ class ImportedPiece:
         '''
         if isinstance(df, pd.core.series.Series):
             df = pd.DataFrame(df)
-        ret = df.droplevel(to_drop)
+        if df.index.nlevels < 2:
+            ret = df.copy()
+        else:
+            ret = df.droplevel(to_drop)
         dup_mask = ret.index.duplicated()
         dups = ret.index[dup_mask]
         ret = ret[~dup_mask]
         for dup in dups:
-            ret.loc[dup, :] = df.loc[(slice(None), dup), :].ffill().iloc[-1, :].values
+            filled = df.loc[(slice(None), dup), :].infer_objects(copy=False).ffill()
+            ret.loc[dup, :] = filled.iloc[-1, :].values
         return ret
 
     def morleyCadences(self):
@@ -1883,21 +1886,21 @@ class ImportedPiece:
         nr = self.notes(combineUnisons=True)
         mel = self.melodic(kind='d', end=True, df=nr)
         mel_ng = self.ngrams(n=2, df=mel, offsets='last')
-        mel2_matches = mel_ng.applymap(lambda cell: cell == ('-2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        mel2_matches = mel_ng.map(lambda cell: cell == ('-2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
         bs = self.beatStrengths().reindex_like(nr)
         bs_ng = self.ngrams(n=3, df=bs, exclude=[], offsets='last')
         bs_ng = bs_ng.reindex_like(mel_ng)
-        bs2_matches = bs_ng.applymap(lambda cell: cell[0] < cell[2] > cell[1], na_action='ignore').replace(False, np.nan).dropna(how='all')
+        bs2_matches = bs_ng.map(lambda cell: cell[0] < cell[2] > cell[1], na_action='ignore').replace(False, np.nan).dropna(how='all')
         # C-B-A-B-C
         mel4_ng = self.ngrams(n=4, df=mel, offsets='last')
-        mel4_matches = mel4_ng.applymap(lambda cell: cell == ('-2', '-2', '2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        mel4_matches = mel4_ng.map(lambda cell: cell == ('-2', '-2', '2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
         bs4_ng = self.ngrams(n=5, df=bs, exclude=[], offsets='last')
         bs4_ng = bs4_ng.reindex_like(mel4_ng)
-        bs4_matches = bs_ng.applymap(lambda cell: all([cell[-1] > val for val in cell[:-1]]), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        bs4_matches = bs_ng.map(lambda cell: all([cell[-1] > val for val in cell[:-1]]), na_action='ignore').replace(False, np.nan).dropna(how='all')
         
-        res = pd.DataFrame().reindex_like(bs_ng)
+        res = pd.DataFrame().reindex_like(bs_ng).astype(object)
         res[bs2_matches & mel2_matches] = 'Morley Cadence'
-        res4 = pd.DataFrame().reindex_like(bs4_ng)
+        res4 = pd.DataFrame().reindex_like(bs4_ng).astype(object)
         res4[bs4_matches & mel4_matches] = 'Morley Cadence'
         res.update(res4)        
         return res.dropna(how='all')
@@ -1916,7 +1919,7 @@ class ImportedPiece:
         progressions = self.ngrams(df=sons, other=lowMel, n=2, offsets='last', held='1')
         data = pd.concat([progressions, mcad], axis=1).dropna(subset=('MCad',))
         res = data.Sonority.str.match('(7/5/3|7/3|5/3|3)_(-5|4), (3|)')
-        res = res[res]
+        res = res[res].astype(object)
         res.name = 'Close'
         res.iloc[:] = 'Close'
         return pd.DataFrame(res)
@@ -2298,7 +2301,7 @@ class ImportedPiece:
 
         # get the lyrics as ngrams to match the durations
         lyrics = self.lyrics()
-        lyrics = lyrics.applymap(self._alpha_only)
+        lyrics = lyrics.map(self._alpha_only)
 
         # specify ngram length with arguments
         lyrics_ng = self.ngrams(df=lyrics, n=ngram_length)
@@ -3129,7 +3132,7 @@ class ImportedPiece:
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
         else:
-            response = requests.get(self.path)
+            response = httpx.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
@@ -3189,7 +3192,7 @@ class ImportedPiece:
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
         else:
-            response = requests.get(self.path)
+            response = httpx.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
@@ -3259,7 +3262,7 @@ class ImportedPiece:
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
         else:
-            response = requests.get(self.path)
+            response = httpx.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
@@ -3356,7 +3359,7 @@ class ImportedPiece:
                 text_file = open(self.path, "r")
                 fetched_mei_string = text_file.read()
         else:
-            response = requests.get(self.path)
+            response = httpx.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
@@ -3735,7 +3738,7 @@ class CorpusBase:
                     res.at[mass.file_name, model.file_name] = 1
                     continue
                 df = mass_modules[j]
-                df = df[df.applymap(lambda cell: 'Rest' not in cell, na_action='ignore')].dropna(how='all')
+                df = df[df.map(lambda cell: 'Rest' not in cell, na_action='ignore')].dropna(how='all')
                 stack = df.stack()
                 if not ic:
                     hits = stack[stack.isin(mod_patterns)]

@@ -9,7 +9,7 @@ ipywidgets==7.6.3
 ipython>=7.23.1, <8.0
 joblib==1.0.1
 jsonschema==3.2
-lxml==4.7.1
+lxml==5.1.0
 matplotlib==3.5.3
 matplotlib-inline==0.1.6
 more-itertools==8.7.0

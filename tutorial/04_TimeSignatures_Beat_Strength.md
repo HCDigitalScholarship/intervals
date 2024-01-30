@@ -6,12 +6,16 @@ Several of these functions called as parameters `detailIndex()`. See more at [09
 
 For any piece, it is possible to return a dataframe containing each new time signature and the offset at which it appears:
 
-    piece.timeSignatures()
+```python
+piece.timeSignatures()
+```
 
 There are no parameters to set with this function.  But it can be called as a parameter from `detailIndex`:
 
-    nr = piece.notes()
-    piece.detailIndex(nr, t_sig = True)
+```python
+nr = piece.notes()
+piece.detailIndex(nr, t_sig = True)
+```
 
 ![Alt text](images/tsig.png)
 
@@ -19,41 +23,49 @@ There are no parameters to set with this function.  But it can be called as a pa
 
 This method returns a dataframe with offsets as the index, and the measure number of each event (note, melodic interval, ngram) in the columns. Thus all columns will frequently be identical. 
 
-    piece.measures()
+```python
+piece.measures()
+```
 
 It is not particularly useful on its own, but it might be helpful for situations in which it is important to return all the offsets that correspond to a given measure number. For example, here is a way to find all of the notes that sound at the start of each measure in a piece:
 
-    #df of measures (that is, where each measure starts)
-    ms = piece.measures()
-    #index of that df as list
-    measure_starts = ms.index.to_list()
-    #df of notes and rests
-    nr = piece.notes()
-    #now filter nr to show only those offsets (=index) that are in the list just made
-    nr2 = nr[nr.index.isin(measure_starts)]
-    nr2
+```python
+#df of measures (that is, where each measure starts)
+ms = piece.measures()
+#index of that df as list
+measure_starts = ms.index.to_list()
+#df of notes and rests
+nr = piece.notes()
+#now filter nr to show only those offsets (=index) that are in the list just made
+nr2 = nr[nr.index.isin(measure_starts)]
+nr2
+```
 
 ![Alt text](images/measure_starts.png)
 
 Or another way to do this with the `loc` method of Pandas:
 
-    #df of measures (that is, where each starts)
-    ms = piece.measures()
-    #index of that df as list
-    measure_starts = ms.index.to_list()
-    #df of notes and rests
-    nr = piece.notes()
-    #filter nr to show only those offsets (=index) that are in the list just made
-    nr2 = nr.loc[nr.index.isin(measure_starts)]
-    nr2
+```python
+#df of measures (that is, where each starts)
+ms = piece.measures()
+#index of that df as list
+measure_starts = ms.index.to_list()
+#df of notes and rests
+nr = piece.notes()
+#filter nr to show only those offsets (=index) that are in the list just made
+nr2 = nr.loc[nr.index.isin(measure_starts)]
+nr2
+```
 
 
 ## View Barlines with `barlines()`
 
 This method returns a data frame showing the offsets at which double or final barlines appear in each voice. It does not report normal (single) barlines.  As such it can be helpful in detecting section breaks in a work. Use it in conjunction with `detailIndex` to report measure numbers, too.
 
-    barlines = piece.barlines()
-    piece.detailIndex(barlines)
+```python
+barlines = piece.barlines()
+piece.detailIndex(barlines)
+```
 
 ![Alt text](images/barlines.png)
 
@@ -61,28 +73,32 @@ This method returns a data frame showing the offsets at which double or final ba
 
 music21 has a built-in method that assigns a relative strength for each beat in a bar, depending on the prevailing time signature. The downbeat is equal to 1.0, and all other metric positions in a measure are given smaller numbers approaching zero as their metric weight decreases. To see the results in the context of measures and beats (in order to make sense of the ratings), pass the results of `beatStrengths()` to `detailIndex()`
 
-    bs = piece.beatStrengths()
-    piece.detailIndex(bs)
+```python
+bs = piece.beatStrengths()
+piece.detailIndex(bs)
+```
 
 ![Alt text](images/bs.png)
 
 The resulting dataframe could also be used to filter other results, for instance, by finding all offsets (and voices) where a certain `beatStrength` condition is met. For instance, here is a way to filter for 'strong beats', the 'strong notes', the 'strong melodic intervals', and at last the 'ngrams based on strong intervals'.  In brief, **structural tones**:
 
-        #get the notes
-        nr = piece.notes()
-        #stack the voices on top of each other to make a series
-        nr_stacked = nr.stack()
-        #find the beat strengths
-        bs = piece.beatStrengths()
-        #stack and filter the beat strengths according to some threshold
-        strong_beats = bs.stack() > .75
-        #filter the stacked notes and unstack
-        strong_notes = nr_stacked[strong_beats].unstack()
-        #find the melodic intervals among those 'strong' notes
-        mel_strong = piece.melodic(df = strong_notes, kind = 'd')
-        #and at last find the ngrams for those strong notes
-        strong_ngrams = piece.ngrams(df = mel_strong, n = 4, exclude = ['Rest']).fillna('')
-        strong_ngrams
+```python
+#get the notes
+nr = piece.notes()
+#stack the voices on top of each other to make a series
+nr_stacked = nr.stack()
+#find the beat strengths
+bs = piece.beatStrengths()
+#stack and filter the beat strengths according to some threshold
+strong_beats = bs.stack() > .75
+#filter the stacked notes and unstack
+strong_notes = nr_stacked[strong_beats].unstack()
+#find the melodic intervals among those 'strong' notes
+mel_strong = piece.melodic(df = strong_notes, kind = 'd')
+#and at last find the ngrams for those strong notes
+strong_ngrams = piece.ngrams(df = mel_strong, n = 4, exclude = ['Rest']).fillna('')
+strong_ngrams
+```
 
 ![Alt text](images/beat_strength_ng.png)
 

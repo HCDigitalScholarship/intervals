@@ -18,11 +18,15 @@ The **red squares represent the harmonic intervals**; the **blue ovals represent
 
 Default usage:  
 
-    piece.ngrams()
+```python
+piece.ngrams()
+```
 
 You will probably want to fill the `na values`:
 
-    piece.ngrams().fillna(')
+```python
+piece.ngrams().fillna(')
+```
 
 ![Alt text](images/modules_2.png)
 
@@ -37,7 +41,9 @@ first)` or `piece.ngrams(offsets=last)`.
 
 Thus a typical request:
 
-    piece.ngrams(interval_settings='c', offsets='first', n=5).fillna('')
+```python
+piece.ngrams(interval_settings='c', offsets='first', n=5).fillna('')
+```
 
 ## Showing Both Voices.  Excluding Certain Values
 * **exclude** is normally used to keep Rests out of the results.  `piece.ngrams(exclude=['Rests'])` (note that the string 'Rests' must be in a list `[]`) will make sure that the results are only nGrams consisting of melodic and harmonic intervals.  If you want *include* rests, then `piece.ngrams(exclude=[])`.  Note that in fact we could *exclude* any strings included in the list, thus: `piece.ngrams(show_both=True, exclude=['8', '5'])` will eliminate any nGram that contains either of those strings.
@@ -57,7 +63,7 @@ By default, the `ngrams` method uses the default behaviors of the `melodic` and 
 
 For example, here is how we this might look for *diatonioc* intervals, although we can already do this with ngram parameters as noted above.  But since `melodic` anb `harmonic` return *compound* intervals by default, this will in turn force the ngrams to be *simple* instead.
 
-```
+```python
 mel = piece.melodic(kind="d", compound=False)
 har = piece.harmonic(kind="d", compound=False)
 ngrams = piece.ngrams(df=har, other=mel, n=3).fillna('')
@@ -68,7 +74,7 @@ ngrams
 
 Or combining unisons 
 
-```
+```python
 nr_no_unisons = piece.notes(combineUnisons=True)
 mel = piece.melodic(df=nr_no_unisons, kind="d", compound=False)
 har = piece.harmonic(kind="d", compound=False)
@@ -79,7 +85,8 @@ ngrams.head()
 ## Corpus Methods with Contrapuntal nGrams
 
 Define the corpus:
-```
+
+```python
 corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei',
                     'https://crimproject.org/mei/CRIM_Mass_0005_1.mei'])
 ```
@@ -91,16 +98,17 @@ Then:
 * NB: use ImportedPiece, not piece!
 * NB: for func do NOT include the closing parentheses!
 
-```
+```python
 func = ImportedPiece.ngrams
 list_of_modules = corpus.batch(func=func, kwargs={'n': 3, 'interval_settings': ('d', False, True)}, metadata=True)
 title_of_output = pd.concat(list_of_melodic_ngrams)
 ```
+
 Note that the output lists voice pairs by staff position. In a four-voice piece, the lowest part would be 4, then 3, etc. 4_3 represents the two lowest voices of the piece, and so on.
 
 
 
-```
+```python
 func = ImportedPiece.ngrams
 list_of_modules = corpus.batch(func=func, kwargs={'n': 4, 'interval_settings': ('d', True, False), 'offsets': 'last'}, metadata=True)
 func2 = ImportedPiece.detailIndex
@@ -121,14 +129,18 @@ module_corpus
 
 ## Filtering and Counting
 
-    piece.ngrams(exclude=['Rest']).stack().value_counts().to_frame()
+```python
+piece.ngrams(exclude=['Rest']).stack().value_counts().to_frame()
+```
 
 ![Alt text](images/modules_6.png)
 
 
 ## Searching with Interact in a Notebook
 
-```
+Note that this will only work in a Jupyter Notebook
+
+```python
 @interact
 def get_modules(search_pattern="", kind=["d", "q", "c", "z"], compound=[True, False], length=[3, 4, 5, 6], endpoint=["last", "first"]):
     

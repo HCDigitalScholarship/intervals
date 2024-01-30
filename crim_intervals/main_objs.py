@@ -11,7 +11,7 @@ from more_itertools import consecutive_groups
 import os
 import re
 import requests
-import intervals
+import crim_intervals
 import collections
 import verovio
 import seaborn as sns
@@ -22,7 +22,7 @@ import matplotlib.lines as mlines
 import plotly.express as px
 from glob import glob
 from IPython.display import SVG, HTML
-cwd = os.path.dirname(intervals.__file__)
+cwd = os.path.dirname(crim_intervals.__file__)
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
@@ -2175,7 +2175,7 @@ class ImportedPiece:
         if renderer == "streamlit":
             return plt
         else:
-            plt.show(renderer=renderer)
+            plt.show()
 
     def markFourths(self):
         '''
@@ -3752,7 +3752,7 @@ class CorpusBase:
 
         return res
 
-    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"):
+    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer=""):
 
         '''
         Parameters Overview:
@@ -3835,7 +3835,7 @@ class CorpusBase:
         if renderer == "streamlit":
             return fig
         else:
-            fig.show(renderer=renderer)
+            fig.show()
 
     # setting up the figure size:
     def _plot_default(self):

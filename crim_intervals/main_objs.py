@@ -773,7 +773,7 @@ class ImportedPiece:
         but that you can set to true if you also want to see them:
 
         * offset: row's offset (distance in quarter notes from beginning, 1.0 = one quarter note)
-        t_sig: the prevailing time signature
+        * t_sig: the prevailing time signature
         * sounding: how many voices are sounding (i.e. not resting) at this point
         * progress: 0-1 how far along in the piece this moment is, 0 = beginning, 1 = last attack onset
         * lowest: the lowest sounding note at this moment

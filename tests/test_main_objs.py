@@ -1,6 +1,5 @@
 from crim_intervals.main_objs import *
-from test import test_constants 
-from test_constants import *
+from intervals.tests.test_constants import *
 
 
 def get_crim_model(file):

@@ -10,7 +10,6 @@ from itertools import combinations_with_replacement as cwr
 from more_itertools import consecutive_groups
 import os
 import re
-import crim_intervals
 import collections
 import verovio
 import seaborn as sns
@@ -21,7 +20,7 @@ import matplotlib.lines as mlines
 import plotly.express as px
 from glob import glob
 from IPython.display import SVG, HTML
-cwd = os.path.dirname(crim_intervals.__file__)
+cwd = os.getcwd()
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
@@ -106,9 +105,9 @@ def importScore(path, recurse=False, verbose=False):
             score = converter.parse(to_import)
             pathDict[path] = ImportedPiece(score, path, mei_doc, date)
             if verbose:
-                print("Successfully imported", path[:80])
+                print("Successfully imported", path[:180])
         except:
-            print("Import of", str(path[:80]), "failed, please check your file, path, or url.")
+            print("Import of", str(path[:180]), "failed, please check your file, path, or url.")
             return None
 
     return pathDict[path]
@@ -121,12 +120,12 @@ def Crimport(path, recurse=False, verbose=False):
 
 def _getCVFTable():
     if 'CVFTable' not in pathDict:
-        pathDict['CVFTable'] = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
+        pathDict['CVFTable'] = pd.read_csv(cwd+'/crim_intervals/data/cadences/CVFLabels.csv', index_col='Ngram')
     return pathDict['CVFTable']
 
 def _getCadenceTable():
     if 'CadenceTable' not in pathDict:
-        pathDict['CadenceTable'] = pd.read_csv(cwd + '/data/cadences/cadenceLabels.csv', index_col=0)
+        pathDict['CadenceTable'] = pd.read_csv(cwd + '/crim_intervals/data/cadences/cadenceLabels.csv', index_col=0)
     return pathDict['CadenceTable']
 
 
@@ -248,8 +247,7 @@ class ImportedPiece:
     def _getM21Objs(self):
         if 'M21Objs' not in self.analyses:
             part_names = self._getPartNames()
-            res = pd.concat(self._getPartSeries(), names=part_names, axis=1)
-            self.analyses['M21Objs'] = res.sort_index()
+            self.analyses['M21Objs'] = pd.concat(self._getPartSeries(), names=part_names, axis=1, sort=True)
         return self.analyses['M21Objs']
 
     def _remove_tied(self, noteOrRest):
@@ -669,7 +667,7 @@ class ImportedPiece:
                     new_index.append((notes.loc[:_first].index[-2], _last))
                 part.index = pd.MultiIndex.from_tuples(new_index, names=part.index.names)
                 newCols.append(part)
-            ret = pd.concat(newCols, axis=1)
+            ret = pd.concat(newCols, axis=1, sort=True)
         elif mode.startswith('c'):  # cvfs mode
             ret = self.cvfs(keep_keys=True, offsets='both').copy()
             ngrams = ret.iloc[:, len(self._getPartNames()):]
@@ -715,10 +713,10 @@ class ImportedPiece:
                 measures = idf.map(lambda i: _measures.loc[:i].iat[-1])
                 _beats = self.beatIndex()
                 beats = idf.map(lambda i: _beats[i])
-                res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1)
+                res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1, sort=True)
                 res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
                 ret = self.numberParts(ret)
-                res = pd.concat([res, ret], axis=1)
+                res = pd.concat([res, ret], axis=1, sort=True)
                 res = res.apply(self._emaRowHelper, axis=1)
                 res.name = 'EMA'
                 return res
@@ -738,20 +736,20 @@ class ImportedPiece:
         Return a table of the beat positions of all the notes and rests. Beats
         are expressed as floats.
         '''
-        if 'Beat' not in self.analyses:
+        if 'Beats' not in self.analyses:
             nr = self.notes()
             nrOffs = nr.apply(lambda row: row.index)
             ms = self.measures().apply(lambda row: row.index)
-            temp = pd.concat([ms, nr], axis=1)
+            temp = pd.concat([ms, nr], axis=1, sort=True)
             ms = temp.iloc[:, :len(ms.columns)].ffill()
             ms = ms[nr.notnull()]
             offFromMeas = nrOffs - ms
             beatDur = self._getBeatUnit()
-            temp = pd.concat([beatDur, nr], axis=1)
+            temp = pd.concat([beatDur, nr], axis=1, sort=True)
             beatDur = temp.iloc[:, :len(beatDur.columns)].ffill()
             beatDur = beatDur[nr.notnull()]
-            self.analyses['Beat'] = (offFromMeas / beatDur) + 1
-        return self.analyses['Beat']
+            self.analyses['Beats'] = (offFromMeas / beatDur) + 1
+        return self.analyses['Beats']
 
     def beatIndex(self):
         '''
@@ -811,7 +809,7 @@ class ImportedPiece:
         if highest:
             cols.append(self.highLine())
             names.append('Highest')
-        temp = pd.concat(cols, axis=1).sort_index()
+        temp = pd.concat(cols, axis=1, sort=True)
         temp2 = temp.iloc[:, len(df.columns):].ffill()
         if measure:
             temp2.iloc[:, 0] = temp2.iloc[:, 0].astype(int)
@@ -852,7 +850,7 @@ class ImportedPiece:
             tsigs = []
             for part in self._getFlatParts():
                 tsigs.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
-            df = pd.concat(tsigs, axis=1)
+            df = pd.concat(tsigs, axis=1, sort=True)
             self.analyses['M21TSigObjs'] = df
         return self.analyses['M21TSigObjs']
 
@@ -877,7 +875,7 @@ class ImportedPiece:
             for part in parts:
                 partMeasures.append(pd.Series({m.offset: m.measureNumber \
                     for m in part.makeMeasures().getElementsByClass(['Measure'])}))
-            df = pd.concat(partMeasures, axis=1)
+            df = pd.concat(partMeasures, axis=1, sort=True)
             df.columns = self._getPartNames()
             self.analyses["Measure"] = df
         return self.analyses["Measure"]
@@ -894,7 +892,7 @@ class ImportedPiece:
             for part in parts:
                 partBarlines.append(pd.Series({b.offset: b.type \
                     for b in part.getElementsByClass(['Barline'])}))
-            df = pd.concat(partBarlines, axis=1)
+            df = pd.concat(partBarlines, axis=1, sort=True)
             df.columns = self._getPartNames()
             self.analyses["Barline"] = df
         return self.analyses["Barline"]
@@ -943,7 +941,7 @@ class ImportedPiece:
     def _melodifyPart(ser, end):
         ser.dropna(inplace=True)
         shifted = ser.shift(1) if end else ser.shift(-1)
-        partDF = pd.concat([ser, shifted], axis=1)
+        partDF = pd.concat([ser, shifted], axis=1, sort=True)
         if end:
             res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
         else:  # not a typo, this uses _harmonicIntervalHelper if end == False
@@ -1092,7 +1090,7 @@ class ImportedPiece:
         else:
             df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
         cols = [(df - df.loc[i]).abs().apply(sum, axis=1) for i in df.index]
-        dist = pd.concat(cols, axis=1)
+        dist = pd.concat(cols, axis=1, sort=True)
         dist.columns = uni
         dist.index = uni
         return dist
@@ -1163,7 +1161,7 @@ class ImportedPiece:
           else:
               df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
           cols = [(df - df.loc[i]).abs().apply(self._flexed_sum, axis=1, args=(head_flex,)) for i in df.index]
-          dist = pd.concat(cols, axis=1)
+          dist = pd.concat(cols, axis=1, sort=True)
           dist.columns = uni
           dist.index = uni
           return dist
@@ -1303,7 +1301,7 @@ class ImportedPiece:
                 loop_ngrams = self.entries(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
             else:
                 loop_ngrams = self.ngrams(df=loop_melodic, exclude=["Rest"], n=int(i)).fillna('')
-            local_ngrams = pd.concat([local_ngrams, loop_ngrams])
+            local_ngrams = pd.concat([local_ngrams, loop_ngrams], sort=True)
 
         total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))
 
@@ -1344,7 +1342,7 @@ class ImportedPiece:
                 low = self.lowLine().apply(lambda val: note.Note(val) if val != 'Rest' else note.Rest())
                 lowIndex = len(m21Objs.columns)
                 combos = [(lowIndex, x) for x in range(len(m21Objs.columns))]
-                m21Objs = pd.concat([m21Objs, low], axis=1)
+                m21Objs = pd.concat([m21Objs, low], axis=1, sort=True)
             else:
                 combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
             for combo in combos:
@@ -1354,7 +1352,7 @@ class ImportedPiece:
                 ser.name = '_'.join((m21Objs.columns[combo[0]], m21Objs.columns[combo[1]]))
                 pairs.append(ser)
             if pairs:
-                ret = pd.concat(pairs, axis=1)
+                ret = pd.concat(pairs, axis=1, sort=True)
             else:
                 ret = pd.DataFrame()
 
@@ -1447,15 +1445,15 @@ class ImportedPiece:
                 first or last note's offset, or by both with a multi-index.
         """
         if offsets == 'both':
-            first = pd.concat([col.shift(-i) for i in range(_n)], axis=1)
-            last = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1)
+            first = pd.concat([col.shift(-i) for i in range(_n)], axis=1, sort=True)
+            last = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1, sort=True)
             mi = pd.MultiIndex.from_arrays([first.index[:-_n + 1], last.index[_n - 1:]], names=['First', 'Last'])
             chunks = first.iloc[:-_n + 1].copy()
             chunks.index = mi
         elif offsets == 'last':
-            chunks = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1)
+            chunks = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1, sort=True)
         else: # offsets == 'first'
-            chunks = pd.concat([col.shift(-i) for i in range(_n)], axis=1)
+            chunks = pd.concat([col.shift(-i) for i in range(_n)], axis=1, sort=True)
         return chunks
 
     def _ngramHelper(col, n, exclude, offsets):
@@ -1590,10 +1588,11 @@ class ImportedPiece:
                 lowerMel = other[lowerVoice].copy()
             if show_both and 'Rest' not in exclude:
                 lowerMel += ':' + other[upperVoice]
-            combo = pd.concat([lowerMel, df[pair]], axis=1)
+            # can't use pd.concat here because of an issue with pandas, maybe a bug
+            combo = pd.DataFrame(lowerMel).join(df[pair], how='outer')
             combo.dropna(subset=(pair,), inplace=True)
             filler = held + ':' + held if show_both else held
-            combo.fillna({lowerVoice: filler}, inplace=True)
+            combo[lowerVoice] = combo[lowerVoice].fillna(filler)
             combo.insert(loc=1, column='Joiner', value=', ')
             combo['_'] = '_'
             if n == -1:
@@ -1628,7 +1627,7 @@ class ImportedPiece:
             cols.append(col)
         # in case piece has no harmony and cols stays empty
         if cols:
-            return pd.concat(cols, axis=1)
+            return pd.concat(cols, axis=1, sort=True)
         else:
             return pd.DataFrame()
 
@@ -1852,7 +1851,7 @@ class ImportedPiece:
                 if cvfs.at[_index, _voice] == 'z' and mel.at[_index[1], _voice] in ('-1', '-2'):
                     cvfs.at[_index, _voice] = 'T'
         if keep_keys:
-            cvfs = pd.concat([cvfs, ngramKeys], axis=1)
+            cvfs = pd.concat([cvfs, ngramKeys], axis=1, sort=True)
         if offsets == 'last' and len(cvfs.index.levels) > 1:
             cvfs = self.condenseMultiIndex(cvfs)
         self.analyses[key] = cvfs
@@ -1917,7 +1916,7 @@ class ImportedPiece:
         low = pd.DataFrame(self.lowLine())
         lowMel = self.melodic(end=True, kind='d', df=low)
         progressions = self.ngrams(df=sons, other=lowMel, n=2, offsets='last', held='1')
-        data = pd.concat([progressions, mcad], axis=1).dropna(subset=('MCad',))
+        data = pd.concat([progressions, mcad], axis=1, sort=True).dropna(subset=('MCad',))
         res = data.Sonority.str.match('(7/5/3|7/3|5/3|3)_(-5|4), (3|)')
         res = res[res].astype(object)
         res.name = 'Close'
@@ -4035,6 +4034,7 @@ class CorpusBase:
                     loop_ngrams = piece_item.entries(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
                 else:
                     loop_ngrams = piece_item.ngrams(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
+                # TODO: try to move this out of the loop and just concat once if possible
                 local_ngrams = pd.concat([local_ngrams, loop_ngrams])
 
             total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))

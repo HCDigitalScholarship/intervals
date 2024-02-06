@@ -1,9 +1,9 @@
 from crim_intervals.main_objs import *
-from test_constants import *
+from test.test_constants import *
 
 
 def get_crim_model(file):
-    root = "https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_3.0/"
+    root = "https://crimproject.org/mei/"
     return importScore(root + file)
 
 def test_get_semi_flat_parts_name():
@@ -32,54 +32,55 @@ def test_get_note_rests():
                         (pd.isna(hardcoded_nr.loc[row, col]) and pd.isna(nr.loc[row, col])))
 
 
-def validate_ngrams_last_offsets(model, df, n, how='columnwise', other=None, held='Held',
-                                 exclude=['Rest'], interval_settings=('d', True, True), unit=0):
-    """
-    Objective: Make sure that ngrams' offsets parameter is correct by checking the nrgams
-    grouped by the offsets of the first notes against the nrgams grouped by the offsets
-    of the last notes. If we receive the same ngrams in both cases, then the output is correct
-    """
+# TODO: fix this flawed test. You can't dropna from 1 column at a time in a dataframe because they just get filled back in if the missing indecies are in other columns
+# def validate_ngrams_last_offsets(model, df, n, how='columnwise', other=None, held='Held',
+#                                  exclude=['Rest'], interval_settings=('d', True, True), unit=0):
+#     """
+#     Objective: Make sure that ngrams' offsets parameter is correct by checking the nrgams
+#     grouped by the offsets of the first notes against the nrgams grouped by the offsets
+#     of the last notes. If we receive the same ngrams in both cases, then the output is correct
+#     """
 
-    df1 = model.ngrams(df=df, n=n, how=how, other=other, held=held,
-                          exclude=exclude, interval_settings=interval_settings, unit=unit,
-                          offsets='first')
+#     df1 = model.ngrams(df=df, n=n, how=how, other=other, held=held,
+#                           exclude=exclude, interval_settings=interval_settings, unit=unit,
+#                           offsets='first')
 
-    df2 = model.ngrams(df=df, n=n, how=how, other=other, held=held,
-                          exclude=exclude, interval_settings=interval_settings, unit=unit,
-                          offsets='last')
+#     df2 = model.ngrams(df=df, n=n, how=how, other=other, held=held,
+#                           exclude=exclude, interval_settings=interval_settings, unit=unit,
+#                           offsets='last')
 
-    # compare patterns
-    df1_cols = [df1.iloc[:, i] for i in range(len(df1.columns))]
-    df2_cols = [df1.iloc[:, i] for i in range(len(df2.columns))]
+#     # compare patterns
+#     df1_cols = [df1.iloc[:, i] for i in range(len(df1.columns))]
+#     df2_cols = [df1.iloc[:, i] for i in range(len(df2.columns))]
 
-    # making sure that we would get the same pattern whichever offsets we choose.
-    for i in range(len(df1.columns)):
-        df1_cols[i].dropna(inplace=True)
-        df2_cols[i].dropna(inplace=True)
+#     # making sure that we would get the same pattern whichever offsets we choose.
+#     for i in range(len(df1.columns)):
+#         df1_cols[i].dropna(inplace=True)
+#         df2_cols[i].dropna(inplace=True)
 
-        df1_cols[i].reset_index(drop=True)
-        df2_cols[i].reset_index(drop=True)
+#         df1_cols[i].reset_index(drop=True)
+#         df2_cols[i].reset_index(drop=True)
 
-        assert (df1_cols[i].equals(df2_cols[i]))
+#         assert (df1_cols[i].equals(df2_cols[i]))
 
 
-def test_ngrams_last_offsets():
-    """
-    For a long and short, sampled and not sampled ngrams with different interval
-    settings, test if they output the same ngrams when either offsets='first' and
-    offset='last' is used.
-    """
+# def test_ngrams_last_offsets():
+#     """
+#     For a long and short, sampled and not sampled ngrams with different interval
+#     settings, test if they output the same ngrams when either offsets='first' and
+#     offset='last' is used.
+#     """
 
-    for i in range(len(TEST_FILES)):
-        model = get_crim_model(TEST_FILES[i])
-        mel = model.melodic(kind='q', directed=True, compound=True, unit=0)
-        validate_ngrams_last_offsets(model, mel, 5)
+#     for i in range(len(TEST_FILES)):
+#         model = get_crim_model(TEST_FILES[i])
+#         mel = model.melodic(kind='q', directed=True, compound=True, unit=0)
+#         validate_ngrams_last_offsets(model, mel, 5)
 
-        # modules mode
-        validate_ngrams_last_offsets(model, df=None, n=10, how='modules')
+#         # modules mode
+#         validate_ngrams_last_offsets(model, df=None, n=10, how='modules')
 
-        # n=-1 mode
-        validate_ngrams_last_offsets(model, mel, -1)
+#         # n=-1 mode
+#         validate_ngrams_last_offsets(model, mel, -1)
 
 
 def test_get_measure():

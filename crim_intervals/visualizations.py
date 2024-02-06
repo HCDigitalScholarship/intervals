@@ -205,7 +205,7 @@ def _from_ema_to_offsets(df, ema_column):
     df['locations'] = df[ema_column].str.split("/", n=1, expand=True)[0]
     df['locations'] = df['locations'].str.split(",")
     df = df.explode('locations')
-    df[['start', 'end']] = df['locations'].str.split("-", expand=True).fillna(method='ffill')
+    df[['start', 'end']] = df['locations'].str.split("-", expand=True).ffill()
 
     df['start'] = df['start'].astype(float)
     df['end'] = df['end'].astype(float)
@@ -384,7 +384,7 @@ def generate_ngrams_and_duration(piece, df, n=3, exclude=['Rest'],
 
     # compute dur for the ngrams
     dur = piece.getDuration(df)
-    dur = dur.reindex_like(df).applymap(str, na_action='ignore')
+    dur = dur.reindex_like(df).map(str, na_action='ignore')
     # combine them and generate ngrams and duration at the same time
     notes_dur = pd.concat([df, dur])
     ngrams = piece.ngrams(df=df, n=n, exclude=exclude,
@@ -394,7 +394,7 @@ def generate_ngrams_and_duration(piece, df, n=3, exclude=['Rest'],
     dur_ngrams = dur_ngrams.reindex_like(ngrams)
 
     # sum up durations!
-    dur_ngrams = dur_ngrams.applymap(lambda cell: sum([float(element) for element in cell]), na_action='ignore')
+    dur_ngrams = dur_ngrams.map(lambda cell: sum([float(element) for element in cell]), na_action='ignore')
 
     return ngrams, dur_ngrams
 
@@ -472,7 +472,7 @@ def _manipulate_processed_network_df(df, interval_column, search_pattern_starts_
     """
     mask = df[interval_column].astype(str).str.startswith(pat=search_pattern_starts_with)
     filtered_df = df[mask].copy()
-    return filtered_df.fillna("-").style.applymap(
+    return filtered_df.fillna("-").style.map(
         lambda x: "background: #ccebc5" if search_pattern_starts_with in x else "")
 
 

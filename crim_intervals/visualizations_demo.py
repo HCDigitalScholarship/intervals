@@ -345,7 +345,7 @@ def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
 
     # compute dur for the ngrams
     dur = model.durations(df)
-    dur = dur.reindex_like(df).applymap(str, na_action='ignore')
+    dur = dur.reindex_like(df).map(str, na_action='ignore')
     # combine them and generate ngrams and duration at the same time
     notes_dur = pd.concat([df, dur])
     ngrams = model.ngrams(df=df, n=n, exclude=exclude,
@@ -355,7 +355,7 @@ def generate_ngrams_and_duration(model, df, n=3, exclude=['Rest'],
     dur_ngrams = dur_ngrams.reindex_like(ngrams)
 
     # sum up durations!
-    dur_ngrams = dur_ngrams.applymap(lambda cell: sum([float(element) for element in cell]), na_action='ignore')
+    dur_ngrams = dur_ngrams.map(lambda cell: sum([float(element) for element in cell]), na_action='ignore')
 
     return ngrams, dur_ngrams
 
@@ -430,7 +430,7 @@ def _manipulate_processed_network_df(df, interval_column, search_pattern_starts_
     """
     mask = df[interval_column].astype(str).str.startswith(pat=search_pattern_starts_with)
     filtered_df = df[mask].copy()
-    return filtered_df.fillna("-").style.applymap(lambda x: "background: #ccebc5" if search_pattern_starts_with in x else "")
+    return filtered_df.fillna("-").style.map(lambda x: "background: #ccebc5" if search_pattern_starts_with in x else "")
 
 def create_interactive_compare_df(df, interval_column):
     """

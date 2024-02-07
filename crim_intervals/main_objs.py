@@ -20,7 +20,7 @@ import matplotlib.lines as mlines
 import plotly.express as px
 from glob import glob
 from IPython.display import SVG, HTML
-cwd = os.getcwd()
+main_objs_dir = os.path.dirname(os.path.abspath(__file__))
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
@@ -120,12 +120,12 @@ def Crimport(path, recurse=False, verbose=False):
 
 def _getCVFTable():
     if 'CVFTable' not in pathDict:
-        pathDict['CVFTable'] = pd.read_csv(cwd+'/crim_intervals/data/cadences/CVFLabels.csv', index_col='Ngram')
+        pathDict['CVFTable'] = pd.read_csv(main_objs_dir + '/data/cadences/CVFLabels.csv', index_col='Ngram')
     return pathDict['CVFTable']
 
 def _getCadenceTable():
     if 'CadenceTable' not in pathDict:
-        pathDict['CadenceTable'] = pd.read_csv(cwd + '/crim_intervals/data/cadences/cadenceLabels.csv', index_col=0)
+        pathDict['CadenceTable'] = pd.read_csv(main_objs_dir + '/data/cadences/cadenceLabels.csv', index_col=0)
     return pathDict['CadenceTable']
 
 
@@ -1085,7 +1085,7 @@ class ImportedPiece:
             df = self.ngrams(df=df, n=n, exclude=['Rest'])
         uni = df.stack().unique()
         ser = pd.Series(uni)
-        if isinstance(uni.iat[0], str):
+        if isinstance(uni[0], str):
             df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
         else:
             df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
@@ -1156,7 +1156,7 @@ class ImportedPiece:
               df = self.ngrams(df=df, n=n, exclude=['Rest'])
           uni = df.stack().unique()
           ser = pd.Series(uni)
-          if isinstance(uni.iat[0], str):
+          if isinstance(uni[0], str):
               df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
           else:
               df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))

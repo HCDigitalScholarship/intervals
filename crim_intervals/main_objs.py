@@ -3294,13 +3294,19 @@ class ImportedPiece:
             non_overlaps = p_types.loc[p_type]["Count_Non_Overlaps"]
 
             # build the measure range dictionary
-            first = ml[0].split('/')[0]
-            last = str(int(ml[-1].split('/')[0]) + 4)
-            mr = str(first) + "-" + str(last)
+            # Find the first and last items
+            first_item = ml[0]
+            last_item = ml[-1]
+
+            # Split each item at '/' and take the first part as integer
+            first_part_first_item = int(float(first_item.split('/')[0]))
+            first_part_last_item = int(float(last_item.split('/')[0]))  
+           
+            mr = str(first_part_first_item) + "-" + str(first_part_last_item)
             mdict = {'measureRange': mr}
 
             # select measures in verovio and redo the layout
-            tk.select(str(mdict))
+            tk.select(mdict)
             tk.redoLayout()
             # get the number of pages
             count = tk.getPageCount()
@@ -3374,7 +3380,7 @@ class ImportedPiece:
         tk.setScale(30)
         # tk.setOption( "pageHeight", "1500" )
         # tk.setOption( "pageWidth", "2500" )
-        tk.setOptions({"pageHeight":  3000, # Height in pixels
+        tk.setOptions({"pageHeight":  1500, # Height in pixels
                        "pageWidth":  3000    # Width in pixels
                        })
 
@@ -3394,11 +3400,11 @@ class ImportedPiece:
         for span in li:
             if ngram_length > 4:
                 if len(span) == 1:
-                    mr = str(span[0]) + "-" + str(span[0] + 3)
+                    mr = str(int(span[0])) + "-" + str(int(span[0] + 3))
                 else:
-                    mr = str(span[0]) + "-" + str(span[-1] + 1)
+                    mr = str(int(span[0])) + "-" + str(int(span[-1] + 1))
             else:
-                mr = str(span[0]) + "-" + str(span[-1] + 1)
+                mr = str(int(span[0])) + "-" + str(int(span[-1] + 1))
             mdict = {'measureRange': mr}
             min_hr_count = 20
             max_hr_count = 0
@@ -3418,7 +3424,7 @@ class ImportedPiece:
                         min_hr_count = mi
 
             # select verovio measures and redo layout for each passage
-            tk.select(str(mdict))
+            tk.select(mdict)
             tk.redoLayout()
             # get the number of pages and display the music for each passage
             print("Results:")

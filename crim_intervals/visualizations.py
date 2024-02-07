@@ -7,7 +7,7 @@ import pandas as pd
 import re
 import textdistance
 
-from ipywidgets import interact, fixed
+# from ipywidgets import interact, fixed
 from pyvis.network import Network
 
 

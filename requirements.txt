@@ -1,11 +1,10 @@
-altair==4.2.0
+altair==5.2.0
 certifi==2020.12.5
 chardet==4.0.0
 h11==0.14.0
 httpcore==1.0.2
 httpx==0.26.0
 idna==3.1
-ipywidgets>=7.6.3
 ipython>=7.23.1, <8.0
 joblib==1.0.1
 jsonschema==3.2

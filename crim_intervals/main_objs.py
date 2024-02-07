@@ -3138,7 +3138,7 @@ class ImportedPiece:
         tk.setScale(30)
         # tk.setOption( "pageHeight", "1500" )
         # tk.setOption( "pageWidth", "3000" )
-        tk.setOptions({"pageHeight":  1500, # Height in pixels
+        tk.setOptions({"pageHeight":  3000, # Height in pixels
                        "pageWidth":  3000    # Width in pixels
                        })
         # adding option to import filtered df of cadences
@@ -3199,8 +3199,11 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOption( "pageHeight", "1500" )
-        tk.setOption( "pageWidth", "3000" )
+        # tk.setOption( "pageHeight", "1500" )
+        # tk.setOption( "pageWidth", "3000" )
+        tk.setOptions({"pageHeight":  3000, # Height in pixels
+                       "pageWidth":  3000    # Width in pixels
+                       })
 
         if stop == -1:
             meas = self.measures()
@@ -3269,8 +3272,11 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOption( "pageHeight", "1500" )
-        tk.setOption( "pageWidth", "3000" )
+        # tk.setOption( "pageHeight", "1500" )
+        # tk.setOption( "pageWidth", "3000" )
+        tk.setOptions({"pageHeight":  3000, # Height in pixels
+                       "pageWidth":  3000    # Width in pixels
+                       })
         print("Results:")
         # collect the metadata
         if p_types is None:
@@ -3366,8 +3372,11 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOption( "pageHeight", "1500" )
-        tk.setOption( "pageWidth", "2500" )
+        # tk.setOption( "pageHeight", "1500" )
+        # tk.setOption( "pageWidth", "2500" )
+        tk.setOptions({"pageHeight":  3000, # Height in pixels
+                       "pageWidth":  3000    # Width in pixels
+                       })
 
         # Now get meas ranges and number of active voices
         if df is None:

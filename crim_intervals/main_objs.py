@@ -3403,7 +3403,8 @@ class ImportedPiece:
             min_hr_count = 20
             max_hr_count = 0
 
-            for n in range(span[0], span[-1]+1):
+            # for n in range(span[0], span[-1]+1):
+            for n in range(int(span[0]), int(span[-1]) +  1):
                 ma = 0
                 mi = 20
                 for item in homorhythm.loc[n]['hr_voices'].to_list():

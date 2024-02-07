@@ -3136,8 +3136,11 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOption( "pageHeight", "1500" )
-        tk.setOption( "pageWidth", "3000" )
+        # tk.setOption( "pageHeight", "1500" )
+        # tk.setOption( "pageWidth", "3000" )
+        tk.setOptions({"pageHeight":  1500, # Height in pixels
+                       "pageWidth":  3000    # Width in pixels
+                       })
         # adding option to import filtered df of cadences
         if df is None:
             cadences = self.cadences()

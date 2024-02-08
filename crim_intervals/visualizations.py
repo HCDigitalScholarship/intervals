@@ -18,7 +18,7 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
         y=count,
         color=color,
         opacity=alt.condition(condition, alt.value(1), alt.value(0.2))
-    ).add_selection(
+    ).add_params(
         *selectors
     )
     return observer_chart
@@ -36,7 +36,7 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     ).properties(
         width=heat_map_width,
         height=heat_map_height
-    ).add_selection(
+    ).add_params(
         *selectors
     )
 
@@ -115,7 +115,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     """
 
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
-    selector = alt.selection_multi(fields=['pattern'])
+    selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
 
     # make a copy of the processed n_grams and turn them into Strings
@@ -181,7 +181,7 @@ def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=
     """
 
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
-    selector = alt.selection_multi(fields=['pattern'])
+    selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
 
     # make a copy of the processed n_grams and turn them into Strings
@@ -254,8 +254,8 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
 
     df.rename(columns={other_category: new_other_category, main_category: new_main_category}, inplace=True)
 
-    other_selector = alt.selection_multi(fields=[new_other_category])
-    main_selector = alt.selection_multi(fields=[new_main_category])
+    other_selector = alt.selection_point(fields=[new_other_category])
+    main_selector = alt.selection_point(fields=[new_main_category])
 
     other_category = new_other_category
     main_category = new_main_category
@@ -276,7 +276,7 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
     ).properties(
         width=heat_map_width,
         height=heat_map_height
-    ).add_selection(
+    ).add_params(
         main_selector
     ).interactive()
 

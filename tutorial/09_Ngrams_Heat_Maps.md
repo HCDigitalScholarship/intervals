@@ -125,7 +125,7 @@ Or:
 
 ```python
 dur = piece.durations()
-dur_ngrams = piece.durations(df = dur).fillna('')
+dur_ngrams = piece.ngrams(df = dur, n=5).fillna('')
 dur_ngrams
 ```
 
@@ -301,7 +301,7 @@ nr = piece.notes(combineUnisons = True)
 # get melodic intervals based on previous, plus settings.  Note end = False so that we associate the interval with the starting note
 mel = piece.melodic(df = nr, kind = 'd', end = False)
 # now the mel ngrams, based on that starting position, etc
-mel_ng = piece.ngrams(df = mel, n = 4).fillna(')
+mel_ng = piece.ngrams(df = mel, n = 4).fillna('')
 # and instead of the moving window, we mask them off to entries only
 entries = piece.entries(mel_ng)
 # now the total durations of those entries. note that passing a df to duration will make a sum of all the values in each cell
@@ -311,7 +311,7 @@ ng_durs
 
 ## Tuple Trouble, and How to Fix It
 
-Note that the output of `ngrams()` for *any of the single-feature types* (melodic, harmonic, durations, lyrics) is a DataFrame of **tuples**, which are immutable data types. To convert from tuples to usable strings, it is necessary to apply a custom function to each cell of the DataFrame with `applymap()`:  
+Note that the output of `ngrams()` for *any of the single-feature types* (melodic, harmonic, durations, lyrics) is a DataFrame of **tuples**, which are immutable data types. To convert from tuples to usable strings, it is necessary to apply a custom function to each cell of the DataFrame with `map()`:  
   
 ```python
 #define the function to convert tuples to strings
@@ -326,7 +326,7 @@ mel = piece.melodic()
 mel_ngrams = piece.ngrams(df = mel)
 
 #apply function to all cells
-mel_ngrams_no_tuples = mel_ngrams.applymap(convertTuple)
+mel_ngrams_no_tuples = mel_ngrams.map(convertTuple)
 mel_ngrams_no_tuples
 ```
 

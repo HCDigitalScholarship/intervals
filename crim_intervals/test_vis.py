@@ -113,26 +113,26 @@ def ngrams_heatmap_test_helper(model, notes):
 #     mel_diatonic = model.melodic(kind='d', directed=True, compound=True, unit=0)
 #     ngrams_heatmap_test_helper(model, mel_diatonic)
 
+# Turned off, as this not used
+# def helper_test_close_match_(model, notes):
+#     ngrams = model.ngrams(df=notes, n=5)
+#     popular_patterns = ngrams.stack().dropna().value_counts().head(5).index.to_list()
 
-def helper_test_close_match_(model, notes):
-    ngrams = model.ngrams(df=notes, n=5)
-    popular_patterns = ngrams.stack().dropna().value_counts().head(5).index.to_list()
+#     for i in range(5):
+#         chart = viz.plot_close_match_heatmap(ngrams, popular_patterns[i])
 
-    for i in range(5):
-        chart = viz.plot_close_match_heatmap(ngrams, popular_patterns[i])
+# Turned off, as this not used
+# def test_plot_close_match_heatmap():
+#     corpus = CorpusBase([EXAMPLE_CRIM_FILE])
+#     model = corpus.scores[0]
 
+#     # detailed diatonic
+#     mel_notes = model.melodic(kind='q', directed=True, compound=True, unit=0)
+#     helper_test_close_match_(model, mel_notes)
 
-def test_plot_close_match_heatmap():
-    corpus = CorpusBase([EXAMPLE_CRIM_FILE])
-    model = corpus.scores[0]
-
-    # detailed diatonic
-    mel_notes = model.melodic(kind='q', directed=True, compound=True, unit=0)
-    helper_test_close_match_(model, mel_notes)
-
-    # ngrams in diatonics
-    mel_diatonic = model.melodic(kind='d', directed=True, compound=True, unit=0)
-    helper_test_close_match_(model, mel_diatonic)
+#     # ngrams in diatonics
+#     mel_diatonic = model.melodic(kind='d', directed=True, compound=True, unit=0)
+#     helper_test_close_match_(model, mel_diatonic)
 
 
 # Turned off because of fraction issues with old durations results

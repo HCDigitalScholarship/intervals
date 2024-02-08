@@ -3165,13 +3165,14 @@ class ImportedPiece:
             c_type = cadences.loc[cad]["CadType"]
             c_beat = cadences.loc[cad]["Beat"]
             cvfs = cadences.loc[cad]['CVFs']
-            low = c_meas-1
-            high = c_meas
+            low = int(c_meas-1)
+            high = int(c_meas)
             mr = str(low) + "-" + str(high)
             mdict = {'measureRange': mr}
 
             # select verovio measures and redo layout
-            tk.select(str(mdict))
+            # tk.select(str(mdict))
+            tk.select(mdict)
             tk.redoLayout()
 
             # get the number of pages and display the music
@@ -3228,7 +3229,8 @@ class ImportedPiece:
         if stop < start:
             print("Check the measure range, the stop measure must be equal to or greater than the start measure")
         else:# select verovio measures and redo layout
-            tk.select(str(mdict))
+            # tk.select(str(mdict))
+            tk.select(mdict)
             tk.redoLayout()
 
             # get the number of pages and display the music

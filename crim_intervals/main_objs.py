@@ -2973,8 +2973,9 @@ class ImportedPiece:
                     if len(df) > 1:
                     # df = df.reset_index()
                         temp = self._temp_dict_of_details(df, det, matches)
+                        df_temp = pd.DataFrame([temp])
                         # points = points.append(temp, ignore_index=True)
-                        points = pd.concat([points, temp], ignore_index=True)
+                        points = pd.concat([points, df_temp], ignore_index=True)
                         points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
                     # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
                     # points = points[points['Offsets'].apply(len) > 1]
@@ -2985,6 +2986,7 @@ class ImportedPiece:
                     if len(item) > 1:
                         df = entry_array.loc[item].reset_index()
                         temp = self._temp_dict_of_details(df, det, matches)
+                        df_temp = pd.DataFrame([temp])
                         lto = len(temp["Offsets"])
                         if lto > 2 :
                             # make range from 2 to allow for fugas needed in NIMs
@@ -2993,16 +2995,17 @@ class ImportedPiece:
                                 for slist in list_combinations:
                                     df = entry_array.loc(axis=0)[slist].reset_index()
                                     temp = self._temp_dict_of_details(df, det, matches)
+                                    df_comb_temp = pd.DataFrame([temp])
                                     temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
                                     if 'PEN' in temp["Presentation_Type"]:
-                                        points2 = points2.concat(temp, ignore_index=True)
+                                        points2 = points2.concat(df_comb_temp, ignore_index=True)
                                         # points2 = points2.append(temp, ignore_index=True)
                                     if 'ID' in temp["Presentation_Type"]:
-                                        points2 = points2.concat(temp, ignore_index=True)
+                                        points2 = points2.concat(df_comb_temp, ignore_index=True)
                                         # points2 = points2.append(temp, ignore_index=True)
                                         # add fuga (so nim will work)
                                     if 'FUGA' in temp["Presentation_Type"]:
-                                        points2 = points2.concat(temp, ignore_index=True)
+                                        points2 = points2.concat(df_comb_temp, ignore_index=True)
                                         # points2 = points2.append(temp, ignore_index=True)
 
             points_combined = points.concat(points2, ignore_index=True)

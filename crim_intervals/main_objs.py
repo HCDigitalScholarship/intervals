@@ -2974,7 +2974,6 @@ class ImportedPiece:
                     # df = df.reset_index()
                         temp = self._temp_dict_of_details(df, det, matches)
                         df_temp = pd.DataFrame([temp])
-                        # points = points.append(temp, ignore_index=True)
                         points = pd.concat([points, df_temp], ignore_index=True)
                         points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
                     # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
@@ -2998,23 +2997,14 @@ class ImportedPiece:
                                     df_comb_temp = pd.DataFrame([temp])
                                     temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
                                     if 'PEN' in temp["Presentation_Type"]:
-                                        # points2 = points2.concat(df_comb_temp, ignore_index=True)
                                         points2 = pd.concat([points2, df_comb_temp], ignore_index=True)
-                                        # points2 = points2.append(temp, ignore_index=True)
                                     if 'ID' in temp["Presentation_Type"]:
                                         points2 = pd.concat([points2, df_comb_temp], ignore_index=True)
-                                        # points2 = points2.concat(df_comb_temp, ignore_index=True)
-                                        # points2 = points2.append(temp, ignore_index=True)
                                         # add fuga (so nim will work)
                                     if 'FUGA' in temp["Presentation_Type"]:
                                         points2 = pd.concat([points2, df_comb_temp], ignore_index=True)
-                                        # points2 = points2.concat(df_comb_temp, ignore_index=True)
-                                        # points2 = points2.append(temp, ignore_index=True)
 
-            # points_combined = points.concat(points2, ignore_index=True)
             points_combined = pd.concat([points, points2], ignore_index=True)
-
-            # points_combined = points.append(points2, ignore_index=True)
             points_combined["Offsets_Key"] = points_combined["Offsets"].apply(self._offset_joiner)
             points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
             points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
@@ -3026,7 +3016,6 @@ class ImportedPiece:
                 print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
             else:
                 points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-                # points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
                 # applying various private functions for overlapping entry tests.
                 # note that ng_durs must be passed to the first of these, via args
                 points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
@@ -3150,8 +3139,6 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        # tk.setOption( "pageHeight", "1500" )
-        # tk.setOption( "pageWidth", "3000" )
         tk.setOptions({"pageHeight":  1500, # Height in pixels
                        "pageWidth":  1500    # Width in pixels
                        })
@@ -3214,9 +3201,7 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        # tk.setOption( "pageHeight", "1500" )
-        # tk.setOption( "pageWidth", "3000" )
-        tk.setOptions({"pageHeight":  3000, # Height in pixels
+        tk.setOptions({"pageHeight":  1500, # Height in pixels
                        "pageWidth":  3000    # Width in pixels
                        })
 
@@ -3288,9 +3273,7 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        # tk.setOption( "pageHeight", "1500" )
-        # tk.setOption( "pageWidth", "3000" )
-        tk.setOptions({"pageHeight":  3000, # Height in pixels
+        tk.setOptions({"pageHeight":  1500, # Height in pixels
                        "pageWidth":  3000    # Width in pixels
                        })
         print("Results:")
@@ -3394,8 +3377,6 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        # tk.setOption( "pageHeight", "1500" )
-        # tk.setOption( "pageWidth", "2500" )
         tk.setOptions({"pageHeight":  1500, # Height in pixels
                        "pageWidth":  3000    # Width in pixels
                        })
@@ -3666,7 +3647,7 @@ class CorpusBase:
         mass_entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False,
                                     kwargs={'df': mass_mel, 'n': n, 'thematic': thematic, 'anywhere': anywhere})
 
-        res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
+        res = pd.DataFrame(columns=list(model.file_name for model in models.scores), index=list(mass.file_name for mass in masses.scores))        
         res.columns.name = 'Model'
         res.index.name = 'Mass'
         for i, model in enumerate(models.scores):
@@ -3743,7 +3724,7 @@ class CorpusBase:
             models = self
         if masses is None:
             masses = self
-        res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
+        res = pd.DataFrame(columns=list(model.file_name for model in models.scores), index=list(mass.file_name for mass in masses.scores))
         res.columns.name = 'Model'
         res.index.name = 'Mass'
 

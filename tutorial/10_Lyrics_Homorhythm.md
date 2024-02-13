@@ -22,11 +22,20 @@ As opposed to integers or floats, the DataFrame produced by the `lyrics()` funct
 
 ## Alphabetical Characters Only?  How to Remove Punctuation Marks from Results
 
-Particularly for projects that aim to assemble lyric syllables into words (or at least ngrams), it might be useful to remove from the initial results the various dashes, hyphens, and punctuation marks from the individual cells before assembling them into ngrams. Fortunately Pandas and Python have a convenient *applymap* method that does this with one line of code: 
+Particularly for projects that aim to assemble lyric syllables into words (or at least ngrams), it might be useful to remove from the initial results the various dashes, hyphens, and punctuation marks from the individual cells before assembling them into ngrams. Fortunately Pandas and Python have a convenient *map* method that does this with one line of code: 
 
 ```python
-lyrics = piece.lyrics()
-lyrics_cleaned = lyrics.applymap(alpha_only)
+# Function to strip non-alphabetic characters
+def _strip_non_alphabetic(text):
+    if pd.isnull(text):
+        return text  # Keep NaN values unchanged
+    else:
+        return re.sub('[^a-zA-Z]+', '', text)
+
+# Apply the function to every cell in the DataFrame
+lyrics = piece.lyrics().fillna('')
+lyrics_cleaned = lyrics.map(strip_non_alphabetic)
+lyrics_cleaned
 ```
 
 ## Lyric Ngrams 
@@ -54,12 +63,20 @@ piece.ngrams(df = Piece.lyrics(), n = _N)
 **Lyric ngrams without punctuation and hyphens:**
 
 ```python
+# function to clean up non alphabet characters
+def _strip_non_alphabetic(text):
+    if pd.isnull(text):
+        return text  # Keep NaN values unchanged
+    else:
+        return re.sub('[^a-zA-Z]+', '', text)
 #define length of ngrams
 _n = 5
 #get the lyrics
 lyr = piece.lyrics()
-#clean the lyrics
-lyrics_cleaned = lyrics.applymap(alpha_only)
+# Apply the function to every cell in the DataFrame
+lyrics = piece.lyrics().fillna('')
+lyrics_cleaned = lyrics.map(strip_non_alphabetic)
+lyrics_cleaned
 # get ngrams of cleaned lyrics
 piece.ngrams(df = lyrics_cleaned, n = _n)
 ```
@@ -67,12 +84,18 @@ piece.ngrams(df = lyrics_cleaned, n = _n)
 **Lyric ngrams, cleaned, entries only:**
 
 ```python
+# function to clean up non alphabet characters
+def _strip_non_alphabetic(text):
+    if pd.isnull(text):
+        return text  # Keep NaN values unchanged
+    else:
+        return re.sub('[^a-zA-Z]+', '', text)
 #define length of ngrams
 _n = 5
 #get the lyrics
 lyr = piece.lyrics()
 #clean the lyrics
-lyrics_cleaned = lyrics.applymap(alpha_only)
+lyrics_cleaned = lyrics.map(alpha_only)
 # get ngrams of cleaned lyrics, now with entries = True (see ngrams documentation for more detail)
 piece.ngrams(df = lyrics_cleaned, n = _n, entries = True)
 ```
@@ -89,7 +112,7 @@ if isinstance(tup, tuple):
 return out
 ```
 
-Then use `applymap()` on the entire dataframe of ngrams:
+Then use `map()` on the entire dataframe of ngrams:
 
 ```python
 #select length of ngrams
@@ -97,7 +120,7 @@ n = _n
 #make the ngrams
 lyric_ngs = piece.ngrams(df = Piece.lyrics(), n = _N)
 #convert them to tuples
-lyric_ngs_strings = lyric_ngs.applymap(convertTuple)
+lyric_ngs_strings = lyric_ngs.map(convertTuple)
 ```
 
 Or more succinctly:

@@ -7,7 +7,7 @@ import pandas as pd
 import re
 import textdistance
 
-from ipywidgets import interact, fixed
+# from ipywidgets import interact, fixed
 from pyvis.network import Network
 
 
@@ -18,7 +18,7 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
         y=count,
         color=color,
         opacity=alt.condition(condition, alt.value(1), alt.value(0.2))
-    ).add_selection(
+    ).add_params(
         *selectors
     )
     return observer_chart
@@ -36,7 +36,7 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     ).properties(
         width=heat_map_width,
         height=heat_map_height
-    ).add_selection(
+    ).add_params(
         *selectors
     )
 
@@ -115,7 +115,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     """
 
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
-    selector = alt.selection_multi(fields=['pattern'])
+    selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
 
     # make a copy of the processed n_grams and turn them into Strings
@@ -181,7 +181,7 @@ def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=
     """
 
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
-    selector = alt.selection_multi(fields=['pattern'])
+    selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
 
     # make a copy of the processed n_grams and turn them into Strings
@@ -254,8 +254,8 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
 
     df.rename(columns={other_category: new_other_category, main_category: new_main_category}, inplace=True)
 
-    other_selector = alt.selection_multi(fields=[new_other_category])
-    main_selector = alt.selection_multi(fields=[new_main_category])
+    other_selector = alt.selection_point(fields=[new_other_category])
+    main_selector = alt.selection_point(fields=[new_main_category])
 
     other_category = new_other_category
     main_category = new_main_category
@@ -276,7 +276,7 @@ def plot_comparison_heatmap(df, ema_col, main_category='musical_type', other_cat
     ).properties(
         width=heat_map_width,
         height=heat_map_height
-    ).add_selection(
+    ).add_params(
         main_selector
     ).interactive()
 
@@ -399,7 +399,7 @@ def generate_ngrams_and_duration(piece, df, n=3, exclude=['Rest'],
     return ngrams, dur_ngrams
 
 
-# Network visualizations
+# Network visualizations from CRIM Django Data
 def process_network_df(df, interval_column_name, ema_column_name):
     """
     Create a small dataframe containing network
@@ -475,35 +475,35 @@ def _manipulate_processed_network_df(df, interval_column, search_pattern_starts_
     return filtered_df.fillna("-").style.map(
         lambda x: "background: #ccebc5" if search_pattern_starts_with in x else "")
 
+# uses INTERACT, and so removed 2024
+# def create_interactive_compare_df(df, interval_column):
+#     """
+#     This method returns a wdiget allowing users to interact with
+#     the simple observations dataframe.
+#     :param df: the dataframe the user interact with
+#     :param interval_column: the column of intervals
+#     :return: a widget that filters and colors a dataframe based on the users
+#     search pattern.
+#     """
+#     return interact(_manipulate_processed_network_df, df=fixed(df),
+#                     interval_column=fixed(interval_column), search_pattern_starts_with='Input search pattern')
 
-def create_interactive_compare_df(df, interval_column):
-    """
-    This method returns a wdiget allowing users to interact with
-    the simple observations dataframe.
-    :param df: the dataframe the user interact with
-    :param interval_column: the column of intervals
-    :return: a widget that filters and colors a dataframe based on the users
-    search pattern.
-    """
-    return interact(_manipulate_processed_network_df, df=fixed(df),
-                    interval_column=fixed(interval_column), search_pattern_starts_with='Input search pattern')
 
+# def create_comparisons_networks_and_interactive_df(df, interval_column, interval_type, ema_column, patterns=[]):
+#     """
+#     Generate a dictionary of networks and a simple dataframe allowing the users
+#     search through the intervals.
+#     :param df: the dataframe the user interact with
+#     :param interval_column: the column of intervals
+#     :param interval_type: put "time" or "melodic"
+#     :param ema_column: column containing ema address
+#     :param patterns: we could only choose to look at specific patterns (optional)
+#     :return: a dictionary of networks created and a clean interactive df
+#     """
+#     # process df
+#     if patterns:
+#         df = df[df[interval_column].isin(patterns)].copy()
 
-def create_comparisons_networks_and_interactive_df(df, interval_column, interval_type, ema_column, patterns=[]):
-    """
-    Generate a dictionary of networks and a simple dataframe allowing the users
-    search through the intervals.
-    :param df: the dataframe the user interact with
-    :param interval_column: the column of intervals
-    :param interval_type: put "time" or "melodic"
-    :param ema_column: column containing ema address
-    :param patterns: we could only choose to look at specific patterns (optional)
-    :return: a dictionary of networks created and a clean interactive df
-    """
-    # process df
-    if patterns:
-        df = df[df[interval_column].isin(patterns)].copy()
-
-    networks_dict = create_interval_networks(df[interval_column], interval_type)
-    df = process_network_df(df, interval_column, ema_column)
-    return networks_dict, create_interactive_compare_df(df, interval_column)
+#     networks_dict = create_interval_networks(df[interval_column], interval_type)
+#     df = process_network_df(df, interval_column, ema_column)
+#     return networks_dict, create_interactive_compare_df(df, interval_column)

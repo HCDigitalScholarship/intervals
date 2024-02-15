@@ -375,16 +375,24 @@ class ImportedPiece:
             result = result[mask]
         return result.dropna(how='all')
 
-    def lyrics(self):
+    def lyrics(self, strip=True):
         '''
         Return a dataframe of the lyrics associated with each note in the piece.
+        If `strip` is True (default), then the lyrics will be stripped of leading
+        and trailing whitespace and dashes. If `strip` is False, then the lyrics will
+        be returned as they are in the score. Notes without lyrics are shown as NaN.
         '''
-        if 'Lyric' not in self.analyses:
-            df = self._getM21ObjsNoTies().map(na_action='ignore',
-                func=lambda note: note.lyric if note.isNote else None)
-            df.fillna(np.nan, inplace=True)
-            self.analyses['Lyric'] = df
-        return self.analyses['Lyric']
+        key = ('Lyrics', strip)
+        if key not in self.analyses:
+            m21Objs = self._getM21ObjsNoTies()
+            if strip:
+                df = m21Objs.map(na_action='ignore',
+                    func=lambda cell: cell.lyric.strip('\n \t-') if (cell.isNote and cell.lyric) else np.nan )
+            else: 
+                df = m21Objs.map(na_action='ignore',
+                    func=lambda cell: cell.lyric if cell.isNote else np.nan)
+            self.analyses[key] = df
+        return self.analyses[key]
 
     def _noteRestHelper(self, noteOrRest):
         if noteOrRest.isRest:

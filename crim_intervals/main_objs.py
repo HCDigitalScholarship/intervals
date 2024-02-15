@@ -2859,7 +2859,7 @@ class ImportedPiece:
                         pass
                     else:
                         list_temps.append(temp)
-            points = pd.DataFrame(list_temps)          
+            points = pd.DataFrame(list_temps)
             points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
             points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
             points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
@@ -2887,59 +2887,43 @@ class ImportedPiece:
         # classification with hidden types
         elif include_hidden_types == True:
             # hidden_types_list = ["PEN", "ID"]
-            list_temps = []
+            temp_dict_list1 = []
+            temp_dict_list2 = []
             for matches in full_list_of_matches["match"]:
                 related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
                 entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
-                dfs = self._split_dataframe(entry_array, "index", 70)
-                # classification of the full set
-                for df in dfs:
-                    temp = self._temp_dict_of_details(df, det, matches)
-                    # print(temp)
-                    if temp in list_temps:
-                        pass
-                    else:
-                        list_temps.append(temp)
-                points = pd.DataFrame(list_temps) 
 
-                offset_list = entry_array.index.to_list()
-                split_list = list(ImportedPiece._split_by_threshold(offset_list))
-                
                 # the initial classification of the full set
-                temp_dict_list = []
+                split_list = list(ImportedPiece._split_by_threshold(entry_array.index))
                 for item in split_list:
                     df = entry_array.loc[item].reset_index()
                     if len(df) > 1:
                     # df = df.reset_index()
                         temp = self._temp_dict_of_details(df, det, matches)
-                        temp_dict_list.append(temp)
-                        if len(temp_dict_list) > 0:
-                            points = pd.concat([points, pd.DataFrame(temp_dict_list)], ignore_index=True)
-                            points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-                    # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-                    # points = points[points['Offsets'].apply(len) > 1]
-                # this return is just for testing
-                # return(points)
+                        temp_dict_list1.append(temp)
+
                 # now the test for hidden types via 'combinations' of all entries in the full set
                 for item in split_list:
-                    if len(item) > 1:
-                        df = entry_array.loc[item].reset_index()
-                        temp = self._temp_dict_of_details(df, det, matches)
-                        lto = len(temp["Offsets"])
-                        if lto > 2 :
-                            # make range from 2 to allow for fugas needed in NIMs
-                            for r in range(3, 6):
-                                list_combinations = list(combinations(item, r))
-                                for slist in list_combinations:
-                                    temp_dict_list = []
-                                    df = entry_array.loc(axis=0)[slist].reset_index()
-                                    temp = self._temp_dict_of_details(df, det, matches)
-                                    temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
-                                    temp_dict_list.append(temp)
-                                    if len(temp_dict_list) > 0:
+                    if len(item) > 2 :
+                        # make range from 2 to allow for fugas needed in NIMs
+                        for r in range(3, 6):
+                            list_combinations = list(combinations(item, r))
+                            for slist in list_combinations:
+                                df = entry_array.loc(axis=0)[slist].reset_index()
+                                temp = self._temp_dict_of_details(df, det, matches)
+                                temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
+                                temp_dict_list2.append(temp)
 
-                                        temp_df = pd.DataFrame(temp_dict_list)
-                                        points2 = pd.concat([points2, temp_df], ignore_index=True)
+            if len(temp_dict_list1) > 0:
+                points = pd.DataFrame(temp_dict_list1)
+                points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
+            else:
+                points = pd.DataFrame()
+
+            if len(temp_dict_list2) > 0:
+                points2 = pd.DataFrame(temp_dict_list2)
+            else:
+                points2 = pd.DataFrame()
 
             points_combined = pd.concat([points, points2], ignore_index=True)
             points_combined['Presentation_Type'] = points_combined['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)

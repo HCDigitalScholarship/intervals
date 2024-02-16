@@ -2444,7 +2444,6 @@ class ImportedPiece:
         ret.dropna(how='all', subset=ret.columns[:num_parts], inplace=True)
         return ret
 
-
     def _find_entry_int_distance(self, coordinates):
         """
         This helper function is used as part of presentationTypes.

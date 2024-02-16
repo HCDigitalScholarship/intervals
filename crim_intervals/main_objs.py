@@ -29,6 +29,17 @@ datePattern = re.compile('date isodate="(1\d*)')
 
 accepted_filetypes = ('mei', 'mid', 'midi', 'abc', 'xml', 'musicxml')
 pathDict = {}
+
+_directedNameMemos = {}  
+def _directed_name_from_note_strings(note1, note2):
+    key = (note1.nameWithOctave, note2.nameWithOctave)
+    if key not in _directedNameMemos:
+        ret = interval.Interval(note1, note2).directedName
+        _directedNameMemos[key] = ret
+        return ret
+    else:
+        return _directedNameMemos[key]
+
 # An extension of the music21 note class with more information easily accessible
 def importScore(path, recurse=False, verbose=False):
     '''
@@ -2443,22 +2454,9 @@ class ImportedPiece:
         They are represented as intervals with quality and direction,
         thus P-4, m3, P5, P5, M-9, P-4, P4
         """
-
-        tone_list = []
-
-        all_tones = self.notes()
-
-        for item in coordinates:
-            filtered_tones = all_tones.loc[item]
-            tone_list.append(filtered_tones)
-
-        noteObjects = [note.Note(tone) for tone in tone_list]
-        _ints = [interval.Interval(noteObjects[i], noteObjects[i + 1]) for i in range(len(noteObjects) - 1)]
-        entry_ints = []
-
-        for _int in _ints:
-            entry_ints.append(_int.directedName)
-
+        all_tones = self._getM21Objs()
+        notes = [all_tones.at[item] for item in coordinates]
+        entry_ints = [_directed_name_from_note_strings(notes[i], notes[i + 1]) for i in range(len(notes) - 1)]
         return entry_ints
 
     def _split_by_threshold(seq, max_diff=70):
@@ -2503,19 +2501,14 @@ class ImportedPiece:
         return dur_list
 
     # July 2022 added to check for overlap
-    def _entry_overlap_helper(df):
+    def _entry_overlap_helper(_dict):
         """
         This private function is used as part of the last stage of the Presentation
         Type classifier.  It reports the overlap (in offsets) between successive entries
         in a given point of imitation.
         """
-        endpoints = [x + y for x, y in zip(df["Entry_Durs"], df["Offsets"])]
-        endpoints.pop(-1)
-        startpoints = df["Offsets"].copy()
-        startpoints.pop(0)
-
-        overlaps = [w - z for w, z in zip(endpoints, startpoints)]
-        return overlaps
+        return [_dict["Entry_Durs"][i] + _dict["Offsets"][i] - _dict["Offsets"][i+1]
+                for i in range(len(_dict["Entry_Durs"]) - 1)]
 
     # July 2022 added to check for overlap
     def _non_overlap_count(list_overlaps):
@@ -2550,8 +2543,6 @@ class ImportedPiece:
 
     # July 2022:  This Replaces the Previous helper
     def _temp_dict_of_details(self, df, det, matches):
-    
-
         """
         This helper function is used as part of presentationTypes.
         It assembles various features for the presentation types
@@ -2633,39 +2624,39 @@ class ImportedPiece:
                 # if both entries are preferred intervals, take the first (top) one
                 if first_mel_ints[0] and second_mel_ints[0] in preferred_list:
                     #  print("First Pair")
-                    short_offset_list.pop(second_dup_index)
+                    del short_offset_list[second_dup_index]
                     time_intervals = np.diff(short_offset_list).tolist()
                     parallel_voice = voice_list[second_dup_index]
-                    voice_list.pop(second_dup_index)
+                    del voice_list[second_dup_index]
                     tone_coordinates = list(zip(short_offset_list, voice_list))
                     melodic_intervals = self._find_entry_int_distance(tone_coordinates)
 
                 # if the first is preferred, take it
                 elif first_mel_ints[0] in preferred_list:
                     # print("First Pair")
-                    short_offset_list.pop(second_dup_index)
+                    del short_offset_list[second_dup_index]
                     time_intervals = np.diff(short_offset_list).tolist()
                     parallel_voice = voice_list[second_dup_index]
-                    voice_list.pop(second_dup_index)
+                    del voice_list[second_dup_index]
                     tone_coordinates = list(zip(short_offset_list, voice_list))
                     melodic_intervals = self._find_entry_int_distance(tone_coordinates)
 
                 # if the second is preferred, take it
                 elif second_mel_ints[0] in preferred_list:
-                    short_offset_list.pop(first_dup_index)
+                    del short_offset_list[first_dup_index]
                     time_intervals = np.diff(short_offset_list).tolist()
                     parallel_voice = voice_list[first_dup_index]
-                    voice_list.pop(first_dup_index)
+                    del voice_list[first_dup_index]
                     tone_coordinates = list(zip(short_offset_list, voice_list))
                     melodic_intervals = self._find_entry_int_distance(tone_coordinates)
                     #  print("Second Pair")
 
                 # if neither is preferred, take the first
                 else:
-                    short_offset_list.pop(second_dup_index)
+                    del short_offset_list[second_dup_index]
                     time_intervals = np.diff(short_offset_list).tolist()
                     parallel_voice = voice_list[second_dup_index]
-                    voice_list.pop(second_dup_index)
+                    del voice_list[second_dup_index]
                     tone_coordinates = list(zip(short_offset_list, voice_list))
                     melodic_intervals = self._find_entry_int_distance(tone_coordinates)
         # if there are no parallel entries, simply find the time intervals and melodic intervals
@@ -2844,9 +2835,9 @@ class ImportedPiece:
         # # Group the filtered distanced patterns
         full_list_of_matches = filtered_dist.groupby('source')['match'].apply(list).reset_index()
 
+        list_temps = []
         # # classification without hidden types
         if include_hidden_types == False:
-            list_temps = []
             for matches in full_list_of_matches["match"]:
                 related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
                 entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
@@ -2860,18 +2851,18 @@ class ImportedPiece:
                     else:
                         list_temps.append(temp)
             points = pd.DataFrame(list_temps)
-            points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-            points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
-            points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
-            points["Number_Entries"] = points["Offsets"].apply(len)
             points["Count_Offsets"] = points["Offsets"].apply(set).apply(len)
             points = points[points["Count_Offsets"] > 1]
             points["Count_Voices"] = points["Voices"].apply(set).apply(len)
             points = points[points["Count_Voices"] > 1]
+            points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
+            points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
+            points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
+            points["Number_Entries"] = points["Offsets"].apply(len)
             if len(points) == 0:
                 print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
             else:
-                points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+                points = points.reindex(columns=col_order).sort_values("First_Offset")
                 # applying various private functions for overlapping entry tests.
                 # note that ng_durs must be passed to the first of these, via args
                 points["Entry_Durs"] = points[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
@@ -2887,23 +2878,19 @@ class ImportedPiece:
         # classification with hidden types
         elif include_hidden_types == True:
             # hidden_types_list = ["PEN", "ID"]
-            temp_dict_list1 = []
-            temp_dict_list2 = []
             for matches in full_list_of_matches["match"]:
                 related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
                 entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
 
-                # the initial classification of the full set
                 split_list = list(ImportedPiece._split_by_threshold(entry_array.index))
                 for item in split_list:
+                    # the initial classification of the full set
                     df = entry_array.loc[item].reset_index()
                     if len(df) > 1:
                     # df = df.reset_index()
                         temp = self._temp_dict_of_details(df, det, matches)
-                        temp_dict_list1.append(temp)
+                        list_temps.append(temp)
 
-                # now the test for hidden types via 'combinations' of all entries in the full set
-                for item in split_list:
                     if len(item) > 2 :
                         # make range from 2 to allow for fugas needed in NIMs
                         for r in range(3, 6):
@@ -2911,48 +2898,34 @@ class ImportedPiece:
                             for slist in list_combinations:
                                 df = entry_array.loc(axis=0)[slist].reset_index()
                                 temp = self._temp_dict_of_details(df, det, matches)
-                                temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
-                                temp_dict_list2.append(temp)
+                                list_temps.append(temp)
 
-            if len(temp_dict_list1) > 0:
-                points = pd.DataFrame(temp_dict_list1)
-                points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-            else:
-                points = pd.DataFrame()
-
-            if len(temp_dict_list2) > 0:
-                points2 = pd.DataFrame(temp_dict_list2)
-            else:
-                points2 = pd.DataFrame()
-
-            points_combined = pd.concat([points, points2], ignore_index=True)
-            points_combined['Presentation_Type'] = points_combined['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-
-            points_combined["Offsets_Key"] = points_combined["Offsets"].apply(self._offset_joiner)
-            points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
-            points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
-            points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
-            points_combined = points_combined[points_combined["Count_Offsets"] > 1]
-            points_combined = points_combined[points_combined["Voices"].apply(set).apply(len) > 1]
-            # return points_combined
-            if len(points_combined) == 0:
+            points = pd.DataFrame(list_temps)
+            points["Count_Offsets"] = points["Offsets"].apply(set).apply(len)
+            points = points[points["Count_Offsets"] > 1]
+            points = points[points["Voices"].apply(set).apply(len) > 1]
+            points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
+            points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
+            points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
+            points["Number_Entries"] = points["Offsets"].apply(len)
+            # return points
+            if len(points) == 0:
                 print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
             else:
-                points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-                points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
+                points = points.reindex(columns=col_order).sort_values("First_Offset")
+                points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
                 # applying various private functions for overlapping entry tests.
                 # note that ng_durs must be passed to the first of these, via args
-                points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
-                points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
-                # points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
-                points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
-                points_combined["Progress"] = (points_combined["First_Offset"] / self.notes().index[-1])
-                # return points_combined
-                points_combined = points_combined.sort_values("Progress")
-                points_combined = points_combined.reset_index(drop=True)
-
-                self.analyses[memo_key] = points_combined
-                return points_combined
+                points["Entry_Durs"] = points[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
+                points["Overlaps"] = points[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
+                # points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
+                points.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
+                points["Progress"] = (points["First_Offset"] / self.notes().index[-1])
+                # return points
+                points = points.sort_values("Progress")
+                points = points.reset_index(drop=True)
+                self.analyses[memo_key] = points
+                return points
             
     # new print methods with verovio
     def verovioCadences(self, df=None):

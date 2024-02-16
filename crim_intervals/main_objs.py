@@ -29,6 +29,17 @@ datePattern = re.compile('date isodate="(1\d*)')
 
 accepted_filetypes = ('mei', 'mid', 'midi', 'abc', 'xml', 'musicxml')
 pathDict = {}
+
+_directedNameMemos = {}  
+def _directed_name_from_note_strings(note1, note2):
+    key = (note1.nameWithOctave, note2.nameWithOctave)
+    if key not in _directedNameMemos:
+        ret = interval.Interval(note1, note2).directedName
+        _directedNameMemos[key] = ret
+        return ret
+    else:
+        return _directedNameMemos[key]
+
 # An extension of the music21 note class with more information easily accessible
 def importScore(path, recurse=False, verbose=False):
     '''
@@ -2433,6 +2444,7 @@ class ImportedPiece:
         ret.dropna(how='all', subset=ret.columns[:num_parts], inplace=True)
         return ret
 
+
     def _find_entry_int_distance(self, coordinates):
         """
         This helper function is used as part of presentationTypes.
@@ -2444,8 +2456,8 @@ class ImportedPiece:
         thus P-4, m3, P5, P5, M-9, P-4, P4
         """
         all_tones = self._getM21Objs()
-        noteObjects = [all_tones.at[item] for item in coordinates]
-        entry_ints = [interval.Interval(noteObjects[i], noteObjects[i + 1]).directedName for i in range(len(noteObjects) - 1)]
+        notes = [all_tones.at[item] for item in coordinates]
+        entry_ints = [_directed_name_from_note_strings(notes[i], notes[i + 1]) for i in range(len(notes) - 1)]
         return entry_ints
 
     def _split_by_threshold(seq, max_diff=70):

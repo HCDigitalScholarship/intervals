@@ -164,9 +164,9 @@ class ImportedPiece:
                 composer = self.score.metadata.composer
         self.metadata = {'title': title, 'composer': composer, 'date': date}
         if not self.metadata['date']:
-            if hasattr(self.score.metadata, 'date') and self.score.metadata.date != 'None':
+            if hasattr(self.score.metadata, 'date') and self.score.metadata.date is not None and self.score.metadata.date != 'None':
                 self.metadata['date'] = int(self.score.metadata.date[:4])
-            elif hasattr(self.score.metadata, 'dateCreated') and self.score.metadata.dateCreated != 'None':
+            elif hasattr(self.score.metadata, 'dateCreated') and self.score.metadata.date is not None and self.score.metadata.dateCreated != 'None':
             # music21 v8 replaced date with dateCreated and date will be removed in v10
                 self.metadata['date'] = int(self.score.metadata.dateCreated[:4])
 
@@ -2290,7 +2290,7 @@ class ImportedPiece:
             dur_ngrams.append(dur_ngrams_no_nan)
         ng['dur_ngrams'] = dur_ngrams
         ng['active_voices'] = ng['dur_ngrams'].apply(len)
-        ng['number_dur_ngrams'] = ng['dur_ngrams'].apply(set).apply(len)
+        ng['number_dur_ngrams'] = ng['dur_ngrams'].apply(lambda lyst: len(set(lyst)))
 
         # from JS to check full_hr or partial
         if full_hr == True:
@@ -2334,7 +2334,7 @@ class ImportedPiece:
             syll_no_nan = [z for z in rows if pd.isnull(z) == False]
             syll_set.append(syll_no_nan)
         filtered_lyric_ngs['syllable_set'] = syll_set
-        filtered_lyric_ngs["count_lyr_ngrams"] = filtered_lyric_ngs["syllable_set"].apply(set).apply(len)
+        filtered_lyric_ngs["count_lyr_ngrams"] = filtered_lyric_ngs["syllable_set"].apply(lambda lyst: len(set(lyst)))
 
         # and the number of active voices
         filtered_lyric_ngs['active_syll_voices'] = filtered_lyric_ngs['syllable_set'].apply(len)
@@ -2851,9 +2851,9 @@ class ImportedPiece:
                     else:
                         list_temps.append(temp)
             points = pd.DataFrame(list_temps)
-            points["Count_Offsets"] = points["Offsets"].apply(set).apply(len)
+            points["Count_Offsets"] = points["Offsets"].apply(lambda lyst: len(set(lyst)))
             points = points[points["Count_Offsets"] > 1]
-            points["Count_Voices"] = points["Voices"].apply(set).apply(len)
+            points["Count_Voices"] = points["Voices"].apply(lambda lyst: len(set(lyst)))
             points = points[points["Count_Voices"] > 1]
             points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
             points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
@@ -2901,9 +2901,9 @@ class ImportedPiece:
                                 list_temps.append(temp)
 
             points = pd.DataFrame(list_temps)
-            points["Count_Offsets"] = points["Offsets"].apply(set).apply(len)
+            points["Count_Offsets"] = points["Offsets"].apply(lambda lyst: len(set(lyst)))
             points = points[points["Count_Offsets"] > 1]
-            points = points[points["Voices"].apply(set).apply(len) > 1]
+            points = points[points["Voices"].apply(lambda lyst: len(set(lyst))) > 1]
             points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
             points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
             points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1

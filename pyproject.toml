@@ -5,6 +5,9 @@ description = "CRIM intervals package"
 readme = "README.md"
 authors = ["Richard Freedman <rfreedma@haverford.edu>"]
 license = "creative commons"
+packages = [
+    { include = "crim_intervals" }
+]
 
 [tool.poetry.dependencies]
 altair = "5.2.0"

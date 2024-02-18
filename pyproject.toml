@@ -5,9 +5,6 @@ description = "CRIM intervals package"
 readme = "README.md"
 authors = ["Richard Freedman <rfreedma@haverford.edu>"]
 license = "creative commons"
-packages = [
-    { include = "crim_intervals" },
-]
 
 [tool.poetry.dependencies]
 altair = "5.2.0"
@@ -42,16 +39,6 @@ xlsxwriter = "3.0.2"
 webcolors = "1.11.1"
 requests = "2.31.0"
 verovio = "4.1.0"
-
-[[tool.poetry_bumpversion.replacements]]
-files = ["crim_intervals/__init__.py"]
-search = '__version__ = "{current_version}"'
-replace = '__version__ = "{new_version}"'
-
-[[tool.poetry_bumpversion.replacements]]
-files = ["README.md"]
-search = 'Current Version: {current_version}'
-replace = 'Current Version: {new_version}'
 
 [build-system]
 requires = ["setuptools","poetry-core>=1.0.0"]

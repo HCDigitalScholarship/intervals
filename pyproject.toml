@@ -43,21 +43,15 @@ webcolors = "1.11.1"
 requests = "2.31.0"
 verovio = "4.1.0"
 
-
-
 [[tool.poetry_bumpversion.replacements]]
 files = ["crim_intervals/__init__.py"]
 search = '__version__ = "{current_version}"'
 replace = '__version__ = "{new_version}"'
 
-
 [[tool.poetry_bumpversion.replacements]]
 files = ["README.md"]
 search = 'Current Version: {current_version}'
 replace = 'Current Version: {new_version}'
-
-
-[tool.poetry.dev-dependencies]
 
 [build-system]
 requires = ["setuptools","poetry-core>=1.0.0"]

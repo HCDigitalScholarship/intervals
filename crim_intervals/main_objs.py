@@ -1943,54 +1943,116 @@ class ImportedPiece:
         return pd.DataFrame(res)
 
     def cadences(self, keep_keys=False):
-        '''
-        Return a dataframe of cadences in the piece along with metadata about
-        these cadence points such as the lowest pitch at moment of cadence, and
-        the cadential goal tone is returned.
+        """
+        Analyzes the realized, evaded, and abandoned cadences in the score and returns
+        a DataFrame with the results.
 
-        * The CVFs column shows the cadential voice functions condensed into
-        one string, following the order in which they appear in the voice parts,
-        starting with the uppermost voice.  Thus CB means the cantizans is above
-        the bassizans, and TC means the tenorizans is above the cantizans (in
-        terms of staff positions). For an explanation of the symbols see cvfs
-        documentation.
+        This method identifies the cadences in the score based on the contrapuntal voice
+        functions (CVFs) and melodic intervals. It also includes additional contextual
+        information about the cadences to facilitate filtering and further analysis.
+        The information in each column is as follows (in order of their appearance):
 
-        * The SinceLast and ToNext columns are the time in quarter notes since
-        the last or to the next cadence. The first cadence's SinceLast time and
-        the last cadence's ToNext time are the time since/to the beginning/end
-        of the piece.
+        * Pattern: Only visible if `keep_keys` is set to True. This column shows the
+        combination of cadential voice functions and chromatic intervals (of the
+        Cantizans, Tenorizans, and Altizans cvfs) that triggered this cadence
+        observation.
 
-        * The "Low" and "Tone" columns give the pitches of the lowest sounding
-        pitch at the perfection, and the goal tone of the cantizans (or altizans
-        if there is no cantizans) respectively. These are usually the same
-        pitch class, but not always.
+        * Key: Only visible if `keep_keys` is set to True. This column shows the
+        regex string used to match the Patterns found with those in the cadenceLabels.csv
+        file.
 
-        * "Rel" is short for relative, so "RelLow" is the lowest pitch of each
-        cadence shown as an interval measured against the final. Likewise,
-        "RelTone" is the cadential tone shown as an interval measured against the
-        final.
+        * CadType: This column shows the type of cadence that was observed. These can
+        be these can be realized, evaded, or abandoned. If fully realized, the cadence
+        will have no additional descriptor, but "Evaded" and "Abandoned" are labelled
+        as such. The cadence types recognized are "Authentic", "Phrygian", "Leaping
+        Contratenor", "Clausula Vera", "Phrygian Clausula Vera", "Altizans Only",
+        "Phrygian Altizans", "Double Leading Tone", "Quince", and "Reinterpreted".
 
-        * If `keep_keys` is set to True, the "Pattern" and "Key" columns will be kept in
-        the cadence results table. "Pattern" refers to the combination of cadential voice
-        functions and chromatic intervals. "Key" is a regex string used to match
-        the Patterns found with those in the cadenceLabels.csv file.
+        * LeadingTones: The number of leading tones (i.e. semitones) as notated in the
+        score. These can be from the Cantizans, Tenorizans, or Altizans. If the CVF
+        that would normally have the leading tone (usually the Cantizans) is evaded or
+        abandoned, the basic melodic movement is no longer fulfilled so this measurement
+        doesn't apply and a -1 is given. 0 shows that no leading tone is notated in the
+        score, so these places are likely candidates for adding editorial ficta.
 
-        * The "Sounding" column shows how many voices were sounding at the moment of
-        the cadence. Note that this count includes voices that did not have a CVF
-        role in the cadence, and ones that only started at the perfection.
+        * CVFs: The cadential voice functions condensed into one string, following the
+        order in which they appear in the voice parts, starting with the uppermost voice.
+        Thus CB means the cantizans is above the bassizans, and TC means the tenorizans
+        is above the cantizans (in terms of staff positions). For an explanation of the
+        symbols see cvfs documentation. Uppercase CVFs are realized, lowercase are evaded
+        or abandoned. However, the presence of evaded or abandoned CVFs does not
+        necessarily mean the cadence is evaded or abandoned.
 
-        * The "Progress" column gives the progress toward the end of the piece measured 0-1
-        where 1 is the time point of the last attack in the piece.
+        * Low: The pitch of the lowest sounding note at the perfection.
 
-        Usage:
+        * RelLow: The lowest pitch of each cadence shown as an interval measured against
+        the final. Speaking of which, you can get the final of a piece with the .final()
+        method. Looking at lowest sounding pitch of cadences relative to the final
+        makes it easier to compare the modal procedure of pieces that are in different
+        modes and/or transposed.
 
-        piece = importScore('url_to_piece')
-        piece.cadences()
+        * Tone: Similar to the "Low" column, the "Tone" is the goal tone of the cantizans
+        (or altizans if there is no cantizans) respectively. This is usually the same
+        pitch class as the "Low" column, but not always. This is NaN if the cadence has
+        an evaded or abandoned Cantizans CVF.
 
-        Note that the output of this function can be used with verovioCadences to show
-        each cadence in staff notation.
+        * RelTone: The cadential tone from the "Tone" column shown as an interval
+        measured against the final. This is similar to the "RelLow" column, but for the
+        cadential tone instead of the lowest sounding pitch. Looking at cadential tones
+        relative to the final makes it easier to compare the modal procedure of pieces
+        that are in different modes and/or transposed.
 
-        '''
+        * TSig: The prevailing time signature (as encoded in the score) at the
+        perfection. This can be useful to look at cadences in different
+        mensurations/meters, particularly comparing binary vs. ternary situations.
+
+        * Measure: The measure number at the perfection.
+
+        * Beat: The beat number at the perfection.
+
+        * Sounding: How many voices are sounding at the perfection. Note that this
+        count includes voices that did not have a CVF role in the cadence, and ones
+        that only started or entered at the perfection.
+
+        * Progress: The progress toward the end of the piece measured 0-1 where 0 is
+        the very beginning of the piece and 1 is the time point of the last attack in
+        the piece. This is particularly useful if you want to compare cadences in
+        different pieces, especially if they are of different lengths. For example,
+        a "Progress" value of 0.5 will always be at the halfway point of a piece, no
+        matter how long or short the piece is.
+
+        * SinceLast: The time in quarter notes since the last cadence. The first
+        cadence's SinceLast time is the time since the beginning of the piece. An
+        unusually high value here could suggest that the prior cadence was particularly
+        conclusive, and that a less broken-up stretch of counterpoint follwed it.
+        Alternatively a high value could mean that a cadence is being missed within
+        the "SinceLast" number of quarter notes just prior to the cadence in question.
+
+        * ToNext: The time in quarter notes to the next cadence. The last cadence's
+        ToNext time is the time to the end of the piece. An unusually high value here
+        could suggest that this cadence is particularly conclusive, and that a less
+        broken-up stretch of counterpoint follows it. Alternatively a high value
+        could mean that a cadence is being missed within the "ToNext" number of
+        quarter notes just after the cadence in question.
+
+        Parameters
+        ----------
+        keep_keys : bool, optional
+            If True, the returned DataFrame includes the 'Pattern' and 'Key' columns.
+            If False (default), these columns are dropped from the DataFrame.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame where each row represents a cadence. The columns provide details
+            about the cadence, including the CVFs, melodic intervals, measure, beat,
+            time signature, sounding pitch, progress, lowest pitch, and relative pitches.
+
+        Notes
+        -----
+        This method caches the result in the `analyses` attribute of the `Score` object
+        to avoid recomputing the cadences if the method is called again with the same parameters.
+        """
         if 'Cadences' in self.analyses:
             if keep_keys:
                 return self.analyses['Cadences']

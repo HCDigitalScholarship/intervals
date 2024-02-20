@@ -93,8 +93,6 @@ cd /Users/rfreedma/Documents/CRIM_Python/intervals_local_test
 Type that into the Terminal and press enter.  Now the terminal command prompt should include the name of your directory:
 
 
-
-
 ### 7.  Sync Your Folder to the GitHub Repository for CRIM Intervals Streamlit
 
 - Now you will issue the command to 'clone' the code and put it in your Project Folder.  Don't worry, you can always delete this, and it will have no effect on any other software on your computer!
@@ -119,15 +117,16 @@ git clone https://github.com/HCDigitalScholarship/intervals.git
 cd intervals
 ```
 
-Now you are ready to install the 'requirements'. Copy and paste the following into your terminal:
+
+![alt text](images/env19.png)
+
+Now you are ready to install your local code. Copy and paste the following into your terminal.  Yes, you need to *include the period after the word 'install'*!  This simply makes sure that *all* the code will be installed.
 
 ```
-pip install -r requirements.txt
+pip install .
 ```
 
-Together those steps look like this:
-
-![alt text](images/env9.png)
+![alt text](images/env17.png)
 
 - There will be a lot of activity for a minute or two as all the libraries are installed.  But eventually you will return to the command prompt.  But meanwhile you might see this:
 

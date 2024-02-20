@@ -1507,20 +1507,69 @@ class ImportedPiece:
                   exclude=['Rest'], interval_settings=('d', True, True), unit=0,
                   offsets='first', show_both=False):
         '''
-        Group sequences of observations in a sliding window "n" events long
-        (default n=3). If the `exclude` parameter is passed and any item in that
-        list is found in an ngram, that ngram will be removed from the resulting
-        DataFrame. Since `exclude` defaults to `['Rest']`, pass an empty list if
-        you want to allow rests in your ngrams.
+        Generate n-grams from the given dataframe (df) or from the harmonic and
+        melodic intervals of the piece.
 
-        There are two primary modes for this method. They were controlled by the
-        `how` parameter, but this parameter is now deprecated and the mode is
-        determined by what is or is not passed as the `df` and `other` parameters.
+        Group sequences of observations in a sliding window "n" events long
+        (default n=3). Whether `df` and/or `other` parameters are passed determines
+        how the ngrams are assembled. When a `df` is passed but no `other` is passed,
+        the columns of the `df` are the data source. When both `df` and `other`
+        parameters are passed, contrapuntal-module ngrams are generated. Similarly,
+        if neither `df` nor `other` dataframes are provided, they will be supplied
+        according to the interval_settings parameter. These contrapuntal-module
+        ngrams are useful to assign specific labels to all 2-voice combinations `n`
+        events long. For our ngrams, an "event" is a note or rest in either voice. This
+        method accepts the following parameters.
+
+        Parameters:
+        df : pandas.DataFrame
+            A DataFrame of note and rest strings. If `df` is None, harmonic intervals
+            will be supplied by the .harmonic method according to the `interval_settings`
+            parameter.
+        n : int
+            The size of the ngrams. If `n` is set to -1, the longest ngrams at
+            all time points excluding subset ngrams will be returned.
+        how : str
+            This parameter is deprecated. The mode is now determined by what is
+            or is not passed as the `df` and `other` parameters.
+        other : pandas.DataFrame
+            A DataFrame of melodic motions. If provided, the method will return
+            contrapuntal-module ngrams. This will also happen if neither `df` nor
+            `other` are provided.
+        held : str
+            The label for when one voice sustains a note while the other voice moves.
+            This defaults to "Held" to distinguish between held notes and reiterated ones
+            but you may want to pass the way a unison gets labeled in your `other`
+            DataFrame (e.g. "P1" or "1").
+        exclude : list
+            A list of strings that will be used to filter out ngrams that contain any
+            of the strings in the list. The default is to exclude rests and most likely
+            you will want to leave this setting as is.
+        interval_settings : tuple
+            A tuple of settings that will be passed to the .harmonic and .melodic
+            methods if `df` and `other` are not provided. The first item in the tuple
+            is the kind of interval to use. The second item is whether to use directed
+            intervals. The third item is whether to use compound intervals.
+        unit : int or float
+            If you want to measure the intervals at a regular durational interval,
+            pass the desired regular durational interval as an integer or float.
+        offsets : str
+            If "first" is selected (default option), the returned ngrams will be
+            grouped according to their first notes' offsets, while if "last" is
+            selected, the returned ngrams will be grouped according to the last
+            notes' offsets. You can also set offsets to "both" in which case a
+            dataframe with a multi-index of both the starting and ending offsets
+            will be returned.
+        show_both : bool
+            If True, the melodic motion of both voices in contrapuntal modules are
+            shown. If False, only the melodic motion of the lower voice is shown.
+            This added information is needed to disambiguate some complex contrapuntal
+            modules.
 
         When a dataframe is passed as `df` and nothing is given for `other`, this
-        is the simple case where the events in each
-        column of the `df` DataFrame are grouped at the offset of the first event
-        in the window. For example, to get 4-grams of melodic intervals:
+        is the simple case where the events in each column of the `df` DataFrame
+        are grouped at the offset of the first event in the window. For example,
+        to get 4-grams of melodic intervals:
 
         ip = ImportedPiece('path_to_piece')
         ngrams = ip.ngrams(df=ip.melodic(), n=4)
@@ -1547,12 +1596,6 @@ class ImportedPiece:
         ngrams at all time points excluding subset ngrams. The returned
         dataframe will have ngrams of length varying between 1 and the longest
         ngram in the piece.
-
-        The `offset` setting can have three modes. If "first" is selected (default option),
-        the returned ngrams will be grouped according to their first notes' offsets,
-        while if "last" is selected, the returned ngrams will be grouped according
-        to the last notes' offsets. You can also set offsets to "both" in which case a
-        dataframe with a multi-index of both the starting and ending offsets will be returned.
 
         If you want want "module" ngrams taken at a regular durational interval,
         you can omit passing `df` and `other` dataframes and instead pass the

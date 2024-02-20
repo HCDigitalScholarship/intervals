@@ -2,4 +2,4 @@ from .main import *
 # from .classify import *
 #from .main_objs import *
 from .visualizations import *
-__version__ = "2.0.12"
+__version__ = "2.0.13"

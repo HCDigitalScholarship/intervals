@@ -11,18 +11,23 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [ 3.8, 3.9 ]
+        python-version: [ '3.10', '3.11' ]
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install flake8 pytest pytest-cov
-          pip install -r requirements.txt --use-feature=fast-deps
+          pip install -r requirements.txt
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
@@ -31,21 +36,30 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test with pytest
         run: |
-          pytest  --cov visualizations --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
-          pytest  --cov main_objs --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
+          python -m pytest  --cov visualizations --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
+          python -m pytest  --cov main_objs --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
       - name: Install poetry and "patch" the build
         run: |
-          python -m pip install --upgrade pip
           pip install poetry
           poetry self add poetry-bumpversion
           poetry version patch
       - name: Publish to Pypi
-        if: ${{ matrix.python-version == 3.9 }}
+        if: github.ref == 'refs/heads/main'  # This ensures publishing only happens on main branch
         run: |
           poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
           poetry publish --build
-        
-      - uses: actions/checkout@v3
+      
+      - name: Update Markdown with New Version
+        if: github.ref == 'refs/heads/main' # Same condition to ensure it runs only on main branch
+        run: |
+          VERSION=$(poetry version -s)
+          sed -i "s/Current Version: .*/Current Version: $VERSION/" README.md
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -am "Update README.md with new version $VERSION [skip ci]" # Add [skip ci] to prevent re-triggering
+          git push
+
+      - uses: actions/checkout@v4
       - uses: stefanzweifel/git-auto-commit-action@v4
 
 

@@ -24,7 +24,6 @@ import re
 import altair as alt
 import matplotlib.pyplot as plt
 import seaborn as sns
-from ipywidgets import interact
 from pandas.io.json import json_normalize
 from pyvis.network import Network
 from IPython.display import display

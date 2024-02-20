@@ -48,16 +48,20 @@ The result is thus sequence of N items expresses as a string. If n = 3, for inst
 
 By default the contrapuntal modules use `kind = 'diatonic'`, `directed = True`, and `compound = True` for the harmonic and melodic intervals it reports. Of course it is vital that the intervals for both dimensions of these modules always match.  Fortunately the `ngrams` function provides a simple way to do this via the `interval_settings` parameter.  The values must be applied in this order:  **kind, directed, compound** and enclosed in parenthesis as a single parameter called 'interval_settings'.  Here for instance the kind is chromatic, directed is True, and compound is False:
 
-    piece.ngrams(interval_settings = ('c', True, False))  
+```python
+piece.ngrams(interval_settings = ('c', True, False))
+``` 
 
 ![Alt text](images/ng_2.png)
 
 This is the equivalent of the rather verbose sequence:
 
-    mel = piece.melodic(kind = "c", directed = True, compound = False)
-    har = piece.harmonic(kind = "c", directed = True, compound = False)
-    ngrams = piece.ngrams(df = har, other = mel)
-    ngrams  
+```python
+mel = piece.melodic(kind = "c", directed = True, compound = False)
+har = piece.harmonic(kind = "c", directed = True, compound = False)
+ngrams = piece.ngrams(df = har, other = mel)
+ngrams
+```
 
 See more about combining different dataframes into ngrams below.
 
@@ -78,42 +82,52 @@ Note:  Ngrams produced in the following ways will be dataframes of 'tuples'.  Se
 
 Ngrams that represent a **single dimension of the score** are build by passing a dataframe to the `ngram()` function via the `df` parameter. For example, the following code will find the **melodic ngrams** in a piece:  
 
-    mel = piece.melodic()
-    mel_ngrams = piece.ngrams(df = mel)
-    mel_ngrams  
+```python
+mel = piece.melodic()
+mel_ngrams = piece.ngrams(df = mel)
+mel_ngrams 
+``` 
 
 ![Alt text](images/ng_5.png)
 
 *Adjust the parameters of the original function first!* For instance to find **melodic ngrams with combined unisons and chromatic intervals**, first specify the relevant parameters with `piece.melodic()`, and then pass those results to `piece.ngrams()` with the `df` parameter:
 
-    nr = piece.notes(combineUnisons = True)
-    mel = piece.melodic(df = nr, end = False)
-    mel_ng = piece.ngrams(df = mel, n = 4) 
-    mel_ng
+```python
+nr = piece.notes(combineUnisons = True)
+mel = piece.melodic(df = nr, end = False)
+mel_ng = piece.ngrams(df = mel, n = 4) 
+mel_ng
+```
 
 ![Alt text](images/ng_6.png)
 
 Similar strategies would work for harmonic, durations, or lyrics:
 
-    har = piece.harmonic(compound = False)
-    har_ngrams = piece.ngrams(df = har).fillna('')
-    har_ngrams
+```python
+har = piece.harmonic(compound = False)
+har_ngrams = piece.ngrams(df = har).fillna('')
+har_ngrams
+```
 
 ![Alt text](images/ng_7.png)
 
 Or:
 
-    lyr = piece.lyrics()
-    lyr_ngrams = piece.ngrams(df = lyr, n=5).fillna('')
-    lyr_ngrams
+```python
+lyr = piece.lyrics()
+lyr_ngrams = piece.ngrams(df = lyr, n=5).fillna('')
+lyr_ngrams
+```
 
 ![Alt text](images/ng_8.png)
 
 Or:
 
-    dur = piece.durations()
-    dur_ngrams = piece.durations(df = dur).fillna('')
-    dur_ngrams
+```python
+dur = piece.durations()
+dur_ngrams = piece.ngrams(df = dur, n=5).fillna('')
+dur_ngrams
+```
 
 ![Alt text](images/ng_9.png)
 
@@ -122,15 +136,19 @@ Or:
 
 When gathering ngrams, we can either search for ngrams of a specific length (default = 3). It can be set via the `n  parameter:
 
-    mel = piece.melodic()
-    ngrams = piece.ngrams(df = mel, n = 5)
-    ngrams 
+```python
+mel = piece.melodic()
+ngrams = piece.ngrams(df = mel, n = 5)
+ngrams 
+```
 
 Remember that modifications to the particular type of feature in question needs to be made when applying that function.  The type of melodic interval, for instance, is set, here in `melodic()`.  The length of the ngrams is set in `ngrams()`:
 
-    mel = piece.melodic(kind = "c", compound = False)
-    ngrams = piece.ngrams(df = mel, n = 5) 
-    ngrams 
+```python
+mel = piece.melodic(kind = "c", compound = False)
+ngrams = piece.ngrams(df = mel, n = 5) 
+ngrams
+```
 
 #### Also note that: 
 
@@ -142,17 +160,34 @@ Remember that modifications to the particular type of feature in question needs 
 
 The default 'contrapuntal module' ngram is in fact a combination of two different dataframes:  one for the harmonic intervals and the other for the melodic ones. But it is possible to create other combinations by passing *both `df` and `other` to `ngrams()`, provided that the `df` and `other` parameters have the same shape (overall number of rows and columns). 
 
-For example, the following line of code will produce **ngrams of length 5 containing the information associated with both the melodic intervals and durations at each subsequent offset in a piece:**  
+For example, the following line of code will produce **ngrams of length 5** containing the information associated with **both the melodic intervals and the durational ratios** at each subsequent offset in a piece:**  
 
-    lyr = piece.lyrics()  
-    dur = piece.durations()  
-    lyr_dur_ngrams = piece.ngrams(df = lyr, other = dur, n = 5)
-    lyr_dur_ngrams  
+```python
+n = 5
+dur_rat = piece.durationalRatios().round(2)
+mel = piece.melodic()
+ngrams = piece.ngrams(df=mel, other=dur_rat)
+ngrams
+```
+
+![Alt text](images/ng_mel_dur_rat.png)
+
+Or here we **combine durations with lyrics**, which in turn would tell us when voices are singing the same syllables to the same durations
+
+
+```python
+lyr = piece.lyrics()  
+dur = piece.durations()  
+lyr_dur_ngrams = piece.ngrams(df = lyr, other = dur, n = 5)
+lyr_dur_ngrams  
+```
 
 Or, more directly:  
 
-    ng = piece.ngrams(df = Piece.lyrics(), other = piece.durations(), n = 5)
-    ng 
+```python
+ng = piece.ngrams(df = Piece.lyrics(), other = piece.durations(), n = 5)
+ng
+```
 
 ![Alt text](images/ng_10.png)
 
@@ -164,14 +199,18 @@ It would probably make little sense to use '1.0' or some other tiny unit, since 
 
 The 'unit' parameter only works with contrapuntal ngrams:
 
-    piece.ngrams(unit = 4)  
+```python
+piece.ngrams(unit = 4)
+``` 
 
 If regularized melodic ngrams (or some other type) are needed, it will be necessary to use the `regularize()` function:
 
-    nr = piece.notes()
-    reg = piece.regularize(nr, unit = 2)
-    mel = piece.melodic(df = reg, kind = 'd')
-    piece.ngrams(df = mel)
+```python
+nr = piece.notes()
+reg = piece.regularize(nr, unit = 2)
+mel = piece.melodic(df = reg, kind = 'd')
+piece.ngrams(df = mel)
+```
 
 Compare results with and without regularization (unit = 2):
 
@@ -185,17 +224,19 @@ An ngram can be placed within the DataFrame at one of two offsets. By default, t
 
 Melodic ngrams at offset at start of first note (note settings for both mel and ngrams!):
 
-    mel = piece.melodic(kind = "c", end = False)
-    mel_ngrams_lastOffset = piece.ngrams(df = mel, n = 5, offsets = "first").fillna('')
-    mel_ngrams_lastOffset 
-
+```python
+mel = piece.melodic(kind = "c", end = False)
+mel_ngrams_lastOffset = piece.ngrams(df = mel, n = 5, offsets = "first").fillna('')
+mel_ngrams_lastOffset
+```
 
 Melodic ngrams at offset at end of last note (note settings for both mel and ngrams!):
 
-    mel = piece.melodic(kind = "c", end = True)
-    mel_ngrams_lastOffset = piece.ngrams(df = mel, n = 5, offsets = "last").fillna('')
-    mel_ngrams_lastOffset 
-
+```python
+mel = piece.melodic(kind = "c", end = True)
+mel_ngrams_lastOffset = piece.ngrams(df = mel, n = 5, offsets = "last").fillna('')
+mel_ngrams_lastOffset
+```
 
 ![Alt text](images/ng_12.png)
 
@@ -224,19 +265,23 @@ after a fermata will also be counted as an entry.
 
 Thus compare *moving window of melodic ngrams*:
 
-    mel = piece.melodic(kind = 'd', end=False)
-    mel_ngrams = piece.ngrams(df = mel, n=4, offsets = 'first').fillna('')
-    piece.detailIndex(mel_ngrams, offset=True).head(10)
+```python
+mel = piece.melodic(kind = 'd', end=False)
+mel_ngrams = piece.ngrams(df = mel, n=4, offsets = 'first').fillna('')
+piece.detailIndex(mel_ngrams, offset=True).head(10)
+```
 
 ![Alt text](images/ng_13.png)
 
 With results *limited to entries*:
 
 
-    mel = piece.melodic(kind = 'd', end = False)
-    mel_ngrams = piece.ngrams(df = mel, n = 4, offsets = 'first')
-    entries = piece.entries(df = mel_ngrams, thematic=False, anywhere=False, fermatas=True, exclude=[]).fillna('')
-    entries  
+```python
+mel = piece.melodic(kind = 'd', end = False)
+mel_ngrams = piece.ngrams(df = mel, n = 4, offsets = 'first')
+entries = piece.entries(df = mel_ngrams, thematic=False, anywhere=False, fermatas=True, exclude=[]).fillna('')
+entries
+```
 
 ![Alt text](images/ng_14.png)
 
@@ -250,36 +295,40 @@ With results of *limited to entries allowing only entries that occur more than o
 
 This output can then be passed to yet another function as a `df` value. For example, we can sum the durations of each cell together to find the overall *durations of melodic ngrams* with the following:  
 
-    # get notes, either combining unisons or not
-    nr = piece.notes(combineUnisons = True)
-    # get melodic intervals based on previous, plus settings.  Note end = False so that we associate the interval with the starting note
-    mel = piece.melodic(df = nr, kind = 'd', end = False)
-    # now the mel ngrams, based on that starting position, etc
-    mel_ng = piece.ngrams(df = mel, n = 4).fillna(')
-    # and instead of the moving window, we mask them off to entries only
-    entries = piece.entries(mel_ng)
-    # now the total durations of those entries. note that passing a df to duration will make a sum of all the values in each cell
-    ng_durs = piece.durations(df = entries)
-    ng_durs
+```python
+# get notes, either combining unisons or not
+nr = piece.notes(combineUnisons = True)
+# get melodic intervals based on previous, plus settings.  Note end = False so that we associate the interval with the starting note
+mel = piece.melodic(df = nr, kind = 'd', end = False)
+# now the mel ngrams, based on that starting position, etc
+mel_ng = piece.ngrams(df = mel, n = 4).fillna('')
+# and instead of the moving window, we mask them off to entries only
+entries = piece.entries(mel_ng)
+# now the total durations of those entries. note that passing a df to duration will make a sum of all the values in each cell
+ng_durs = piece.durations(df = entries)
+ng_durs
+```
 
 ## Tuple Trouble, and How to Fix It
 
-Note that the output of `ngrams()` for *any of the single-feature types* (melodic, harmonic, durations, lyrics) is a DataFrame of **tuples**, which are immutable data types. To convert from tuples to usable strings, it is necessary to apply a custom function to each cell of the DataFrame with `applymap()`:  
+Note that the output of `ngrams()` for *any of the single-feature types* (melodic, harmonic, durations, lyrics) is a DataFrame of **tuples**, which are immutable data types. To convert from tuples to usable strings, it is necessary to apply a custom function to each cell of the DataFrame with `map()`:  
   
-    #define the function to convert tuples to strings
-    def convertTuple(tup):
-        out = ""
-        if isinstance(tup, tuple):
-            out = ', '.join(tup)
-        return out  
-    
-    #find mel ngrams
-    mel = piece.melodic()
-    mel_ngrams = piece.ngrams(df = mel)
+```python
+#define the function to convert tuples to strings
+def convertTuple(tup):
+    out = ""
+    if isinstance(tup, tuple):
+        out = ', '.join(tup)
+    return out  
 
-    #apply function to all cells
-    mel_ngrams_no_tuples = mel_ngrams.applymap(convertTuple)
-    mel_ngrams_no_tuples
+#find mel ngrams
+mel = piece.melodic()
+mel_ngrams = piece.ngrams(df = mel)
+
+#apply function to all cells
+mel_ngrams_no_tuples = mel_ngrams.map(convertTuple)
+mel_ngrams_no_tuples
+```
 
 It is **not** necessary to treat the contrapuntal ngrams in this way, as the default function already converts the results to strings.  
 
@@ -287,8 +336,10 @@ It is **not** necessary to treat the contrapuntal ngrams in this way, as the def
 
 Similarly to other functions previously discussed in this documentation, ngram DataFrams can be cleaned up using the `dropna()` and `fillna()` functions to drop all rows filled with only "NaN" values, and replace the remaining "NaN" values with blank spaces so that the table may be read more easily:  
 
-    cleaned_entries = entries.dropna(how = "all").fillna(' ')
-    cleaned_entries  
+```python
+cleaned_entries = entries.dropna(how = "all").fillna(' ')
+cleaned_entries
+```
 
 ## Organizing by Measures and beats  
 
@@ -298,17 +349,128 @@ To display DataFrames relative to measures, and beats within measures, rather th
 
 After using the `ngrams()` function to identify all of the ngrams in a piece, they can be counted and sorted by their frequency in the piece overall using some [general pandas functions](15_Pandas_Basics.md):  
 
-    mel = piece.melodic(kind = "c", compound = False)
-    melNgrams = mel.ngrams(n = 4)
-    melNgrams.stack().value_counts().to_frame()  
+```python
+mel = piece.melodic(kind = "c", compound = False)
+melNgrams = mel.ngrams(n = 4)
+melNgrams.stack().value_counts().to_frame()
+```
 
 ## Searching for melodic ngrams
 
 **More Information Pending**  
 
 
+## Visualizing nGrams (and Comparing nGrams across a Corpus)
+
+The CRIM Intervals visualization library makes it possible to display ngrams as a dynamic chart, with each nGram displayed from the start (left) to end (right) of the piece, voice-by-voice.  Identical nGrams receive the same color.
+
+We can display these 'heat maps' for one piece or an entire corpus:
+
+```python
+# define piece list
+piece_list = ['CRIM_Model_0019.mei',
+                     'CRIM_Mass_0019_1.mei',
+                     'CRIM_Mass_0019_2.mei',
+                     'CRIM_Mass_0019_3.mei',
+                     'CRIM_Mass_0019_4.mei',
+                     'CRIM_Mass_0019_5.mei']
+```
 
 
+Set parameters for the ngrams (melodic in this case)
+
+
+```python
+# settings for ngrams, unisons and kind
+
+n=4
+combineUnisons=False
+kind='d'
+```
+
+Now a map of melodic ngrams for just one piece:
+
+
+```python
+# select the model from the list
+model = piece_list[0]
+prefix = 'https://crimproject.org/mei/' 
+# prefix = 'Music_Files/'
+url = prefix + model
+model = importScore(url)
+
+# find entries for model
+nr = model.notes(combineUnisons=combineUnisons)
+mel = model.melodic(df=nr, kind=kind, compound=False, unit=0, end=False)
+mod_mel_ngrams = model.ngrams(df=mel, n=n)
+mod_entry_ngrams = model.entries(df=mel, n=n, thematic=True, anywhere=True)
+mod_mel_ngrams_duration = model.durations(df=mel, n=n, mask_df=mod_entry_ngrams)
+mod_entries_stack = list(mod_entry_ngrams.stack().unique())
+
+print(model.metadata)
+
+display(viz.plot_ngrams_heatmap(mod_entry_ngrams, mod_mel_ngrams_duration, 
+                        selected_patterns=mod_entries_stack,
+                        voices=[]))
+```
+
+![Alt text](images/viz_1.png)
+
+Now for a corpus consisting of a 'model' (the first piece in the list) and any set of other pieces (normally the movements of a Mass). Note that the code below shows only the 'entry' ngrams shared by each pair of pieces.
+
+```python
+# select the model from the list
+model = piece_list[0]
+prefix = 'https://crimproject.org/mei/' 
+# prefix = 'Music_Files/'
+url = prefix + model
+model = importScore(url)
+
+# find entries for model
+nr = model.notes(combineUnisons=combineUnisons)
+mel = model.melodic(df=nr, kind=kind, compound=False, unit=0, end=False)
+mod_mel_ngrams = model.ngrams(df=mel, n=n)
+mod_entry_ngrams = model.entries(df=mel, n=n, thematic=True, anywhere=True)
+mod_mel_ngrams_duration = model.durations(df=mel, n=n, mask_df=mod_entry_ngrams)
+mod_entries_stack = list(mod_entry_ngrams.stack().unique())
+
+# find entries mass movements:
+mass_movements = piece_list[1:6]
+
+for movement in mass_movements:
+    
+    prefix = 'https://crimproject.org/mei/' 
+    url = prefix + movement
+    m_movement = importScore(url)
+    nr = m_movement.notes(combineUnisons=combineUnisons)
+    mel = m_movement.melodic(df=nr, kind=kind, compound=False, unit=0, end=False)
+    mass_mvmt_mel_ngrams = m_movement.ngrams(df=mel, n=n)
+    mass_mvmt_entries = m_movement.entries(df=mel, n=n, thematic=True, anywhere=True)
+    mass_mvmt_mel_ngrams_duration = m_movement.durations(df=mel, n=n, mask_df=mass_mvmt_entries)
+    mass_mvmt_entries_stack = mass_mvmt_entries.stack()
+
+    
+    # find shared entries
+    
+    shared_entries = list(set(mass_mvmt_entries_stack).intersection(mod_entries_stack))
+
+    # print model metadata and chart
+    print(model.metadata)
+
+    display(viz.plot_ngrams_heatmap(mod_entry_ngrams, mod_mel_ngrams_duration, 
+                        selected_patterns=shared_entries,
+                        voices=[])) #.plot_ngrams_heatmap(entry_ngrams,
+
+
+    # print mass movement metadata and chart
+    print(m_movement.metadata)
+    display(viz.plot_ngrams_heatmap(mass_mvmt_entries, mass_mvmt_mel_ngrams_duration, 
+                                selected_patterns=shared_entries,
+                                voices=[])) #.plot_ngrams_heatmap(entry_ngrams,
+```
+Here we show just the first pair:
+
+![Alt text](images/vis_2.png)
 -----
 
 ## Sections in this guide

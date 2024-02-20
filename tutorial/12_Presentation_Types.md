@@ -36,13 +36,14 @@ Settings:  Handling of **Unisons**, **Flexes**, and **Hidden Patterns**
 
 Typical Settings:
 
-    piece.presentationTypes(limit_to_entries = True,
-                            head_flex=1,
-                            body_flex = 0,
-                            include_hidden_types = False,
-                            combine_unisons = True,
-                            melodic_ngram_length = 4)
-
+```python
+piece.presentationTypes(limit_to_entries = True,
+                        head_flex=1,
+                        body_flex = 0,
+                        include_hidden_types = False,
+                        combine_unisons = True,
+                        melodic_ngram_length = 4)
+```
 --- 
 
 ## Render Presentation Types as Score with Verovio
@@ -54,15 +55,22 @@ The function also displays metadata about each excerpt, drawn from the presentat
 To use the function, pass the piece, cadence data frame, url of the piece, and mei_file name (all loaded in the first part of this notebook) as follows:
 For a very simple displayt of presentation types using default settings:
 
-    piece.verovioPtypes()
+```python
+piece.verovioPtypes()
+```
 
 Otherwise you might want to filter the p_types or use custom settings. In this case first you will need to create the p_types list, either with custom settings (see the possibilities above) or filter them.
 
-    p_types = piece.presentationTypes()
+```python
+p_types = piece.presentationTypes()
+```
+
 
 Then filter the results, and pass these to verovioPtypes():
 
-    piece.verovioPtypes(p_types)
+```python
+piece.verovioPtypes(p_types)
+```
 
 ---
 
@@ -72,40 +80,62 @@ Pandas offers many ways to filter any dataframe. One of the simplest involves ch
 
 **Exact Match the Full Contents of a Cell**. For this we use the Python method `isin(['My_Exact_Pattern'])`, which returns True for any row in which the given columns is an exact match of the given string. If you run the following in a cell, you will see a long Series of True or False values:
 
-    p_types["Presentation_Type"].isin(['PEN'])
+```python
+p_types["Presentation_Type"].isin(['PEN'])
+```
+
 
 We can in turn use this **Boolean Series to "mask" the entire dataframe** to show either all the rows for which the condition is True or False (and so we could show all the PEN's, or everything except the PEN's).
 
 
 NOT the PENs includes the "~" to reverse the True and False values:
 
-    p_types[~p_types["Presentation_Type"].isin(['PEN'])]
+```python
+p_types[~p_types["Presentation_Type"].isin(['PEN'])]
+```
+
 
 You can in fact pass several possible values in this way. But whether you are searching for one or more strings, they must be presented in the form of a Python list: ['My_Exact_Pattern_1', 'My_Exact_Pattern_2']. For instance, we could look for either PEN or ID:
 
-    p_types[p_types["Presentation_Type"].isin(['PEN', 'ID'])]
+```python
+p_types[p_types["Presentation_Type"].isin(['PEN', 'ID'])]
+```
+
     
 Finally, note that a partial match would return no results:
 
-    p_types[p_types["Presentation_Type"].isin(['P'])]
+```python
+p_types[p_types["Presentation_Type"].isin(['P'])]
+```
 
 **Partial Match of Characters** is possible with `str.contains` method. This returns True for any row in which our search pattern is contained anywhere in the given cell. We could find any row in which the column "Presentation Type" contains "P" anywhere, and not just a complete exact match:
 
-    p_types[p_types["Presentation_Type"].str.contains("P")]
+```python
+p_types[p_types["Presentation_Type"].str.contains("P")]
+```
+
 
 In practice it's useful to give such searches a name of their own, and to make a .copy() of the dataframe so that you don't disturb the original results:
 
-    pens_only = p_types[p_types["Presentation_Type"].str.contains("P")].copy()
+```python
+pens_only = p_types[p_types["Presentation_Type"].str.contains("P")].copy()
+```
+
 
 Of course it would be more interesting to search for substrings in something like the Melodic Intervals column (which have various sets of values where we might want to know which patterns contain a M3 in the midst of some other series of entries). But for this we need to manage the data types (see below).
 
 Comparisons: < or > can be useful for Fuga, as when you might want to find all the Fugas longer (or shorter) than a certain size. This code, for instance, will return a Boolean Series (True/False) of the column for Number_Entries:
 
-    p_types['Number_Entries'] < 4
+```python
+p_types['Number_Entries'] < 4
+```
+
 
 We can in turn use this to 'mask' the p_types dataframe itself (notice the two sets of brackets):
 
-    p_types[p_types['Number_Entries'] < 4]
+```python
+p_types[p_types['Number_Entries'] < 4]
+```
 
 ---
 
@@ -115,75 +145,91 @@ Some fields (like composer or title) are simply strings of characters. But the d
 
 This is done by applying a function to all items in the column. Here we map each item in the list to a 'string', then join those strings together as a single string, and update the column accordingly:
 
-    p_types["Melodic_Entry_Intervals"] = p_types["Melodic_Entry_Intervals"].apply(lambda x: ', '.join(map(str, x))).copy()
+```python
+p_types["Melodic_Entry_Intervals"] = p_types["Melodic_Entry_Intervals"].apply(lambda x: ', '.join(map(str, x))).copy()
+```
 
 Now we can use `str.contains()` to find subpatterns within the Melodic Entry Intervals:
 
-    patterns_with_5 = p_types[p_types["Melodic_Entry_Intervals"].str.contains("5")].copy()
+```python
+patterns_with_5 = p_types[p_types["Melodic_Entry_Intervals"].str.contains("5")].copy()
+```
+
 
 And now it is also possible to count the values of the sets of entries as strings:
 
-    p_types["Melodic_Entry_Intervals"].value_counts().to_frame()
+```python
+p_types["Melodic_Entry_Intervals"].value_counts().to_frame()
+```
+
 
 ---
 ## Grouping Results to See the Big Picture
 
 Groupby functions are a useful way to find sets of related items.
 
-    pd.set_option('display.max_rows', None)
-    p_types["Mel_Ent"] = p_types['Melodic_Entry_Intervals'].apply(joiner)
-    p_types["Soggetti_Joined"] = p_types['Soggetti'].apply(joiner)
-    p_types.groupby(['Presentation_Type', 'Number_Entries', 'Soggetti_Joined']).size().reset_index(name='counts')
+```python
+pd.set_option('display.max_rows', None)
+p_types["Mel_Ent"] = p_types['Melodic_Entry_Intervals'].apply(joiner)
+p_types["Soggetti_Joined"] = p_types['Soggetti'].apply(joiner)
+p_types.groupby(['Presentation_Type', 'Number_Entries', 'Soggetti_Joined']).size().reset_index(name='counts')
+```
 
 ## Presentation Types with a Corpus
 
 It is also possible to work with a corpus using the Presentation Type tool.  First build your corpus:
 
-    corpus_list = []
+```python
+corpus_list = []
 
-    prefix = 'https://crimproject.org/mei/'
+prefix = 'https://crimproject.org/mei/'
 
-    piece_list = ['CRIM_Model_0019', 'CRIM_Mass_0019_1']
-    suffix = '.mei'
-    for piece in piece_list:
-        url = prefix + piece + suffix
-        corpus_list.append(url)
-    corpus_list
+piece_list = ['CRIM_Model_0019', 'CRIM_Mass_0019_1']
+suffix = '.mei'
+for piece in piece_list:
+    url = prefix + piece + suffix
+    corpus_list.append(url)
+corpus_list
+```
 
 And then run the corpus using the Presentation Type method:
 
-    # indicate the function
-    func = ImportedPiece.PresentationType  # <- NB there are no parentheses here
-   
-    #provide the kwargs
-    kwargs = {'limit_to_entries': True, 'head_flex' = 1,
-                                        'body_flex' = 0,
-                                        'include_hidden_types' = False,
-                                        'combine_unisons' = True,
-                                        'melodic_ngram_length' = 4}
-    
-    #build a list of dataframes, one for each piece in the corpus
-    list_of_dfs = corpus.batch(func, kwargs)
-    
-    #concatenate the list to a single dataframe
-    output = pd.concat(list_of_dfs)
+```python
+# indicate the function
+func = ImportedPiece.presentationTypes  # <- NB there are no parentheses here
+
+#provide the kwargs
+kwargs = {'limit_to_entries': True, 'head_flex' : 1,
+                                    'body_flex' : 0,
+                                    'include_hidden_types' : False,
+                                    'combine_unisons' : True,
+                                    'melodic_ngram_length' :  4}
+
+#build a list of dataframes, one for each piece in the corpus
+list_of_dfs = corpus.batch(func, kwargs)
+
+#concatenate the list to a single dataframe
+output = pd.concat(list_of_dfs)
+```
 
 Or more than one function, for instance in order to use chromatic melodic ngrams:
 
-    func1 = ImportedPiece.Melodic
-    kwargs1 = {'kind' : 'c'}
-    #build a list of dataframes, one for each piece in the corpus
-    list_of_dfs = corpus.batch(func = func1, kwargs = kwargs1, metadata = False)
+```python
+func1 = ImportedPiece.Melodic
+kwargs1 = {'kind' : 'c'}
+#build a list of dataframes, one for each piece in the corpus
+list_of_dfs = corpus.batch(func = func1, kwargs = kwargs1, metadata = False)
 
-    func2 = ImportedPiece.presentationTypes  # <- NB there are no parentheses here
-    #provide the kwargs
-    kwargs2 = {'limit_to_entries': True, 'head_flex' : 1, 'body_flex' : 0, 'include_hidden_types' : False, 'combine_unisons' : True,'melodic_ngram_length' : 4}
-    
-    #build a list of dataframes, one for each piece in the corpus
-    list_of_dfs = corpus.batch(func = func1, kwargs = kwargs2, metadata = True)
-    
-    #concatenate the list to a single dataframe
-    output = pd.concat(list_of_dfs)
+func2 = ImportedPiece.presentationTypes  # <- NB there are no parentheses here
+#provide the kwargs
+kwargs2 = {'limit_to_entries': True, 'head_flex' : 1, 'body_flex' : 0, 'include_hidden_types' : False, 'combine_unisons' : True,'melodic_ngram_length' : 4}
+
+#build a list of dataframes, one for each piece in the corpus
+list_of_dfs = corpus.batch(func = func1, kwargs = kwargs2, metadata = True)
+
+#concatenate the list to a single dataframe
+output = pd.concat(list_of_dfs)
+```
 
 See [01_Introduction](01_Introduction.md) for more detail on ways to **track errors during import of a corpus** or how to **replace staff names with staff numbers**.
 

@@ -8,29 +8,34 @@ By default, CRIM Intervals dataframes display results according to the `offset` 
 
 But it is easy to include information about measures and beats (as well as offsets)in any combination. This can be done with the help of the `detailIndex()` function (which can also be abbreviated as `di()`. 
 
-To use `detailIndex`, simply pass the dataframe from any function (which will have a list of offsets as the Index) to `detailIndex()``.  For instance:
+To use `detailIndex`, simply pass the dataframe from any function (which will have a list of offsets as the Index) to `detailIndex()`.  For instance:
 
-    nr = piece.notes()
-    piece.detailIndex(nr)
+```python
+nr = piece.notes()
+piece.detailIndex(nr)
+```
 
 *or:*
 
-    mel = piece.melodic()
-    piece.detailIndex(mel)
+```python
+mel = piece.melodic()
+piece.detailIndex(mel)
+```
 
 
-<!-- add examples -->
+![Alt text](images/det_index.png)
 
 
 Indeed, this method works with any dataframe (provided that it relates to a single piece already previously loaded, and provided that the passed dataframe has offsets as its index), and so it can be used to find the measure + beat reference for any subset of events that result from filtering or other algorithms.
 
-<!-- Add examples for these -->
 
 ## Advanced Parameters for `detailIndex`
 
 This function also has a number of parameters that can be adjusted according to need: 
 
-    piece.detailIndex(df, measure = True, beat = True, offset = False, t_sig = False, sounding = False, progress = False, lowest = False, highest = False, _all = False)
+```python
+piece.detailIndex(df, measure = True, beat = True, offset = False, t_sig = False, sounding = False, progress = False, lowest = False, highest = False, _all = False)
+```
 
 At least **one** of either `measure`, `beat`, or `offset` must be `True`.  If more than one is `True`, the dataframe will have a multi-index.
 

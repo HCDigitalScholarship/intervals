@@ -10,8 +10,6 @@ from itertools import combinations_with_replacement as cwr
 from more_itertools import consecutive_groups
 import os
 import re
-import requests
-import crim_intervals
 import collections
 import verovio
 import seaborn as sns
@@ -22,7 +20,7 @@ import matplotlib.lines as mlines
 import plotly.express as px
 from glob import glob
 from IPython.display import SVG, HTML
-cwd = os.path.dirname(crim_intervals.__file__)
+main_objs_dir = os.path.dirname(os.path.abspath(__file__))
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
@@ -31,6 +29,17 @@ datePattern = re.compile('date isodate="(1\d*)')
 
 accepted_filetypes = ('mei', 'mid', 'midi', 'abc', 'xml', 'musicxml')
 pathDict = {}
+
+_directedNameMemos = {}  
+def _directed_name_from_note_strings(note1, note2):
+    key = (note1.nameWithOctave, note2.nameWithOctave)
+    if key not in _directedNameMemos:
+        ret = interval.Interval(note1, note2).directedName
+        _directedNameMemos[key] = ret
+        return ret
+    else:
+        return _directedNameMemos[key]
+
 # An extension of the music21 note class with more information easily accessible
 def importScore(path, recurse=False, verbose=False):
     '''
@@ -107,9 +116,9 @@ def importScore(path, recurse=False, verbose=False):
             score = converter.parse(to_import)
             pathDict[path] = ImportedPiece(score, path, mei_doc, date)
             if verbose:
-                print("Successfully imported", path[:80])
+                print("Successfully imported", path[:180])
         except:
-            print("Import of", str(path[:80]), "failed, please check your file, path, or url.")
+            print("Import of", str(path[:180]), "failed, please check your file, path, or url.")
             return None
 
     return pathDict[path]
@@ -122,12 +131,12 @@ def Crimport(path, recurse=False, verbose=False):
 
 def _getCVFTable():
     if 'CVFTable' not in pathDict:
-        pathDict['CVFTable'] = pd.read_csv(cwd+'/data/cadences/CVFLabels.csv', index_col='Ngram')
+        pathDict['CVFTable'] = pd.read_csv(main_objs_dir + '/data/cadences/CVFLabels.csv', index_col='Ngram')
     return pathDict['CVFTable']
 
 def _getCadenceTable():
     if 'CadenceTable' not in pathDict:
-        pathDict['CadenceTable'] = pd.read_csv(cwd + '/data/cadences/cadenceLabels.csv', index_col=0)
+        pathDict['CadenceTable'] = pd.read_csv(main_objs_dir + '/data/cadences/cadenceLabels.csv', index_col=0)
     return pathDict['CadenceTable']
 
 
@@ -155,9 +164,9 @@ class ImportedPiece:
                 composer = self.score.metadata.composer
         self.metadata = {'title': title, 'composer': composer, 'date': date}
         if not self.metadata['date']:
-            if hasattr(self.score.metadata, 'date') and self.score.metadata.date != 'None':
+            if hasattr(self.score.metadata, 'date') and self.score.metadata.date is not None and self.score.metadata.date != 'None':
                 self.metadata['date'] = int(self.score.metadata.date[:4])
-            elif hasattr(self.score.metadata, 'dateCreated') and self.score.metadata.dateCreated != 'None':
+            elif hasattr(self.score.metadata, 'dateCreated') and self.score.metadata.date is not None and self.score.metadata.dateCreated != 'None':
             # music21 v8 replaced date with dateCreated and date will be removed in v10
                 self.metadata['date'] = int(self.score.metadata.dateCreated[:4])
 
@@ -181,14 +190,14 @@ class ImportedPiece:
             ('c', False, False): lambda cell: str(abs(cell.semitones) % 12) if hasattr(cell, 'semitones') else cell
         }
 
-    def _getSemiFlatParts(self):
+    def _getFlatParts(self):
         """
         Return and store flat parts inside a piece using the score attribute.
         """
-        if 'SemiFlatParts' not in self.analyses:
+        if 'FlatParts' not in self.analyses:
             parts = self.score.getElementsByClass(stream.Part)
-            self.analyses['SemiFlatParts'] = [part.semiFlat for part in parts]
-        return self.analyses['SemiFlatParts']
+            self.analyses['FlatParts'] = [part.flatten() for part in parts]
+        return self.analyses['FlatParts']
 
     def _getPartNames(self):
         """
@@ -197,7 +206,7 @@ class ImportedPiece:
         if 'PartNames' not in self.analyses:
             part_names = []
             name_set = set()
-            for i, part in enumerate(self._getSemiFlatParts()):
+            for i, part in enumerate(self._getFlatParts()):
                 name = part.partName or 'Part-' + str(i + 1)
                 if name in name_set:
                     name = 'Part-' + str(i + 1)
@@ -214,7 +223,7 @@ class ImportedPiece:
         if 'PartSeries' not in self.analyses:
             part_series = []
             part_names = self._getPartNames()
-            for i, flat_part in enumerate(self._getSemiFlatParts()):
+            for i, flat_part in enumerate(self._getFlatParts()):
                 notesAndRests = flat_part.getElementsByClass(['Note', 'Rest', 'Chord'])
                 notesAndRests = [max(noteOrRest.notes) if noteOrRest.isChord else noteOrRest for noteOrRest in notesAndRests]
                 ser = pd.Series(notesAndRests, name=part_names[i])
@@ -249,7 +258,7 @@ class ImportedPiece:
     def _getM21Objs(self):
         if 'M21Objs' not in self.analyses:
             part_names = self._getPartNames()
-            self.analyses['M21Objs'] = pd.concat(self._getPartSeries(), names=part_names, axis=1)
+            self.analyses['M21Objs'] = pd.concat(self._getPartSeries(), names=part_names, axis=1, sort=True)
         return self.analyses['M21Objs']
 
     def _remove_tied(self, noteOrRest):
@@ -259,7 +268,7 @@ class ImportedPiece:
 
     def _getM21ObjsNoTies(self):
         if 'M21ObjsNoTies' not in self.analyses:
-            df = self._getM21Objs().applymap(self._remove_tied).dropna(how='all')
+            df = self._getM21Objs().map(self._remove_tied).dropna(how='all')
             self.analyses['M21ObjsNoTies'] = df
         return self.analyses['M21ObjsNoTies']
 
@@ -373,20 +382,28 @@ class ImportedPiece:
         result = result.astype('float64')
         result.index = result.index.astype('float64')
         if mask_df is not None:
-            mask = mask_df.applymap(lambda cell: True, na_action='ignore')
+            mask = mask_df.map(lambda cell: True, na_action='ignore')
             result = result[mask]
         return result.dropna(how='all')
 
-    def lyrics(self):
+    def lyrics(self, strip=True):
         '''
         Return a dataframe of the lyrics associated with each note in the piece.
+        If `strip` is True (default), then the lyrics will be stripped of leading
+        and trailing whitespace and dashes. If `strip` is False, then the lyrics will
+        be returned as they are in the score. Notes without lyrics are shown as NaN.
         '''
-        if 'Lyric' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(na_action='ignore',
-                func=lambda note: note.lyric if note.isNote else None)
-            df.fillna(np.nan, inplace=True)
-            self.analyses['Lyric'] = df
-        return self.analyses['Lyric']
+        key = ('Lyrics', strip)
+        if key not in self.analyses:
+            m21Objs = self._getM21ObjsNoTies()
+            if strip:
+                df = m21Objs.map(na_action='ignore',
+                    func=lambda cell: cell.lyric.strip('\n \t-') if (cell.isNote and cell.lyric) else np.nan )
+            else: 
+                df = m21Objs.map(na_action='ignore',
+                    func=lambda cell: cell.lyric if cell.isNote else np.nan)
+            self.analyses[key] = df
+        return self.analyses[key]
 
     def _noteRestHelper(self, noteOrRest):
         if noteOrRest.isRest:
@@ -412,7 +429,7 @@ class ImportedPiece:
         pitch in a given voice, however, `combineUnisons` defaults to False.
         '''
         if 'Notes' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(self._noteRestHelper, na_action='ignore')
+            df = self._getM21ObjsNoTies().map(self._noteRestHelper, na_action='ignore')
             self.analyses['Notes'] = df
         ret = self.analyses['Notes'].copy()
         if combineRests:
@@ -426,7 +443,7 @@ class ImportedPiece:
         Get all the expressions from music21. This includes fermatas, mordents, etc.
         '''
         if 'm21Expressions' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(lambda noteOrRest: noteOrRest.expressions, na_action='ignore')
+            df = self._getM21ObjsNoTies().map(lambda noteOrRest: noteOrRest.expressions, na_action='ignore')
             self.analyses['m21Expressions'] = df
         return self.analyses['m21Expressions']
 
@@ -435,7 +452,7 @@ class ImportedPiece:
         Get all the fermatas in a piece. A fermata is designated by a True value.
         '''
         if 'Fermatas' not in self.analyses:
-            df = self._m21Expressions().applymap(
+            df = self._m21Expressions().map(
                 lambda exps: any(isinstance(exp, expressions.Fermata) for exp in exps), na_action='ignore')
             self.analyses['Fermatas'] = df
         return self.analyses['Fermatas']
@@ -451,7 +468,7 @@ class ImportedPiece:
             notes = self._getM21ObjsNoTies()
             # you can't compare notes and rests, so replace rests with a really high note
             highNote = note.Note('C9')
-            notes = notes.applymap(lambda n: highNote if n.isRest else n, na_action='ignore')
+            notes = notes.map(lambda n: highNote if n.isRest else n, na_action='ignore')
             notes.ffill(inplace=True)
             lowLine = notes.apply(min, axis=1)
             lowLine = lowLine.apply(lambda n: n.nameWithOctave)
@@ -486,7 +503,7 @@ class ImportedPiece:
             notes = self._getM21ObjsNoTies()
             # you can't compare notes and rests, so replace rests with a really high note
             lowNote = note.Note('C', octave=-9)
-            notes = notes.applymap(lambda n: lowNote if n.isRest else n, na_action='ignore')
+            notes = notes.map(lambda n: lowNote if n.isRest else n, na_action='ignore')
             notes.ffill(inplace=True)
             highLine = notes.apply(max, axis=1)
             highLine = highLine.apply(lambda n: n.nameWithOctave)
@@ -496,25 +513,25 @@ class ImportedPiece:
         return self.analyses['HighLine']
 
     def _emaRowHelper(self, row):
-        measures = list(range(row[0], row[2] + 1))
-        ends = (row[0], row[2])
-        mCount = row[2] - row[0] + 1
+        measures = list(range(row.iat[0], row.iat[2] + 1))
+        ends = (row.iat[0], row.iat[2])
+        mCount = row.iat[2] - row.iat[0] + 1
         parts = row.iloc[4:].dropna().index
         part_strings = '+'.join({part for combo in parts for part in combo.split('_')})
         num_parts = part_strings.count('+') + 1
 
         beats = []
         for meas in measures:
-            if meas == row[0] and meas == row[2]:
-                beats.append('+'.join(['@{}-{}'.format(row[1], row[3])]*num_parts))
-            elif meas == row[0]:  # meas < row[2]
-                beats.append('+'.join(['@{}-end'.format(row[1])]*num_parts))
-            elif meas > row[0] and meas < row[2]:
+            if meas == row.iat[0] and meas == row.iat[2]:
+                beats.append('+'.join(['@{}-{}'.format(row.iat[1], row.iat[3])]*num_parts))
+            elif meas == row.iat[0]:  # meas < row.iat[2]
+                beats.append('+'.join(['@{}-end'.format(row.iat[1])]*num_parts))
+            elif meas > row.iat[0] and meas < row.iat[2]:
                 beats.append('+'.join(['@all']*num_parts))
-            else: # meas > row[0] and meas == row[2]
-                beats.append('+'.join(['@start-{}'.format(row[3])]*num_parts))
+            else: # meas > row.iat[0] and meas == row.iat[2]
+                beats.append('+'.join(['@start-{}'.format(row.iat[3])]*num_parts))
 
-        post = ['{}-{}'.format(row[0], row[2]), # measures
+        post = ['{}-{}'.format(row.iat[0], row.iat[2]), # measures
             ','.join([part_strings]*mCount),    # parts
             ','.join(beats)]                    # beats
         return '/'.join(post)
@@ -669,7 +686,7 @@ class ImportedPiece:
                     new_index.append((notes.loc[:_first].index[-2], _last))
                 part.index = pd.MultiIndex.from_tuples(new_index, names=part.index.names)
                 newCols.append(part)
-            ret = pd.concat(newCols, axis=1)
+            ret = pd.concat(newCols, axis=1, sort=True)
         elif mode.startswith('c'):  # cvfs mode
             ret = self.cvfs(keep_keys=True, offsets='both').copy()
             ngrams = ret.iloc[:, len(self._getPartNames()):]
@@ -712,13 +729,13 @@ class ImportedPiece:
             if len(df) >= 1:
                 idf = ret.index.to_frame()
                 _measures = self.measures().iloc[:, 0]
-                measures = idf.applymap(lambda i: _measures.loc[:i].iat[-1])
+                measures = idf.map(lambda i: _measures.loc[:i].iat[-1])
                 _beats = self.beatIndex()
-                beats = idf.applymap(lambda i: _beats[i])
-                res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1)
+                beats = idf.map(lambda i: _beats[i])
+                res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1, sort=True)
                 res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
                 ret = self.numberParts(ret)
-                res = pd.concat([res, ret], axis=1)
+                res = pd.concat([res, ret], axis=1, sort=True)
                 res = res.apply(self._emaRowHelper, axis=1)
                 res.name = 'EMA'
                 return res
@@ -730,7 +747,7 @@ class ImportedPiece:
         '''
         tsigs = self._getM21TSigObjs()
         tsigs.columns = self._getPartNames()
-        df = tsigs.applymap(lambda tsig: tsig.beatDuration.quarterLength, na_action='ignore')
+        df = tsigs.map(lambda tsig: tsig.beatDuration.quarterLength, na_action='ignore')
         return df
 
     def beats(self):
@@ -738,27 +755,27 @@ class ImportedPiece:
         Return a table of the beat positions of all the notes and rests. Beats
         are expressed as floats.
         '''
-        if 'Beat' not in self.analyses:
+        if 'Beats' not in self.analyses:
             nr = self.notes()
             nrOffs = nr.apply(lambda row: row.index)
             ms = self.measures().apply(lambda row: row.index)
-            temp = pd.concat([ms, nr], axis=1)
+            temp = pd.concat([ms, nr], axis=1, sort=True)
             ms = temp.iloc[:, :len(ms.columns)].ffill()
             ms = ms[nr.notnull()]
             offFromMeas = nrOffs - ms
             beatDur = self._getBeatUnit()
-            temp = pd.concat([beatDur, nr], axis=1)
+            temp = pd.concat([beatDur, nr], axis=1, sort=True)
             beatDur = temp.iloc[:, :len(beatDur.columns)].ffill()
             beatDur = beatDur[nr.notnull()]
-            self.analyses['Beat'] = (offFromMeas / beatDur) + 1
-        return self.analyses['Beat']
+            self.analyses['Beats'] = (offFromMeas / beatDur) + 1
+        return self.analyses['Beats']
 
     def beatIndex(self):
         '''
         Return a series of the first valid value in each row of .beats().
         '''
         if 'BeatIndex' not in self.analyses:
-            ser = self.beats().dropna(how='all').apply(lambda row: row.dropna()[0], axis=1)
+            ser = self.beats().dropna(how='all').apply(lambda row: row.dropna().iat[0], axis=1)
             self.analyses['BeatIndex'] = ser
         return self.analyses['BeatIndex']
 
@@ -773,7 +790,7 @@ class ImportedPiece:
         but that you can set to true if you also want to see them:
 
         * offset: row's offset (distance in quarter notes from beginning, 1.0 = one quarter note)
-        t_sig: the prevailing time signature
+        * t_sig: the prevailing time signature
         * sounding: how many voices are sounding (i.e. not resting) at this point
         * progress: 0-1 how far along in the piece this moment is, 0 = beginning, 1 = last attack onset
         * lowest: the lowest sounding note at this moment
@@ -811,7 +828,7 @@ class ImportedPiece:
         if highest:
             cols.append(self.highLine())
             names.append('Highest')
-        temp = pd.concat(cols, axis=1)
+        temp = pd.concat(cols, axis=1, sort=True)
         temp2 = temp.iloc[:, len(df.columns):].ffill()
         if measure:
             temp2.iloc[:, 0] = temp2.iloc[:, 0].astype(int)
@@ -843,16 +860,16 @@ class ImportedPiece:
         Results from this method should not be sent to the regularize method.
         '''
         if 'BeatStrength' not in self.analyses:
-            df = self._getM21ObjsNoTies().applymap(self._beatStrengthHelper)
+            df = self._getM21ObjsNoTies().map(self._beatStrengthHelper)
             self.analyses['BeatStrength'] = df
         return self.analyses['BeatStrength']
 
     def _getM21TSigObjs(self):
         if 'M21TSigObjs' not in self.analyses:
             tsigs = []
-            for part in self._getSemiFlatParts():
+            for part in self._getFlatParts():
                 tsigs.append(pd.Series({ts.offset: ts for ts in part.getTimeSignatures()}))
-            df = pd.concat(tsigs, axis=1)
+            df = pd.concat(tsigs, axis=1, sort=True)
             self.analyses['M21TSigObjs'] = df
         return self.analyses['M21TSigObjs']
 
@@ -862,7 +879,7 @@ class ImportedPiece:
         """
         if 'TimeSignature' not in self.analyses:
             df = self._getM21TSigObjs()
-            df = df.applymap(lambda ts: ts.ratioString, na_action='ignore')
+            df = df.map(lambda ts: ts.ratioString, na_action='ignore')
             df.columns = self._getPartNames()
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
@@ -872,12 +889,12 @@ class ImportedPiece:
         This method retrieves the offsets of each measure in each voices.
         """
         if "Measure" not in self.analyses:
-            parts = self._getSemiFlatParts()
+            parts = self._getFlatParts()
             partMeasures = []
             for part in parts:
                 partMeasures.append(pd.Series({m.offset: m.measureNumber \
-                    for m in part.getElementsByClass(['Measure'])}))
-            df = pd.concat(partMeasures, axis=1)
+                    for m in part.makeMeasures().getElementsByClass(['Measure'])}))
+            df = pd.concat(partMeasures, axis=1, sort=True)
             df.columns = self._getPartNames()
             self.analyses["Measure"] = df
         return self.analyses["Measure"]
@@ -889,12 +906,12 @@ class ImportedPiece:
         detect section divisions.
         """
         if "Barline" not in self.analyses:
-            parts = self._getSemiFlatParts()
+            parts = self._getFlatParts()
             partBarlines = []
             for part in parts:
                 partBarlines.append(pd.Series({b.offset: b.type \
                     for b in part.getElementsByClass(['Barline'])}))
-            df = pd.concat(partBarlines, axis=1)
+            df = pd.concat(partBarlines, axis=1, sort=True)
             df.columns = self._getPartNames()
             self.analyses["Barline"] = df
         return self.analyses["Barline"]
@@ -925,25 +942,25 @@ class ImportedPiece:
         return str(val + 1)
 
     def _harmonicIntervalHelper(row):
-        if hasattr(row[1], 'isRest') and hasattr(row[0], 'isRest'):
-            if row[1].isRest or row[0].isRest:
+        if hasattr(row.iat[1], 'isRest') and hasattr(row.iat[0], 'isRest'):
+            if row.iat[1].isRest or row.iat[0].isRest:
                 return 'Rest'
-            elif row[1].isNote and row[0].isNote:
-                return interval.Interval(row[0], row[1])
+            elif row.iat[1].isNote and row.iat[0].isNote:
+                return interval.Interval(row.iat[0], row.iat[1])
         return None
 
     def _melodicIntervalHelper(row):
-        if hasattr(row[0], 'isRest'):
-            if row[0].isRest:
+        if hasattr(row.iat[0], 'isRest'):
+            if row.iat[0].isRest:
                 return 'Rest'
-            elif row[0].isNote and hasattr(row[1], 'isNote') and row[1].isNote:
-                return interval.Interval(row[1], row[0])
+            elif row.iat[0].isNote and hasattr(row.iat[1], 'isNote') and row.iat[1].isNote:
+                return interval.Interval(row.iat[1], row.iat[0])
         return None
 
     def _melodifyPart(ser, end):
         ser.dropna(inplace=True)
         shifted = ser.shift(1) if end else ser.shift(-1)
-        partDF = pd.concat([ser, shifted], axis=1)
+        partDF = pd.concat([ser, shifted], axis=1, sort=True)
         if end:
             res = partDF.apply(ImportedPiece._melodicIntervalHelper, axis=1).dropna()
         else:  # not a typo, this uses _harmonicIntervalHelper if end == False
@@ -963,7 +980,7 @@ class ImportedPiece:
             if df is None:
                 m21Objs = self._getM21ObjsNoTies()
             else:
-                m21Objs = df.applymap(ImportedPiece._strToM21Obj, na_action='ignore')
+                m21Objs = df.map(ImportedPiece._strToM21Obj, na_action='ignore')
             _df = m21Objs.apply(ImportedPiece._melodifyPart, args=(end,))
             if df is not None:
                 return _df
@@ -1092,7 +1109,7 @@ class ImportedPiece:
         else:
             df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
         cols = [(df - df.loc[i]).abs().apply(sum, axis=1) for i in df.index]
-        dist = pd.concat(cols, axis=1)
+        dist = pd.concat(cols, axis=1, sort=True)
         dist.columns = uni
         dist.index = uni
         return dist
@@ -1163,7 +1180,7 @@ class ImportedPiece:
           else:
               df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
           cols = [(df - df.loc[i]).abs().apply(self._flexed_sum, axis=1, args=(head_flex,)) for i in df.index]
-          dist = pd.concat(cols, axis=1)
+          dist = pd.concat(cols, axis=1, sort=True)
           dist.columns = uni
           dist.index = uni
           return dist
@@ -1217,9 +1234,9 @@ class ImportedPiece:
         key = ('MelodicIntervals', kind, directed, compound, end)
         if key not in self.analyses or unit or df is not None:
             _df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals(end, df)
-            _df = _df.applymap(self._intervalMethods[settings])
+            _df = _df.map(self._intervalMethods[settings])
             if kind == 'z':
-                _df = _df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+                _df = _df.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
             if unit or df is not None:
                 return _df
             else:
@@ -1303,7 +1320,7 @@ class ImportedPiece:
                 loop_ngrams = self.entries(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
             else:
                 loop_ngrams = self.ngrams(df=loop_melodic, exclude=["Rest"], n=int(i)).fillna('')
-            local_ngrams = pd.concat([local_ngrams, loop_ngrams])
+            local_ngrams = pd.concat([local_ngrams, loop_ngrams], sort=True)
 
         total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))
 
@@ -1344,7 +1361,7 @@ class ImportedPiece:
                 low = self.lowLine().apply(lambda val: note.Note(val) if val != 'Rest' else note.Rest())
                 lowIndex = len(m21Objs.columns)
                 combos = [(lowIndex, x) for x in range(len(m21Objs.columns))]
-                m21Objs = pd.concat([m21Objs, low], axis=1)
+                m21Objs = pd.concat([m21Objs, low], axis=1, sort=True)
             else:
                 combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
             for combo in combos:
@@ -1354,7 +1371,7 @@ class ImportedPiece:
                 ser.name = '_'.join((m21Objs.columns[combo[0]], m21Objs.columns[combo[1]]))
                 pairs.append(ser)
             if pairs:
-                ret = pd.concat(pairs, axis=1)
+                ret = pd.concat(pairs, axis=1, sort=True)
             else:
                 ret = pd.DataFrame()
 
@@ -1391,10 +1408,10 @@ class ImportedPiece:
         key = ('HarmonicIntervals', kind, directed, compound, againstLow)
         if key not in self.analyses:
             df = self._getM21HarmonicIntervals(againstLow)
-            df = df.applymap(self._intervalMethods[settings])
+            df = df.map(self._intervalMethods[settings])
             if kind == 'z':
-                df = df.applymap(ImportedPiece._zeroIndexIntervals, na_action='ignore')
-            self.analyses[key] = df
+                df = df.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+            self.analyses[key] = df.sort_index()
         return self.analyses[key]
     
     def sonorities(self, kind='d', directed=True, compound='simple', sort=True):
@@ -1447,15 +1464,15 @@ class ImportedPiece:
                 first or last note's offset, or by both with a multi-index.
         """
         if offsets == 'both':
-            first = pd.concat([col.shift(-i) for i in range(_n)], axis=1)
-            last = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1)
+            first = pd.concat([col.shift(-i) for i in range(_n)], axis=1, sort=True)
+            last = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1, sort=True)
             mi = pd.MultiIndex.from_arrays([first.index[:-_n + 1], last.index[_n - 1:]], names=['First', 'Last'])
             chunks = first.iloc[:-_n + 1].copy()
             chunks.index = mi
         elif offsets == 'last':
-            chunks = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1)
+            chunks = pd.concat([col.shift(i) for i in range(_n - 1, -1, -1)], axis=1, sort=True)
         else: # offsets == 'first'
-            chunks = pd.concat([col.shift(-i) for i in range(_n)], axis=1)
+            chunks = pd.concat([col.shift(-i) for i in range(_n)], axis=1, sort=True)
         return chunks
 
     def _ngramHelper(col, n, exclude, offsets):
@@ -1490,20 +1507,69 @@ class ImportedPiece:
                   exclude=['Rest'], interval_settings=('d', True, True), unit=0,
                   offsets='first', show_both=False):
         '''
-        Group sequences of observations in a sliding window "n" events long
-        (default n=3). If the `exclude` parameter is passed and any item in that
-        list is found in an ngram, that ngram will be removed from the resulting
-        DataFrame. Since `exclude` defaults to `['Rest']`, pass an empty list if
-        you want to allow rests in your ngrams.
+        Generate n-grams from the given dataframe (df) or from the harmonic and
+        melodic intervals of the piece.
 
-        There are two primary modes for this method. They were controlled by the
-        `how` parameter, but this parameter is now deprecated and the mode is
-        determined by what is or is not passed as the `df` and `other` parameters.
+        Group sequences of observations in a sliding window "n" events long
+        (default n=3). Whether `df` and/or `other` parameters are passed determines
+        how the ngrams are assembled. When a `df` is passed but no `other` is passed,
+        the columns of the `df` are the data source. When both `df` and `other`
+        parameters are passed, contrapuntal-module ngrams are generated. Similarly,
+        if neither `df` nor `other` dataframes are provided, they will be supplied
+        according to the interval_settings parameter. These contrapuntal-module
+        ngrams are useful to assign specific labels to all 2-voice combinations `n`
+        events long. For our ngrams, an "event" is a note or rest in either voice. This
+        method accepts the following parameters.
+
+        Parameters:
+        df : pandas.DataFrame
+            A DataFrame of note and rest strings. If `df` is None, harmonic intervals
+            will be supplied by the .harmonic method according to the `interval_settings`
+            parameter.
+        n : int
+            The size of the ngrams. If `n` is set to -1, the longest ngrams at
+            all time points excluding subset ngrams will be returned.
+        how : str
+            This parameter is deprecated. The mode is now determined by what is
+            or is not passed as the `df` and `other` parameters.
+        other : pandas.DataFrame
+            A DataFrame of melodic motions. If provided, the method will return
+            contrapuntal-module ngrams. This will also happen if neither `df` nor
+            `other` are provided.
+        held : str
+            The label for when one voice sustains a note while the other voice moves.
+            This defaults to "Held" to distinguish between held notes and reiterated ones
+            but you may want to pass the way a unison gets labeled in your `other`
+            DataFrame (e.g. "P1" or "1").
+        exclude : list
+            A list of strings that will be used to filter out ngrams that contain any
+            of the strings in the list. The default is to exclude rests and most likely
+            you will want to leave this setting as is.
+        interval_settings : tuple
+            A tuple of settings that will be passed to the .harmonic and .melodic
+            methods if `df` and `other` are not provided. The first item in the tuple
+            is the kind of interval to use. The second item is whether to use directed
+            intervals. The third item is whether to use compound intervals.
+        unit : int or float
+            If you want to measure the intervals at a regular durational interval,
+            pass the desired regular durational interval as an integer or float.
+        offsets : str
+            If "first" is selected (default option), the returned ngrams will be
+            grouped according to their first notes' offsets, while if "last" is
+            selected, the returned ngrams will be grouped according to the last
+            notes' offsets. You can also set offsets to "both" in which case a
+            dataframe with a multi-index of both the starting and ending offsets
+            will be returned.
+        show_both : bool
+            If True, the melodic motion of both voices in contrapuntal modules are
+            shown. If False, only the melodic motion of the lower voice is shown.
+            This added information is needed to disambiguate some complex contrapuntal
+            modules.
 
         When a dataframe is passed as `df` and nothing is given for `other`, this
-        is the simple case where the events in each
-        column of the `df` DataFrame are grouped at the offset of the first event
-        in the window. For example, to get 4-grams of melodic intervals:
+        is the simple case where the events in each column of the `df` DataFrame
+        are grouped at the offset of the first event in the window. For example,
+        to get 4-grams of melodic intervals:
 
         ip = ImportedPiece('path_to_piece')
         ngrams = ip.ngrams(df=ip.melodic(), n=4)
@@ -1530,12 +1596,6 @@ class ImportedPiece:
         ngrams at all time points excluding subset ngrams. The returned
         dataframe will have ngrams of length varying between 1 and the longest
         ngram in the piece.
-
-        The `offset` setting can have three modes. If "first" is selected (default option),
-        the returned ngrams will be grouped according to their first notes' offsets,
-        while if "last" is selected, the returned ngrams will be grouped according
-        to the last notes' offsets. You can also set offsets to "both" in which case a
-        dataframe with a multi-index of both the starting and ending offsets will be returned.
 
         If you want want "module" ngrams taken at a regular durational interval,
         you can omit passing `df` and `other` dataframes and instead pass the
@@ -1577,8 +1637,8 @@ class ImportedPiece:
         cols = []
         other = other.fillna(held)
         if '_' not in df.columns[0] and 'Sonority' != df.columns[0]:  # df is not a pair of voices, but rather info about 1 voice at a time
-            _df = df.applymap(str, na_action='ignore')
-            _other = other.applymap(str, na_action='ignore')
+            _df = df.map(str, na_action='ignore')
+            _other = other.map(str, na_action='ignore')
             ret = _df + '_' + _other
             return self.ngrams(df=ret, n=n, exclude=exclude, offsets=offsets)
         for pair in df.columns:
@@ -1590,10 +1650,11 @@ class ImportedPiece:
                 lowerMel = other[lowerVoice].copy()
             if show_both and 'Rest' not in exclude:
                 lowerMel += ':' + other[upperVoice]
-            combo = pd.concat([lowerMel, df[pair]], axis=1)
+            # can't use pd.concat here because of an issue with pandas, maybe a bug
+            combo = pd.DataFrame(lowerMel).join(df[pair], how='outer')
             combo.dropna(subset=(pair,), inplace=True)
             filler = held + ':' + held if show_both else held
-            combo[lowerVoice].fillna(filler, inplace=True)
+            combo[lowerVoice] = combo[lowerVoice].fillna(filler)
             combo.insert(loc=1, column='Joiner', value=', ')
             combo['_'] = '_'
             if n == -1:
@@ -1628,7 +1689,7 @@ class ImportedPiece:
             cols.append(col)
         # in case piece has no harmony and cols stays empty
         if cols:
-            return pd.concat(cols, axis=1)
+            return pd.concat(cols, axis=1, sort=True)
         else:
             return pd.DataFrame()
 
@@ -1708,9 +1769,9 @@ class ImportedPiece:
                 else:
                     val = last_har_int + reference_int + 1
                 return '{}@{}'.format(prefix, val)
-            res1 = ngrams[mask1].dropna(how='all').applymap(_icHelper, na_action='ignore')
+            res1 = ngrams[mask1].dropna(how='all').map(_icHelper, na_action='ignore')
             prefix = 'IC'
-            res2 = ngrams[mask2].dropna(how='all').applymap(_icHelper, na_action='ignore')
+            res2 = ngrams[mask2].dropna(how='all').map(_icHelper, na_action='ignore')
             res1.update(res2)
             return res1
 
@@ -1815,7 +1876,7 @@ class ImportedPiece:
             return pd.DataFrame()
         key = ('CVF', keep_keys, offsets)
         if key in self.analyses:
-            return self.analyses[key]
+            return self.analyses[key].copy()
         cadences = _getCVFTable()
         cadences['N'] = cadences.index.map(lambda i: i.count(', ') + 1)
         harmonic = self.markFourths()
@@ -1852,12 +1913,11 @@ class ImportedPiece:
                 if cvfs.at[_index, _voice] == 'z' and mel.at[_index[1], _voice] in ('-1', '-2'):
                     cvfs.at[_index, _voice] = 'T'
         if keep_keys:
-            cvfs = pd.concat([cvfs, ngramKeys], axis=1)
-        if offsets == 'last':
-            _cvfs = cvfs.copy()
+            cvfs = pd.concat([cvfs, ngramKeys], axis=1, sort=True)
+        if offsets == 'last' and len(cvfs.index.levels) > 1:
             cvfs = self.condenseMultiIndex(cvfs)
         self.analyses[key] = cvfs
-        return cvfs
+        return cvfs.copy()
 
     def condenseMultiIndex(self, df, to_drop=0):
         '''
@@ -1866,12 +1926,16 @@ class ImportedPiece:
         '''
         if isinstance(df, pd.core.series.Series):
             df = pd.DataFrame(df)
-        ret = df.droplevel(to_drop)
+        if df.index.nlevels < 2:
+            ret = df.copy()
+        else:
+            ret = df.droplevel(to_drop)
         dup_mask = ret.index.duplicated()
         dups = ret.index[dup_mask]
         ret = ret[~dup_mask]
         for dup in dups:
-            ret.loc[dup, :] = df.loc[(slice(None), dup), :].ffill().iloc[-1, :].values
+            filled = df.loc[(slice(None), dup), :].infer_objects(copy=False).ffill()
+            ret.loc[dup, :] = filled.iloc[-1, :].values
         return ret
 
     def morleyCadences(self):
@@ -1883,21 +1947,21 @@ class ImportedPiece:
         nr = self.notes(combineUnisons=True)
         mel = self.melodic(kind='d', end=True, df=nr)
         mel_ng = self.ngrams(n=2, df=mel, offsets='last')
-        mel2_matches = mel_ng.applymap(lambda cell: cell == ('-2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        mel2_matches = mel_ng.map(lambda cell: cell == ('-2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
         bs = self.beatStrengths().reindex_like(nr)
         bs_ng = self.ngrams(n=3, df=bs, exclude=[], offsets='last')
         bs_ng = bs_ng.reindex_like(mel_ng)
-        bs2_matches = bs_ng.applymap(lambda cell: cell[0] < cell[2] > cell[1], na_action='ignore').replace(False, np.nan).dropna(how='all')
+        bs2_matches = bs_ng.map(lambda cell: cell[0] < cell[2] > cell[1], na_action='ignore').replace(False, np.nan).dropna(how='all')
         # C-B-A-B-C
         mel4_ng = self.ngrams(n=4, df=mel, offsets='last')
-        mel4_matches = mel4_ng.applymap(lambda cell: cell == ('-2', '-2', '2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        mel4_matches = mel4_ng.map(lambda cell: cell == ('-2', '-2', '2', '2'), na_action='ignore').replace(False, np.nan).dropna(how='all')
         bs4_ng = self.ngrams(n=5, df=bs, exclude=[], offsets='last')
         bs4_ng = bs4_ng.reindex_like(mel4_ng)
-        bs4_matches = bs_ng.applymap(lambda cell: all([cell[-1] > val for val in cell[:-1]]), na_action='ignore').replace(False, np.nan).dropna(how='all')
+        bs4_matches = bs_ng.map(lambda cell: all([cell[-1] > val for val in cell[:-1]]), na_action='ignore').replace(False, np.nan).dropna(how='all')
         
-        res = pd.DataFrame().reindex_like(bs_ng)
+        res = pd.DataFrame().reindex_like(bs_ng).astype(object)
         res[bs2_matches & mel2_matches] = 'Morley Cadence'
-        res4 = pd.DataFrame().reindex_like(bs4_ng)
+        res4 = pd.DataFrame().reindex_like(bs4_ng).astype(object)
         res4[bs4_matches & mel4_matches] = 'Morley Cadence'
         res.update(res4)        
         return res.dropna(how='all')
@@ -1914,62 +1978,124 @@ class ImportedPiece:
         low = pd.DataFrame(self.lowLine())
         lowMel = self.melodic(end=True, kind='d', df=low)
         progressions = self.ngrams(df=sons, other=lowMel, n=2, offsets='last', held='1')
-        data = pd.concat([progressions, mcad], axis=1).dropna(subset=('MCad',))
+        data = pd.concat([progressions, mcad], axis=1, sort=True).dropna(subset=('MCad',))
         res = data.Sonority.str.match('(7/5/3|7/3|5/3|3)_(-5|4), (3|)')
-        res = res[res]
+        res = res[res].astype(object)
         res.name = 'Close'
         res.iloc[:] = 'Close'
         return pd.DataFrame(res)
 
     def cadences(self, keep_keys=False):
-        '''
-        Return a dataframe of cadences in the piece along with metadata about
-        these cadence points such as the lowest pitch at moment of cadence, and
-        the cadential goal tone is returned.
+        """
+        Analyzes the realized, evaded, and abandoned cadences in the score and returns
+        a DataFrame with the results.
 
-        * The CVFs column shows the cadential voice functions condensed into
-        one string, following the order in which they appear in the voice parts,
-        starting with the uppermost voice.  Thus CB means the cantizans is above
-        the bassizans, and TC means the tenorizans is above the cantizans (in
-        terms of staff positions). For an explanation of the symbols see cvfs
-        documentation.
+        This method identifies the cadences in the score based on the contrapuntal voice
+        functions (CVFs) and melodic intervals. It also includes additional contextual
+        information about the cadences to facilitate filtering and further analysis.
+        The information in each column is as follows (in order of their appearance):
 
-        * The SinceLast and ToNext columns are the time in quarter notes since
-        the last or to the next cadence. The first cadence's SinceLast time and
-        the last cadence's ToNext time are the time since/to the beginning/end
-        of the piece.
+        * Pattern: Only visible if `keep_keys` is set to True. This column shows the
+        combination of cadential voice functions and chromatic intervals (of the
+        Cantizans, Tenorizans, and Altizans cvfs) that triggered this cadence
+        observation.
 
-        * The "Low" and "Tone" columns give the pitches of the lowest sounding
-        pitch at the perfection, and the goal tone of the cantizans (or altizans
-        if there is no cantizans) respectively. These are usually the same
-        pitch class, but not always.
+        * Key: Only visible if `keep_keys` is set to True. This column shows the
+        regex string used to match the Patterns found with those in the cadenceLabels.csv
+        file.
 
-        * "Rel" is short for relative, so "RelLow" is the lowest pitch of each
-        cadence shown as an interval measured against the final. Likewise,
-        "RelTone" is the cadential tone shown as an interval measured against the
-        final.
+        * CadType: This column shows the type of cadence that was observed. These can
+        be these can be realized, evaded, or abandoned. If fully realized, the cadence
+        will have no additional descriptor, but "Evaded" and "Abandoned" are labelled
+        as such. The cadence types recognized are "Authentic", "Phrygian", "Leaping
+        Contratenor", "Clausula Vera", "Phrygian Clausula Vera", "Altizans Only",
+        "Phrygian Altizans", "Double Leading Tone", "Quince", and "Reinterpreted".
 
-        * If `keep_keys` is set to True, the "Pattern" and "Key" columns will be kept in
-        the cadence results table. "Pattern" refers to the combination of cadential voice
-        functions and chromatic intervals. "Key" is a regex string used to match
-        the Patterns found with those in the cadenceLabels.csv file.
+        * LeadingTones: The number of leading tones (i.e. semitones) as notated in the
+        score. These can be from the Cantizans, Tenorizans, or Altizans. If the CVF
+        that would normally have the leading tone (usually the Cantizans) is evaded or
+        abandoned, the basic melodic movement is no longer fulfilled so this measurement
+        doesn't apply and a -1 is given. 0 shows that no leading tone is notated in the
+        score, so these places are likely candidates for adding editorial ficta.
 
-        * The "Sounding" column shows how many voices were sounding at the moment of
-        the cadence. Note that this count includes voices that did not have a CVF
-        role in the cadence, and ones that only started at the perfection.
+        * CVFs: The cadential voice functions condensed into one string, following the
+        order in which they appear in the voice parts, starting with the uppermost voice.
+        Thus CB means the cantizans is above the bassizans, and TC means the tenorizans
+        is above the cantizans (in terms of staff positions). For an explanation of the
+        symbols see cvfs documentation. Uppercase CVFs are realized, lowercase are evaded
+        or abandoned. However, the presence of evaded or abandoned CVFs does not
+        necessarily mean the cadence is evaded or abandoned.
 
-        * The "Progress" column gives the progress toward the end of the piece measured 0-1
-        where 1 is the time point of the last attack in the piece.
+        * Low: The pitch of the lowest sounding note at the perfection.
 
-        Usage:
+        * RelLow: The lowest pitch of each cadence shown as an interval measured against
+        the final. Speaking of which, you can get the final of a piece with the .final()
+        method. Looking at lowest sounding pitch of cadences relative to the final
+        makes it easier to compare the modal procedure of pieces that are in different
+        modes and/or transposed.
 
-        piece = importScore('url_to_piece')
-        piece.cadences()
+        * Tone: Similar to the "Low" column, the "Tone" is the goal tone of the cantizans
+        (or altizans if there is no cantizans) respectively. This is usually the same
+        pitch class as the "Low" column, but not always. This is NaN if the cadence has
+        an evaded or abandoned Cantizans CVF.
 
-        Note that the output of this function can be used with verovioCadences to show
-        each cadence in staff notation.
+        * RelTone: The cadential tone from the "Tone" column shown as an interval
+        measured against the final. This is similar to the "RelLow" column, but for the
+        cadential tone instead of the lowest sounding pitch. Looking at cadential tones
+        relative to the final makes it easier to compare the modal procedure of pieces
+        that are in different modes and/or transposed.
 
-        '''
+        * TSig: The prevailing time signature (as encoded in the score) at the
+        perfection. This can be useful to look at cadences in different
+        mensurations/meters, particularly comparing binary vs. ternary situations.
+
+        * Measure: The measure number at the perfection.
+
+        * Beat: The beat number at the perfection.
+
+        * Sounding: How many voices are sounding at the perfection. Note that this
+        count includes voices that did not have a CVF role in the cadence, and ones
+        that only started or entered at the perfection.
+
+        * Progress: The progress toward the end of the piece measured 0-1 where 0 is
+        the very beginning of the piece and 1 is the time point of the last attack in
+        the piece. This is particularly useful if you want to compare cadences in
+        different pieces, especially if they are of different lengths. For example,
+        a "Progress" value of 0.5 will always be at the halfway point of a piece, no
+        matter how long or short the piece is.
+
+        * SinceLast: The time in quarter notes since the last cadence. The first
+        cadence's SinceLast time is the time since the beginning of the piece. An
+        unusually high value here could suggest that the prior cadence was particularly
+        conclusive, and that a less broken-up stretch of counterpoint follwed it.
+        Alternatively a high value could mean that a cadence is being missed within
+        the "SinceLast" number of quarter notes just prior to the cadence in question.
+
+        * ToNext: The time in quarter notes to the next cadence. The last cadence's
+        ToNext time is the time to the end of the piece. An unusually high value here
+        could suggest that this cadence is particularly conclusive, and that a less
+        broken-up stretch of counterpoint follows it. Alternatively a high value
+        could mean that a cadence is being missed within the "ToNext" number of
+        quarter notes just after the cadence in question.
+
+        Parameters
+        ----------
+        keep_keys : bool, optional
+            If True, the returned DataFrame includes the 'Pattern' and 'Key' columns.
+            If False (default), these columns are dropped from the DataFrame.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame where each row represents a cadence. The columns provide details
+            about the cadence, including the CVFs, melodic intervals, measure, beat,
+            time signature, sounding pitch, progress, lowest pitch, and relative pitches.
+
+        Notes
+        -----
+        This method caches the result in the `analyses` attribute of the `Score` object
+        to avoid recomputing the cadences if the method is called again with the same parameters.
+        """
         if 'Cadences' in self.analyses:
             if keep_keys:
                 return self.analyses['Cadences']
@@ -2175,7 +2301,7 @@ class ImportedPiece:
         if renderer == "streamlit":
             return plt
         else:
-            plt.show(renderer=renderer)
+            plt.show()
 
     def markFourths(self):
         '''
@@ -2269,7 +2395,7 @@ class ImportedPiece:
             dur_ngrams.append(dur_ngrams_no_nan)
         ng['dur_ngrams'] = dur_ngrams
         ng['active_voices'] = ng['dur_ngrams'].apply(len)
-        ng['number_dur_ngrams'] = ng['dur_ngrams'].apply(set).apply(len)
+        ng['number_dur_ngrams'] = ng['dur_ngrams'].apply(lambda lyst: len(set(lyst)))
 
         # from JS to check full_hr or partial
         if full_hr == True:
@@ -2298,7 +2424,7 @@ class ImportedPiece:
 
         # get the lyrics as ngrams to match the durations
         lyrics = self.lyrics()
-        lyrics = lyrics.applymap(self._alpha_only)
+        lyrics = lyrics.map(self._alpha_only)
 
         # specify ngram length with arguments
         lyrics_ng = self.ngrams(df=lyrics, n=ngram_length)
@@ -2313,7 +2439,7 @@ class ImportedPiece:
             syll_no_nan = [z for z in rows if pd.isnull(z) == False]
             syll_set.append(syll_no_nan)
         filtered_lyric_ngs['syllable_set'] = syll_set
-        filtered_lyric_ngs["count_lyr_ngrams"] = filtered_lyric_ngs["syllable_set"].apply(set).apply(len)
+        filtered_lyric_ngs["count_lyr_ngrams"] = filtered_lyric_ngs["syllable_set"].apply(lambda lyst: len(set(lyst)))
 
         # and the number of active voices
         filtered_lyric_ngs['active_syll_voices'] = filtered_lyric_ngs['syllable_set'].apply(len)
@@ -2433,22 +2559,9 @@ class ImportedPiece:
         They are represented as intervals with quality and direction,
         thus P-4, m3, P5, P5, M-9, P-4, P4
         """
-
-        tone_list = []
-
-        all_tones = self.notes()
-
-        for item in coordinates:
-            filtered_tones = all_tones.loc[item]
-            tone_list.append(filtered_tones)
-
-        noteObjects = [note.Note(tone) for tone in tone_list]
-        _ints = [interval.Interval(noteObjects[i], noteObjects[i + 1]) for i in range(len(noteObjects) - 1)]
-        entry_ints = []
-
-        for _int in _ints:
-            entry_ints.append(_int.directedName)
-
+        all_tones = self._getM21Objs()
+        notes = [all_tones.at[item] for item in coordinates]
+        entry_ints = [_directed_name_from_note_strings(notes[i], notes[i + 1]) for i in range(len(notes) - 1)]
         return entry_ints
 
     def _split_by_threshold(seq, max_diff=70):
@@ -2493,19 +2606,14 @@ class ImportedPiece:
         return dur_list
 
     # July 2022 added to check for overlap
-    def _entry_overlap_helper(df):
+    def _entry_overlap_helper(_dict):
         """
         This private function is used as part of the last stage of the Presentation
         Type classifier.  It reports the overlap (in offsets) between successive entries
         in a given point of imitation.
         """
-        endpoints = [x + y for x, y in zip(df["Entry_Durs"], df["Offsets"])]
-        endpoints.pop(-1)
-        startpoints = df["Offsets"].copy()
-        startpoints.pop(0)
-
-        overlaps = [w - z for w, z in zip(endpoints, startpoints)]
-        return overlaps
+        return [_dict["Entry_Durs"][i] + _dict["Offsets"][i] - _dict["Offsets"][i+1]
+                for i in range(len(_dict["Entry_Durs"]) - 1)]
 
     # July 2022 added to check for overlap
     def _non_overlap_count(list_overlaps):
@@ -2540,8 +2648,6 @@ class ImportedPiece:
 
     # July 2022:  This Replaces the Previous helper
     def _temp_dict_of_details(self, df, det, matches):
-    
-
         """
         This helper function is used as part of presentationTypes.
         It assembles various features for the presentation types
@@ -2623,39 +2729,39 @@ class ImportedPiece:
                 # if both entries are preferred intervals, take the first (top) one
                 if first_mel_ints[0] and second_mel_ints[0] in preferred_list:
                     #  print("First Pair")
-                    short_offset_list.pop(second_dup_index)
+                    del short_offset_list[second_dup_index]
                     time_intervals = np.diff(short_offset_list).tolist()
                     parallel_voice = voice_list[second_dup_index]
-                    voice_list.pop(second_dup_index)
+                    del voice_list[second_dup_index]
                     tone_coordinates = list(zip(short_offset_list, voice_list))
                     melodic_intervals = self._find_entry_int_distance(tone_coordinates)
 
                 # if the first is preferred, take it
                 elif first_mel_ints[0] in preferred_list:
                     # print("First Pair")
-                    short_offset_list.pop(second_dup_index)
+                    del short_offset_list[second_dup_index]
                     time_intervals = np.diff(short_offset_list).tolist()
                     parallel_voice = voice_list[second_dup_index]
-                    voice_list.pop(second_dup_index)
+                    del voice_list[second_dup_index]
                     tone_coordinates = list(zip(short_offset_list, voice_list))
                     melodic_intervals = self._find_entry_int_distance(tone_coordinates)
 
                 # if the second is preferred, take it
                 elif second_mel_ints[0] in preferred_list:
-                    short_offset_list.pop(first_dup_index)
+                    del short_offset_list[first_dup_index]
                     time_intervals = np.diff(short_offset_list).tolist()
                     parallel_voice = voice_list[first_dup_index]
-                    voice_list.pop(first_dup_index)
+                    del voice_list[first_dup_index]
                     tone_coordinates = list(zip(short_offset_list, voice_list))
                     melodic_intervals = self._find_entry_int_distance(tone_coordinates)
                     #  print("Second Pair")
 
                 # if neither is preferred, take the first
                 else:
-                    short_offset_list.pop(second_dup_index)
+                    del short_offset_list[second_dup_index]
                     time_intervals = np.diff(short_offset_list).tolist()
                     parallel_voice = voice_list[second_dup_index]
-                    voice_list.pop(second_dup_index)
+                    del voice_list[second_dup_index]
                     tone_coordinates = list(zip(short_offset_list, voice_list))
                     melodic_intervals = self._find_entry_int_distance(tone_coordinates)
         # if there are no parallel entries, simply find the time intervals and melodic intervals
@@ -2798,7 +2904,6 @@ class ImportedPiece:
             entries = self.ngrams(df=mel, exclude=['Rest'], n=melodic_ngram_length)
         # get ngram durs to use for overlap check as part of _temp files
         ng_durs = self.durations(df=entries)
-
         points = pd.DataFrame(columns=['Composer',
                     'Title',
                     'First_Offset',
@@ -2820,11 +2925,9 @@ class ImportedPiece:
                                             'Offsets_Key']
 
         det = self.detailIndex(nr, offset=True, progress=True)
-
         # ngrams of melodic entries
         mels_stacked = entries.stack().to_frame()
         mels_stacked.rename(columns =  {0:"pattern"}, inplace = True)
-
         # edit distance, based on side-by-side comparison of melodic ngrams
         # gets flexed and other similar soggetti
         dist = self.flexed_distance(head_flex, entries)
@@ -2834,13 +2937,12 @@ class ImportedPiece:
         filtered_dist_stack = dist_stack[dist_stack[0] < distance_factor]
         filtered_dist = filtered_dist_stack.reset_index()
         filtered_dist.rename(columns =  {'level_0':"source", 'level_1':'match'}, inplace = True)
-
         # # Group the filtered distanced patterns
         full_list_of_matches = filtered_dist.groupby('source')['match'].apply(list).reset_index()
 
+        list_temps = []
         # # classification without hidden types
         if include_hidden_types == False:
-            list_temps = []
             for matches in full_list_of_matches["match"]:
                 related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
                 entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
@@ -2853,245 +2955,83 @@ class ImportedPiece:
                         pass
                     else:
                         list_temps.append(temp)
-            points = pd.DataFrame(list_temps)          
+            points = pd.DataFrame(list_temps)
+            points["Count_Offsets"] = points["Offsets"].apply(lambda lyst: len(set(lyst)))
+            points = points[points["Count_Offsets"] > 1]
+            points["Count_Voices"] = points["Voices"].apply(lambda lyst: len(set(lyst)))
+            points = points[points["Count_Voices"] > 1]
             points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
             points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
             points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
             points["Number_Entries"] = points["Offsets"].apply(len)
-            points["Count_Offsets"] = points["Offsets"].apply(set).apply(len)
-            points = points[points["Count_Offsets"] > 1]
-            points["Count_Voices"] = points["Voices"].apply(set).apply(len)
-            points = points[points["Count_Voices"] > 1]
             if len(points) == 0:
                 print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
             else:
-                points = points.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
+                points = points.reindex(columns=col_order).sort_values("First_Offset")
                 # applying various private functions for overlapping entry tests.
                 # note that ng_durs must be passed to the first of these, via args
                 points["Entry_Durs"] = points[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
                 points["Overlaps"] = points[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
                 points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
                 points.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
-                points["Progress"] = (points["First_Offset"] / self.notes().index[-1])
-            
-            # NIM test.  Here we check for interlocking fugas that are really nims:
-                fugas = points[points["Presentation_Type"] == 'FUGA']
-                fugas_2_drop = pd.DataFrame(columns=fugas.columns)
-                temporary_nim_list = []
-                if len(fugas) >= 1:
-                    fuga_index_list = fugas.index.tolist()
-                    temp_fuga_drop_list = []
-                    filtered_dist['pairs'] = filtered_dist.apply(lambda row: list((row['source'], row['match'])), axis=1)
-                    for this_item in fuga_index_list:
-                        if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
-                            next_item_index = fuga_index_list.index(this_item) + 1
-                            next_item = fuga_index_list[next_item_index]
-                            # check time entry intervals of the two fugas match
-                            if fugas.loc[this_item]['Time_Entry_Intervals'] == fugas.loc[next_item]['Time_Entry_Intervals']:
-                                # check if the first offsets interlock
-                                if fugas.loc[this_item]['Offsets'][0] <= fugas.loc[next_item]['Offsets'][0]:
-                                    # get data for melodic intervals between the NIMS
-                                    voices_for_melodic_ints = fugas.loc[this_item]['Voices']
-                                    offsets_for_melodic_ints = fugas.loc[this_item]['Offsets']
-                                    coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
-                                    melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
-                                    nim_soggetti = [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair]
-                                    nim_sogs_as_strings = [tuple(str(x) for x in tuple_of_strings) for tuple_of_strings in nim_soggetti]
-                                    # filter out Fugas that involve the same pair of voices
-                                    if (fugas.loc[this_item]['Voices'][0] == fugas.loc[next_item]['Voices'][0]) | (fugas.loc[this_item]['Voices'][1] == fugas.loc[next_item]['Voices'][1]):
-                                        pass
-
-                                    # if nim_sogs_as_strings not in filtered_dist['pairs'].tolist():
-                                    #     pass
-                                    else:
-                                        temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
-                                            "Title": fugas.loc[this_item]['Title'],
-                                            'First_Offset': fugas.loc[this_item]['First_Offset'],
-                                            # here we need to combine and sort lists of offsets
-                                            'Offsets': sorted(fugas.loc[this_item]['Offsets'] + fugas.loc[next_item]['Offsets']),
-                                            # here we need to combine and sort lists of meas and beats
-                                            'Measures_Beats': sorted(fugas.loc[this_item]['Measures_Beats'] + fugas.loc[next_item]['Measures_Beats']),
-                                            # here we need to combine and sort lists of soggette
-                                            "Soggetti": [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair],
-                                            # here we need to combine and sort lists of voices
-                                            'Voices': [val for pair in zip(fugas.loc[this_item]['Voices'], fugas.loc[next_item]['Voices']) for val in pair],
-                                            'Time_Entry_Intervals': fugas.loc[this_item]['Time_Entry_Intervals'],
-                                            'Melodic_Entry_Intervals': melodic_intervals_between_nims,
-                                            'Number_Entries': fugas.loc[this_item]['Number_Entries'] + fugas.loc[next_item]['Number_Entries'],
-                                            'Presentation_Type' : 'NIM',
-                                            'Flexed_Entries': True if fugas.loc[this_item]['Flexed_Entries'] == True | fugas.loc[next_item]['Flexed_Entries'] == True else False,
-                                            'Parallel_Entries': True if (fugas.loc[this_item]['Parallel_Entries'] == True) | (fugas.loc[next_item]['Parallel_Entries'] == True) else False,
-                                            'Parallel_Voice': self._parallel_voice_check(fugas.loc[this_item]['Parallel_Voice'], fugas.loc[next_item]['Parallel_Voice']),
-                                            'Count_Non_Overlaps': fugas.loc[this_item]['Count_Non_Overlaps'] + fugas.loc[next_item]['Count_Non_Overlaps'],
-                                            'Progress' : fugas.loc[this_item]['Progress']
-                                            }
-                                        temporary_nim_list.append(temp_nim_details)
-                                        # remove fugas that are nims from points
-                                        temp_fuga_drop_list.append(fugas.loc[this_item].to_dict())
-                                        temp_fuga_drop_list.append(fugas.loc[next_item].to_dict())
-                    # if len(temp_fuga_drop_list) >= 1:
-                    #     fugas2drop = pd.DataFrame(temp_fuga_drop_list)
-                    #     cols = points.columns.to_list()
-                    #     points = points[~points[cols].isin(fugas2drop[cols])].dropna(how='all')
-                        
-                # len test
-                if len(temporary_nim_list) >= 1:
-                    for nim in temporary_nim_list:
-                        points = points.append(nim, ignore_index=True)
-                
+                points["Progress"] = (points["First_Offset"] / self.notes().index[-1])        
                 points = points.sort_values("Progress")
                 points = points.reset_index(drop=True)
-
                 self.analyses[memo_key] = points
                 return points
 
         # classification with hidden types
         elif include_hidden_types == True:
             # hidden_types_list = ["PEN", "ID"]
-            list_temps = []
             for matches in full_list_of_matches["match"]:
                 related_entry_list = mels_stacked[mels_stacked['pattern'].isin(matches)]
                 entry_array = related_entry_list.reset_index(level=1).rename(columns = {'level_1': "voice", 0: "pattern"})
-                dfs = self._split_dataframe(entry_array, "index", 70)
-                # classification of the full set
-                for df in dfs:
-                    temp = self._temp_dict_of_details(df, det, matches)
-                    # print(temp)
-                    if temp in list_temps:
-                        pass
-                    else:
-                        list_temps.append(temp)
-                points = pd.DataFrame(list_temps) 
 
-                offset_list = entry_array.index.to_list()
-                split_list = list(ImportedPiece._split_by_threshold(offset_list))
-                # the initial classification of the full set
+                split_list = list(ImportedPiece._split_by_threshold(entry_array.index))
                 for item in split_list:
+                    # the initial classification of the full set
                     df = entry_array.loc[item].reset_index()
                     if len(df) > 1:
                     # df = df.reset_index()
                         temp = self._temp_dict_of_details(df, det, matches)
-                        points = points.append(temp, ignore_index=True)
-                        points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-                    # points.drop_duplicates(subset=["First_Offset"], keep='first', inplace = True)
-                    # points = points[points['Offsets'].apply(len) > 1]
-                # this return is just for testing
-                # return(points)
-                # now the test for hidden types via 'combinations' of all entries in the full set
-                for item in split_list:
-                    if len(item) > 1:
-                        df = entry_array.loc[item].reset_index()
-                        temp = self._temp_dict_of_details(df, det, matches)
-                        lto = len(temp["Offsets"])
-                        if lto > 2 :
-                            # make range from 2 to allow for fugas needed in NIMs
-                            for r in range(3, 6):
-                                list_combinations = list(combinations(item, r))
-                                for slist in list_combinations:
-                                    df = entry_array.loc(axis=0)[slist].reset_index()
-                                    temp = self._temp_dict_of_details(df, det, matches)
-                                    temp["Presentation_Type"] = ImportedPiece._classify_by_offset(temp['Time_Entry_Intervals'])
-                                    if 'PEN' in temp["Presentation_Type"]:
-                                        points2 = points2.append(temp, ignore_index=True)
-                                    if 'ID' in temp["Presentation_Type"]:
-                                        points2 = points2.append(temp, ignore_index=True)
-                                        # add fuga (so nim will work)
-                                    if 'FUGA' in temp["Presentation_Type"]:
-                                        points2 = points2.append(temp, ignore_index=True)
+                        list_temps.append(temp)
 
-            points_combined = points.append(points2, ignore_index=True)
-            points_combined["Offsets_Key"] = points_combined["Offsets"].apply(self._offset_joiner)
-            points_combined['Flexed_Entries'] = points_combined["Soggetti"].apply(len) > 1
-            points_combined["Number_Entries"] = points_combined["Offsets"].apply(len)
-            points_combined["Count_Offsets"] = points_combined["Offsets"].apply(set).apply(len)
-            points_combined = points_combined[points_combined["Count_Offsets"] > 1]
-            points_combined = points_combined[points_combined["Voices"].apply(set).apply(len) > 1]
-            # return points_combined
-            if len(points_combined) == 0:
+                    if len(item) > 2 :
+                        # make range from 2 to allow for fugas needed in NIMs
+                        for r in range(3, 6):
+                            list_combinations = list(combinations(item, r))
+                            for slist in list_combinations:
+                                df = entry_array.loc(axis=0)[slist].reset_index()
+                                temp = self._temp_dict_of_details(df, det, matches)
+                                list_temps.append(temp)
+
+            points = pd.DataFrame(list_temps)
+            points["Count_Offsets"] = points["Offsets"].apply(lambda lyst: len(set(lyst)))
+            points = points[points["Count_Offsets"] > 1]
+            points = points[points["Voices"].apply(lambda lyst: len(set(lyst))) > 1]
+            points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
+            points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
+            points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
+            points["Number_Entries"] = points["Offsets"].apply(len)
+            # return points
+            if len(points) == 0:
                 print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
             else:
-                points_combined = points_combined.reindex(columns=col_order).sort_values("First_Offset").reset_index(drop=True)
-                # points_combined.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
+                points = points.reindex(columns=col_order).sort_values("First_Offset")
+                points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
                 # applying various private functions for overlapping entry tests.
                 # note that ng_durs must be passed to the first of these, via args
-                points_combined["Entry_Durs"] = points_combined[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
-                points_combined["Overlaps"] = points_combined[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
-                points_combined["Count_Non_Overlaps"] = points_combined["Overlaps"].apply(ImportedPiece._non_overlap_count)
-                points_combined.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
-                points_combined["Progress"] = (points_combined["First_Offset"] / self.notes().index[-1])
-                points_combined["Presentation_Type"].fillna("FUGA", inplace=True)
-                # return points_combined
-
-                # NIM test.  Here we check for interlocking fugas that are really nims:
-                fugas = points_combined[points_combined["Presentation_Type"] == 'FUGA']
-                fugas_2_drop = pd.DataFrame(columns=fugas.columns)
-                temporary_nim_list = []
-                if len(fugas) >= 1:
-                    fuga_index_list = fugas.index.tolist()
-                    temp_fuga_drop_list = []
-                    filtered_dist['pairs'] = filtered_dist.apply(lambda row: list((row['source'], row['match'])), axis=1)
-                    for this_item in fuga_index_list:
-                        if fuga_index_list.index(this_item) != len(fuga_index_list)-1:
-                            next_item_index = fuga_index_list.index(this_item) + 1
-                            next_item = fuga_index_list[next_item_index]
-                            # check time entry intervals of the two fugas match
-                            if fugas.loc[this_item]['Time_Entry_Intervals'] == fugas.loc[next_item]['Time_Entry_Intervals']:
-                                # check if the first offsets interlock
-                                if fugas.loc[this_item]['Offsets'][0] <= fugas.loc[next_item]['Offsets'][0]:
-                                    # get data for melodic intervals between the NIMS
-                                    voices_for_melodic_ints = fugas.loc[this_item]['Voices']
-                                    offsets_for_melodic_ints = fugas.loc[this_item]['Offsets']
-                                    coordinates = list(zip(offsets_for_melodic_ints, voices_for_melodic_ints))
-                                    melodic_intervals_between_nims = self._find_entry_int_distance(coordinates)
-                                    nim_soggetti = [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair]
-                                    nim_sogs_as_strings = [tuple(str(x) for x in tuple_of_strings) for tuple_of_strings in nim_soggetti]
-                                    # filter out Fugas that involve the same pair of voices
-                                    if (fugas.loc[this_item]['Voices'][0] == fugas.loc[next_item]['Voices'][0]) | (fugas.loc[this_item]['Voices'][1] == fugas.loc[next_item]['Voices'][1]):
-                                        pass
-
-                                    # if nim_sogs_as_strings not in filtered_dist['pairs'].tolist():
-                                    #     pass
-                                    else:
-                                        temp_nim_details = {"Composer": fugas.loc[this_item]['Composer'],
-                                            "Title": fugas.loc[this_item]['Title'],
-                                            'First_Offset': fugas.loc[this_item]['First_Offset'],
-                                            # here we need to combine and sort lists of offsets
-                                            'Offsets': sorted(fugas.loc[this_item]['Offsets'] + fugas.loc[next_item]['Offsets']),
-                                            # here we need to combine and sort lists of meas and beats
-                                            'Measures_Beats': sorted(fugas.loc[this_item]['Measures_Beats'] + fugas.loc[next_item]['Measures_Beats']),
-                                            # here we need to combine and sort lists of soggette
-                                            "Soggetti": [val for pair in zip(fugas.loc[this_item]['Soggetti'], fugas.loc[next_item]['Soggetti']) for val in pair],
-                                            # here we need to combine and sort lists of voices
-                                            'Voices': [val for pair in zip(fugas.loc[this_item]['Voices'], fugas.loc[next_item]['Voices']) for val in pair],
-                                            'Time_Entry_Intervals': fugas.loc[this_item]['Time_Entry_Intervals'],
-                                            'Melodic_Entry_Intervals': melodic_intervals_between_nims,
-                                            'Number_Entries': fugas.loc[this_item]['Number_Entries'] + fugas.loc[next_item]['Number_Entries'],
-                                            'Presentation_Type' : 'NIM',
-                                            'Flexed_Entries': True if fugas.loc[this_item]['Flexed_Entries'] == True | fugas.loc[next_item]['Flexed_Entries'] == True else False,
-                                            'Parallel_Entries': True if (fugas.loc[this_item]['Parallel_Entries'] == True) | (fugas.loc[next_item]['Parallel_Entries'] == True) else False,
-                                            'Parallel_Voice': self._parallel_voice_check(fugas.loc[this_item]['Parallel_Voice'], fugas.loc[next_item]['Parallel_Voice']),
-                                            'Count_Non_Overlaps': fugas.loc[this_item]['Count_Non_Overlaps'] + fugas.loc[next_item]['Count_Non_Overlaps'],
-                                            'Progress' : fugas.loc[this_item]['Progress']
-                                            }
-                                        temporary_nim_list.append(temp_nim_details)
-                                        # remove fugas that are nims from points
-                                        temp_fuga_drop_list.append(fugas.loc[this_item].to_dict())
-                                        temp_fuga_drop_list.append(fugas.loc[next_item].to_dict())
-                    # if len(temp_fuga_drop_list) >= 1:
-                    #     fugas2drop = pd.DataFrame(temp_fuga_drop_list)
-                    #     cols = points.columns.to_list()
-                    #     points = points[~points[cols].isin(fugas2drop[cols])].dropna(how='all')
-                        
-                # len test
-                if len(temporary_nim_list) >= 1:
-                    for nim in temporary_nim_list:
-                        points_combined = points_combined.append(nim, ignore_index=True)
-                
-                points_combined = points_combined.sort_values("Progress")
-                points_combined = points_combined.reset_index(drop=True)
-
-                self.analyses[memo_key] = points_combined
-                return points_combined
+                points["Entry_Durs"] = points[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
+                points["Overlaps"] = points[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
+                # points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
+                points.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
+                points["Progress"] = (points["First_Offset"] / self.notes().index[-1])
+                # return points
+                points = points.sort_values("Progress")
+                points = points.reset_index(drop=True)
+                self.analyses[memo_key] = points
+                return points
+            
     # new print methods with verovio
     def verovioCadences(self, df=None):
         """
@@ -3129,13 +3069,14 @@ class ImportedPiece:
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
         else:
-            response = requests.get(self.path)
+            response = httpx.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOption( "pageHeight", "1500" )
-        tk.setOption( "pageWidth", "3000" )
+        tk.setOptions({"pageHeight":  1500, # Height in pixels
+                       "pageWidth":  1500    # Width in pixels
+                       })
         # adding option to import filtered df of cadences
         if df is None:
             cadences = self.cadences()
@@ -3147,13 +3088,14 @@ class ImportedPiece:
             c_type = cadences.loc[cad]["CadType"]
             c_beat = cadences.loc[cad]["Beat"]
             cvfs = cadences.loc[cad]['CVFs']
-            low = c_meas-1
-            high = c_meas
+            low = int(c_meas-1)
+            high = int(c_meas)
             mr = str(low) + "-" + str(high)
             mdict = {'measureRange': mr}
 
             # select verovio measures and redo layout
-            tk.select(str(mdict))
+            # tk.select(str(mdict))
+            tk.select(mdict)
             tk.redoLayout()
 
             # get the number of pages and display the music
@@ -3189,13 +3131,14 @@ class ImportedPiece:
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
         else:
-            response = requests.get(self.path)
+            response = httpx.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOption( "pageHeight", "1500" )
-        tk.setOption( "pageWidth", "3000" )
+        tk.setOptions({"pageHeight":  1500, # Height in pixels
+                       "pageWidth":  3000    # Width in pixels
+                       })
 
         if stop == -1:
             meas = self.measures()
@@ -3207,7 +3150,8 @@ class ImportedPiece:
         if stop < start:
             print("Check the measure range, the stop measure must be equal to or greater than the start measure")
         else:# select verovio measures and redo layout
-            tk.select(str(mdict))
+            # tk.select(str(mdict))
+            tk.select(mdict)
             tk.redoLayout()
 
             # get the number of pages and display the music
@@ -3259,13 +3203,14 @@ class ImportedPiece:
             text_file = open(self.path, "r")
             fetched_mei_string = text_file.read()
         else:
-            response = requests.get(self.path)
+            response = httpx.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOption( "pageHeight", "1500" )
-        tk.setOption( "pageWidth", "3000" )
+        tk.setOptions({"pageHeight":  1500, # Height in pixels
+                       "pageWidth":  3000    # Width in pixels
+                       })
         print("Results:")
         # collect the metadata
         if p_types is None:
@@ -3283,13 +3228,19 @@ class ImportedPiece:
             non_overlaps = p_types.loc[p_type]["Count_Non_Overlaps"]
 
             # build the measure range dictionary
-            first = ml[0].split('/')[0]
-            last = str(int(ml[-1].split('/')[0]) + 4)
-            mr = str(first) + "-" + str(last)
+            # Find the first and last items
+            first_item = ml[0]
+            last_item = ml[-1]
+
+            # Split each item at '/' and take the first part as integer
+            first_part_first_item = int(float(first_item.split('/')[0]))
+            first_part_last_item = int(float(last_item.split('/')[0]))  
+           
+            mr = str(first_part_first_item) + "-" + str(first_part_last_item)
             mdict = {'measureRange': mr}
 
             # select measures in verovio and redo the layout
-            tk.select(str(mdict))
+            tk.select(mdict)
             tk.redoLayout()
             # get the number of pages
             count = tk.getPageCount()
@@ -3356,13 +3307,14 @@ class ImportedPiece:
                 text_file = open(self.path, "r")
                 fetched_mei_string = text_file.read()
         else:
-            response = requests.get(self.path)
+            response = httpx.get(self.path)
             fetched_mei_string = response.text
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOption( "pageHeight", "1500" )
-        tk.setOption( "pageWidth", "2500" )
+        tk.setOptions({"pageHeight":  1500, # Height in pixels
+                       "pageWidth":  3000    # Width in pixels
+                       })
 
         # Now get meas ranges and number of active voices
         if df is None:
@@ -3380,16 +3332,17 @@ class ImportedPiece:
         for span in li:
             if ngram_length > 4:
                 if len(span) == 1:
-                    mr = str(span[0]) + "-" + str(span[0] + 3)
+                    mr = str(int(span[0])) + "-" + str(int(span[0] + 3))
                 else:
-                    mr = str(span[0]) + "-" + str(span[-1] + 1)
+                    mr = str(int(span[0])) + "-" + str(int(span[-1] + 1))
             else:
-                mr = str(span[0]) + "-" + str(span[-1] + 1)
+                mr = str(int(span[0])) + "-" + str(int(span[-1] + 1))
             mdict = {'measureRange': mr}
             min_hr_count = 20
             max_hr_count = 0
 
-            for n in range(span[0], span[-1]+1):
+            # for n in range(span[0], span[-1]+1):
+            for n in range(int(span[0]), int(span[-1]) +  1):
                 ma = 0
                 mi = 20
                 for item in homorhythm.loc[n]['hr_voices'].to_list():
@@ -3403,7 +3356,7 @@ class ImportedPiece:
                         min_hr_count = mi
 
             # select verovio measures and redo layout for each passage
-            tk.select(str(mdict))
+            tk.select(mdict)
             tk.redoLayout()
             # get the number of pages and display the music for each passage
             print("Results:")
@@ -3628,8 +3581,7 @@ class CorpusBase:
         mass_mel = masses.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'df': mass_notes, 'kind': 'd', 'end': False})
         mass_entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False,
                                     kwargs={'df': mass_mel, 'n': n, 'thematic': thematic, 'anywhere': anywhere})
-
-        res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
+        res = pd.DataFrame(columns=list(model.file_name for model in models.scores), index=list(mass.file_name for mass in masses.scores))
         res.columns.name = 'Model'
         res.index.name = 'Mass'
         for i, model in enumerate(models.scores):
@@ -3706,7 +3658,7 @@ class CorpusBase:
             models = self
         if masses is None:
             masses = self
-        res = pd.DataFrame(columns=(model.file_name for model in models.scores), index=(mass.file_name for mass in masses.scores))
+        res = pd.DataFrame(columns=list(model.file_name for model in models.scores), index=list(mass.file_name for mass in masses.scores))
         res.columns.name = 'Model'
         res.index.name = 'Mass'
 
@@ -3735,7 +3687,7 @@ class CorpusBase:
                     res.at[mass.file_name, model.file_name] = 1
                     continue
                 df = mass_modules[j]
-                df = df[df.applymap(lambda cell: 'Rest' not in cell, na_action='ignore')].dropna(how='all')
+                df = df[df.map(lambda cell: 'Rest' not in cell, na_action='ignore')].dropna(how='all')
                 stack = df.stack()
                 if not ic:
                     hits = stack[stack.isin(mod_patterns)]
@@ -3752,7 +3704,7 @@ class CorpusBase:
 
         return res
 
-    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer="iframe"):
+    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer=""):
 
         '''
         Parameters Overview:
@@ -3835,7 +3787,7 @@ class CorpusBase:
         if renderer == "streamlit":
             return fig
         else:
-            fig.show(renderer=renderer)
+            fig.show()
 
     # setting up the figure size:
     def _plot_default(self):
@@ -4032,6 +3984,7 @@ class CorpusBase:
                     loop_ngrams = piece_item.entries(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
                 else:
                     loop_ngrams = piece_item.ngrams(df=loop_melodic, n=int(i), exclude=["Rest"]).fillna('')
+                # TODO: try to move this out of the loop and just concat once if possible
                 local_ngrams = pd.concat([local_ngrams, loop_ngrams])
 
             total_unique_ngrams_list = list(filter(lambda x: x != "", list(set(local_ngrams.values.flatten().tolist()))))

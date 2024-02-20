@@ -13,22 +13,21 @@ Install with pypi package manager:  `pip install crim_intervals`
 ## Import Libraries
 
 ```python
-# import crim_intervals
+# import crim_intervals and specific modules
 import crim_intervals
 from crim_intervals import * 
 from crim_intervals import main_objs
 import crim_intervals.visualizations as viz
-# import pandas and other libraries
+# import other libraries used in the notebooks
 import pandas as pd
-import re
-import altair as alt
-import matplotlib.pyplot as plt
-import seaborn as sns
-from pandas.io.json import json_normalize
-from pyvis.network import Network
 from IPython.display import display
-import requests
+from pyvis.network import Network
+import altair as alt
+import plotly_express as px
 import os
+import re
+import requests
+import seaborn as sns
 
 # for use in Jupyter notebook, create a local folder for music files
 MYDIR = ("saved_csv")

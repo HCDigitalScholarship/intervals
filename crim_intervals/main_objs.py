@@ -2010,6 +2010,15 @@ class ImportedPiece:
         as such. The cadence types recognized are "Authentic", "Phrygian", "Leaping
         Contratenor", "Clausula Vera", "Phrygian Clausula Vera", "Altizans Only",
         "Phrygian Altizans", "Double Leading Tone", "Quince", and "Reinterpreted".
+        The "Quince" cadence is rare and typically only happens in thicker textures
+        with a "Quinta pars". It is like a Clausula Vera with the Tenorizans voice
+        typically above the Cantizans voice, but the Tenorizans moves up by a fourth
+        or down by a fifth at the perfection such that the Cantizans and Tenorizans
+        arrive a perfect fifth. The very rare "Reinterpreted" cadence initially sounds
+        like it will be an authentic type because one pair of voices can be understood
+        as a Cantizans-Bassizans pair. But then Tenorizans below what sounded like a
+        Bassizans causes the Cantizans to be reinterpreted as an Altizans, and the
+        Bassizans to be reinterpreted as a Quintizans CVF, hence the name "Reinterpreted".
 
         * LeadingTones: The number of leading tones (i.e. semitones) as notated in the
         score. These can be from the Cantizans, Tenorizans, or Altizans. If the CVF

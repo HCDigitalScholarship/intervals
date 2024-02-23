@@ -250,10 +250,12 @@ class ImportedPiece:
         The df's column names are changed in place, so make a copy before calling this method
         if you don't want your original df to get changed.'''
         _dict = self._getPartNumberDict()
-        cols = ['_'.join(_dict.get(part, part) for part in col.split('_')) for col in df.columns]
-        res = df.copy()
-        res.columns = cols
-        return res
+        if _dict is not None or len(_dict) !=  0:
+            cols = ['_'.join(_dict.get(part, part) for part in col.split('_')) for col in df.columns]
+            res = df.copy()
+            res.columns = cols
+            return res
+        
 
     def _getM21Objs(self):
         if 'M21Objs' not in self.analyses:

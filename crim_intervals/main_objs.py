@@ -19,7 +19,7 @@ import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import plotly.express as px
 from glob import glob
-from IPython.display import SVG, HTML
+# from IPython.display import SVG, HTML
 main_objs_dir = os.path.dirname(os.path.abspath(__file__))
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -3189,7 +3189,7 @@ class ImportedPiece:
                 print("Cadence Tone: ", c_tone)
                 print("Cadence Type: ", c_type)
                 print("Cadential Voice Functions: ", cvfs)
-                display(HTML(music))
+                # display(HTML(music))
     # January 2023 addition to print score or excerpt
 
     def verovioPrintExample(self, start, stop):
@@ -3241,7 +3241,7 @@ class ImportedPiece:
                 print(self.metadata['composer'])
                 print(self.metadata['title'])
                 print("Measures: " + str(start) + "-" + str(stop))
-                display(HTML(music))
+                # display(HTML(music))
 
     # July 2022 Addition for printing presentation types with Verovio
     def verovioPtypes(self, p_types=None):
@@ -3341,7 +3341,7 @@ class ImportedPiece:
             for c in range(1, count + 1):
                 music = tk.renderToSVG(c)
                 # display(SVG(music))
-                display(HTML(music))
+                # display(HTML(music))
 
     # July 2022 Addition for printing hr types with Verovio
     def verovioHomorhythm(self, df=None, ngram_length=4, full_hr=True):
@@ -3449,7 +3449,7 @@ class ImportedPiece:
 
             for c in range(1, count + 1):
                 music = tk.renderToSVG(c)
-                display(SVG(music))
+                # display(SVG(music))
 
 
 # The following are NOT part of piece or other classes

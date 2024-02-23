@@ -11,7 +11,7 @@ from more_itertools import consecutive_groups
 import os
 import re
 import collections
-import verovio
+# import verovio
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -3111,345 +3111,345 @@ class ImportedPiece:
                 return points
             
     # new print methods with verovio
-    def verovioCadences(self, df=None):
-        """
-        This function is used to display the results of the Cadence
-        classifier in the Notebook with Verovio.  Each excerpt is
-        two measures long:  the measure of the final tone of the cadence
-        and the previous measure.
+    # def verovioCadences(self, df=None):
+    #     """
+    #     This function is used to display the results of the Cadence
+    #     classifier in the Notebook with Verovio.  Each excerpt is
+    #     two measures long:  the measure of the final tone of the cadence
+    #     and the previous measure.
 
-        The function also displays metadata about each excerpt, drawn from the
-        cadence results dataframe:  piece ID, composer, title, measures, type of
-        cadence, beat of the bar in which the final tone is heard, and evaded
-        status.
+    #     The function also displays metadata about each excerpt, drawn from the
+    #     cadence results dataframe:  piece ID, composer, title, measures, type of
+    #     cadence, beat of the bar in which the final tone is heard, and evaded
+    #     status.
 
-        Usage:
+    #     Usage:
 
-        You will need to run cadences = piece.cadences() in order to build the
-        initial set of results.
+    #     You will need to run cadences = piece.cadences() in order to build the
+    #     initial set of results.
 
-        Then pass these results to the Verovio print function:
+    #     Then pass these results to the Verovio print function:
 
-        verovioCadences(cadences)
+    #     verovioCadences(cadences)
 
-        It is also possible to pass a filtered list of cadences to this function 
-        by specifying a df into verovioCadences() as shown below:
+    #     It is also possible to pass a filtered list of cadences to this function 
+    #     by specifying a df into verovioCadences() as shown below:
 
-        cadences = piece.cadences()
-        cadences_filtered = cadences[cadences['Tone'] == 'G']
-        piece.verovioCadences(cadences_filtered)
+    #     cadences = piece.cadences()
+    #     cadences_filtered = cadences[cadences['Tone'] == 'G']
+    #     piece.verovioCadences(cadences_filtered)
 
-        """
-        if self.path.startswith('Music_Files/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        elif self.path.startswith('/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        else:
-            response = httpx.get(self.path)
-            fetched_mei_string = response.text
-        tk = verovio.toolkit()
-        tk.loadData(fetched_mei_string)
-        tk.setScale(30)
-        tk.setOptions({"pageHeight":  1500, # Height in pixels
-                       "pageWidth":  1500    # Width in pixels
-                       })
-        # adding option to import filtered df of cadences
-        if df is None:
-            cadences = self.cadences()
-        else:
-            cadences = df
-        for cad in cadences.index:
-            c_meas = cadences.loc[cad]["Measure"]
-            c_tone = cadences.loc[cad]["Tone"]
-            c_type = cadences.loc[cad]["CadType"]
-            c_beat = cadences.loc[cad]["Beat"]
-            cvfs = cadences.loc[cad]['CVFs']
-            low = int(c_meas-1)
-            high = int(c_meas)
-            mr = str(low) + "-" + str(high)
-            mdict = {'measureRange': mr}
+    #     """
+    #     if self.path.startswith('Music_Files/'):
+    #         text_file = open(self.path, "r")
+    #         fetched_mei_string = text_file.read()
+    #     elif self.path.startswith('/'):
+    #         text_file = open(self.path, "r")
+    #         fetched_mei_string = text_file.read()
+    #     else:
+    #         response = httpx.get(self.path)
+    #         fetched_mei_string = response.text
+    #     tk = verovio.toolkit()
+    #     tk.loadData(fetched_mei_string)
+    #     tk.setScale(30)
+    #     tk.setOptions({"pageHeight":  1500, # Height in pixels
+    #                    "pageWidth":  1500    # Width in pixels
+    #                    })
+    #     # adding option to import filtered df of cadences
+    #     if df is None:
+    #         cadences = self.cadences()
+    #     else:
+    #         cadences = df
+    #     for cad in cadences.index:
+    #         c_meas = cadences.loc[cad]["Measure"]
+    #         c_tone = cadences.loc[cad]["Tone"]
+    #         c_type = cadences.loc[cad]["CadType"]
+    #         c_beat = cadences.loc[cad]["Beat"]
+    #         cvfs = cadences.loc[cad]['CVFs']
+    #         low = int(c_meas-1)
+    #         high = int(c_meas)
+    #         mr = str(low) + "-" + str(high)
+    #         mdict = {'measureRange': mr}
 
-            # select verovio measures and redo layout
-            # tk.select(str(mdict))
-            tk.select(mdict)
-            tk.redoLayout()
+    #         # select verovio measures and redo layout
+    #         # tk.select(str(mdict))
+    #         tk.select(mdict)
+    #         tk.redoLayout()
 
-            # get the number of pages and display the music
-            print("Results:")
-            count = tk.getPageCount()
-            for c in range(1, count + 1):
-                music = tk.renderToSVG(c)
-                print("File Name: ", self.file_name)
-                print(self.metadata['composer'])
-                print(self.metadata['title'])
-                print("Cadence End Measure:", c_meas)
-                print("Beat: ", c_beat)
-                print("Cadence Tone: ", c_tone)
-                print("Cadence Type: ", c_type)
-                print("Cadential Voice Functions: ", cvfs)
-                # display(HTML(music))
-    # January 2023 addition to print score or excerpt
+    #         # get the number of pages and display the music
+    #         print("Results:")
+    #         count = tk.getPageCount()
+    #         for c in range(1, count + 1):
+    #             music = tk.renderToSVG(c)
+    #             print("File Name: ", self.file_name)
+    #             print(self.metadata['composer'])
+    #             print(self.metadata['title'])
+    #             print("Cadence End Measure:", c_meas)
+    #             print("Beat: ", c_beat)
+    #             print("Cadence Tone: ", c_tone)
+    #             print("Cadence Type: ", c_type)
+    #             print("Cadential Voice Functions: ", cvfs)
+    #             # display(HTML(music))
+    # # January 2023 addition to print score or excerpt
 
-    def verovioPrintExample(self, start, stop):
+    # def verovioPrintExample(self, start, stop):
 
-        """
-        Pass a range of measures (as integers) to print the given range.
+    #     """
+    #     Pass a range of measures (as integers) to print the given range.
 
-        For last measure you can also use '-1', thus for all measures:
+    #     For last measure you can also use '-1', thus for all measures:
 
-        verovioPrintExample(1, -1)
+    #     verovioPrintExample(1, -1)
 
-        """
-        if self.path.startswith('Music_Files/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        elif self.path.startswith('/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        else:
-            response = httpx.get(self.path)
-            fetched_mei_string = response.text
-        tk = verovio.toolkit()
-        tk.loadData(fetched_mei_string)
-        tk.setScale(30)
-        tk.setOptions({"pageHeight":  1500, # Height in pixels
-                       "pageWidth":  3000    # Width in pixels
-                       })
+    #     """
+    #     if self.path.startswith('Music_Files/'):
+    #         text_file = open(self.path, "r")
+    #         fetched_mei_string = text_file.read()
+    #     elif self.path.startswith('/'):
+    #         text_file = open(self.path, "r")
+    #         fetched_mei_string = text_file.read()
+    #     else:
+    #         response = httpx.get(self.path)
+    #         fetched_mei_string = response.text
+    #     tk = verovio.toolkit()
+    #     tk.loadData(fetched_mei_string)
+    #     tk.setScale(30)
+    #     tk.setOptions({"pageHeight":  1500, # Height in pixels
+    #                    "pageWidth":  3000    # Width in pixels
+    #                    })
 
-        if stop == -1:
-            meas = self.measures()
-            stop = meas.iloc[-1].tolist()[0]
+    #     if stop == -1:
+    #         meas = self.measures()
+    #         stop = meas.iloc[-1].tolist()[0]
 
-        mr = str(start) + "-" + str(stop)
-        mdict = {'measureRange': mr}
+    #     mr = str(start) + "-" + str(stop)
+    #     mdict = {'measureRange': mr}
 
-        if stop < start:
-            print("Check the measure range, the stop measure must be equal to or greater than the start measure")
-        else:# select verovio measures and redo layout
-            # tk.select(str(mdict))
-            tk.select(mdict)
-            tk.redoLayout()
+    #     if stop < start:
+    #         print("Check the measure range, the stop measure must be equal to or greater than the start measure")
+    #     else:# select verovio measures and redo layout
+    #         # tk.select(str(mdict))
+    #         tk.select(mdict)
+    #         tk.redoLayout()
 
-            # get the number of pages and display the music
-            print("Score:")
-            count = tk.getPageCount()
-            for c in range(1, count + 1):
-                music = tk.renderToSVG(c)
-                print("File Name: ", self.file_name)
-                print(self.metadata['composer'])
-                print(self.metadata['title'])
-                print("Measures: " + str(start) + "-" + str(stop))
-                # display(HTML(music))
+    #         # get the number of pages and display the music
+    #         print("Score:")
+    #         count = tk.getPageCount()
+    #         for c in range(1, count + 1):
+    #             music = tk.renderToSVG(c)
+    #             print("File Name: ", self.file_name)
+    #             print(self.metadata['composer'])
+    #             print(self.metadata['title'])
+    #             print("Measures: " + str(start) + "-" + str(stop))
+    #             # display(HTML(music))
 
-    # July 2022 Addition for printing presentation types with Verovio
-    def verovioPtypes(self, p_types=None):
-        """
-        This function is used to display the results of the presentationTypes function
-        in the Notebook with Verovio.  Each excerpt begins with
-        the first measure of the given presentation type and continues through four
-        measures after the last entry.
+    # # July 2022 Addition for printing presentation types with Verovio
+    # def verovioPtypes(self, p_types=None):
+    #     """
+    #     This function is used to display the results of the presentationTypes function
+    #     in the Notebook with Verovio.  Each excerpt begins with
+    #     the first measure of the given presentation type and continues through four
+    #     measures after the last entry.
 
-        The function also displays metadata about each excerpt, drawn from the
-        presentation type dataframe:  piece ID, composer, title, measure range,
-        presentation type, voices in order of entry, number of entries, the soggetti
-        , melodic entry intervals, time entry intervals.
+    #     The function also displays metadata about each excerpt, drawn from the
+    #     presentation type dataframe:  piece ID, composer, title, measure range,
+    #     presentation type, voices in order of entry, number of entries, the soggetti
+    #     , melodic entry intervals, time entry intervals.
 
-        Usage:
+    #     Usage:
 
-        You must first run p_types to build the initial list of results and define
-        these as a new variable name "p_types":
+    #     You must first run p_types to build the initial list of results and define
+    #     these as a new variable name "p_types":
 
-        p_types = piece.presentationTypes()
+    #     p_types = piece.presentationTypes()
 
-        Note that there are many options in the presentationTypes methods to
-        determine the length of soggetti, degree of head or body flex, status
-        of unisons, whether to use main entries only (or moving window of soggetti)
-        and status of hidden entries.)
+    #     Note that there are many options in the presentationTypes methods to
+    #     determine the length of soggetti, degree of head or body flex, status
+    #     of unisons, whether to use main entries only (or moving window of soggetti)
+    #     and status of hidden entries.)
 
-        After any additional filtering, pass the results of that work to verovioPtypes:
+    #     After any additional filtering, pass the results of that work to verovioPtypes:
 
-        piece.verovioPtypes(p_types)
+    #     piece.verovioPtypes(p_types)
 
 
-        """
-        if self.path.startswith('Music_Files/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        elif self.path.startswith('/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        else:
-            response = httpx.get(self.path)
-            fetched_mei_string = response.text
-        tk = verovio.toolkit()
-        tk.loadData(fetched_mei_string)
-        tk.setScale(30)
-        tk.setOptions({"pageHeight":  1500, # Height in pixels
-                       "pageWidth":  3000    # Width in pixels
-                       })
-        print("Results:")
-        # collect the metadata
-        if p_types is None:
-            p_types = self.presentationTypes()
-        for p_type in p_types.index:
-            this_p_type = p_types.loc[p_type]["Presentation_Type"]
-            p_voices = p_types.loc[p_type]["Voices"]
-            n_voices = p_types.loc[p_type]["Number_Entries"]
-            soggetti = p_types.loc[p_type]["Soggetti"]
-            mint = p_types.loc[p_type]["Melodic_Entry_Intervals"]
-            tint = p_types.loc[p_type]["Time_Entry_Intervals"]
-            flexed = p_types.loc[p_type]["Flexed_Entries"]
-            ml = p_types.loc[p_type]["Measures_Beats"]
-            parallel = p_types.loc[p_type]["Parallel_Voice"]
-            non_overlaps = p_types.loc[p_type]["Count_Non_Overlaps"]
+    #     """
+    #     if self.path.startswith('Music_Files/'):
+    #         text_file = open(self.path, "r")
+    #         fetched_mei_string = text_file.read()
+    #     elif self.path.startswith('/'):
+    #         text_file = open(self.path, "r")
+    #         fetched_mei_string = text_file.read()
+    #     else:
+    #         response = httpx.get(self.path)
+    #         fetched_mei_string = response.text
+    #     tk = verovio.toolkit()
+    #     tk.loadData(fetched_mei_string)
+    #     tk.setScale(30)
+    #     tk.setOptions({"pageHeight":  1500, # Height in pixels
+    #                    "pageWidth":  3000    # Width in pixels
+    #                    })
+    #     print("Results:")
+    #     # collect the metadata
+    #     if p_types is None:
+    #         p_types = self.presentationTypes()
+    #     for p_type in p_types.index:
+    #         this_p_type = p_types.loc[p_type]["Presentation_Type"]
+    #         p_voices = p_types.loc[p_type]["Voices"]
+    #         n_voices = p_types.loc[p_type]["Number_Entries"]
+    #         soggetti = p_types.loc[p_type]["Soggetti"]
+    #         mint = p_types.loc[p_type]["Melodic_Entry_Intervals"]
+    #         tint = p_types.loc[p_type]["Time_Entry_Intervals"]
+    #         flexed = p_types.loc[p_type]["Flexed_Entries"]
+    #         ml = p_types.loc[p_type]["Measures_Beats"]
+    #         parallel = p_types.loc[p_type]["Parallel_Voice"]
+    #         non_overlaps = p_types.loc[p_type]["Count_Non_Overlaps"]
 
-            # build the measure range dictionary
-            # Find the first and last items
-            first_item = ml[0]
-            last_item = ml[-1]
+    #         # build the measure range dictionary
+    #         # Find the first and last items
+    #         first_item = ml[0]
+    #         last_item = ml[-1]
 
-            # Split each item at '/' and take the first part as integer
-            first_part_first_item = int(float(first_item.split('/')[0]))
-            first_part_last_item = int(float(last_item.split('/')[0]))  
+    #         # Split each item at '/' and take the first part as integer
+    #         first_part_first_item = int(float(first_item.split('/')[0]))
+    #         first_part_last_item = int(float(last_item.split('/')[0]))  
            
-            mr = str(first_part_first_item) + "-" + str(first_part_last_item)
-            mdict = {'measureRange': mr}
+    #         mr = str(first_part_first_item) + "-" + str(first_part_last_item)
+    #         mdict = {'measureRange': mr}
 
-            # select measures in verovio and redo the layout
-            tk.select(mdict)
-            tk.redoLayout()
-            # get the number of pages
-            count = tk.getPageCount()
+    #         # select measures in verovio and redo the layout
+    #         tk.select(mdict)
+    #         tk.redoLayout()
+    #         # get the number of pages
+    #         count = tk.getPageCount()
 
-            # print caption
-            print("File Name: ", self.file_name)
-            print(self.metadata['composer'])
-            print(self.metadata['title'])
-            print("Measures:", mr)
-            print("Presentation Type: ", this_p_type)
-            print("Voices: ", p_voices)
-            print("Number of Entries: ", n_voices)
-            print("Soggetti: ", soggetti)
-            print("Melodic Entry Intervals: ", mint)
-            print("Time Entry Intervals: ", tint )
-            print("Flexed: ", flexed)
-            print("Parallel Entries:", parallel)
-            print("Number of Non-Overlapping Voices:", non_overlaps)
-            # print the music
-            for c in range(1, count + 1):
-                music = tk.renderToSVG(c)
-                # display(SVG(music))
-                # display(HTML(music))
+    #         # print caption
+    #         print("File Name: ", self.file_name)
+    #         print(self.metadata['composer'])
+    #         print(self.metadata['title'])
+    #         print("Measures:", mr)
+    #         print("Presentation Type: ", this_p_type)
+    #         print("Voices: ", p_voices)
+    #         print("Number of Entries: ", n_voices)
+    #         print("Soggetti: ", soggetti)
+    #         print("Melodic Entry Intervals: ", mint)
+    #         print("Time Entry Intervals: ", tint )
+    #         print("Flexed: ", flexed)
+    #         print("Parallel Entries:", parallel)
+    #         print("Number of Non-Overlapping Voices:", non_overlaps)
+    #         # print the music
+    #         for c in range(1, count + 1):
+    #             music = tk.renderToSVG(c)
+    #             # display(SVG(music))
+    #             # display(HTML(music))
 
-    # July 2022 Addition for printing hr types with Verovio
-    def verovioHomorhythm(self, df=None, ngram_length=4, full_hr=True):
-        '''
-        Prints HR passages for a given piece with Verovio, based on imported piece and 
-        other parameters.
+    # # July 2022 Addition for printing hr types with Verovio
+    # def verovioHomorhythm(self, df=None, ngram_length=4, full_hr=True):
+    #     '''
+    #     Prints HR passages for a given piece with Verovio, based on imported piece and 
+    #     other parameters.
 
-        Users can supply either of two arguments:
+    #     Users can supply either of two arguments:
 
-        'ngram_length' (which is 4 by default, and determines the number of durations and syllables that must be in common among the voices in order to be marked as HR);
+    #     'ngram_length' (which is 4 by default, and determines the number of durations and syllables that must be in common among the voices in order to be marked as HR);
 
-        'full_hr' (which is True default).  When full_hr=True the method will find any passage where _all active voices_ share the same durational ngram and syllables; if full_hr=False the method will find any passage where even _two voices_ share the same durational ngram and the same syllables.
+    #     'full_hr' (which is True default).  When full_hr=True the method will find any passage where _all active voices_ share the same durational ngram and syllables; if full_hr=False the method will find any passage where even _two voices_ share the same durational ngram and the same syllables.
 
-        Typical use:
+    #     Typical use:
 
-        piece.verovioHomorhythm()
+    #     piece.verovioHomorhythm()
 
-        OR with custom parameters
+    #     OR with custom parameters
 
-        piece.verovioHomorhythm(ngram_length=5, full_hr=False)
+    #     piece.verovioHomorhythm(ngram_length=5, full_hr=False)
 
-        It is also to run piece.homorhythm(), then filter the results in some way and pass those results to the print function:
+    #     It is also to run piece.homorhythm(), then filter the results in some way and pass those results to the print function:
 
-        #run hr function and convert hr['syllable_set'] to string
-        hr = piece.homorhythm(ngram_length=6, full_hr=True).fillna('')
-        hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
+    #     #run hr function and convert hr['syllable_set'] to string
+    #     hr = piece.homorhythm(ngram_length=6, full_hr=True).fillna('')
+    #     hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
 
-        #supply names of voices.  They must match the voice names in `piece.notes.columns()` 
-        chosen_voices = ["Tenor", "Bassus"]
-        #filter the results for hr passages involving chosen voices:
-        hr_with_chosen_voices = hr[hr.apply(lambda x: hr['hr_voices'].str.contains('|'.join(chosen_voices)))].dropna()
+    #     #supply names of voices.  They must match the voice names in `piece.notes.columns()` 
+    #     chosen_voices = ["Tenor", "Bassus"]
+    #     #filter the results for hr passages involving chosen voices:
+    #     hr_with_chosen_voices = hr[hr.apply(lambda x: hr['hr_voices'].str.contains('|'.join(chosen_voices)))].dropna()
         
-        #render just the hr_with_chosen_voices using `piece.verovioHomorhythm()`:
-        piece.verovioHomorhythm(hr_with_chosen_voices)
+    #     #render just the hr_with_chosen_voices using `piece.verovioHomorhythm()`:
+    #     piece.verovioHomorhythm(hr_with_chosen_voices)
 
-        '''
-        if self.path.startswith('Music_Files/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        elif self.path.startswith('/'):
-                text_file = open(self.path, "r")
-                fetched_mei_string = text_file.read()
-        else:
-            response = httpx.get(self.path)
-            fetched_mei_string = response.text
-        tk = verovio.toolkit()
-        tk.loadData(fetched_mei_string)
-        tk.setScale(30)
-        tk.setOptions({"pageHeight":  1500, # Height in pixels
-                       "pageWidth":  3000    # Width in pixels
-                       })
+    #     '''
+    #     if self.path.startswith('Music_Files/'):
+    #         text_file = open(self.path, "r")
+    #         fetched_mei_string = text_file.read()
+    #     elif self.path.startswith('/'):
+    #             text_file = open(self.path, "r")
+    #             fetched_mei_string = text_file.read()
+    #     else:
+    #         response = httpx.get(self.path)
+    #         fetched_mei_string = response.text
+    #     tk = verovio.toolkit()
+    #     tk.loadData(fetched_mei_string)
+    #     tk.setScale(30)
+    #     tk.setOptions({"pageHeight":  1500, # Height in pixels
+    #                    "pageWidth":  3000    # Width in pixels
+    #                    })
 
-        # Now get meas ranges and number of active voices
-        if df is None:
-            homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr)
-        else:
-            homorhythm = df
-        hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
-        #Get the groupings of consecutive items
-        short_list =sorted(list(set(hr_list)))
-        li = [list(item) for item in consecutive_groups(short_list)]
+    #     # Now get meas ranges and number of active voices
+    #     if df is None:
+    #         homorhythm = self.homorhythm(ngram_length=ngram_length, full_hr=full_hr)
+    #     else:
+    #         homorhythm = df
+    #     hr_list = list(homorhythm.index.get_level_values('Measure').tolist())
+    #     #Get the groupings of consecutive items
+    #     short_list =sorted(list(set(hr_list)))
+    #     li = [list(item) for item in consecutive_groups(short_list)]
 
-        # adjusts number of measures to display based on length of each span
-        # of adjacent bars.
-        # This matters for long 'n'
-        for span in li:
-            if ngram_length > 4:
-                if len(span) == 1:
-                    mr = str(int(span[0])) + "-" + str(int(span[0] + 3))
-                else:
-                    mr = str(int(span[0])) + "-" + str(int(span[-1] + 1))
-            else:
-                mr = str(int(span[0])) + "-" + str(int(span[-1] + 1))
-            mdict = {'measureRange': mr}
-            min_hr_count = 20
-            max_hr_count = 0
+    #     # adjusts number of measures to display based on length of each span
+    #     # of adjacent bars.
+    #     # This matters for long 'n'
+    #     for span in li:
+    #         if ngram_length > 4:
+    #             if len(span) == 1:
+    #                 mr = str(int(span[0])) + "-" + str(int(span[0] + 3))
+    #             else:
+    #                 mr = str(int(span[0])) + "-" + str(int(span[-1] + 1))
+    #         else:
+    #             mr = str(int(span[0])) + "-" + str(int(span[-1] + 1))
+    #         mdict = {'measureRange': mr}
+    #         min_hr_count = 20
+    #         max_hr_count = 0
 
-            # for n in range(span[0], span[-1]+1):
-            for n in range(int(span[0]), int(span[-1]) +  1):
-                ma = 0
-                mi = 20
-                for item in homorhythm.loc[n]['hr_voices'].to_list():
-                    if len(item) > ma:
-                        ma = len(item)
-                    if len(item) < mi:
-                        mi = len(item)
-                    if ma > max_hr_count:
-                        max_hr_count = ma
-                    if mi < min_hr_count:
-                        min_hr_count = mi
+    #         # for n in range(span[0], span[-1]+1):
+    #         for n in range(int(span[0]), int(span[-1]) +  1):
+    #             ma = 0
+    #             mi = 20
+    #             for item in homorhythm.loc[n]['hr_voices'].to_list():
+    #                 if len(item) > ma:
+    #                     ma = len(item)
+    #                 if len(item) < mi:
+    #                     mi = len(item)
+    #                 if ma > max_hr_count:
+    #                     max_hr_count = ma
+    #                 if mi < min_hr_count:
+    #                     min_hr_count = mi
 
-            # select verovio measures and redo layout for each passage
-            tk.select(mdict)
-            tk.redoLayout()
-            # get the number of pages and display the music for each passage
-            print("Results:")
-            count = tk.getPageCount()
-            print("File Name: ", self.file_name)
-            print(self.metadata['composer'])
-            print(self.metadata['title'])
-            print("HR Start Measure: ", span[0])
-            print("HR Stop Measure: ", span[-1])
-            print("Minimum Number of HR Voices: ", min_hr_count)
-            print("Maximum Number of HR Voices: ", max_hr_count)
+    #         # select verovio measures and redo layout for each passage
+    #         tk.select(mdict)
+    #         tk.redoLayout()
+    #         # get the number of pages and display the music for each passage
+    #         print("Results:")
+    #         count = tk.getPageCount()
+    #         print("File Name: ", self.file_name)
+    #         print(self.metadata['composer'])
+    #         print(self.metadata['title'])
+    #         print("HR Start Measure: ", span[0])
+    #         print("HR Stop Measure: ", span[-1])
+    #         print("Minimum Number of HR Voices: ", min_hr_count)
+    #         print("Maximum Number of HR Voices: ", max_hr_count)
 
-            for c in range(1, count + 1):
-                music = tk.renderToSVG(c)
-                # display(SVG(music))
+    #         for c in range(1, count + 1):
+    #             music = tk.renderToSVG(c)
+    #             # display(SVG(music))
 
 
 # The following are NOT part of piece or other classes

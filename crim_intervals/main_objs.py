@@ -743,7 +743,9 @@ class ImportedPiece:
     def _getBeatUnit(self):
         '''
         Return a dataframe of the duration of the beat for each time signature
-        object in the piece.
+        object in the piece. The duration is expressed as a float where 1.0 is
+        a quarter note, 0.5 is an eighth note, etc. This is useful for
+        calculating the beat strength of notes and rests.
         '''
         tsigs = self._getM21TSigObjs()
         tsigs.columns = self._getPartNames()
@@ -752,8 +754,12 @@ class ImportedPiece:
 
     def beats(self):
         '''
-        Return a table of the beat positions of all the notes and rests. Beats
-        are expressed as floats.
+        Return a table of the beat positions of all the notes and rests.
+
+        Beats are expressed as floats. The downbeat of each measure is 1.0, and
+        all other metric positions in a measure are given smaller numbers
+        approaching zero as their metric weight decreases. Results from this
+        method should not be sent to the regularize method.
         '''
         if 'Beats' not in self.analyses:
             nr = self.notes()
@@ -773,6 +779,13 @@ class ImportedPiece:
     def beatIndex(self):
         '''
         Return a series of the first valid value in each row of .beats().
+
+        This is useful for getting the beat position of a given timepoint (i.e.
+        index value) in the piece. Results from this method should not be sent to
+        the regularize method. You would use this method to lookup the beat
+        position of a given offset (timepoint) in a piece. Provided there is a
+        note or rest in any voice at that offset, the beatIndex results will
+        have a value at that index.
         '''
         if 'BeatIndex' not in self.analyses:
             ser = self.beats().dropna(how='all').apply(lambda row: row.dropna().iat[0], axis=1)
@@ -842,11 +855,19 @@ class ImportedPiece:
     def di(self, df, measure=True, beat=True, offset=False, t_sig=False, sounding=False,
         progress=False, lowest=False, highest=False, _all=False):
         """
-        Convenience shortcut for .detailIndex. See that method's documentation for instructions."""
+        Convenience shortcut for .detailIndex. See that method's documentation for instructions.
+        """
         return self.detailIndex(df=df, measure=measure, beat=beat, offset=offset, t_sig=t_sig,
             sounding=sounding, progress=progress, lowest=lowest, highest=highest, _all=_all)
 
     def _beatStrengthHelper(self, noteOrRest):
+        '''
+        Return the beat strength of a note or rest.
+
+        This follows the music21 conventions where the downbeat is equal to 1, and
+        all other metric positions in a measure are given smaller numbers approaching
+        zero as their metric weight decreases.
+        '''
         if hasattr(noteOrRest, 'beatStrength'):
             return noteOrRest.beatStrength
         return noteOrRest
@@ -865,6 +886,12 @@ class ImportedPiece:
         return self.analyses['BeatStrength']
 
     def _getM21TSigObjs(self):
+        '''
+        Return a dataframe of the time signature objects in the piece.
+
+        This is useful for getting the prevailing time signature at any given
+        moment in the piece.
+        '''
         if 'M21TSigObjs' not in self.analyses:
             tsigs = []
             for part in self._getFlatParts():
@@ -876,6 +903,11 @@ class ImportedPiece:
     def timeSignatures(self):
         """
         Return a data frame containing the time signatures and their offsets.
+
+        This is useful for getting the prevailing time signature at any given
+        moment in the piece. The time signature is expressed as a string taken
+        from music21's .ratioString attribute. For example, 4/4 time is
+        expressed as "4/4", 3/4 time is expressed as "3/4", etc.
         """
         if 'TimeSignature' not in self.analyses:
             df = self._getM21TSigObjs()
@@ -886,7 +918,9 @@ class ImportedPiece:
 
     def measures(self):
         """
-        This method retrieves the offsets of each measure in each voices.
+        This method retrieves the offsets of each measure in each voice.
+
+        Measures are expressed as integers.
         """
         if "Measure" not in self.analyses:
             parts = self._getFlatParts()
@@ -918,8 +952,12 @@ class ImportedPiece:
 
     def soundingCount(self):
         """
-        This would return a series with the number of parts that currently have
-        a note sounding.
+        Return a series with the number of parts that currently sounding.
+
+        This information is included the .cadences method so you can filter cadence
+        results based on how many voices are sounding at the time of the cadence.
+        It is also available in the .detailIndex method to add this information to
+        almost any dataframe CRIM-Intervals provides.
         """
         if not 'SoundingCount' in self.analyses:
             nr = self.notes().ffill()
@@ -947,7 +985,7 @@ class ImportedPiece:
                 return 'Rest'
             elif row.iat[1].isNote and row.iat[0].isNote:
                 return interval.Interval(row.iat[0], row.iat[1])
-        return None
+        return np.nan
 
     def _melodicIntervalHelper(row):
         if hasattr(row.iat[0], 'isRest'):
@@ -955,9 +993,16 @@ class ImportedPiece:
                 return 'Rest'
             elif row.iat[0].isNote and hasattr(row.iat[1], 'isNote') and row.iat[1].isNote:
                 return interval.Interval(row.iat[1], row.iat[0])
-        return None
+        return np.nan
 
     def _melodifyPart(ser, end):
+        '''
+        Convert a series of music21 notes or rests to melodic intervals.
+
+        If end is True, the intervals will be from the end of the note to the start
+        of the next note. If end is False, the intervals will be from the start of
+        the note to the start of the next note.
+        '''
         ser.dropna(inplace=True)
         shifted = ser.shift(1) if end else ser.shift(-1)
         partDF = pd.concat([ser, shifted], axis=1, sort=True)
@@ -1234,7 +1279,7 @@ class ImportedPiece:
         key = ('MelodicIntervals', kind, directed, compound, end)
         if key not in self.analyses or unit or df is not None:
             _df = self._getRegularM21MelodicIntervals(unit) if unit else self._getM21MelodicIntervals(end, df)
-            _df = _df.map(self._intervalMethods[settings])
+            _df = _df.map(self._intervalMethods[settings], na_action='ignore')
             if kind == 'z':
                 _df = _df.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
             if unit or df is not None:
@@ -1348,20 +1393,32 @@ class ImportedPiece:
         plt.show()
 
 
-    def _getM21HarmonicIntervals(self, againstLow=False):
+    def _getM21HarmonicIntervals(self, againstLow=False, df=None):
         """
         Return m21 interval objects for every pair of intervals in the piece.
+
         This does all pairs between voices if againstLow is False (default) or
-        each voice against the lowest sounding note if againstLow is True."""
+        each voice against the lowest sounding note if againstLow is True.
+        """
         key = ('M21HarmonicIntervals', againstLow)
         if key not in self.analyses:
-            m21Objs = self._getM21ObjsNoTies()
+            if df is None:
+                m21Objs = self._getM21ObjsNoTies()
+            else:
+                sampleVal = df.stack(future_stack=True).dropna().iat[0]
+                if isinstance(sampleVal, str):
+                    m21Objs = df.map(ImportedPiece._strToM21Obj, na_action='ignore')
+                else:
+                    m21Objs = df
             pairs = []
             if againstLow:
-                low = self.lowLine().apply(lambda val: note.Note(val) if val != 'Rest' else note.Rest())
+                low = self.lowLine()
+                if df is not None:
+                    low = low.loc[df.index[0]: df.index[-1]]
+                low = low.apply(lambda val: note.Note(val) if val != 'Rest' else note.Rest())
                 lowIndex = len(m21Objs.columns)
                 combos = [(lowIndex, x) for x in range(len(m21Objs.columns))]
-                m21Objs = pd.concat([m21Objs, low], axis=1, sort=True)
+                m21Objs = pd.concat([m21Objs, low], axis=1)
             else:
                 combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
             for combo in combos:
@@ -1378,11 +1435,13 @@ class ImportedPiece:
             self.analyses[key] = ret
         return self.analyses[key]
 
-    def harmonic(self, kind='q', directed=True, compound=True, againstLow=False):
+    def harmonic(self, kind='q', directed=True, compound=True, againstLow=False, df=None):
         '''
-        Return harmonic intervals for all voice pairs. The voice pairs are
-        named with the voice that's lower on the staff given first, and the two
-        voices separated with an underscore, e.g. "Bassus_Tenor".
+        Return harmonic intervals for all voice pairs.
+
+        The voice pairs are named with the voice that's lower on the staff given first,
+        and the two voices separated with an underscore, e.g. "Bassus_Tenor". If againstLow
+        is True, intervals will be measured against the lowest sounding note.
 
         :param str kind: use "q" (default) for diatonic intervals with quality,
             "d" for diatonic intervals without quality, "z" for zero-indexed
@@ -1400,28 +1459,38 @@ class ImportedPiece:
         :param bool againstLow: if False (default) harmonic intervals between
             all pairs of voices will be returned. If True harmonic intervals of
             each voice against the lowest sounding note at each moment is returned.
+        :param pandas DataFrame df: None (default) is the standard behavior. Pass a
+            df of note and rest strings or music21 objects to calculate the harmonic
+            interals in any dataframe.
+        :returns: `pandas.DataFrame` of harmonic intervals in each pair in the
+            format specified by the `kind`, `directed`, and `compound` parameters.
         '''
         kind = kind[0].lower()
         kind = {'s': 'c'}.get(kind, kind)
         _kind = {'z': 'd'}.get(kind, kind)
         settings = (_kind, directed, compound)
         key = ('HarmonicIntervals', kind, directed, compound, againstLow)
-        if key not in self.analyses:
-            df = self._getM21HarmonicIntervals(againstLow)
-            df = df.map(self._intervalMethods[settings])
+        if df is not None or key not in self.analyses:
+            _df = self._getM21HarmonicIntervals(againstLow, df)
+            _df = _df.map(self._intervalMethods[settings], na_action='ignore')
             if kind == 'z':
-                df = df.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
-            self.analyses[key] = df.sort_index()
+                _df = _df.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+            _df = _df.sort_index()
+            if df is not None:
+                self.analyses[key] = _df
+            else:
+                return _df
         return self.analyses[key]
     
     def sonorities(self, kind='d', directed=True, compound='simple', sort=True):
         """
-        Return a dataframe of sonorities that are similar to a continuo part but
-        not reduced. There is a sonority observed every time any part in the piece
-        has an attack. The `kind`, `directed`, and `compound` parameters are passed
-        unchanged to .harmonic and will control the type of intervals used. In all
-        cases Rests are ignored. `sort` will sort the values before returning them, and
-        remove duplicates as well as any unisons against the lowest line.
+        Return a dataframe of sonorities that are similar to a continuo part but not reduced.
+
+        There is a sonority observed every time any part in the piece has an attack. The
+        `kind`, `directed`, and `compound` parameters are passed unchanged to .harmonic and
+        will control the type of intervals used. In all cases Rests are ignored. `sort` will
+        sort the values before returning them, and remove duplicates as well as any unisons
+        against the lowest line.
         """
         har = self.harmonic(kind=kind, directed=directed, compound=compound, againstLow=True).ffill()
         if sort:

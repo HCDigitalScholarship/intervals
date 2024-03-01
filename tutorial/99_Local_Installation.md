@@ -45,7 +45,7 @@ Now you will need to create a dedicated folder on your computer where you will k
 - You should see something like this, with the **name of your environment**, followed by the **name of your computer**, all followed by a **symbol and space for your cursor**:
 
 ```
-(CRIM_Streamlit_Code) rfreedma@rfreedma-22 ~ % 
+(My_Intervals_Env) rfreedma@rfreedma-22 ~ % 
 ```
 
 ![alt text](images/env3.png)

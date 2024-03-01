@@ -39,6 +39,7 @@ jobs:
           python -m pytest  --cov visualizations --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
           python -m pytest  --cov main_objs --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
       - name: Install poetry and "patch" the build
+        if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == '3.11' }}
         run: |
           pip install poetry
           poetry self add poetry-bumpversion

@@ -44,13 +44,13 @@ jobs:
           poetry self add poetry-bumpversion
           poetry version patch
       - name: Publish to Pypi
-        if: github.ref == 'refs/heads/main'  # This ensures publishing only happens on main branch
+        if: ${{github.ref == 'refs/heads/main'}}  # This ensures publishing only happens on main branch
         run: |
           poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
           poetry publish --build
       
       - name: Update Markdown with New Version
-        if: github.ref == 'refs/heads/main' # Same condition to ensure it runs only on main branch
+        if: ${{github.ref == 'refs/heads/main'}} # Same condition to ensure it runs only on main branch
         run: |
           VERSION=$(poetry version -s)
           sed -i "s/Current Version: .*/Current Version: $VERSION/" README.md

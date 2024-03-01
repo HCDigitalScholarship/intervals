@@ -124,5 +124,3 @@ All CRIM intervals tools are available via a **Creative Commons** license (Attri
   * [16_Python_Basics](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/16_Python_Basics.md)
   * [17_Pandas_Basics](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/17_Pandas_Basics.md)
   * [18_Music21_Basics](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/18_Music21_Basics.md)
-
-[comment]: <> (This is a comment to test the testing file.)

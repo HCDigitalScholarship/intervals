@@ -44,7 +44,7 @@ jobs:
           poetry self add poetry-bumpversion
           poetry version patch
       - name: Publish to Pypi
-        if: ${{github.ref == 'refs/heads/main'}}  # This ensures publishing only happens on main branch
+        if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == '3.11' }}   # This ensures publishing only happens on main branch
         run: |
           poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
           poetry publish --build

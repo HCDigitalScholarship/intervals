@@ -50,7 +50,7 @@ jobs:
           poetry publish --build
       
       - name: Update Markdown with New Version
-        if: ${{github.ref == 'refs/heads/main'}} # Same condition to ensure it runs only on main branch
+        if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == '3.11' }} # Same condition to ensure it runs only on main branch 
         run: |
           VERSION=$(poetry version -s)
           sed -i "s/Current Version: .*/Current Version: $VERSION/" README.md

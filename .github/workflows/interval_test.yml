@@ -40,16 +40,25 @@ jobs:
           python -m pytest  --cov main_objs --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
       - name: Install poetry and "patch" the build
         run: |
-          python -m pip install --upgrade pip
           pip install poetry
           poetry self add poetry-bumpversion
           poetry version patch
       - name: Publish to Pypi
-        if: ${{ matrix.python-version == 3.9 }}
+        if: github.ref == 'refs/heads/main'  # This ensures publishing only happens on main branch
         run: |
           poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
           poetry publish --build
-        
+      
+      - name: Update Markdown with New Version
+        if: github.ref == 'refs/heads/main' # Same condition to ensure it runs only on main branch
+        run: |
+          VERSION=$(poetry version -s)
+          sed -i "s/Current Version: .*/Current Version: $VERSION/" README.md
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -am "Update README.md with new version $VERSION [skip ci]" # Add [skip ci] to prevent re-triggering
+          git push
+
       - uses: actions/checkout@v4
       - uses: stefanzweifel/git-auto-commit-action@v4
 

@@ -659,21 +659,29 @@ class ImportedPiece:
     def emaAddresses(self, df=None, mode=''):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
-        like melodic ngrams. Specifically for melodic ngrams, you have to set mode='melodic'.
-        Here's an example of that workflow for an imported piece called `piece`.
+        like melodic ngrams. The `mode` parameter is detected automatically if it isn't passed.
 
         ***Example***
         mel = piece.melodic()
         ng = piece.ngrams(df=mel, n=4, offsets='both')
-        ema = piece.emaAddresses(df=ng, mode='melodic')
+        ema = piece.emaAddresses(df=ng)
         ***
-
-        If you want the emaAddresses of a cvfs dataframe, you can set mode='cvfs' or mode='cadences'
-        and passing a dataframe to the df parameter is optional in this case. CVFS and cadences
-        have the same EMA addresses so the results will be the same with mode='cvfs' and
-        mode='cadences'.
         '''
-        mode = mode.lower()
+        if mode == '':   # detect mode if it is not passed
+            if 'hr_voices' in df.columns:
+                mode = 'homorhythm'
+            elif 'Presentation_Type' in df.columns:
+                mode = 'p_types'
+            elif 'CVF' in df.columns:
+                mode = 'cadences'
+            elif all(self._getPartNames() == cvfs.columns):
+                if any(char in df.values for char in 'CAyca'):
+                    mode = 'cadences'
+                else:
+                    mode = 'melodic'
+        else:
+            mode = mode.lower()
+
         if isinstance(df, pd.DataFrame):
             ret = df.copy()
         if mode == 'melodic':
@@ -687,7 +695,7 @@ class ImportedPiece:
                 part.index = pd.MultiIndex.from_tuples(new_index, names=part.index.names)
                 newCols.append(part)
             ret = pd.concat(newCols, axis=1, sort=True)
-        elif mode.startswith('c'):  # cvfs mode
+        elif mode.startswith('c'):  # cadences/cvfs mode
             ret = self.cvfs(keep_keys=True, offsets='both').copy()
             ngrams = ret.iloc[:, len(self._getPartNames()):]
             addresses = self.emaAddresses(df=ngrams, mode='')
@@ -702,7 +710,7 @@ class ImportedPiece:
                 return ret
         # hr mode--works with HR dataframe, adding ema address to each hr passage (= row).  
         # pass in output of hr = piece.homorhythm() as the df and set mode = 'hr'
-        elif mode.startswith('h'): # hr mode
+        elif mode == 'homorhythm': # hr mode
             if isinstance(df, pd.DataFrame):
                 hr = df
                 ngram_length = int(hr.iloc[0]['ngram_length'])
@@ -716,7 +724,7 @@ class ImportedPiece:
         # for ptypes output
         # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
 
-        elif mode.startswith('p'): # p_type mode
+        elif mode == 'p_types': # p_type mode
             if isinstance(df, pd.DataFrame):
                 p_types = df
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])

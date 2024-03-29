@@ -7,7 +7,7 @@ httpx==0.26.0
 idna==3.1
 ipython>=7.23.1, <8.0
 joblib==1.0.1
-jsonschema==3.2
+jsonschema>=3.1
 lxml==5.1.0
 matplotlib==3.5.3
 matplotlib-inline==0.1.6

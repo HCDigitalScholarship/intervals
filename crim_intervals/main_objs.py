@@ -782,7 +782,6 @@ class ImportedPiece:
             ema = self.emaAddresses(df, mode=mode)
             res = ema.apply(func=lambda row: ImportedPiece._constructUrl(row, piece_url, mode), axis=1)
         display(HTML(res.to_html(render_links=True, escape=False)))
-        return res
 
     def _constructUrl(row, piece_url, mode):
         mr = ''

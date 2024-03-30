@@ -19,7 +19,9 @@ import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import plotly.express as px
 from glob import glob
-from IPython.display import SVG, HTML
+from IPython.display import display, SVG, HTML
+import json
+import urllib.parse
 main_objs_dir = os.path.dirname(os.path.abspath(__file__))
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -514,7 +516,6 @@ class ImportedPiece:
 
     def _emaRowHelper(self, row):
         measures = list(range(row.iat[0], row.iat[2] + 1))
-        ends = (row.iat[0], row.iat[2])
         mCount = row.iat[2] - row.iat[0] + 1
         parts = row.iloc[4:].dropna().index
         part_strings = '+'.join({part for combo in parts for part in combo.split('_')})
@@ -549,7 +550,6 @@ class ImportedPiece:
         last_m = self.measures().iat[-1, 0]
         for ema in emas:
             ema = ema.replace('start', '1')
-            print(ema)
             _measures, _parts, _beats = ema.split('/')
             _beats = _beats.replace('1.0-', '1-')
             _beats = _beats.replace('1.0@', '1@')
@@ -667,28 +667,13 @@ class ImportedPiece:
         ema = piece.emaAddresses(df=ng)
         ***
         '''
-        if mode == '':   # detect mode if it is not passed
-            if 'hr_voices' in df.columns:
-                mode = 'homorhythm'
-            elif 'Presentation_Type' in df.columns:
-                mode = 'p_types'
-            elif 'CVF' in df.columns:
-                mode = 'cadences'
-            elif all(self._getPartNames() == cvfs.columns):
-                if any(char in df.values for char in 'CAyca'):
-                    mode = 'cadences'
-                else:
-                    mode = 'melodic'
-        else:
-            mode = mode.lower()
-
         if isinstance(df, pd.DataFrame):
             ret = df.copy()
         if mode == 'melodic':
             newCols = []
             for i in range(len(ret.columns)):
                 part = ret.iloc[:, i].dropna()
-                notes = self.notes().iloc[:, i].dropna()
+                notes = self.notes().loc[:, part.name].dropna()
                 new_index = []
                 for (_first, _last) in part.index:
                     new_index.append((notes.loc[:_first].index[-2], _last))
@@ -723,7 +708,6 @@ class ImportedPiece:
                 return hr  
         # for ptypes output
         # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
-
         elif mode == 'p_types': # p_type mode
             if isinstance(df, pd.DataFrame):
                 p_types = df
@@ -747,6 +731,100 @@ class ImportedPiece:
                 res = res.apply(self._emaRowHelper, axis=1)
                 res.name = 'EMA'
                 return res
+
+    def linkExamples(self, df, piece_url='', mode=''):
+        '''
+        Given a dataframe of EMA addresses, return a dataframe of clickable
+        links to the EMA React app. The `piece_url` parameter is the URL of the
+        piece on the EMA React app. If you don't pass a `piece_url`, the method
+        will try to construct one based on the piece's metadata. The resulting
+        dataframe will have the same data results, but instead of plain text
+        they will be links to highlighted examples of each result.
+        '''
+        if piece_url == '':
+            if self.path.startswith('https://crimproject.org/mei/CRIM'):
+                piece_url = self.path
+            else:
+                print('No piece URL was passed and the piece was not downloaded from a crimproject.org. Please provide a piece_url.')
+                return
+
+        if mode == '':   # detect mode if it is not passed
+            if 'hr_voices' in df.columns:
+                mode = 'homorhythm'
+            elif 'Presentation_Type' in df.columns:
+                mode = 'p_types'
+            elif 'CVF' in df.columns:
+                mode = 'cadences'
+            elif all(self._getPartNames() == df.columns):
+                if any(char in df.values for char in 'CAyca'):
+                    mode = 'cadences'
+                else:
+                    mode = 'melodic'
+        else:
+            mode = mode.lower()
+
+        if mode == 'melodic':
+            columnwise = [self.emaAddresses(df.take([col], axis=1), mode=mode) for col in range(len(df.columns))]
+            ema = pd.concat(columnwise, axis=1, sort=True)
+            temp = ema.map(func=lambda row: ImportedPiece._constructColumnwiseUrl(row, piece_url), na_action='ignore')
+            res = []
+            # this loop is needed because the "last" offset of df is the beginning
+            # of it's last event, whereas in temp it's the beginning of the next event
+            for col in range(len(temp.columns)):
+                col_urls = temp.iloc[:, col].dropna()
+                col_data = df.iloc[:, col].dropna()
+                fmt = '<a href="{}" rel="noopener noreferrer" target="_blank">{}</a>'
+                links = [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls)]
+                col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
+                res.append(col_links)
+            res = pd.concat(res, axis=1, sort=True)
+        else:
+            ema = self.emaAddresses(df, mode=mode)
+            res = ema.apply(func=lambda row: ImportedPiece._constructUrl(row, piece_url, mode), axis=1)
+        display(HTML(res.to_html(render_links=True, escape=False)))
+        return res
+
+    def _constructUrl(row, piece_url, mode):
+        mr = ''
+        if mode == 'p_types':
+            integers = re.findall(r'\d+', row['EMA'].split("/")[0])
+            # Step 2: Extract the first and last elements and join them with a dash
+            mr = f"{integers[0]}-{integers[-1]}"
+        else:
+            mr = row['EMA'].split("/")[0]
+
+        ema_expression = ''.join(("/", row['EMA'], "/highlight"))
+        measure_range = {"measureRange": mr}
+        json_string = json.dumps(measure_range)
+        encoded_mr = urllib.parse.quote(json_string)
+
+        react_app_url = "https://eleon024.github.io/ema_react_app/"
+
+        params = {
+            "pieceURL": piece_url,
+            "ema_expression": ema_expression,
+            "measure_range": encoded_mr
+        }
+
+        query_string = urllib.parse.urlencode(params)
+        url = ''.join((react_app_url, '?', query_string))
+        return url
+
+    def _constructColumnwiseUrl(cell, piece_url):
+        ema_expression = ''.join(("/", cell, "/highlight"))
+        mr = cell.split("/")[0]
+        measure_range = {"measureRange": mr}
+        json_string = json.dumps(measure_range)
+        encoded_mr = urllib.parse.quote(json_string)
+        params = {
+            "pieceURL": piece_url,
+            "ema_expression": ema_expression,
+            "measure_range": encoded_mr
+        }
+        query_string = urllib.parse.urlencode(params)
+        react_app_url = "https://eleon024.github.io/ema_react_app/"
+        url = ''.join((react_app_url, '?', query_string))
+        return url
 
     def _getBeatUnit(self):
         '''

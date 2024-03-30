@@ -748,20 +748,28 @@ class ImportedPiece:
                 print('No piece URL was passed and the piece was not downloaded from a crimproject.org. Please provide a piece_url.')
                 return
 
-        if mode == '':   # detect mode if it is not passed
+        if mode != '':
+            mode = mode.lower()
+        else:   # detect mode if it is not passed
             if 'hr_voices' in df.columns:
                 mode = 'homorhythm'
+                data_col_name = 'hr_voices'
+                ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
             elif 'Presentation_Type' in df.columns:
                 mode = 'p_types'
+                data_col_name = 'Presentation_Type'
+                ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
             elif 'CVFs' in df.columns:
                 mode = 'cadences'
+                data_col_name = 'CadType'
+                ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
             elif all(self._getPartNames() == df.columns):
                 if any(char in df.values for char in 'CAyca'):
                     mode = 'cadences'
+                    data_col_name = 'CadType'
+                    ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
                 else:
                     mode = 'melodic'
-        else:
-            mode = mode.lower()
 
         fmt = '<a href="{}" rel="noopener noreferrer" target="_blank">{}</a>'
         if mode == 'melodic':
@@ -778,14 +786,13 @@ class ImportedPiece:
                 col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
                 res.append(col_links)
             res = pd.concat(res, axis=1, sort=True)
-        elif mode.startswith('cadence') or mode.startswith('cvf'):   # cadences/cvfs mode
-            ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
+        else:
             col_urls = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
-            col_data = df.loc[:, 'CadType']
+            col_data = df.loc[:, data_col_name]
             links = [fmt.format(col_urls.iat[col_urls.index.get_loc(ndx), 0], col_data.at[ndx])
                     if isinstance(col_data.at[ndx], str) else np.nan for ndx in col_data.index]
             res = df.copy()
-            res['CadType'] = links
+            res[data_col_name] = links
         display(HTML(res.to_html(render_links=True, escape=False)))
 
     def _constructUrl(row, piece_url, mode):

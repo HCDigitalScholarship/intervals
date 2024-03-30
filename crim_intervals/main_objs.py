@@ -753,7 +753,7 @@ class ImportedPiece:
                 mode = 'homorhythm'
             elif 'Presentation_Type' in df.columns:
                 mode = 'p_types'
-            elif 'CVF' in df.columns:
+            elif 'CVFs' in df.columns:
                 mode = 'cadences'
             elif all(self._getPartNames() == df.columns):
                 if any(char in df.values for char in 'CAyca'):
@@ -763,24 +763,29 @@ class ImportedPiece:
         else:
             mode = mode.lower()
 
+        fmt = '<a href="{}" rel="noopener noreferrer" target="_blank">{}</a>'
         if mode == 'melodic':
             columnwise = [self.emaAddresses(df.take([col], axis=1), mode=mode) for col in range(len(df.columns))]
             ema = pd.concat(columnwise, axis=1, sort=True)
-            temp = ema.map(func=lambda row: ImportedPiece._constructColumnwiseUrl(row, piece_url), na_action='ignore')
+            temp = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
             res = []
             # this loop is needed because the "last" offset of df is the beginning
             # of it's last event, whereas in temp it's the beginning of the next event
             for col in range(len(temp.columns)):
                 col_urls = temp.iloc[:, col].dropna()
                 col_data = df.iloc[:, col].dropna()
-                fmt = '<a href="{}" rel="noopener noreferrer" target="_blank">{}</a>'
                 links = [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls)]
                 col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
                 res.append(col_links)
             res = pd.concat(res, axis=1, sort=True)
-        else:
-            ema = self.emaAddresses(df, mode=mode)
-            res = ema.apply(func=lambda row: ImportedPiece._constructUrl(row, piece_url, mode), axis=1)
+        elif mode.startswith('cadence') or mode.startswith('cvf'):   # cadences/cvfs mode
+            ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
+            col_urls = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
+            col_data = df.loc[:, 'CadType']
+            links = [fmt.format(col_urls.iat[col_urls.index.get_loc(ndx), 0], col_data.at[ndx])
+                    if isinstance(col_data.at[ndx], str) else np.nan for ndx in col_data.index]
+            res = df.copy()
+            res['CadType'] = links
         display(HTML(res.to_html(render_links=True, escape=False)))
 
     def _constructUrl(row, piece_url, mode):

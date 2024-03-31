@@ -799,12 +799,12 @@ class ImportedPiece:
         mr = ''
         if 'Presentation_Type' in row.index:
             ema = row['EMA'].split("/")[0]
-            integers = [int(x) for x in re.findall(r'\d+', ema) if x.find('/') == -1]
-            # Find the lowest and highest integers
-            lowest = min(integers)
-            highest = max(integers)
+            measures = re.findall(r'\d+', ema.split("/", 1)[0])
+            meas_integers = [int(x) for x in measures]
+            lowest = min(meas_integers)
+            highest = max(meas_integers)
             # join them with a dash
-            mr = f"{integers[0]}-{integers[-1]}"
+            mr = f"{lowest}-{highest}"
         else:
             mr = row['EMA'].split("/")[0]
 

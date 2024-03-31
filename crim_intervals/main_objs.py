@@ -765,9 +765,8 @@ class ImportedPiece:
                 ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
             elif all(self._getPartNames() == df.columns):
                 if any(char in df.values for char in 'CAyca'):
-                    mode = 'cadences'
-                    data_col_name = 'CadType'
-                    ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
+                    print('Running on cadences which have the same ema addresses as cvfs...')
+                    return self.linkExamples(self.cadences(), piece_url)
                 else:
                     mode = 'melodic'
 

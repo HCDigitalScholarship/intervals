@@ -621,40 +621,18 @@ class ImportedPiece:
     def _ptype_ema_helper(self, row, ngrams):
         # initialize dict and df
         dictionary = {}
-        filtered_df = pd.DataFrame()
+        filtered_df = pd.DataFrame(np.nan, index=ngrams.index, columns=ngrams.columns)
         # get row values for offsets and voices
         offsets = row['Offsets']
-        voices = row['Voices']
+        voices = list(set(row['Voices']))
         # make dict
-        for f, s in zip(offsets, voices):
-            if f not in dictionary:
-                dictionary[f] = []
-            dictionary[f].append(s)
-        # slice of ngrams corresponding to this point
-        short_ngrams = ngrams.loc[offsets]
-        # use dict values to build offset and column sets
-        for offset, voice_list in dictionary.items():
-            exclude_columns = ['[Superius]', 'Altus']
-            columns_to_replace = short_ngrams.columns.difference(voice_list)
-            # Replace the values with NaN
-            short_ngrams.loc[offset, columns_to_replace] = np.nan
-            short_ngrams.dropna(how='all', inplace=True)
-            if len(filtered_df) == 0:
-                filtered_df = short_ngrams
-            else:
-                result = pd.concat([filtered_df, short_ngrams])
-                result.drop_duplicates(inplace=True)
-
-        emas = self.emaAddresses(df=result, mode='')
+        for idx, col in zip(offsets, voices):
+            filtered_df.loc[idx, col] = ngrams.loc[idx, col]
+        filtered_df = filtered_df.dropna(how='all')
+        filtered_df = filtered_df.groupby(level='First').tail(1)
+        emas = self.emaAddresses(df=filtered_df, mode='')
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema
-        
-
-        this_point = row["Offsets"]
-        ret = ngrams.loc[set(this_point)]
-        addresses = self.emaAddresses(df=ret, mode='')
-        full_ema = self.combineEmaAddresses(addresses)
-        return full_ema
 
     def emaAddresses(self, df=None, mode=''):
         '''

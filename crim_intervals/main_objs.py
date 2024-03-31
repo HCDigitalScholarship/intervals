@@ -787,7 +787,7 @@ class ImportedPiece:
             col_urls = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
             col_data = df.loc[:, data_col_name]
             links = [fmt.format(col_urls.iat[col_urls.index.get_loc(ndx), 0], col_data.at[ndx])
-                    if isinstance(col_data.at[ndx], str) else np.nan for ndx in col_data.index]
+                    if isinstance(col_data.at[ndx], (str, list)) else np.nan for ndx in col_data.index]
             res = df.copy()
             res[data_col_name] = links
             if 'ema' in res.columns:

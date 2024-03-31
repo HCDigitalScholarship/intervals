@@ -796,7 +796,7 @@ class ImportedPiece:
 
     def _constructColumnwiseUrl(cell, piece_url):
         ema_expression = ''.join(("/", cell, "/highlight"))
-        if "-" not in cell:
+        if "-" not in cell.split("/", 1)[0]:
             ema_measures = re.findall(r'\d+', cell.split("/", 1)[0])
             ema_measure_integers = [int(x) for x in ema_measures]
             min_meas = min(ema_measure_integers)

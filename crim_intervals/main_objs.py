@@ -697,7 +697,7 @@ class ImportedPiece:
         # pass in output of hr = piece.homorhythm() as the df and set mode = 'hr'
         elif mode == 'homorhythm': # hr mode
             if isinstance(df, pd.DataFrame):
-                hr = df
+                hr = df.copy()
                 ngram_length = int(hr.iloc[0]['ngram_length'])
                 nr = self.notes()
                 dur = self.durations(df = nr)
@@ -710,7 +710,7 @@ class ImportedPiece:
         # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
         elif mode == 'p_types': # p_type mode
             if isinstance(df, pd.DataFrame):
-                p_types = df
+                p_types = df.copy()
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
                 mel = self.melodic(end=False)
                 ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)
@@ -773,16 +773,13 @@ class ImportedPiece:
 
         fmt = '<a href="{}" rel="noopener noreferrer" target="_blank">{}</a>'
         if mode == 'melodic':
-            columnwise = [self.emaAddresses(df.take([col], axis=1), mode=mode) for col in range(len(df.columns))]
-            ema = pd.concat(columnwise, axis=1, sort=True)
-            temp = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
             res = []
             # this loop is needed because the "last" offset of df is the beginning
             # of it's last event, whereas in temp it's the beginning of the next event
-            for col in range(len(temp.columns)):
-                col_urls = temp.iloc[:, col].dropna()
+            for col in range(len(df.columns)):
+                col_urls = self.emaAddresses(df.take([col], axis=1), mode=mode).dropna()
                 col_data = df.iloc[:, col].dropna()
-                links = [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls)]
+                links = [] if col_data.empty else [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls)]
                 col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
                 res.append(col_links)
             res = pd.concat(res, axis=1, sort=True)
@@ -793,6 +790,8 @@ class ImportedPiece:
                     if isinstance(col_data.at[ndx], str) else np.nan for ndx in col_data.index]
             res = df.copy()
             res[data_col_name] = links
+            if 'ema' in res.columns:
+                res.drop(columns='ema', inplace=True)
         display(HTML(res.to_html(render_links=True, escape=False)))
 
     def _constructUrl(row, piece_url, mode):

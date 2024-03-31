@@ -796,7 +796,14 @@ class ImportedPiece:
 
     def _constructColumnwiseUrl(cell, piece_url):
         ema_expression = ''.join(("/", cell, "/highlight"))
-        mr = cell.split("/")[0]
+        if "-" not in cell:
+            ema_measures = re.findall(r'\d+', cell.split("/", 1)[0])
+            ema_measure_integers = [int(x) for x in ema_measures]
+            min_meas = min(ema_measure_integers)
+            max_meas = max(ema_measure_integers)
+            mr = f"{min_meas}-{max_meas}"
+        else:
+            mr = cell.split("/")[0]
         measure_range = {"measureRange": mr}
         json_string = json.dumps(measure_range)
         encoded_mr = urllib.parse.quote(json_string)

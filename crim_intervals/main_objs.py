@@ -776,9 +776,10 @@ class ImportedPiece:
             # this loop is needed because the "last" offset of df is the beginning
             # of it's last event, whereas in temp it's the beginning of the next event
             for col in range(len(df.columns)):
-                col_urls = self.emaAddresses(df.take([col], axis=1), mode=mode).dropna()
+                col_urls = pd.DataFrame(self.emaAddresses(df.take([col], axis=1), mode=mode).dropna())
+                col_urls = col_urls.map(ImportedPiece._constructColumnwiseUrl, na_action='ignore', piece_url=piece_url)
                 col_data = df.iloc[:, col].dropna()
-                links = [] if col_data.empty else [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls)]
+                links = [] if col_data.empty else [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls.values)]
                 col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
                 res.append(col_links)
             res = pd.concat(res, axis=1, sort=True)

@@ -779,7 +779,7 @@ class ImportedPiece:
                 col_urls = pd.DataFrame(self.emaAddresses(df.take([col], axis=1), mode=mode).dropna())
                 col_urls = col_urls.map(ImportedPiece._constructColumnwiseUrl, na_action='ignore', piece_url=piece_url)
                 col_data = df.iloc[:, col].dropna()
-                links = [] if col_data.empty else [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls.values)]
+                links = [] if col_data.empty else [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls.values[0])]
                 col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
                 res.append(col_links)
             res = pd.concat(res, axis=1, sort=True)

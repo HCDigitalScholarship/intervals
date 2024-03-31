@@ -779,7 +779,7 @@ class ImportedPiece:
                 col_urls = pd.DataFrame(self.emaAddresses(df.take([col], axis=1), mode=mode).dropna())
                 col_urls = col_urls.map(ImportedPiece._constructColumnwiseUrl, na_action='ignore', piece_url=piece_url)
                 col_data = df.iloc[:, col].dropna()
-                links = [] if col_data.empty else [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls.values[0])]
+                links = [] if col_data.empty else [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls['EMA'])]
                 col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
                 res.append(col_links)
             res = pd.concat(res, axis=1, sort=True)
@@ -793,32 +793,6 @@ class ImportedPiece:
             if 'ema' in res.columns:
                 res.drop(columns='ema', inplace=True)
         display(HTML(res.to_html(render_links=True, escape=False)))
-
-    def _constructUrl(row, piece_url, mode):
-        mr = ''
-        if mode == 'p_types':
-            integers = re.findall(r'\d+', row['EMA'].split("/")[0])
-            # Step 2: Extract the first and last elements and join them with a dash
-            mr = f"{integers[0]}-{integers[-1]}"
-        else:
-            mr = row['EMA'].split("/")[0]
-
-        ema_expression = ''.join(("/", row['EMA'], "/highlight"))
-        measure_range = {"measureRange": mr}
-        json_string = json.dumps(measure_range)
-        encoded_mr = urllib.parse.quote(json_string)
-
-        react_app_url = "https://eleon024.github.io/ema_react_app/"
-
-        params = {
-            "pieceURL": piece_url,
-            "ema_expression": ema_expression,
-            "measure_range": encoded_mr
-        }
-
-        query_string = urllib.parse.urlencode(params)
-        url = ''.join((react_app_url, '?', query_string))
-        return url
 
     def _constructColumnwiseUrl(cell, piece_url):
         ema_expression = ''.join(("/", cell, "/highlight"))

@@ -775,7 +775,7 @@ class ImportedPiece:
         if mode == 'melodic':
             columnwise = [self.emaAddresses(df.take([col], axis=1), mode=mode) for col in range(len(df.columns))]
             ema = pd.concat(columnwise, axis=1, sort=True)
-            temp = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
+            temp = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(df, cell, piece_url), na_action='ignore')
             res = []
             # this loop is needed because the "last" offset of df is the beginning
             # of it's last event, whereas in temp it's the beginning of the next event
@@ -787,7 +787,7 @@ class ImportedPiece:
                 res.append(col_links)
             res = pd.concat(res, axis=1, sort=True)
         else:
-            col_urls = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
+            col_urls = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(df, cell, piece_url), na_action='ignore')
             col_data = df.loc[:, data_col_name]
             links = [fmt.format(col_urls.iat[col_urls.index.get_loc(ndx), 0], col_data.at[ndx])
                     if isinstance(col_data.at[ndx], str) else np.nan for ndx in col_data.index]
@@ -825,9 +825,18 @@ class ImportedPiece:
         url = ''.join((react_app_url, '?', query_string))
         return url
 
-    def _constructColumnwiseUrl(cell, piece_url):
+    def _constructColumnwiseUrl(df, cell, piece_url):
         ema_expression = ''.join(("/", cell, "/highlight"))
-        mr = cell.split("/")[0]
+        mr = ''
+        if 'Presentation_Type' in df.columns:
+            ema_measures = re.findall(r'\d+', ema_expression.split("/", 1)[0])
+            ema_meas_integers = [int(x) for x in ema_measures]
+            lowest = min(ema_meas_integers)
+            highest = max(ema_meas_integers)
+            # join them with a dash
+            mr = f"{lowest}-{highest}"
+        else:
+            mr = cell.split("/")[0]
         measure_range = {"measureRange": mr}
         json_string = json.dumps(measure_range)
         encoded_mr = urllib.parse.quote(json_string)

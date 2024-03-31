@@ -798,8 +798,12 @@ class ImportedPiece:
     def _constructUrl(row, piece_url, mode):
         mr = ''
         if mode == 'p_types':
-            integers = re.findall(r'\d+', row['EMA'].split("/")[0])
-            # Step 2: Extract the first and last elements and join them with a dash
+            ema = row['EMA'].split("/")[0]
+            integers = [int(x) for x in re.findall(r'\d+', ema) if x.find('/') == -1]
+            # Find the lowest and highest integers
+            lowest = min(integers)
+            highest = max(integers)
+            # join them with a dash
             mr = f"{integers[0]}-{integers[-1]}"
         else:
             mr = row['EMA'].split("/")[0]

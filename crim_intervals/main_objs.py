@@ -627,7 +627,7 @@ class ImportedPiece:
         voices = list(set(row['Voices']))
         # make dict
         for idx, col in zip(offsets, voices):
-            filtered_df.loc[idx, col] = ngrams.loc[idx, col]
+            filtered_df = ngrams.loc[idx, col]
         filtered_df = filtered_df.dropna(how='all')
         filtered_df = filtered_df.groupby(level='First').tail(1)
         emas = self.emaAddresses(df=filtered_df, mode='')

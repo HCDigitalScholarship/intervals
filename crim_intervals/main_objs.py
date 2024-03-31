@@ -19,7 +19,9 @@ import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import plotly.express as px
 from glob import glob
-from IPython.display import SVG, HTML
+from IPython.display import display, SVG, HTML
+import json
+import urllib.parse
 main_objs_dir = os.path.dirname(os.path.abspath(__file__))
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -514,7 +516,6 @@ class ImportedPiece:
 
     def _emaRowHelper(self, row):
         measures = list(range(row.iat[0], row.iat[2] + 1))
-        ends = (row.iat[0], row.iat[2])
         mCount = row.iat[2] - row.iat[0] + 1
         parts = row.iloc[4:].dropna().index
         part_strings = '+'.join({part for combo in parts for part in combo.split('_')})
@@ -549,7 +550,6 @@ class ImportedPiece:
         last_m = self.measures().iat[-1, 0]
         for ema in emas:
             ema = ema.replace('start', '1')
-            print(ema)
             _measures, _parts, _beats = ema.split('/')
             _beats = _beats.replace('1.0-', '1-')
             _beats = _beats.replace('1.0@', '1@')
@@ -659,35 +659,28 @@ class ImportedPiece:
     def emaAddresses(self, df=None, mode=''):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
-        like melodic ngrams. Specifically for melodic ngrams, you have to set mode='melodic'.
-        Here's an example of that workflow for an imported piece called `piece`.
+        like melodic ngrams. The `mode` parameter is detected automatically if it isn't passed.
 
         ***Example***
         mel = piece.melodic()
         ng = piece.ngrams(df=mel, n=4, offsets='both')
-        ema = piece.emaAddresses(df=ng, mode='melodic')
+        ema = piece.emaAddresses(df=ng)
         ***
-
-        If you want the emaAddresses of a cvfs dataframe, you can set mode='cvfs' or mode='cadences'
-        and passing a dataframe to the df parameter is optional in this case. CVFS and cadences
-        have the same EMA addresses so the results will be the same with mode='cvfs' and
-        mode='cadences'.
         '''
-        mode = mode.lower()
         if isinstance(df, pd.DataFrame):
             ret = df.copy()
         if mode == 'melodic':
             newCols = []
             for i in range(len(ret.columns)):
                 part = ret.iloc[:, i].dropna()
-                notes = self.notes().iloc[:, i].dropna()
+                notes = self.notes().loc[:, part.name].dropna()
                 new_index = []
                 for (_first, _last) in part.index:
                     new_index.append((notes.loc[:_first].index[-2], _last))
                 part.index = pd.MultiIndex.from_tuples(new_index, names=part.index.names)
                 newCols.append(part)
             ret = pd.concat(newCols, axis=1, sort=True)
-        elif mode.startswith('c'):  # cvfs mode
+        elif mode.startswith('c'):  # cadences/cvfs mode
             ret = self.cvfs(keep_keys=True, offsets='both').copy()
             ngrams = ret.iloc[:, len(self._getPartNames()):]
             addresses = self.emaAddresses(df=ngrams, mode='')
@@ -702,7 +695,7 @@ class ImportedPiece:
                 return ret
         # hr mode--works with HR dataframe, adding ema address to each hr passage (= row).  
         # pass in output of hr = piece.homorhythm() as the df and set mode = 'hr'
-        elif mode.startswith('h'): # hr mode
+        elif mode == 'homorhythm': # hr mode
             if isinstance(df, pd.DataFrame):
                 hr = df
                 ngram_length = int(hr.iloc[0]['ngram_length'])
@@ -715,8 +708,7 @@ class ImportedPiece:
                 return hr  
         # for ptypes output
         # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
-
-        elif mode.startswith('p'): # p_type mode
+        elif mode == 'p_types': # p_type mode
             if isinstance(df, pd.DataFrame):
                 p_types = df
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
@@ -739,6 +731,111 @@ class ImportedPiece:
                 res = res.apply(self._emaRowHelper, axis=1)
                 res.name = 'EMA'
                 return res
+
+    def linkExamples(self, df, piece_url='', mode=''):
+        '''
+        Given a dataframe of EMA addresses, return a dataframe of clickable
+        links to the EMA React app. The `piece_url` parameter is the URL of the
+        piece on the EMA React app. If you don't pass a `piece_url`, the method
+        will try to construct one based on the piece's metadata. The resulting
+        dataframe will have the same data results, but instead of plain text
+        they will be links to highlighted examples of each result.
+        '''
+        if piece_url == '':
+            if self.path.startswith('https://crimproject.org/mei/CRIM'):
+                piece_url = self.path
+            else:
+                print('No piece URL was passed and the piece was not downloaded from a crimproject.org. Please provide a piece_url.')
+                return
+
+        if mode != '':
+            mode = mode.lower()
+        else:   # detect mode if it is not passed
+            if 'hr_voices' in df.columns:
+                mode = 'homorhythm'
+                data_col_name = 'hr_voices'
+                ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
+            elif 'Presentation_Type' in df.columns:
+                mode = 'p_types'
+                data_col_name = 'Presentation_Type'
+                ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
+            elif 'CVFs' in df.columns:
+                mode = 'cadences'
+                data_col_name = 'CadType'
+                ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
+            elif all(self._getPartNames() == df.columns):
+                if any(char in df.values for char in 'CAyca'):
+                    mode = 'cadences'
+                    data_col_name = 'CadType'
+                    ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
+                else:
+                    mode = 'melodic'
+
+        fmt = '<a href="{}" rel="noopener noreferrer" target="_blank">{}</a>'
+        if mode == 'melodic':
+            columnwise = [self.emaAddresses(df.take([col], axis=1), mode=mode) for col in range(len(df.columns))]
+            ema = pd.concat(columnwise, axis=1, sort=True)
+            temp = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
+            res = []
+            # this loop is needed because the "last" offset of df is the beginning
+            # of it's last event, whereas in temp it's the beginning of the next event
+            for col in range(len(temp.columns)):
+                col_urls = temp.iloc[:, col].dropna()
+                col_data = df.iloc[:, col].dropna()
+                links = [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls)]
+                col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
+                res.append(col_links)
+            res = pd.concat(res, axis=1, sort=True)
+        else:
+            col_urls = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
+            col_data = df.loc[:, data_col_name]
+            links = [fmt.format(col_urls.iat[col_urls.index.get_loc(ndx), 0], col_data.at[ndx])
+                    if isinstance(col_data.at[ndx], str) else np.nan for ndx in col_data.index]
+            res = df.copy()
+            res[data_col_name] = links
+        display(HTML(res.to_html(render_links=True, escape=False)))
+
+    def _constructUrl(row, piece_url, mode):
+        mr = ''
+        if mode == 'p_types':
+            integers = re.findall(r'\d+', row['EMA'].split("/")[0])
+            # Step 2: Extract the first and last elements and join them with a dash
+            mr = f"{integers[0]}-{integers[-1]}"
+        else:
+            mr = row['EMA'].split("/")[0]
+
+        ema_expression = ''.join(("/", row['EMA'], "/highlight"))
+        measure_range = {"measureRange": mr}
+        json_string = json.dumps(measure_range)
+        encoded_mr = urllib.parse.quote(json_string)
+
+        react_app_url = "https://eleon024.github.io/ema_react_app/"
+
+        params = {
+            "pieceURL": piece_url,
+            "ema_expression": ema_expression,
+            "measure_range": encoded_mr
+        }
+
+        query_string = urllib.parse.urlencode(params)
+        url = ''.join((react_app_url, '?', query_string))
+        return url
+
+    def _constructColumnwiseUrl(cell, piece_url):
+        ema_expression = ''.join(("/", cell, "/highlight"))
+        mr = cell.split("/")[0]
+        measure_range = {"measureRange": mr}
+        json_string = json.dumps(measure_range)
+        encoded_mr = urllib.parse.quote(json_string)
+        params = {
+            "pieceURL": piece_url,
+            "ema_expression": ema_expression,
+            "measure_range": encoded_mr
+        }
+        query_string = urllib.parse.urlencode(params)
+        react_app_url = "https://eleon024.github.io/ema_react_app/"
+        url = ''.join((react_app_url, '?', query_string))
+        return url
 
     def _getBeatUnit(self):
         '''

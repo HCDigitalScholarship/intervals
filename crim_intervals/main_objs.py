@@ -697,7 +697,7 @@ class ImportedPiece:
         # pass in output of hr = piece.homorhythm() as the df and set mode = 'hr'
         elif mode == 'homorhythm': # hr mode
             if isinstance(df, pd.DataFrame):
-                hr = df
+                hr = df.copy()
                 ngram_length = int(hr.iloc[0]['ngram_length'])
                 nr = self.notes()
                 dur = self.durations(df = nr)
@@ -710,7 +710,7 @@ class ImportedPiece:
         # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
         elif mode == 'p_types': # p_type mode
             if isinstance(df, pd.DataFrame):
-                p_types = df
+                p_types = df.copy()
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
                 mel = self.melodic(end=False)
                 ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)
@@ -765,78 +765,38 @@ class ImportedPiece:
                 ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
             elif all(self._getPartNames() == df.columns):
                 if any(char in df.values for char in 'CAyca'):
-                    mode = 'cadences'
-                    data_col_name = 'CadType'
-                    ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
+                    print('Running on cadences which have the same ema addresses as cvfs...')
+                    return self.linkExamples(self.cadences(), piece_url)
                 else:
                     mode = 'melodic'
 
         fmt = '<a href="{}" rel="noopener noreferrer" target="_blank">{}</a>'
         if mode == 'melodic':
-            columnwise = [self.emaAddresses(df.take([col], axis=1), mode=mode) for col in range(len(df.columns))]
-            ema = pd.concat(columnwise, axis=1, sort=True)
-            temp = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(df, cell, piece_url), na_action='ignore')
             res = []
             # this loop is needed because the "last" offset of df is the beginning
             # of it's last event, whereas in temp it's the beginning of the next event
-            for col in range(len(temp.columns)):
-                col_urls = temp.iloc[:, col].dropna()
+            for col in range(len(df.columns)):
+                col_urls = pd.DataFrame(self.emaAddresses(df.take([col], axis=1), mode=mode).dropna())
+                col_urls = col_urls.map(ImportedPiece._constructColumnwiseUrl, na_action='ignore', piece_url=piece_url)
                 col_data = df.iloc[:, col].dropna()
-                links = [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls)]
+                links = [] if col_data.empty else [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls['EMA'])]
                 col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
                 res.append(col_links)
             res = pd.concat(res, axis=1, sort=True)
         else:
-            col_urls = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(df, cell, piece_url), na_action='ignore')
+            col_urls = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
             col_data = df.loc[:, data_col_name]
             links = [fmt.format(col_urls.iat[col_urls.index.get_loc(ndx), 0], col_data.at[ndx])
-                    if isinstance(col_data.at[ndx], str) else np.nan for ndx in col_data.index]
+                    if isinstance(col_data.at[ndx], (str, list)) else np.nan for ndx in col_data.index]
             res = df.copy()
             res[data_col_name] = links
+            if 'ema' in res.columns:
+                res.drop(columns='ema', inplace=True)
         display(HTML(res.to_html(render_links=True, escape=False)))
 
-    def _constructUrl(row, piece_url, mode):
-        mr = ''
-        if 'Presentation_Type' in row.index:
-            ema = row['EMA'].split("/")[0]
-            measures = re.findall(r'\d+', ema.split("/", 1)[0])
-            meas_integers = [int(x) for x in measures]
-            lowest = min(meas_integers)
-            highest = max(meas_integers)
-            # join them with a dash
-            mr = f"{lowest}-{highest}"
-        else:
-            mr = row['EMA'].split("/")[0]
-
-        ema_expression = ''.join(("/", row['EMA'], "/highlight"))
-        measure_range = {"measureRange": mr}
-        json_string = json.dumps(measure_range)
-        encoded_mr = urllib.parse.quote(json_string)
-
-        react_app_url = "https://eleon024.github.io/ema_react_app/"
-
-        params = {
-            "pieceURL": piece_url,
-            "ema_expression": ema_expression,
-            "measure_range": encoded_mr
-        }
-
-        query_string = urllib.parse.urlencode(params)
-        url = ''.join((react_app_url, '?', query_string))
-        return url
-
-    def _constructColumnwiseUrl(df, cell, piece_url):
+    def _constructColumnwiseUrl(cell, piece_url):
         ema_expression = ''.join(("/", cell, "/highlight"))
-        mr = ''
-        if 'Presentation_Type' in df.columns:
-            ema_measures = re.findall(r'\d+', ema_expression.split("/", 1)[0])
-            ema_meas_integers = [int(x) for x in ema_measures]
-            lowest = min(ema_meas_integers)
-            highest = max(ema_meas_integers)
-            # join them with a dash
-            mr = f"{lowest}-{highest}"
-        else:
-            mr = cell.split("/")[0]
+        mr = cell.split("/")[0]
         measure_range = {"measureRange": mr}
         json_string = json.dumps(measure_range)
         encoded_mr = urllib.parse.quote(json_string)

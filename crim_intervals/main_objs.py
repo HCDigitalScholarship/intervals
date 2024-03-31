@@ -796,7 +796,7 @@ class ImportedPiece:
 
     def _constructUrl(row, piece_url, mode):
         mr = ''
-        if mode == 'p_types':
+        if 'Presentation_Type' in row.index:
             ema = row['EMA'].split("/")[0]
             integers = [int(x) for x in re.findall(r'\d+', ema) if x.find('/') == -1]
             # Find the lowest and highest integers

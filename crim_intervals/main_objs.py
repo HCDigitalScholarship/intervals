@@ -617,14 +617,6 @@ class ImportedPiece:
         full_ema = full_ema.reset_index()
         ema = full_ema['EMA']
         return ema
-    # 4/24 not needed
-    # def _apply_filter(self, row, filter_dict, short_ngrams):
-    #     for key, value in filter_dict.items():
-    #         if row.name[0] == key: 
-    #             for col in short_ngrams.columns:
-    #                 if col not in value:
-    #                     row[col] = np.nan
-    #     return row
 
     def _ptype_ema_helper(self, row, ngrams):
         # initialize dict and df

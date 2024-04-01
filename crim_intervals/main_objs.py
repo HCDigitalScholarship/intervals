@@ -618,16 +618,30 @@ class ImportedPiece:
         ema = full_ema['EMA']
         return ema
     
+    def _apply_filter(self, row, filter_dict):
+        for key, value in filter_dict.items():
+            if row.name[0] == key: 
+                for col in short_ngrams.columns:
+                    if col not in value:
+                        row[col] = np.nan
+        return row
+
     def _ptype_ema_helper(self, row, ngrams):
         # initialize dict and df
-        dictionary = {}
+        filter_dict = {}
         filtered_df = pd.DataFrame(np.nan, index=ngrams.index, columns=ngrams.columns)
+        for f, s in zip(offsets, voices):
+            if f not in filter_dict:
+                filter_dict[f] = []
+            filter_dict[f].append(s)
         # get row values for offsets and voices
         offsets = row['Offsets']
         voices = list(set(row['Voices']))
+        short_ngrams = ngrams.loc[offsets]
         filtered_df = ngrams.loc[offsets, voices]
         filtered_df = filtered_df.dropna(how='all')
         filtered_df = filtered_df.groupby(level=0).head(1)
+        filtered_df = short_ngrams.apply(lambda row: self._apply_filter(row, filter_dict), axis=1)
         emas = self.emaAddresses(df=filtered_df, mode='')
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema

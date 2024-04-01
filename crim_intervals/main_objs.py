@@ -629,7 +629,7 @@ class ImportedPiece:
         for idx, col in zip(offsets, voices):
             filtered_df = ngrams.loc[idx, col]
         filtered_df = filtered_df.dropna(how='all')
-        filtered_df = filtered_df.groupby(level='First').tail(1)
+        filtered_df = filtered_df.groupby(level=0).tail(1)
         emas = self.emaAddresses(df=filtered_df, mode='')
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema

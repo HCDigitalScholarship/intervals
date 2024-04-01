@@ -618,7 +618,7 @@ class ImportedPiece:
         ema = full_ema['EMA']
         return ema
     
-    def _apply_filter(self, row, filter_dict):
+    def _apply_filter(self, row, filter_dict, short_ngrams):
         for key, value in filter_dict.items():
             if row.name[0] == key: 
                 for col in short_ngrams.columns:
@@ -641,7 +641,7 @@ class ImportedPiece:
         filtered_df = ngrams.loc[offsets, voices]
         filtered_df = filtered_df.dropna(how='all')
         filtered_df = filtered_df.groupby(level=0).head(1)
-        filtered_df = short_ngrams.apply(lambda row: self._apply_filter(row, filter_dict), axis=1)
+        filtered_df = short_ngrams.apply(lambda row: self._apply_filter(row, filter_dict, short_ngrams), axis=1)
         emas = self.emaAddresses(df=filtered_df, mode='')
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema

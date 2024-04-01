@@ -630,13 +630,13 @@ class ImportedPiece:
         # initialize dict and df
         filter_dict = {}
         filtered_df = pd.DataFrame(np.nan, index=ngrams.index, columns=ngrams.columns)
+        # get row values for offsets and voices
+        offsets = row['Offsets']
+        voices = list(set(row['Voices']))
         for f, s in zip(offsets, voices):
             if f not in filter_dict:
                 filter_dict[f] = []
             filter_dict[f].append(s)
-        # get row values for offsets and voices
-        offsets = row['Offsets']
-        voices = list(set(row['Voices']))
         short_ngrams = ngrams.loc[offsets]
         filtered_df = ngrams.loc[offsets, voices]
         filtered_df = filtered_df.dropna(how='all')

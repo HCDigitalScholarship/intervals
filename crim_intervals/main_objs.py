@@ -625,11 +625,9 @@ class ImportedPiece:
         # get row values for offsets and voices
         offsets = row['Offsets']
         voices = list(set(row['Voices']))
-        # make dict
-        for idx, col in zip(offsets, voices):
-            filtered_df = ngrams.loc[idx, col]
+        filtered_df = ngrams.loc[offsets, voices]
         filtered_df = filtered_df.dropna(how='all')
-        filtered_df = filtered_df.groupby(level=0).tail(1)
+        filtered_df = filtered_df.groupby(level=0).head(1)
         emas = self.emaAddresses(df=filtered_df, mode='')
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema

@@ -515,8 +515,8 @@ class ImportedPiece:
         return self.analyses['HighLine']
 
     def _emaRowHelper(self, row):
-        measures = list(range(int(row.iat[0]), int(row.iat[2] + 1)))
-        mCount = int(row.iat[2]) - int(row.iat[0] + 1)
+        measures = list(range(row.iat[0], row.iat[2] + 1))
+        mCount = row.iat[2] - row.iat[0] + 1
         parts = row.iloc[4:].dropna().index
         part_strings = '+'.join({part for combo in parts for part in combo.split('_')})
         num_parts = part_strings.count('+') + 1
@@ -617,14 +617,14 @@ class ImportedPiece:
         full_ema = full_ema.reset_index()
         ema = full_ema['EMA']
         return ema
-    
-    def _apply_filter(self, row, filter_dict, short_ngrams):
-        for key, value in filter_dict.items():
-            if row.name[0] == key: 
-                for col in short_ngrams.columns:
-                    if col not in value:
-                        row[col] = np.nan
-        return row
+    # 4/24 not needed
+    # def _apply_filter(self, row, filter_dict, short_ngrams):
+    #     for key, value in filter_dict.items():
+    #         if row.name[0] == key: 
+    #             for col in short_ngrams.columns:
+    #                 if col not in value:
+    #                     row[col] = np.nan
+    #     return row
 
     def _ptype_ema_helper(self, row, ngrams):
         # initialize dict and df
@@ -638,11 +638,19 @@ class ImportedPiece:
                 filter_dict[f] = []
             filter_dict[f].append(s)
         short_ngrams = ngrams.loc[offsets]
-        filtered_df = ngrams.loc[offsets, voices]
-        filtered_df = filtered_df.dropna(how='all')
-        filtered_df = filtered_df.groupby(level=0).head(1)
-        filtered_df = short_ngrams.apply(lambda row: self._apply_filter(row, filter_dict, short_ngrams), axis=1)
-        emas = self.emaAddresses(df=filtered_df, mode='')
+        # update 4/24
+        for offset, voice_list in dictionary.items():
+            columns_to_replace = short_ngrams.columns.difference(voice_list)
+            # Replace the values with NaN
+            short_ngrams.loc[offset, columns_to_replace] = np.nan
+            short_ngrams.dropna(how='all', inplace=True)
+            short_ngrams.drop_duplicates(inplace=True)
+            result = short_ngrams
+        # filtered_df = ngrams.loc[offsets, voices]
+        # filtered_df = filtered_df.dropna(how='all')
+        # filtered_df = filtered_df.groupby(level=0).head(1)
+        # filtered_df = short_ngrams.apply(lambda row: self._apply_filter(row, filter_dict, short_ngrams), axis=1)
+        emas = self.emaAddresses(df=result, mode='')
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema
 

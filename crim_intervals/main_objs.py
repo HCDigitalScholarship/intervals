@@ -628,31 +628,40 @@ class ImportedPiece:
 
     def _ptype_ema_helper(self, row, ngrams):
         # initialize dict and df
-        filter_dict = {}
-        filtered_df = pd.DataFrame(np.nan, index=ngrams.index, columns=ngrams.columns)
+        dictionary = {}
+        filtered_df = pd.DataFrame()
         # get row values for offsets and voices
         offsets = row['Offsets']
-        voices = list(set(row['Voices']))
+        voices = row['Voices']
+        # make dict
         for f, s in zip(offsets, voices):
-            if f not in filter_dict:
-                filter_dict[f] = []
-            filter_dict[f].append(s)
+            if f not in dictionary:
+                dictionary[f] = []
+            dictionary[f].append(s)
+        # slice of ngrams corresponding to this point
         short_ngrams = ngrams.loc[offsets]
-        # update 4/24
+        # use dict values to build offset and column sets
         for offset, voice_list in dictionary.items():
             columns_to_replace = short_ngrams.columns.difference(voice_list)
             # Replace the values with NaN
             short_ngrams.loc[offset, columns_to_replace] = np.nan
             short_ngrams.dropna(how='all', inplace=True)
-            short_ngrams.drop_duplicates(inplace=True)
-            result = short_ngrams
-        # filtered_df = ngrams.loc[offsets, voices]
-        # filtered_df = filtered_df.dropna(how='all')
-        # filtered_df = filtered_df.groupby(level=0).head(1)
-        # filtered_df = short_ngrams.apply(lambda row: self._apply_filter(row, filter_dict, short_ngrams), axis=1)
-        emas = self.emaAddresses(df=result, mode='')
+            # if len(filtered_df) == 0:
+            #     filtered_df = short_ngrams
+            # else:
+            #     result = pd.concat([filtered_df, short_ngrams])
+            #     result.drop_duplicates(inplace=True)
+
+        emas = self.emaAddresses(df=short_ngrams, mode='')
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema
+        
+
+        # this_point = row["Offsets"]
+        # ret = ngrams.loc[set(this_point)]
+        # addresses = self.emaAddresses(df=ret, mode='')
+        # full_ema = self.combineEmaAddresses(addresses)
+        # return full_ema
 
     def emaAddresses(self, df=None, mode=''):
         '''

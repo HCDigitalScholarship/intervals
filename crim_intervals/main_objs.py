@@ -644,24 +644,12 @@ class ImportedPiece:
         for offset, voice_list in dictionary.items():
             columns_to_replace = short_ngrams.columns.difference(voice_list)
             # Replace the values with NaN
+            # updated 4/24 to remove repeating voice error
             short_ngrams.loc[offset, columns_to_replace] = np.nan
             short_ngrams.dropna(how='all', inplace=True)
-            # if len(filtered_df) == 0:
-            #     filtered_df = short_ngrams
-            # else:
-            #     result = pd.concat([filtered_df, short_ngrams])
-            #     result.drop_duplicates(inplace=True)
-
         emas = self.emaAddresses(df=short_ngrams, mode='')
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema
-        
-
-        # this_point = row["Offsets"]
-        # ret = ngrams.loc[set(this_point)]
-        # addresses = self.emaAddresses(df=ret, mode='')
-        # full_ema = self.combineEmaAddresses(addresses)
-        # return full_ema
 
     def emaAddresses(self, df=None, mode=''):
         '''

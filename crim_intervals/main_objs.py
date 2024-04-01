@@ -515,8 +515,8 @@ class ImportedPiece:
         return self.analyses['HighLine']
 
     def _emaRowHelper(self, row):
-        measures = list(range(row.iat[0], row.iat[2] + 1))
-        mCount = row.iat[2] - row.iat[0] + 1
+        measures = list(range(int(row.iat[0]), int(row.iat[2] + 1)))
+        mCount = int(row.iat[2]) - int(row.iat[0] + 1)
         parts = row.iloc[4:].dropna().index
         part_strings = '+'.join({part for combo in parts for part in combo.split('_')})
         num_parts = part_strings.count('+') + 1

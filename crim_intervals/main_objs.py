@@ -757,7 +757,7 @@ class ImportedPiece:
                 else:
                     mode = 'melodic'
 
-        fmt = '<a href="{}" rel="noopener noreferrer" target="_blank">{}</a>'
+        fmt = '<a href="{}&{}" rel="noopener noreferrer" target="_blank">{}</a>'
         if mode == 'melodic':
             res = []
             # this loop is needed because the "last" offset of df is the beginning
@@ -766,14 +766,19 @@ class ImportedPiece:
                 col_urls = pd.DataFrame(self.emaAddresses(df.take([col], axis=1), mode=mode).dropna())
                 col_urls = col_urls.map(ImportedPiece._constructColumnwiseUrl, na_action='ignore', piece_url=piece_url)
                 col_data = df.iloc[:, col].dropna()
-                links = [] if col_data.empty else [fmt.format(url, col_data.iat[ii]) for ii, url in enumerate(col_urls['EMA'])]
+                links = [] if col_data.empty else [fmt.format(url,
+                                                              urllib.parse.urlencode({'observation': f' {col_data.iat[ii]}'}),
+                                                              col_data.iat[ii])
+                                                   for ii, url in enumerate(col_urls['EMA'])]
                 col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
                 res.append(col_links)
             res = pd.concat(res, axis=1, sort=True)
         else:
             col_urls = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
             col_data = df.loc[:, data_col_name]
-            links = [fmt.format(col_urls.iat[col_urls.index.get_loc(ndx), 0], col_data.at[ndx])
+            links = [fmt.format(col_urls.iat[col_urls.index.get_loc(ndx), 0],
+                                urllib.parse.urlencode({'observation': f' {col_data.at[ndx]}'}),
+                                col_data.at[ndx])
                     if isinstance(col_data.at[ndx], (str, list)) else np.nan for ndx in col_data.index]
             res = df.copy()
             res[data_col_name] = links

@@ -729,10 +729,10 @@ class ImportedPiece:
         they will be links to highlighted examples of each result.
         '''
         if piece_url == '':
-            if self.path.startswith('https://crimproject.org/mei/CRIM'):
+            if self.path.startswith('https://'):
                 piece_url = self.path
             else:
-                print('No piece URL was passed and the piece was not downloaded from a crimproject.org. Please provide a piece_url.')
+                print('No piece URL was passed and the piece was not downloaded from a public respository. Please provide a piece_url.')
                 return
 
         if mode != '':
@@ -793,13 +793,14 @@ class ImportedPiece:
         min_meas = min(ema_measure_integers)
         max_meas = max(ema_measure_integers)
         mr = f"{min_meas}-{max_meas}"
-        measure_range = {"measureRange": mr}
-        json_string = json.dumps(measure_range)
-        encoded_mr = urllib.parse.quote(json_string)
+        # not needed as of 4/24
+        # measure_range = {"measureRange": mr}
+        # json_string = json.dumps(measure_range)
+        # encoded_mr = urllib.parse.quote(json_string)
         params = {
             "pieceURL": piece_url,
             "ema_expression": ema_expression,
-            "measure_range": encoded_mr
+            "measure_range": mr
         }
         query_string = urllib.parse.urlencode(params)
         react_app_url = "https://eleon024.github.io/ema_react_app/"

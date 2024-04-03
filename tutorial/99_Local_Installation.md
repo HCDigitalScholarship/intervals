@@ -27,11 +27,11 @@ Here are the steps:
 
 ### 3. Create a Project Folder on your Computer
 
-Now you will need to create a dedicated folder on your computer where you will keep the code for the CRIM Intervals Streamlit application.
+Now you will need to create a dedicated folder on your computer where you will keep your notebooks
 
-- Make a **new folder** in the **Documents** folder on your machine.  You can name it as you like, but something simple like "**CRIM Intervals Code**" will do.  
-- You will not be editing any of the files here, but instead you will sync this folder to an online repository on GitHub.  Don't worry, this won't put anything strange on your computer!
-- Make sure you know where to find this folder, since you will need to point to it in the next step
+- Make a **new folder** in the **Documents** folder on your machine.  You can name it as you like, but something simple like "**CRIM Intervals Notebooks**" will do.  
+
+- Make sure you know where to find this folder, since you will need to work with files and notebooks there.
 
 ### 4. Return to Anaconda Navigator and your Virtual Env
 
@@ -50,92 +50,37 @@ Now you will need to create a dedicated folder on your computer where you will k
 
 ![alt text](images/env3.png)
 
-### 5. Get the Code from Github via the Terminal
+### 5. Install CRIM Intervals
 
-- Now you will first need to make sure you have the 'git' code that will allow you to request code from github.  Install it by pasting the following into your terminal: 
-
-```
-conda install git
-```
-![alt text](images/env4.png)
-
-
-- This will in turn ask you to confirm that you want to install this software.  Type **y** for 'yes'.
-
-![alt text](images/env5.png)
-
-- You will see the code install and then something to confirm success, like the following:
-
-![alt text](images/env6.png)
-
-### 6. Change the Terminal to Point to your New Project Folder
-
-- Now find the **new project folder** (which we will call a 'directory') you created in Step 3 above.  We will enter the 'path' to that directory in the terminal, preceeded by "cd", like this:
+- Now you will install the CRIM Intervals code as a Python 'package'.  Type:
 
 ```
-cd Documents/Projects/MyProject
+pip install crim_intervals
 ```
+![alt text](envs4.png)
 
-- The 'path' to your folder might look like this:
+#### Need to Update CRIM Intervals?
 
+If you learn of a new update for CRIM Intervals, it's simple to install this and replace your current version.
 
-```
-/Users/rfreedma/Documents/CRIM_Python/intervals_local_test
-```
-
-- The whole command would be (remember ONE space between 'cd' and the 'path' to your folder!)
-
+Open a terminal (as described above), then type:
 
 ```
-cd /Users/rfreedma/Documents/CRIM_Python/intervals_local_test
+pip uninstall crim_intervals
 ```
 
-Type that into the Terminal and press enter.  Now the terminal command prompt should include the name of your directory:
+![alt text](envs5.png)
 
+You will be type "Y" to confirm the removal of the old version.
 
-### 7.  Sync Your Folder to the GitHub Repository for CRIM Intervals Streamlit
-
-- Now you will issue the command to 'clone' the code and put it in your Project Folder.  Don't worry, you can always delete this, and it will have no effect on any other software on your computer!
-
-- At the terminal prompt paste in the following (remember just one space between each element), and press Enter/Return:
+Now reinstall:
 
 ```
-git clone https://github.com/HCDigitalScholarship/intervals.git
+pip install crim_intervals
 ```
+![alt text](envs4.png)
 
-- This should only take a few seconds, but you will see the following confirmation:
-
- ![alt text](images/env8.png)
-
-### 8. Install the Requirements for CRIM Intervals
-
-- Now you need to install the various dependencies that make CRIM Intervals work.  
-
-- The first step is to 'cd' to a folder *within* the one you just created.  Copy and paste the following into your terminal:
-
-```
-cd intervals
-```
-
-
-![alt text](images/env19.png)
-
-Now you are ready to install your local code. Copy and paste the following into your terminal.  Yes, you need to *include the period after the word 'install'*!  This simply makes sure that *all* the code will be installed.
-
-```
-pip install .
-```
-
-![alt text](images/env17.png)
-
-- There will be a lot of activity for a minute or two as all the libraries are installed.  But eventually you will return to the command prompt.  But meanwhile you might see this:
-
-
-![alt text](images/env_10.png)
-
-- Congratulations, you are ready to run CRIM Intervals in a Jupyter Notebook!
-
-### 9.  Install and Launch Jupyter Lab via Anaconda Navigator
+### 6.  Install and Launch Jupyter Lab via Anaconda Navigator
 
 - Go back to Anaconda Navigator
 - While your environment is active, go to the Home menu at left
@@ -151,11 +96,10 @@ pip install .
 ![alt text](images/env12.png)
 
 
-### 10.  Create Folder for your Notebooks and Run Them
+### 7.  Create Folder for your Notebooks and Run Them
 
 - Jupyter Lab will 'look' into the Documents on your computer.
 - Create a new My_CRIM_Notebooks folder somewhere convenient.  You can name it anything you like.
-- Probably best to _avoid_ putting it in the CRIM Intervals code folder you just created!
 - Next, start a new Python Session via the "Launcher" in the middle of your screen.
 
 ![alt text](images/env13.png)
@@ -164,12 +108,12 @@ pip install .
 - Now use the "+" icon at the top left to create a new notebook.  
 - Or open an existing Notebook . . . 
 
-### 11.  Build a Notebook with the CRIM Intervals Tutorials
+### 8.  Build a Notebook with the CRIM Intervals Tutorials
 
 - Return to the [CRIM Intervals Tutorials Pages](https://github.com/HCDigitalScholarship/intervals/tree/main/tutorial) to learn how to build up your Notebook!
 
 
-### 12.  Shut Down and Restart
+### 9.  Shut Down and Restart
 
 - When you are finished you can simply close your browser window, and quit Anaconda Navigator and the Terminal application
 
@@ -181,7 +125,7 @@ pip install .
 4.  Launch Jupyter Lab
 5.  Navigate to the folder where you keep your notebooks.
 
-### 13.  Help with Jupyter Lab
+### 10.  Help with Jupyter Lab
 
 Learn more via the [Jupyter Lab documentation](https://jupyterlab.readthedocs.io/en/latest/)
 

@@ -54,7 +54,7 @@ Now you will need to create a dedicated folder on your computer where you will k
 
 - Now you will install the CRIM Intervals code as a Python 'package'.  Type:
 
-```
+```python
 pip install crim_intervals
 ```
 ![alt text](envs4.png)
@@ -65,7 +65,7 @@ If you learn of a new update for CRIM Intervals, it's simple to install this and
 
 Open a terminal (as described above), then type:
 
-```
+```python
 pip uninstall crim_intervals
 ```
 
@@ -75,17 +75,27 @@ You will be type "Y" to confirm the removal of the old version.
 
 Now reinstall:
 
-```
+```python
 pip install crim_intervals
 ```
 ![alt text](envs4.png)
 
-### 6.  Install and Launch Jupyter Lab via Anaconda Navigator
+### 6. Install iPywidgets
+
+There is one other library you will need to install in order to use *@interact* filters with dataframes:
+
+```python
+pip install ipywidgets
+```
+
+
+### 7.  Install and Launch Jupyter Lab via Anaconda Navigator
 
 - Go back to Anaconda Navigator
 - While your environment is active, go to the Home menu at left
 - Now you will see a gallery of programs that can be 'installed'
 - Install **Jupyter Lab**, which is how we will create, save and interact with Notebooks
+- Be sure to install **Version 4.0.11**.  If your version seems to be different, use the *gear* icon to update to 4.0.11
 
 
 ![alt text](images/evn11.png)
@@ -96,7 +106,7 @@ pip install crim_intervals
 ![alt text](images/env12.png)
 
 
-### 7.  Create Folder for your Notebooks and Run Them
+### 8.  Create Folder for your Notebooks and Run Them
 
 - Jupyter Lab will 'look' into the Documents on your computer.
 - Create a new My_CRIM_Notebooks folder somewhere convenient.  You can name it anything you like.
@@ -108,12 +118,12 @@ pip install crim_intervals
 - Now use the "+" icon at the top left to create a new notebook.  
 - Or open an existing Notebook . . . 
 
-### 8.  Build a Notebook with the CRIM Intervals Tutorials
+### 9.  Build a Notebook with the CRIM Intervals Tutorials
 
 - Return to the [CRIM Intervals Tutorials Pages](https://github.com/HCDigitalScholarship/intervals/tree/main/tutorial) to learn how to build up your Notebook!
 
 
-### 9.  Shut Down and Restart
+### 10.  Shut Down and Restart
 
 - When you are finished you can simply close your browser window, and quit Anaconda Navigator and the Terminal application
 
@@ -125,7 +135,7 @@ pip install crim_intervals
 4.  Launch Jupyter Lab
 5.  Navigate to the folder where you keep your notebooks.
 
-### 10.  Help with Jupyter Lab
+### 11.  Help with Jupyter Lab
 
 Learn more via the [Jupyter Lab documentation](https://jupyterlab.readthedocs.io/en/latest/)
 

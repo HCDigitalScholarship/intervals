@@ -180,9 +180,9 @@ Finally it is now also possible to print examples with analytic highlights corre
 - homorhythm
 - presentation types
 
-The `linkExample` works by calculating the 'address' of each pattern, in this case formulated according to the Raffaele Viglianti's [Enhancing Music Addressability(https://music-encoding.org/projects/ema.html)] API, which reduces any complex of selected notes to a string representing measures/staves/beats that can be used to return a valid segment of any MEI score corresponding to the passage in question.
+The `linkExample` works by calculating the 'address' of each pattern, in this case formulated according to the Raffaele Viglianti's [Enhancing Music Addressability](https://music-encoding.org/projects/ema.html) API, which reduces any complex of selected notes to a string representing measures/staves/beats that can be used to return a valid segment of any MEI score corresponding to the passage in question.
 
-These score selections can then be rendered by Verovio with highlights and relevant metadata, thanks to a [JS REACT(https://github.com/eleon024/ema_react_app/tree/main)] application created by Haverford College student Edgar Leon. 
+These score selections can then be rendered by Verovio with highlights and relevant metadata, thanks to a [JS REACT](https://github.com/eleon024/ema_react_app/tree/main) application created by Haverford College student Edgar Leon. 
 
 Note that `linkExample()` will **only work with MEI files** and will **only work with files stored in a remote repository** such as **github**. For example:
 

@@ -184,6 +184,19 @@ The `linkExample` works by calculating the 'address' of each pattern, in this ca
 
 These score selections can then be rendered by Verovio with highlights and relevant metadata, thanks to a [JS REACT(https://github.com/eleon024/ema_react_app/tree/main)] application created by Haverford College student Edgar Leon. 
 
+Note that `linkExample()` will **only work with MEI files** and will **only work with files stored in a remote repository** such as **github**. For example:
+
+```python
+prefix = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_4.0/'
+piece_id = 'CRIM_Model_0008.mei'
+url = prefix + piece_id
+piece = importScore(url)
+cd=piece.cadences()
+piece.linkExamples(df=cd, piece_url=url)
+```
+
+### How to use linkExample
+
 In practice we combined these tools with Juypyter Notebook:
 
 - Return your chosen pattern in a dataframe
@@ -192,12 +205,7 @@ In practice we combined these tools with Juypyter Notebook:
 - View the dataframe with and click on individual cells (they are 'links') to view the score with highlights and basic metadata about the composer, piece, and musical type.
 
 
-Given a dataframe of EMA addresses, return a dataframe of clickable
-links to the EMA React app. The `piece_url` parameter is the URL of the
-piece on the EMA React app. If you don't pass a `piece_url`, the method
-will try to construct one based on the piece's metadata. The resulting
-dataframe will have the same data results, but instead of plain text
-they will be links to highlighted examples of each result.
+Given a dataframe of EMA addresses, return a dataframe of clickable links to the EMA React app. The `piece_url` parameter is the URL of the piece on the EMA React app. If you don't pass a `piece_url`, the method will try to construct one based on the piece's metadata. The resulting dataframe will have the same data results, but instead of plain text they will be links to highlighted examples of each result.
 
 
 How to use it:

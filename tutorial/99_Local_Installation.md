@@ -57,7 +57,7 @@ Now you will need to create a dedicated folder on your computer where you will k
 ```python
 pip install crim_intervals
 ```
-![alt text](envs4.png)
+![alt text](images/envs4.png)
 
 #### Need to Update CRIM Intervals?
 
@@ -69,7 +69,7 @@ Open a terminal (as described above), then type:
 pip uninstall crim_intervals
 ```
 
-![alt text](envs5.png)
+![alt text](images/envs5.png)
 
 You will be type "Y" to confirm the removal of the old version.
 
@@ -78,7 +78,7 @@ Now reinstall:
 ```python
 pip install crim_intervals
 ```
-![alt text](envs4.png)
+![alt text](images/envs4.png)
 
 ### 6. Install iPywidgets
 

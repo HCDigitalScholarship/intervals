@@ -236,7 +236,7 @@ corpus.compareCadenceRadarPlots(combinedType = False, displayAll = True, rendere
 Complete default function code:
 
 ```python
-corpus.compareCadenceRadarPlots(self, combinedType = False, sounding = None, displayAll = True, customOrder = None, renderer = "iframe")
+corpus.compareCadenceRadarPlots(combinedType = False, sounding = None, displayAll = True, customOrder = None, renderer = "iframe")
 ```
 
 Default display order (could be modified for `customOrder`)
@@ -272,7 +272,7 @@ piece.cadenceProgressPlot(includeType = True)
 Complete function with defaults:
 
 ```python
-piece.cadenceProgressPlot(self, includeType = False, cadTone = None, cadType = None, customOrder = None, includeLegend = True, renderer = "")
+piece.cadenceProgressPlot(includeType = False, cadTone = None, cadType = None, customOrder = None, includeLegend = True, renderer = "")
 ```
 
 ![cad_4.png](images%2Fcad_4.png)
@@ -299,7 +299,7 @@ corpus.compareCadenceProgressPlots(includeType = True)
 Complete function with defaults:
 
 ```python
-corpus.compareCadenceProgressPlots(self, includeType = False, cadTone = None, cadType = None, includeLegend = True, customOrder = None, renderer = "")
+corpus.compareCadenceProgressPlots(includeType = False, cadTone = None, cadType = None, includeLegend = True, customOrder = None, renderer = "")
 ```
 
 Default order dictionary (could be modified for `customOrder`)
@@ -315,23 +315,23 @@ order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "
 
 ## Sections in this guide
 
-  * [01_Introduction_and_Corpus](tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](tutorial/02_Notes_Rests.md)
-  * [03_Durations](tutorial/03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](tutorial/04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](tutorial/05_Detail_Index.md)
-  * [06_Melodic_Intervals](tutorial/06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](tutorial/07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](tutorial/08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](tutorial/09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](tutorial/10_Lyrics_Homorhythm.md)
-  * [11_Cadences](tutorial/11_Cadences.md)
-  * [12_Presentation_Types](tutorial/12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](tutorial/13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](tutorial/14_Model_Finder.md)
-  * [15_Visualizations_Summary](tutorial/15_Visualizations_Summary.md)
-  * [16_Network_Graphs](tutorial/16_Network_Graphs.md)
-  * [17_Python_Basics](tutorial/17_Python_Basics.md)
-  * [18_Pandas_Basics](tutorial/18_Pandas_Basics.md)
-  * [19_Music21_Basics](tutorial/18_Music21_Basics.md)
-  * [99_Local_Installation](tutorial/99_Local_Installation.md)
+  * [01_Introduction_and_Corpus](/01_Introduction_and_Corpus.md)
+  * [02_Notes_Rests](/02_Notes_Rests.md)
+  * [03_Durations](/03_Durations.md) 
+  * [04_TimeSignatures_Beat_Strength](/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals](/07_Harmonic_Intervals.md)
+  * [08_Contrapuntal_Modules](/08_Contrapuntal_Modules.md)
+  * [09_Ngrams_Heat_Maps](/09_Ngrams_Heat_Maps.md)
+  * [10_Lyrics_Homorhythm](/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/11_Cadences.md)
+  * [12_Presentation_Types](/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/14_Model_Finder.md)
+  * [15_Visualizations_Summary](/15_Visualizations_Summary.md)
+  * [16_Network_Graphs](/16_Network_Graphs.md)
+  * [17_Python_Basics](/17_Python_Basics.md)
+  * [18_Pandas_Basics](/18_Pandas_Basics.md)
+  * [19_Music21_Basics](/18_Music21_Basics.md)
+  * [99_Local_Installation](/99_Local_Installation.md)

@@ -261,45 +261,47 @@ Alternatively, a DataFrame can be saved as an Excel file with the following comm
 ```python
 writer = pd.ExcelWriter('saved_csv/file_name.xlsx', engine = 'xlsxwriter') 
 frame_name.to_excel(writer, sheet_name = 'Sheet1')  
-writer.save()```  
+writer.save()
+```  
 
 Substituting the information from the first example, we could write that same DataFrame to an Excel sheet with the following commands: 
 
 ```python
 writer = pd.ExcelWriter('saved_csv/CRIM_Model_0008.xlsx', engine = 'xlsxwriter')
 mel.to_excel(writer, sheet_name = 'CRIM Model 0008') 
-writer.save() ```
+writer.save() 
+```
  
 ## Help and Documentation
 
 The documentation associated with each function can be read with a line of the following sample format: 
 
 ```python
-print(piece.notes.__doc__)```
+print(piece.notes.__doc__)
+```
 
 This line would print out the documentation (`.__doc__`) associated with the function `notes()`, a function applicable to the object `piece`. Note that to print the documentation for a function, some object able to utilize that function must be used in the command line as shown above.
 
 -----
-
 ## Sections in this guide
 
-  * [01_Introduction_and_Corpus](tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](tutorial/02_Notes_Rests.md)
-  * [03_Durations](tutorial/03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](tutorial/04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](tutorial/05_Detail_Index.md)
-  * [06_Melodic_Intervals](tutorial/06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](tutorial/07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](tutorial/08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](tutorial/09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](tutorial/10_Lyrics_Homorhythm.md)
-  * [11_Cadences](tutorial/11_Cadences.md)
-  * [12_Presentation_Types](tutorial/12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](tutorial/13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](tutorial/14_Model_Finder.md)
-  * [15_Visualizations_Summary](tutorial/15_Visualizations_Summary.md)
-  * [16_Network_Graphs](tutorial/16_Network_Graphs.md)
-  * [17_Python_Basics](tutorial/17_Python_Basics.md)
-  * [18_Pandas_Basics](tutorial/18_Pandas_Basics.md)
-  * [19_Music21_Basics](tutorial/18_Music21_Basics.md)
-  * [99_Local_Installation](tutorial/99_Local_Installation.md)
+  * [01_Introduction_and_Corpus](/01_Introduction_and_Corpus.md)
+  * [02_Notes_Rests](/02_Notes_Rests.md)
+  * [03_Durations](/03_Durations.md) 
+  * [04_TimeSignatures_Beat_Strength](/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals](/07_Harmonic_Intervals.md)
+  * [08_Contrapuntal_Modules](/08_Contrapuntal_Modules.md)
+  * [09_Ngrams_Heat_Maps](/09_Ngrams_Heat_Maps.md)
+  * [10_Lyrics_Homorhythm](/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/11_Cadences.md)
+  * [12_Presentation_Types](/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/14_Model_Finder.md)
+  * [15_Visualizations_Summary](/15_Visualizations_Summary.md)
+  * [16_Network_Graphs](/16_Network_Graphs.md)
+  * [17_Python_Basics](/17_Python_Basics.md)
+  * [18_Pandas_Basics](/18_Pandas_Basics.md)
+  * [19_Music21_Basics](/18_Music21_Basics.md)
+  * [99_Local_Installation](/99_Local_Installation.md)

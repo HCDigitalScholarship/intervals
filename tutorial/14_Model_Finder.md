@@ -71,8 +71,8 @@ Typical Use:
 
 
 ```python
-dataplot = sns.heatmap(soggetto_cross_plot, cmap="YlGnBu", annot=False)
-plt.show()
+fig = px.imshow(soggetto_cross_plot, width=800, height=600)
+fig.show()
 ```
 
 Results for every piece to every other piece (note diagonal bar of 'self to self'):
@@ -139,8 +139,8 @@ See explanation above.
 
 
 ```python
-dataplot = sns.heatmap(module_matrix, cmap="YlGnBu", annot=False)
-plt.show()
+fig = px.imshow(module_matrix, width=800, height=600)
+fig.show()
 ```
 
 ![model_Finder_5.png](images%2Fmodel_Finder_5.png)
@@ -158,8 +158,8 @@ comparison_table
 ### Map of 'transformation'.  Dark blue = places where the differences between melodic and modular borrowing are greatest!
 
 ```python
-dataplot = sns.heatmap(comparison_table, cmap="YlGnBu", annot=False)
-plt.show()
+fig = px.imshow(comparison_table, width=800, height=600)
+fig.show()
 ```
 
 ![model_Finder_6.png](images%2Fmodel_Finder_6.png)
@@ -361,23 +361,23 @@ model.verovioPtypes(mass_movement_p_types)
 
 ## Sections in this guide
 
-  * [01_Introduction_and_Corpus](tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](tutorial/02_Notes_Rests.md)
-  * [03_Durations](tutorial/03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](tutorial/04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](tutorial/05_Detail_Index.md)
-  * [06_Melodic_Intervals](tutorial/06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](tutorial/07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](tutorial/08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](tutorial/09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](tutorial/10_Lyrics_Homorhythm.md)
-  * [11_Cadences](tutorial/11_Cadences.md)
-  * [12_Presentation_Types](tutorial/12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](tutorial/13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](tutorial/14_Model_Finder.md)
-  * [15_Visualizations_Summary](tutorial/15_Visualizations_Summary.md)
-  * [16_Network_Graphs](tutorial/16_Network_Graphs.md)
-  * [17_Python_Basics](tutorial/17_Python_Basics.md)
-  * [18_Pandas_Basics](tutorial/18_Pandas_Basics.md)
-  * [19_Music21_Basics](tutorial/18_Music21_Basics.md)
-  * [99_Local_Installation](tutorial/99_Local_Installation.md)
+  * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
+  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
+  * [03_Durations](/tutorial//03_Durations.md) 
+  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
+  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
+  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
+  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial//11_Cadences.md)
+  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
+  * [15_Visualizations_Summary](/tutorial//15_Visualizations_Summary.md)
+  * [16_Network_Graphs](/tutorial//16_Network_Graphs.md)
+  * [17_Python_Basics](/tutorial//17_Python_Basics.md)
+  * [18_Pandas_Basics](/tutorial//18_Pandas_Basics.md)
+  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
+  * [99_Local_Installation](/tutorial//99_Local_Installation.md)

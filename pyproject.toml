@@ -1,0 +1,64 @@
+[tool.poetry]
+name = "crim_intervals"
+version = "2.0.32"
+description = "CRIM intervals package"
+readme = "README.md"
+authors = ["Richard Freedman <rfreedma@haverford.edu>"]
+license = "creative commons"
+packages = [
+    { include = "crim_intervals" },
+]
+
+[tool.poetry.dependencies]
+altair = "5.2.0"
+certifi = "2020.12.5"
+chardet = "4.0.0"
+h11 = "0.14.0"
+httpcore = "1.0.2"
+httpx = "0.26.0"
+idna = "3.1"
+ipython = ">=7.23.1,<8.0"
+joblib = "1.0.1"
+jsonschema = ">=3.1"
+lxml = "5.1.0"
+more-itertools = "8.7.0"
+music21 = "8.3.0"
+numpy = ">=1.20.2,<2.0.0"
+pandas = ">=2.2.0"
+statsmodels = "0.14.1"
+plotly = "5.18.0"
+plotly-express = "0.4.1"
+pyarrow = ">=15.0.0"
+pyvis = "0.1.9"
+python-dateutil = "2.8.2"
+python-louvain = "0.16"
+pytz = "2021.1"
+rfc3986 = "1.4.0"
+seaborn = "0.11.2"
+six = "1.16.0"
+sniffio = "1.2.0"
+textdistance = "4.2.1"
+xlsxwriter = "3.0.2"
+webcolors = "1.11.1"
+requests = "2.31.0"
+verovio = "4.1.0"
+
+
+
+[[tool.poetry_bumpversion.replacements]]
+files = ["crim_intervals/__init__.py"]
+search = '__version__ = "{current_version}"'
+replace = '__version__ = "{new_version}"'
+
+
+[[tool.poetry_bumpversion.replacements]]
+files = ["README.md"]
+search = 'Current Version: {current_version}'
+replace = 'Current Version: {new_version}'
+
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["setuptools","poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

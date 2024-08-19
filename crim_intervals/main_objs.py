@@ -913,7 +913,7 @@ class ImportedPiece:
         if measure:
             temp2.iloc[:, 0] = temp2.iloc[:, 0].astype(int)
         mi = pd.MultiIndex.from_frame(temp2, names=names)
-        ret = temp.iloc[:, :len(df.columns)]
+        ret = temp.iloc[:, :len(df.columns)].copy()
         ret.index = mi
         ret.dropna(inplace=True, how='all')
         ret.sort_index(inplace=True)
@@ -2265,6 +2265,24 @@ class ImportedPiece:
         labels = keys.join(cadDict, on='Key')
         labels['CVFs'] = cvfs.apply(lambda row: ''.join(row.dropna()), axis=1)
         detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, sounding=True, progress=True, lowest=True)
+        # NEW: check for Rest and remove that row in detailed and labels
+        # temp reset of index for value check
+        det_reset = detailed.reset_index()
+        # index of "Rest" rows
+        index_rest = det_reset.loc[det_reset['Lowest'] == 'Rest'].index.tolist()
+        # Filter out rows where the fifth level (now a column after reset) contains 'Rest'
+        det_filtered = det_reset[~det_reset['Lowest'].str.contains('Rest')]
+        # set index back to what it was
+        detailed = det_filtered.set_index(detailed.index.names)
+
+        # filter out corresponding row from Labels df
+        # temp reset of index
+        labels_reset = labels.reset_index()
+        # remove corresponding rows that have rests in the detailed DF, based on stored index_rest
+        labels_filtered = labels_reset.drop(index_rest, axis=0)
+        # put labels back to previous index
+        labels = labels_filtered.set_index(labels.index.names)
+
         labels['Low'] = detailed.index.get_level_values(5).values
         final = note.Note(self.final())
         labels['RelLow'] = labels.Low.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(final, note.Note(x))))

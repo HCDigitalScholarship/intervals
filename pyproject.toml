@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "crim_intervals"
-version = "2.0.38"
+version = "2.0.39"
 description = "CRIM intervals package"
 readme = "README.md"
 authors = ["Richard Freedman <rfreedma@haverford.edu>"]

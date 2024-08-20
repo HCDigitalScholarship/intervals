@@ -112,6 +112,184 @@ notes_rest_DI = piece.detailIndex(notes_rests)
 
 For more information about the `detailIndex` function, consult [the function's documentation](09_DetailIndex.md).  
 
+
+## Plotly Bar Charts
+
+Bar charts are used to display categorical data. They consist of vertical or horizontal bars that represent different categories and their corresponding values. Bar charts are excellent for comparing data across different categories.  Learn more at [Plotly Express](https://plotly.com/python/bar-charts/)
+
+
+### Bar Graphs of Notes in Each Voice
+
+Here we the counts of each pitch (including octave) in each voice of a given piece.  Note that we can declare a custom 'order' for the pitches, so it's possible to present these as you like.  Here we have sorted them from lowest to highest.  You could also display only a subset of pitches.
+
+![alt text](images/nr_chart_voices.png)
+
+<br>
+
+<Details>
+
+<Summary>Code to Produce this Chart</Summary>
+
+```python
+# assuming all the usual CRIM Intervals imports already done .  . 
+url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
+piece = importScore(url)
+
+# give the chart a meaningful title based on your piece:
+md = piece.metadata  
+chart_title = "Distribution of Notes in " + md['composer'] + ", " + md['title']
+
+# set the custom order for pitches
+pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
+               'C3', 'C#3', 'D3', 'E-3','E3', 'F3', 'F#3', 'G3', 'G#3','A3', 'B-3','B3',
+               'C4', 'C#4','D4', 'E-4', 'E4', 'F4', 'F#4','G4', 'A4', 'B-4', 'B4',
+               'C5', 'C#5','D5', 'E-5','E5', 'F5', 'F#5', 'G5', 'A5', 'B-5', 'B5']
+
+# get the notes and create the dataframe for the chart
+nr = piece.notes().fillna('-')  
+nr = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
+nr.rename(columns={'index': 'pitch'}, inplace=True)  
+nr['pitch'] = pd.Categorical(nr["pitch"], categories=pitch_order)  
+nr = nr.sort_values(by="pitch").dropna().copy()  
+voices = nr.columns.to_list()[1:]  # Exclude 'pitch' column
+# melt the dataframe to long format suitable for px.bar
+melted_nr = nr.melt(id_vars='pitch', var_name='voice', value_name='count')
+# create a custom color palette
+custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
+color_dict = {voice: custom_palette[i % len(custom_palette)] for i, voice in enumerate(voices)}
+# Plot using Plotly Express with stacked bars
+fig = px.bar(melted_nr, 
+             x='pitch', 
+             y='count', 
+             color='voice', 
+             facet_col='voice', 
+             category_orders={'pitch': pitch_order}, 
+             color_discrete_map=color_dict, barmode='stack',
+             height=700,
+             width=1000,
+             title=chart_title)
+
+fig.update_layout(showlegend=True)
+fig.show()
+``` 
+</Details>
+
+
+
+### Barcharts of Notes in Each Voice Stacked in One Chart
+
+
+![alt text](images/nr_chart_combined.png)
+
+<Details>
+
+<Summary>Code to Produce this Chart</Summary>
+
+```python
+import plotly.express as px
+# set order of tones
+pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
+               'C3', 'C#3', 'D3', 'E-3','E3', 'F3', 'F#3', 'G3', 'G#3','A3', 'B-3','B3',
+               'C4', 'C#4','D4', 'E-4', 'E4', 'F4', 'F#4','G4', 'A4', 'B-4', 'B4',
+               'C5', 'C#5','D5', 'E-5','E5', 'F5', 'F#5', 'G5', 'A5', 'B-5', 'B5']
+nr = piece.notes().fillna('-')  
+nr = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
+nr.rename(columns={'index': 'pitch'}, inplace=True)  
+nr['pitch'] = pd.Categorical(nr["pitch"], categories=pitch_order)  
+nr = nr.sort_values(by="pitch").dropna().copy()  
+
+voices = nr.columns.to_list()[1:]  # Exclude 'pitch' column
+
+# Melt the dataframe to long format suitable for px.bar
+melted_nr = nr.melt(id_vars='pitch', var_name='voice', value_name='count')
+
+# Create a custom color palette
+custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
+color_dict = {voice: custom_palette[i % len(custom_palette)] for i, voice in enumerate(voices)}
+
+# Create the stacked bar chart
+fig = px.bar(nr_melted, 
+             x='pitch', 
+             y='count', 
+             color='voice', 
+             barmode='stack',
+            title="Chart of Melodic Intervals")
+
+fig.show()
+```
+
+</Details>
+
+
+### Barcharts of Notes in a Corpus
+
+with the `corpus.batch` methods, it is also possible to do same kind of thing for a collection of pieces.
+
+![alt text](images/nr_corpus_chart.png)
+
+<br>
+
+
+<Details>
+
+<Summary>Code to Run</Summary>
+
+```python
+# notes in a corpus
+def corpus_notes(corpus, combine_unisons_choice, combine_rests_choice):
+    func = ImportedPiece.notes  # <- NB there are no parentheses here
+    list_of_dfs = corpus.batch(func = func, 
+                                kwargs = {'combineUnisons': combine_unisons_choice, 'combineRests': combine_rests_choice}, 
+                                metadata=False)
+    func1 = ImportedPiece.numberParts
+    list_of_dfs = corpus.batch(func = func1,
+                               kwargs = {'df' : list_of_dfs},
+                               metadata=True)
+    
+    
+    nr = pd.concat(list_of_dfs)
+    cols_to_move = ['Composer', 'Title', 'Date']
+    nr = nr[cols_to_move + [col for col in nr.columns if col not in cols_to_move]]
+    return nr
+
+# settings
+combine_unisons_choice = False
+combine_rests_choice = False
+kind_choice = 'd'
+directed = True
+compound = True
+exclude_rests = True
+
+# load corpus
+file_list = ['https://crimproject.org/mei/CRIM_Model_0001.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei']
+corpus = CorpusBase(file_list)
+
+# run function and create chart
+nr = corpus_notes(corpus, combine_unisons_choice, combine_rests_choice)
+nr_no_mdata = nr.drop(['Composer', 'Title', "Date"], axis=1)
+
+nr_counts = pd.DataFrame(nr_no_mdata.apply(pd.Series.value_counts))
+
+if exclude_rests == True:
+    nr_counts = nr_counts.drop('Rest', axis=0)
+                                                               
+voices = nr_counts.columns.to_list() 
+
+chart_title = "Distribution of Notes in Corpus"
+fig = px.bar(nr_counts, x=nr_counts.index, y=list(nr_counts.columns),
+                    title=chart_title)
+fig.update_layout(xaxis_title="Note", 
+                    yaxis_title="Count",
+                    legend_title='Voices',
+                       height=700,
+                       width=1000)
+fig.show()
+```
+
+</Details>
+
+<br>
+
 -----
 
 ## Sections in this guide
@@ -135,4 +313,5 @@ For more information about the `detailIndex` function, consult [the function's d
   * [17_Python_Basics](/tutorial//17_Python_Basics.md)
   * [18_Pandas_Basics](/tutorial//18_Pandas_Basics.md)
   * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
+  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
   * [99_Local_Installation](/tutorial//99_Local_Installation.md)

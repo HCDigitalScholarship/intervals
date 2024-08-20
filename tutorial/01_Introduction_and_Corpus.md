@@ -78,7 +78,17 @@ piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei', verbose =
 ```
 
 Note that import errors will be reported even if `verbose = False`
-  
+
+You can also return metadata from the piece object:
+
+```python
+md = piece.metadata
+composer = md['composer']
+title = md['title']
+date = md['date']
+```
+
+<br>
 
 ## Importing Multiple Pieces at Once: `CorpusBase()`
 
@@ -107,6 +117,14 @@ The complete import statement will look like this:
 
 ```python
 corpus = CorpusBase(['url_to_mei_file1.mei', 'url_to_mei_file2.mei', '/path/to/mei/file1.mei', '/path/to/mei/file2.mei'])  
+```
+
+Or for example:
+
+```python
+
+file_list = ['https://crimproject.org/mei/CRIM_Model_0001.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei']
+corpus = CorpusBase(file_list)
 ```
 
 Note that there is a special format required when a given CRIM Intervals function (such as melodic(), or harmonic() is applied to a **corpus** object. See below, and also the **batch method** documentation for each individual function.
@@ -163,6 +181,9 @@ list_of_dfs = corpus.batch(func, kwargs)
 #concatenate the list to a single dataframe
 output = pd.concat(list_of_dfs)
 ```
+
+For some **specific custom functions** to help you work with a corpus, see the [Melodic](/06_Melodic_Intervals.md), [Harmonic](/07_Harmonic_Intervals.md), and [Contrapuntal_Modules](/08_Contrapuntal_Modules.md) tutorials.
+
   
 ### Chaining Together Batch Methods
 
@@ -271,7 +292,9 @@ writer = pd.ExcelWriter('saved_csv/CRIM_Model_0008.xlsx', engine = 'xlsxwriter')
 mel.to_excel(writer, sheet_name = 'CRIM Model 0008') 
 writer.save() 
 ```
- 
+
+
+
 ## Help and Documentation
 
 The documentation associated with each function can be read with a line of the following sample format: 
@@ -304,4 +327,5 @@ This line would print out the documentation (`.__doc__`) associated with the fun
   * [17_Python_Basics](/tutorial//17_Python_Basics.md)
   * [18_Pandas_Basics](/tutorial//18_Pandas_Basics.md)
   * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
+  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
   * [99_Local_Installation](/tutorial//99_Local_Installation.md)

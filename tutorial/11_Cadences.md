@@ -250,7 +250,9 @@ order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
 
 ![cad_8.png](images%2Fcad_8.png)
 
-## Cadence Progress Plots for One or Many Pieces:  `piece.cadenceProgressPlot()` and `corpus.compareCadenceProgressPlots()`
+## Cadence Progress Plots 
+
+These are a way to see the 'flow' of cadences in one or more pieces:  `piece.cadenceProgressPlot()` and `corpus.compareCadenceProgressPlots()`
 
 #### For One Piece
 Parameters Overview:
@@ -334,4 +336,5 @@ order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "
   * [17_Python_Basics](/tutorial//17_Python_Basics.md)
   * [18_Pandas_Basics](/tutorial//18_Pandas_Basics.md)
   * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
+  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
   * [99_Local_Installation](/tutorial//99_Local_Installation.md)

@@ -99,4 +99,5 @@ As the name suggests, this sets all parameters as `True`.
   * [17_Python_Basics](/tutorial//17_Python_Basics.md)
   * [18_Pandas_Basics](/tutorial//18_Pandas_Basics.md)
   * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
+  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
   * [99_Local_Installation](/tutorial//99_Local_Installation.md)

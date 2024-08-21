@@ -355,56 +355,50 @@ melNgrams = mel.ngrams(n = 4)
 melNgrams.stack().value_counts().to_frame()
 ```
 
-## Searching for melodic ngrams
-
-**More Information Pending**  
-
 
 ## Visualizing nGrams (and Comparing nGrams across a Corpus)
 
 The CRIM Intervals visualization library makes it possible to display ngrams as a dynamic chart, with each nGram displayed from the start (left) to end (right) of the piece, voice-by-voice.  Identical nGrams receive the same color.
 
-We can display these 'heat maps' for one piece or an entire corpus:
+### Heat Map of Ngrams in One Piece
+
+The CRIM Intervals visualization library makes it possible to display ngrams as a dynamic chart, with each nGram displayed from the start (left) to end (right) of the piece, voice-by-voice.  Identical nGrams receive the same color.
+
+Note that these are built-in functions, and work with the Altair library.  Find the documentation via [CRIM Interval Visualization](https://github.com/HCDigitalScholarship/intervals/blob/main/crim_intervals/visualizations.py) module.
+
+Here is a map for just one piece:
+
+<br>
+
+
+![Alt text](images/visualization_1.png)
+
+<br>
+
+<Details>
+
+<Summary>Code to Produce this Chart</Summary>
 
 ```python
-# define piece list
-piece_list = ['CRIM_Model_0019.mei',
-                     'CRIM_Mass_0019_1.mei',
-                     'CRIM_Mass_0019_2.mei',
-                     'CRIM_Mass_0019_3.mei',
-                     'CRIM_Mass_0019_4.mei',
-                     'CRIM_Mass_0019_5.mei']
-```
-
-
-Set parameters for the ngrams (melodic in this case)
-
-
-```python
-# settings for ngrams, unisons and kind
-
-n=4
-combineUnisons=False
-kind='d'
-```
-
-Now a map of melodic ngrams for just one piece:
-
-
-```python
-# select the model from the list
-model = piece_list[0]
-prefix = 'https://crimproject.org/mei/' 
-# prefix = 'Music_Files/'
-url = prefix + model
+# import piece
+url = 'https://crimproject.org/mei/CRIM_Model_0019.mei' 
 model = importScore(url)
+url = 'https://crimproject.org/mei/CRIM_Model_0019.mei' 
+model = importScore(url)
+
+# settings:
+combineUnisons = True
+kind = "d"
+compound = False
+ngram_length = 4
+
 
 # find entries for model
 nr = model.notes(combineUnisons=combineUnisons)
-mel = model.melodic(df=nr, kind=kind, compound=False, unit=0, end=False)
-mod_mel_ngrams = model.ngrams(df=mel, n=n)
-mod_entry_ngrams = model.entries(df=mel, n=n, thematic=True, anywhere=True)
-mod_mel_ngrams_duration = model.durations(df=mel, n=n, mask_df=mod_entry_ngrams)
+mel = model.melodic(df=nr, kind=kind, compound=compound, unit=0, end=False)
+mod_mel_ngrams = model.ngrams(df=mel, n=ngram_length)
+mod_entry_ngrams = model.entries(df=mel, n=ngram_length, thematic=True, anywhere=True)
+mod_mel_ngrams_duration = model.durations(df=mel, n=ngram_length, mask_df=mod_entry_ngrams)
 mod_entries_stack = list(mod_entry_ngrams.stack().unique())
 
 print(model.metadata)
@@ -414,11 +408,38 @@ display(viz.plot_ngrams_heatmap(mod_entry_ngrams, mod_mel_ngrams_duration,
                         voices=[]))
 ```
 
-![Alt text](images/viz_1.png)
 
-Now for a corpus consisting of a 'model' (the first piece in the list) and any set of other pieces (normally the movements of a Mass). Note that the code below shows only the 'entry' ngrams shared by each pair of pieces.
+</Details>
+
+
+<br>
+
+### Heat Map of Shared Ngrams in Two or More Pieces
+
+Now for a corpus consisting of a 'model' (the first piece in the list) and any set of other pieces (normally the movements of a Mass). Note that the code below shows only the 'entry' ngrams shared by each pair of pieces. Here we show just the first pair:
+
+![Alt text](images/visualization_1.png)
+![Alt text](images/visualization_2.png)
+
+<Details>
+
+<Summary>Code to Use</Summary>
 
 ```python
+
+# settings:
+combineUnisons = True
+kind = "d"
+compound = False
+ngram_length = 4
+
+# define piece list
+piece_list = ['CRIM_Model_0019.mei',
+                     'CRIM_Mass_0019_1.mei',
+                     'CRIM_Mass_0019_2.mei',
+                     'CRIM_Mass_0019_3.mei',
+                     'CRIM_Mass_0019_4.mei',
+                     'CRIM_Mass_0019_5.mei']
 # select the model from the list
 model = piece_list[0]
 prefix = 'https://crimproject.org/mei/' 
@@ -428,10 +449,10 @@ model = importScore(url)
 
 # find entries for model
 nr = model.notes(combineUnisons=combineUnisons)
-mel = model.melodic(df=nr, kind=kind, compound=False, unit=0, end=False)
-mod_mel_ngrams = model.ngrams(df=mel, n=n)
-mod_entry_ngrams = model.entries(df=mel, n=n, thematic=True, anywhere=True)
-mod_mel_ngrams_duration = model.durations(df=mel, n=n, mask_df=mod_entry_ngrams)
+mel = model.melodic(df=nr, kind=kind, compound=compound, unit=0, end=False)
+mod_mel_ngrams = model.ngrams(df=mel, n=ngram_length)
+mod_entry_ngrams = model.entries(df=mel, n=ngram_length, thematic=True, anywhere=True)
+mod_mel_ngrams_duration = model.durations(df=mel, n=ngram_length, mask_df=mod_entry_ngrams)
 mod_entries_stack = list(mod_entry_ngrams.stack().unique())
 
 # find entries mass movements:
@@ -443,10 +464,10 @@ for movement in mass_movements:
     url = prefix + movement
     m_movement = importScore(url)
     nr = m_movement.notes(combineUnisons=combineUnisons)
-    mel = m_movement.melodic(df=nr, kind=kind, compound=False, unit=0, end=False)
-    mass_mvmt_mel_ngrams = m_movement.ngrams(df=mel, n=n)
-    mass_mvmt_entries = m_movement.entries(df=mel, n=n, thematic=True, anywhere=True)
-    mass_mvmt_mel_ngrams_duration = m_movement.durations(df=mel, n=n, mask_df=mass_mvmt_entries)
+    mel = m_movement.melodic(df=nr, kind=kind, compound=compound, unit=0, end=False)
+    mass_mvmt_mel_ngrams = m_movement.ngrams(df=mel, n=ngram_length)
+    mass_mvmt_entries = m_movement.entries(df=mel, n=ngram_length, thematic=True, anywhere=True)
+    mass_mvmt_mel_ngrams_duration = m_movement.durations(df=mel, n=ngram_length, mask_df=mass_mvmt_entries)
     mass_mvmt_entries_stack = mass_mvmt_entries.stack()
 
     
@@ -468,9 +489,10 @@ for movement in mass_movements:
                                 selected_patterns=shared_entries,
                                 voices=[])) #.plot_ngrams_heatmap(entry_ngrams,
 ```
-Here we show just the first pair:
 
-![Alt text](images/vis_2.png)
+</Details>
+
+<br>
 -----
 
 ## Sections in this guide
@@ -494,4 +516,5 @@ Here we show just the first pair:
   * [17_Python_Basics](/tutorial//17_Python_Basics.md)
   * [18_Pandas_Basics](/tutorial//18_Pandas_Basics.md)
   * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
+  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
   * [99_Local_Installation](/tutorial//99_Local_Installation.md)

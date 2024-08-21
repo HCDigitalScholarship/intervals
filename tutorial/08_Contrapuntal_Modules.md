@@ -61,7 +61,7 @@ By default, the `ngrams` method uses the default behaviors of the `melodic` and 
 * simple rather than compound
 * Or build custom 'combined' ngrams from something like melodic intervals and durations, or lyrics and durations.
 
-For example, here is how we this might look for *diatonioc* intervals, although we can already do this with ngram parameters as noted above.  But since `melodic` anb `harmonic` return *compound* intervals by default, this will in turn force the ngrams to be *simple* instead.
+For example, here is how we this might look for *diatonic* intervals, although we can already do this with ngram parameters as noted above.  But since `melodic` anb `harmonic` return *compound* intervals by default, this will in turn force the ngrams to be *simple* instead.
 
 ```python
 mel = piece.melodic(kind="d", compound=False)
@@ -176,4 +176,5 @@ def get_modules(search_pattern="", kind=["d", "q", "c", "z"], compound=[True, Fa
   * [17_Python_Basics](/tutorial//17_Python_Basics.md)
   * [18_Pandas_Basics](/tutorial//18_Pandas_Basics.md)
   * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
+  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
   * [99_Local_Installation](/tutorial//99_Local_Installation.md)

@@ -195,6 +195,292 @@ har_DI = piece.detailIndex(har)
 
 For more information about the `detailIndex` function, consult [the function's documentation](09_DetailIndex.md).  
 
+
+## Harmonic Intervals in a Corpus
+
+
+The `corpus.batch` method will help you produce a combined picture of harmonic intervals across any corpus.
+
+<br>
+
+![alt text](images/corp_har.png)
+
+<br>
+
+<Details>
+
+<Summary>Code to Run</Summary>
+
+```python
+def corpus_har(corpus, combine_unisons_choice, combine_rests_choice, kind_choice, directed, compound):
+    func = ImportedPiece.notes  # <- NB there are no parentheses here
+    list_of_dfs = corpus.batch(func = func, 
+                                kwargs = {'combineUnisons': combine_unisons_choice, 'combineRests': combine_rests_choice}, 
+                                metadata=False)
+    func1 = ImportedPiece.numberParts
+    list_of_dfs = corpus.batch(func = func1,
+                               kwargs = {'df' : list_of_dfs},
+                               metadata=False)
+    
+    func2 = ImportedPiece.harmonic
+    list_of_dfs = corpus.batch(func = func2,
+                               kwargs = {'df' : list_of_dfs, 'kind' : kind_choice, 'directed' : directed, 'compound' : compound},
+                               metadata = False)
+    func3 = ImportedPiece.detailIndex
+    list_of_dfs = corpus.batch(func = func3, 
+                            kwargs = {'df': list_of_dfs}, 
+                            metadata = True)
+    har = pd.concat(list_of_dfs)
+    cols_to_move = ['Composer', 'Title', 'Date']
+    har = har[cols_to_move + [col for col in har.columns if col not in cols_to_move]]
+    return har
+
+# define the settings
+combine_unisons_choice = False
+combine_rests_choice = False
+kind_choice = 'd'
+directed = True
+compound = True
+
+
+# run the function
+har = corpus_har(corpus, combine_unisons_choice, combine_rests_choice, kind_choice, directed, compound).fillna('')
+har
+```
+
+</Details>
+
+## Charts with Harmonic Intervals
+
+As we explain the [Visualizations_Summary](/18_Visualizations_Summary.md), the **Plotly** library provides some powerful tools for displaying tabular data in various charts and plots.
+
+### For a Single Piece
+
+First with the voices as separate charts:
+
+![alt text](images/har_chart_voices.png)
+
+<br>
+
+<Details>
+
+<Summary>Code to Use</Summary>
+
+```python
+url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
+piece = importScore(url)
+
+# give the chart a meaningful title based on your piece:
+md = piece.metadata  
+chart_title = "Distribution of Harmonic Intervals in " + md['composer'] + ", " + md['title']
+
+# custom interval order
+int_order = ["-P8", "-M7", "-m7", "-M6", "-m6", "-P5", "-P4", "-M3", 
+                          "-m3", "-M2", "-m2", "P1", "m2", "M2", "m3", "M3",
+                          "P4", "P5", "m6", "M6", "m7", "M7", "P8"]
+# get the harmonic intervals
+har = piece.harmonic().fillna("-")  
+har = har.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
+har.rename(columns={'index': 'interval', 'voice' : 'voices'}, inplace=True)  
+har['interval'] = pd.Categorical(har["interval"], categories=int_order)  
+har = har.sort_values(by="interval").dropna().copy()  
+voices = mel.columns.to_list()[1:]  # Exclude 'interval' column
+# Create a custom color palette
+custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
+color_dict = {voice: custom_palette[i % len(custom_palette)] for i, voice in enumerate(voices)}
+# Melt the DataFrame to long format suitable for px.bar
+melted_har = har.melt(id_vars='interval', var_name='voices', value_name='count')
+# Plot using Plotly Express
+fig = px.bar(melted_har, 
+             x='interval', 
+             y='count', 
+             color='voices', 
+             facet_col='voices', 
+             category_orders={'interval': int_order}, 
+             color_discrete_map=dict(zip(voices, custom_palette)),
+             facet_col_wrap=4,  # Wrap facets after every 4 columns; adjust according to your results
+             height=1000,  # Overall figure height
+             facet_row_spacing=0.08,  # Spacing between rows; adjust according to height chosen
+             title=chart_title)
+for i in range(len(set(melted_har['voices']))):
+    fig.update_xaxes(showticklabels=True)
+
+
+fig.show()
+```
+
+</Details>
+
+<br>
+
+
+And then combined:
+
+![alt text](images/har_chart_combined.png)
+
+
+<br>
+
+<Details>
+
+<Summary>Code to Use</Summary>
+
+```python
+url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
+piece = importScore(url)
+
+# give the chart a meaningful title based on your piece:
+md = piece.metadata  
+chart_title = "Distribution of Harmonic Intervals in " + md['composer'] + ", " + md['title']
+
+# custom interval order
+int_order = ["-P8", "-M7", "-m7", "-M6", "-m6", "-P5", "-P4", "-M3", 
+                          "-m3", "-M2", "-m2", "P1", "m2", "M2", "m3", "M3",
+                          "P4", "P5", "m6", "M6", "m7", "M7", "P8"]
+# get the harmonic intervals
+har = piece.harmonic().fillna("-")  
+har = har.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
+har.rename(columns={'index': 'interval'}, inplace=True)  
+har['interval'] = pd.Categorical(har["interval"], categories=int_order)  
+har = har.sort_values(by="interval").dropna().copy()  
+voices = har.columns.to_list()[1:]  # Exclude 'interval' column
+# Create a custom color palette
+custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
+color_dict = {voice: custom_palette[i % len(custom_palette)] for i, voice in enumerate(voices)}
+# Melt the DataFrame to long format suitable for px.bar
+melted_har = har.melt(id_vars='interval', var_name='voice', value_name='count')
+
+
+# Create the stacked bar chart
+fig = px.bar(melted_har, 
+             x='interval', 
+             y='count', 
+             color='voice', 
+             barmode='stack',
+             height=700,
+             width=1200,
+            title=chart_title)
+
+fig.show()
+```
+
+</Details>
+
+<br>
+
+
+
+### For a Corpus
+
+Here is a chart for an entire corpus:
+
+
+![alt text](images/har_corpus_chart.png)
+
+<br>
+
+<Details>
+
+<Summary>Code to Use</Summary>
+
+```python
+# har corpus function for batch processing
+def corpus_har(corpus, combine_unisons_choice, combine_rests_choice, kind_choice, directed, compound):
+    func = ImportedPiece.notes  # <- NB there are no parentheses here
+    list_of_dfs = corpus.batch(func = func, 
+                                kwargs = {'combineUnisons': combine_unisons_choice, 'combineRests': combine_rests_choice}, 
+                                metadata=False)
+    func1 = ImportedPiece.numberParts
+    list_of_dfs = corpus.batch(func = func1,
+                               kwargs = {'df' : list_of_dfs},
+                               metadata=False)
+    
+    func2 = ImportedPiece.harmonic
+    list_of_dfs = corpus.batch(func = func2,
+                               kwargs = {'df' : list_of_dfs, 'kind' : kind_choice, 'directed' : directed, 'compound' : compound},
+                               metadata = False)
+    func3 = ImportedPiece.detailIndex
+    list_of_dfs = corpus.batch(func = func3, 
+                            kwargs = {'df': list_of_dfs}, 
+                            metadata = True)
+    har = pd.concat(list_of_dfs)
+    cols_to_move = ['Composer', 'Title', 'Date']
+    har = har[cols_to_move + [col for col in har.columns if col not in cols_to_move]]
+    return har
+
+# settings
+combine_unisons_choice = False
+combine_rests_choice = False
+kind_choice = 'd'
+directed = True
+compound = True
+
+# orderings
+
+interval_order_quality = ["-P8", "-M7", "-m7", "-M6", "-m6", "-P5", "-P4", "-M3", 
+                          "-m3", "-M2", "-m2", "P1", "m2", "M2", "m3", "M3",
+                          "P4", "P5", "m6", "M6", "m7", "M7", "P8"]
+
+# load corpus
+
+
+file_list = ['https://crimproject.org/mei/CRIM_Model_0001.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei']
+
+corpus = CorpusBase(file_list)
+
+# run function and create plot
+
+
+har = corpus_har(corpus, combine_unisons_choice, combine_rests_choice, kind_choice, directed, compound)
+filtered_har = har
+har_no_mdata = filtered_har.drop(['Composer', 'Title', "Date"], axis=1)
+har_no_mdata = har_no_mdata.map(str)
+har_counts = pd.DataFrame(har_no_mdata.apply(pd.Series.value_counts).fillna(0))
+
+# drop row of nas:
+har_counts = har_counts.drop('nan', axis=0)
+
+if exclude_rests == True:
+    har_counts = har_counts.drop('Rest', axis=0)
+# apply the categorical list and sort.  
+if kind_choice == 'q':
+    # har_counts = har_counts.drop(index='')
+    har_counts.index = pd.CategoricalIndex(har_counts.index, categories=interval_order_quality, ordered=True)
+    har_counts.sort_index(inplace=True)
+else:
+    har_counts.index = pd.to_numeric(har_counts.index, errors='coerce')
+
+    # Filter out rows with NaN index if necessary
+    # df = df.dropna(subset=[df.index.name])
+    negative_df = har_counts[har_counts.index < 0].sort_index(ascending=True)
+    non_negative_df = har_counts[har_counts.index >= 0].sort_index(ascending=True)
+    
+    # Step 2: Concatenate the two DataFrames
+    har_counts = pd.concat([negative_df, non_negative_df])
+    # har_counts = har_counts.drop(index='')
+    har_counts.index.rename('interval', inplace=True)
+voices = har_counts.columns.to_list() 
+
+
+chart_title = "Distribution of Harmonic Intervals in Corpus"
+
+fig = px.bar(har_counts, x=har_counts.index, y=list(har_counts.columns),
+                    title=chart_title)
+fig.update_layout(xaxis_title="Interval", 
+                    yaxis_title="Count",
+                    legend_title='Voices',
+                       height=700,
+                       width=1000)
+fig.show()
+```
+
+
+</Details>
+
+<br>
+
+
+
 -----
 
 ## Sections in this guide
@@ -218,4 +504,5 @@ For more information about the `detailIndex` function, consult [the function's d
   * [17_Python_Basics](/tutorial//17_Python_Basics.md)
   * [18_Pandas_Basics](/tutorial//18_Pandas_Basics.md)
   * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
+  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
   * [99_Local_Installation](/tutorial//99_Local_Installation.md)

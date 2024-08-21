@@ -12,11 +12,15 @@ from pyvis.network import Network
 
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
+    color_scale = alt.Scale(
+        domain = data['pattern'].unique(),
+        range = data['color'].unique()
+    ) # OY addition 6/12/24
 
     observer_chart = alt.Chart(data).mark_bar().encode(
         x=variable,
         y=count,
-        color=color,
+        color=alt.Color('pattern:N', scale=color_scale, legend=alt.Legend(title='Pattern')), # OY change 6/12/24
         opacity=alt.condition(condition, alt.value(1), alt.value(0.2))
     ).add_params(
         *selectors
@@ -25,12 +29,16 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
 
 
 def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip):
+    color_scale = alt.Scale(
+        domain = data['pattern'].unique(),
+        range = data['color'].unique()
+    ) # OY addition 6/12/24
 
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,
         x2=x2,
         y=y,
-        color=color,
+        color=alt.Color('pattern:N', scale=color_scale, legend=alt.Legend(title='Pattern')), # OY change 6/12/24
         opacity=alt.condition(selector_condition, alt.value(1), alt.value(0.2)),
         tooltip=tooltip
     ).properties(
@@ -39,7 +47,6 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     ).add_params(
         *selectors
     )
-
     return heatmap
 
 
@@ -101,6 +108,36 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
 
     return ngrams_df
 
+# OY addition - new function for generating distinct colors 6/12/24
+def generate_distinct_colors(n):
+    # Generate `n` distinct colors using the HSV color space
+    colors = []
+    for i in range(n):
+        hue = i / n
+        saturation = 0.65  # Fixed saturation
+        value = 0.9  # Fixed value
+        color = mplt.colors.to_hex(mplt.colors.hsv_to_rgb((hue, saturation, value)))
+        colors.append(color)
+    return colors
+
+# OY addition - new function for adding colors 6/12/24
+def ngrams_color_helper(new_processed_ngrams_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add a Series to the dataframe that assigns a unique hex color to each unique pattern
+    :param new_processed_ngrams_df: processed crim-intervals getNgram's output where tuples have been converted to strings
+    :return: a dataframe containing a new column with hex color values
+    """
+
+    # Calculate the number of unique values in 'pattern_str'
+    num_unique_values = new_processed_ngrams_df['pattern'].nunique() #  Function to count unique values in 'pattern_str' column
+    # # Generate enough hex colors
+    hex_colors = generate_distinct_colors(num_unique_values)   
+    # # Step 2: Assign colors to unique values
+    color_map = dict(zip(new_processed_ngrams_df['pattern'].unique(), hex_colors)) 
+    # # Add a new column 'color' to the DataFrame
+    new_processed_ngrams_df['color'] = new_processed_ngrams_df['pattern'].map(color_map)
+
+    return new_processed_ngrams_df
 
 def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False):
     """
@@ -122,6 +159,8 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     new_processed_ngrams_df = processed_ngrams_df.copy()
     new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
 
+    new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df) # OY addition 6/12/24
+    
     heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
                              selector, selector, tooltip=['start', 'end', 'pattern'])
     if includeCount:

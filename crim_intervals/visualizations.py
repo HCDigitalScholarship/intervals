@@ -10,6 +10,8 @@ import textdistance
 # from ipywidgets import interact, fixed
 from pyvis.network import Network
 
+import matplotlib as mplt # OY addition 6/12/24
+
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
     color_scale = alt.Scale(

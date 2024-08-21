@@ -250,7 +250,9 @@ order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
 
 ![cad_8.png](images%2Fcad_8.png)
 
-## Cadence Progress Plots for One or Many Pieces:  `piece.cadenceProgressPlot()` and `corpus.compareCadenceProgressPlots()`
+## Cadence Progress Plots 
+
+These are a way to see the 'flow' of cadences in one or more pieces:  `piece.cadenceProgressPlot()` and `corpus.compareCadenceProgressPlots()`
 
 #### For One Piece
 Parameters Overview:

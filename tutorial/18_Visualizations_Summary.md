@@ -389,7 +389,7 @@ The **Melodic Interval Families** method allows you to chart the "progress" of o
 
 <br>
 
-See more in the [Melodic Interval Families](/20_Melodic_Interval_Families.md) tutorial.
+See more in the [Melodic Interval Families](/tutorial//20_Melodic_Interval_Families.md) tutorial.
 
 
 ## Cadence Radar Plots

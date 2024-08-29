@@ -42,8 +42,12 @@ Here are the functions needed to create the networks with CRIM Intervals melodic
 
 <Summary>Get the Code</Summary
 
+#### 
+
 ```python
+
 # import libraries
+
 import pandas as pd
 import numpy as np
 import networkx as nx

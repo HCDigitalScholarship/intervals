@@ -267,8 +267,6 @@ Here is a map for just one piece:
 # import piece
 url = 'https://crimproject.org/mei/CRIM_Model_0019.mei' 
 model = importScore(url)
-url = 'https://crimproject.org/mei/CRIM_Model_0019.mei' 
-model = importScore(url)
 
 # settings:
 combineUnisons = True

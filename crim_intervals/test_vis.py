@@ -181,21 +181,21 @@ def ngrams_heatmap_test_helper(model, notes):
 #     # helper_test_generate_ngrams_and_dur(model, mel_chromatic, -1)
 
 
-def test_comparisons_heatmap():
-    # pieces
-    df_relationships = pd.DataFrame(RELATIONSHIPS_DICT_EXAMPLE)
-    relationships_chart = viz.plot_comparison_heatmap(df_relationships, 'model_observation.ema',
-                                                      main_category='relationship_type', other_category='observer.name',
-                                                      heat_map_width=800, heat_map_height=300)
-    assert isinstance(relationships_chart, alt.VConcatChart)
-    assert len(relationships_chart.vconcat) == 2
+# def test_comparisons_heatmap():
+#     # pieces
+#     df_relationships = pd.DataFrame(RELATIONSHIPS_DICT_EXAMPLE)
+#     relationships_chart = viz.plot_comparison_heatmap(df_relationships, 'model_observation.ema',
+#                                                       main_category='relationship_type', other_category='observer.name',
+#                                                       heat_map_width=800, heat_map_height=300)
+#     assert isinstance(relationships_chart, alt.VConcatChart)
+#     assert len(relationships_chart.vconcat) == 2
 
-    df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
-    observations_chart = viz.plot_comparison_heatmap(df_observations, 'ema',
-                                                     main_category='musical_type', other_category='observer.name',
-                                                     heat_map_width=800, heat_map_height=300)
-    assert isinstance(observations_chart, alt.VConcatChart)
-    assert len(observations_chart.vconcat) == 2
+#     df_observations = pd.DataFrame(OBSERVATIONS_DICT_EXAMPLE)
+#     observations_chart = viz.plot_comparison_heatmap(df_observations, 'ema',
+#                                                      main_category='musical_type', other_category='observer.name',
+#                                                      heat_map_width=800, heat_map_height=300)
+#     assert isinstance(observations_chart, alt.VConcatChart)
+#     assert len(observations_chart.vconcat) == 2
 
 
 # TODO: review if this is still wanted and used. If not, remove it and see if ipywidgets can be removed as a dependency

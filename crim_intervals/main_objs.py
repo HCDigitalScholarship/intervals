@@ -3167,33 +3167,37 @@ class ImportedPiece:
                                 df = entry_array.loc(axis=0)[slist].reset_index()
                                 temp = self._temp_dict_of_details(df, det, matches)
                                 list_temps.append(temp)
-
-            points = pd.DataFrame(list_temps)
-            points["Count_Offsets"] = points["Offsets"].apply(lambda lyst: len(set(lyst)))
-            points = points[points["Count_Offsets"] > 1]
-            points = points[points["Voices"].apply(lambda lyst: len(set(lyst))) > 1]
-            points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
-            points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
-            points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
-            points["Number_Entries"] = points["Offsets"].apply(len)
-            # return points
-            if len(points) == 0:
-                print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
+            # 8/24 patch for empty lists
+            if len(list_temps) == 0:
+                print("No Hidden Types Found in " + piece.metadata['composer'] + ":" + piece.metadata['title'])
             else:
-                points = points.reindex(columns=col_order).sort_values("First_Offset")
-                points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
-                # applying various private functions for overlapping entry tests.
-                # note that ng_durs must be passed to the first of these, via args
-                points["Entry_Durs"] = points[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
-                points["Overlaps"] = points[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
-                # points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
-                points.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
-                points["Progress"] = (points["First_Offset"] / self.notes().index[-1])
+                points = pd.DataFrame(list_temps)
+                points = pd.DataFrame(list_temps)
+                points["Count_Offsets"] = points["Offsets"].apply(lambda lyst: len(set(lyst)))
+                points = points[points["Count_Offsets"] > 1]
+                points = points[points["Voices"].apply(lambda lyst: len(set(lyst))) > 1]
+                points['Presentation_Type'] = points['Time_Entry_Intervals'].apply(ImportedPiece._classify_by_offset)
+                points["Offsets_Key"] = points["Offsets"].apply(self._offset_joiner)
+                points['Flexed_Entries'] = points["Soggetti"].apply(len) > 1
+                points["Number_Entries"] = points["Offsets"].apply(len)
                 # return points
-                points = points.sort_values("Progress")
-                points = points.reset_index(drop=True)
-                self.analyses[memo_key] = points
-                return points
+                if len(points) == 0:
+                    print("No Presentation Types Found in " + self.metadata['composer'] + ":" + self.metadata['title'])
+                else:
+                    points = points.reindex(columns=col_order).sort_values("First_Offset")
+                    points.drop_duplicates(subset=["Offsets_Key"], keep='first', inplace=True)
+                    # applying various private functions for overlapping entry tests.
+                    # note that ng_durs must be passed to the first of these, via args
+                    points["Entry_Durs"] = points[["Offsets", "Voices"]].apply(ImportedPiece._dur_ngram_helper, args=(ng_durs,), axis=1)
+                    points["Overlaps"] = points[["Entry_Durs", "Offsets"]].apply(ImportedPiece._entry_overlap_helper, axis=1)
+                    # points["Count_Non_Overlaps"] = points["Overlaps"].apply(ImportedPiece._non_overlap_count)
+                    points.drop(['Count_Offsets', 'Offsets_Key', 'Entry_Durs', 'Overlaps'], axis=1, inplace=True)
+                    points["Progress"] = (points["First_Offset"] / self.notes().index[-1])
+                    # return points
+                    points = points.sort_values("Progress")
+                    points = points.reset_index(drop=True)
+                    self.analyses[memo_key] = points
+                    return points
             
     # new print methods with verovio
     def verovioCadences(self, df=None):

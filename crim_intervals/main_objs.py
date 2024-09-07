@@ -3011,7 +3011,7 @@ class ImportedPiece:
 
     def presentationTypes(self, melodic_ngram_length=4, limit_to_entries=True,
                           body_flex=0, head_flex=1, include_hidden_types=False,
-                          combine_unisons=False):
+                          combine_unisons=False, beat_strength=0):
         """
         This function uses several other functions to classify the entries in a given piece.
         The output is a list, in order of offset, of each presentation type, including information about
@@ -3055,10 +3055,15 @@ class ImportedPiece:
         each cadence in staff notation.
         """
         memo_key = ('PresentationTypes', melodic_ngram_length, limit_to_entries,
-            body_flex, head_flex, include_hidden_types, combine_unisons)
+            body_flex, head_flex, include_hidden_types, combine_unisons, beat_strength)
         if memo_key in self.analyses:
             return self.analyses[memo_key]
         nr = self.notes(combineUnisons=combine_unisons)
+        # beat strength filter
+        bs = self.beatStrengths()
+        nr_stacked = nr.stack()
+        strong_beats = bs.stack() >= beat_strength
+        nr = nr_stacked[strong_beats].unstack()
         mel = self.melodic(df=nr, kind='d', end=False)
         mel_ng = self.ngrams(df=mel, exclude=['Rest'], n=melodic_ngram_length)
         if limit_to_entries:

@@ -1,0 +1,37 @@
+@prefix ow:<http://www.omac.org/work#>.
+@prefix od:<http://www.omac.org/data#>.
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix viaf: <http://viaf.org/viaf/>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix dbp: <http://dbpedia.org/property/>.
+@prefix dbr: <http://dbpedia.org/resource/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+viaf:294918919
+    dcterms:title "Symphony No. 35"^^xsd:string;
+    rdf:type ow:MusicalWork;
+    ow:composed_by viaf:32197206;
+    dbp:genre dbr:Symphony;
+    dbp:key dbr:D_major;
+    dbp:composed "1782"^^xsd:gYear;
+    ow:scored_for od:performing_force1;
+    ow:scored_for od:performing_force2.
+
+viaf:32197206
+  dbp:firstname "Wolfgang Amadeus"^^xsd:string;
+  dbp:familyname "Mozart"^^xsd:string;
+  dbp:name "Wolfgang Amadeus Mozart"^^xsd:string;
+  dbp:birthDate "1756-01-27"^^xsd:date;
+  dbp:deathDate "1791-12-05"^^xsd:date.
+
+
+od:performing_force1
+    rdf:type ow:PerformingForceAttribute;
+    ow:performing_force_type dbr:Oboe;
+    ow:number_performing_force "2"^^xsd:int.
+
+od:performing_force2
+        rdf:type ow:PerformingForceAttribute;
+        ow:performing_force_type dbr:Flute;
+        ow:number_performing_force "2"^^xsd:int.

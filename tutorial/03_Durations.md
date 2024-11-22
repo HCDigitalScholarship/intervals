@@ -91,18 +91,60 @@ piece.durationalRatios().round(2)
 
 ![Alt text](images/dur_rat.png)
 
-And these could in turn be used as the basis of ngrams (to find rhythmic motives), or combined with melodic intervals to describe motives in great detail.
 
-But in this case we need to use Python `applymap(str)` to transform the original durational ratios (which are floats) into strings.  You might also need to dropna values.
+## Ngrams with Durations and Durational Ratios
 
+Each of the previous approaches could be used as the basis of ngrams (to find rhythmic motives), or combined with melodic intervals to describe motives in great detail.
+
+But in this case we need to use Python `applymap(str)` to transform the original durational ratios (which are floats) into strings.  You might also need to dropna values, as noted above.
+
+In addition, we should recall that the resulting ngrams will be expressed as tuples, which can prove difficult to work with for purposes of other work.  Meanwhile if we begin be filling the na values with empty strings or some neutral value, we will in the process create ngrams contain these 'blank' values, and so misrepresent the durational (or durationalRatio) ngrams in your piece.
+
+So here are some functions that will help avoid these problems:
 
 ```python
-dur_rat = piece.durationalRatios().fillna('').round(2).applymap(str)
-ng = piece.ngrams(df=dur_rat)
+#define the function to convert tuples to strings
+def convertTuple(tup):
+    out = ""
+    if isinstance(tup, tuple):
+        out = '_'.join(tup)
+    return out  
+
+# another function to clean up
+def clean_string(input_string):
+    if input_string[0] == "_":
+        return ""
+    if input_string[-1] == "_":
+        return ""
+    if '__' in input_string:
+        return ""
+    else:
+        return input_string
+```
+
+Now use them to create the durational ngrams:
+
+```python
+# durations
+dur = piece.durations().fillna('')
+
+# convert the floats to strings
+dur = dur.applymap(str)
+
+# ngrams
+ng = piece.ngrams(df=dur, n=3)
+
+# convert tuples and remove ngrams shorter than required length
+ng = ng.applymap(convertTuple)
+ng = ng.applymap(clean_string)
 ng
 ```
 
-![Alt text](images/ng_dur_rat.png)
+![alt text](images/dur_ngs.png)
+
+You could so the same for `durationRatios`
+
+
 
 
 ## More About Measures, Beats, and Offsets: The `detailIndex()` Function  

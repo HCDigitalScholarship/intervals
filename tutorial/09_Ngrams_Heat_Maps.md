@@ -332,6 +332,57 @@ mel_ngrams_no_tuples
 
 It is **not** necessary to treat the contrapuntal ngrams in this way, as the default function already converts the results to strings.  
 
+## NGrams with Durations and Durational Ratios
+
+Creating ngrams with `durations` or `durationaRatios` will take some special care, since the original values produced by these methods are floats.  We need to transform these into strings. You might also need to dropna values.
+
+In addition, we should recall that the resulting ngrams will be expressed as tuples (as noted above), which can prove difficult to work with for purposes of other work.  Meanwhile if we begin be filling the na values with empty strings or some neutral value, we will in the process create ngrams contain these 'blank' values, and so misrepresent the durational (or durationalRatio) ngrams in your piece.
+
+So here are some functions that will help avoid these problems:
+
+```python
+#define the function to convert tuples to strings
+def convertTuple(tup):
+    out = ""
+    if isinstance(tup, tuple):
+        out = '_'.join(tup)
+    return out  
+
+# another function to clean up
+def clean_string(input_string):
+    if input_string[0] == "_":
+        return ""
+    if input_string[-1] == "_":
+        return ""
+    if '__' in input_string:
+        return ""
+    else:
+        return input_string
+```
+
+Now use them to create the durational ngrams:
+
+```python
+# durations
+dur = piece.durations().fillna('')
+
+# convert the floats to strings
+dur = dur.applymap(str)
+
+# ngrams
+ng = piece.ngrams(df=dur, n=3)
+
+# convert tuples and remove ngrams shorter than required length
+ng = ng.applymap(convertTuple)
+ng = ng.applymap(clean_string)
+ng
+```
+
+![alt text](images/dur_ngs.png)
+
+You could so the same for `durationRatios`
+
+
 ## Removing "NaN" values  
 
 Similarly to other functions previously discussed in this documentation, ngram DataFrams can be cleaned up using the `dropna()` and `fillna()` functions to drop all rows filled with only "NaN" values, and replace the remaining "NaN" values with blank spaces so that the table may be read more easily:  

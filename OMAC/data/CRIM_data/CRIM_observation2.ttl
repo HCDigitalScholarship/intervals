@@ -1,0 +1,39 @@
+@prefix od: <http://www.omac.org/data#>.
+@prefix ow: <http://www.omac.org/work#>.
+@prefix oc: <http://www.omac.org/claim#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix dbp: <http://dbpedia.org/property/>.
+@prefix viaf: <http://viaf.org/viaf/>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+
+viaf:89469141 dbp:name "Claudin de Sermisy"^^xsd:string.
+
+viaf:180445237
+  dcterms:title "Missa tota pulchra es"^^xsd:string;
+  ow:composed_by viaf:89469141.
+
+od:Credo_180445237
+    ow:section_of viaf:180445237;
+    dcterms:title "Missa tota pulchra es:Credo"^^xsd:string.
+
+od:analytic_segment_P2
+    rdf:type oc:AnalyticSegment;
+    oc:segment_of od:Credo_180445237.
+
+od:claim_P2
+     rdf:type oc:StructureClaim;
+     oc:stated_by od:Ian_Lorenz;
+     oc:refers_to od:analytic_segment_P2;
+     oc:refers_to od:Credo_180445237;#can be inferred, included here for testing
+     oc:refers_to viaf:180445237;##can be inferred, included here for testing
+     oc:has_schema oc:Fuga_schema;
+     oc:melodic_interval_of_entry "4-"^^xsd:string;
+     oc:time_interval_of_entry "B2"^^xsd:string;
+     oc:periodic "false"^^xsd:boolean;
+     oc:strict "false"^^xsd:boolean;
+     oc:flexed "false"^^xsd:boolean;
+     oc:sequential "false"^^xsd:boolean;
+     oc:inverted "false"^^xsd:boolean;
+     oc:retrograde "false"^^xsd:boolean;
+     oc:remarks "Makes up a longer ID"^^xsd:string.

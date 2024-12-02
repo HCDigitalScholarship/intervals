@@ -1,0 +1,47 @@
+@prefix ow:<http://www.omac.org/work#>.
+@prefix od:<http://www.omac.org/data#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dbp: <http://dbpedia.org/property/>.
+@prefix dbr: <http://dbpedia.org/resource/>.
+@prefix viaf: <http://viaf.org/viaf/>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+viaf:313248912
+    dcterms:title "Missa o gente brunette"^^xsd:string;
+    rdf:type ow:MusicalWork;
+    ow:composed_by viaf:44485735;
+    dbp:composed "1568"^^xsd:gYear;
+    dbp:genre <http://dbpedia.org/resource/Mass_(music)>;
+    ow:sections_number "5";
+    ow:has_section od:Kyrie_MissaBrunette, od:Gloria_MissaBrunette, od:Credo_MissaBrunette, od:Sanctus_MissaBrunette, od:AgnusDei_MissaBrunette.
+
+od:Kyrie_MissaBrunette
+ow:order "1"^^xsd:int;
+dbp:genre dbr:Kyrie;
+ow:has_subsection od:Kyrie1_MissaBrunette, od:Christe_MissaBrunette, od:Kyrie2_MissaBrunette.
+
+od:Gloria_MissaBrunette
+  ow:order "2"^^xsd:int;
+  dbp:genre dbr:Gloria.
+
+od:Credo_MissaBrunette
+  ow:order "3"^^xsd:int;
+    dbp:genre dbr:Credo.
+
+od:Sanctus_MissaBrunette
+  ow:order "4"^^xsd:int;
+dbp:genre dbr:Sanctus;
+od:has_subsection od:Sanctus_ss_MissaBrunette, od:PleniSunt_MissaBrunette, od:Osanna_MissaBrunette, od:Benedictus_MissaBrunette.
+
+od:AgnusDei_MissaBrunette
+  ow:order "5"^^xsd:int;
+dbp:genre <http://dbpedia.org/resource/Agnus_Dei_(music)>;
+ow:has_subsection od:AgnusDei1_MissaBrunette, od:AgnusDei2_MissaBrunette.
+
+viaf:44485735
+rdf:type ow:Composer;
+dbp:firstname "Nicolas"^^xsd:string;
+dbp:familyname "de Marle"^^xsd:string;
+dbp:name "Nicolas de Marle"^^xsd:string.

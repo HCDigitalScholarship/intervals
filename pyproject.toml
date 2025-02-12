@@ -33,7 +33,6 @@ plotly-express = "0.4.1"
 pyarrow = ">=15.0.0"
 pyvis = "0.1.9"
 python-dateutil = "2.8.2"
-python-louvain = "0.16"
 pytz = "2021.1"
 rfc3986 = "1.4.0"
 seaborn = "0.13"
@@ -43,7 +42,7 @@ textdistance = "4.2.1"
 xlsxwriter = "3.0.2"
 webcolors = "1.11.1"
 requests = "2.31.0"
-verovio = "4.1.0"
+
 
 
 

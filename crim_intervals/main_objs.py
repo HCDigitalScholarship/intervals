@@ -11,7 +11,7 @@ from more_itertools import consecutive_groups
 import os
 import re
 import collections
-import verovio
+# import verovio
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm

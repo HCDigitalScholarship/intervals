@@ -12,7 +12,7 @@ import os
 import re
 import collections
 # import verovio
-import seaborn as sns
+
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.patches as mpatches

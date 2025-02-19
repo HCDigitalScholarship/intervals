@@ -315,7 +315,7 @@ class ImportedPiece:
 
     def _maxnDurationHelper(self, _col):
         col = _col.dropna()
-        starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', np.nan)))]
+        starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', None)))]
         ends = col[(col == 'Rest') & (col.shift(1) != 'Rest')]
         starts.dropna(inplace=True)
         ends.dropna(inplace=True)

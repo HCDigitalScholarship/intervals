@@ -3964,7 +3964,7 @@ class CorpusBase:
         Set sns plot size for cadence progress tool.
         """
         if '_plot_default' not in self.analyses:
-            sns.set(rc={'figure.figsize':(15,9)})
+            sns.set_theme(rc={'figure.figsize':(15,9)})
             self.analyses['_plot_default'] = True
 
     def compareCadenceProgressPlots(self, includeType=False, cadTone=None, cadType=None, includeLegend=True, customOrder=None, renderer=""):

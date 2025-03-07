@@ -3749,9 +3749,7 @@ class CorpusBase:
         mass_mel = masses.batch(ImportedPiece.melodic, number_parts=False, metadata=False, kwargs={'df': mass_notes, 'kind': 'd', 'end': False})
         mass_entries = masses.batch(ImportedPiece.entries, number_parts=False, metadata=False,
                                     kwargs={'df': mass_mel, 'n': n, 'thematic': thematic, 'anywhere': anywhere})
-        model_name = model.metadata['composer'] + '_' + model.metadata['title']
-        mass_name = model.metadata['composer'] + '_' + model.metadata['title']
-        res = pd.DataFrame(columns=list(model_name for model in models.scores), index=list(mass_name for mass in masses.scores))
+        res = pd.DataFrame(columns=list(model.metadata['title'] for model in models.scores), index=list(mass.metadata['title'] for mass in masses.scores))
         res.columns.name = 'Model'
         res.index.name = 'Mass'
         for i, model in enumerate(models.scores):
@@ -3761,7 +3759,7 @@ class CorpusBase:
                 hits = stack[stack.isin(mod_patterns)]
                 if len(stack.index):
                     percent = len(hits.index) / len(stack.index)
-                    res.at[mass_name, model_name] = percent
+                    res.at[mass.metadata['title'], model.metadata['title']] = percent
         return res
 
     def derivativeAnalyzer(self, df=None, n=10):

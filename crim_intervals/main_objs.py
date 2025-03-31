@@ -3054,7 +3054,7 @@ class ImportedPiece:
         Note that the output of this function can be used with verovioPtypes to show
         each cadence in staff notation.
         """
-        memo_key = ('PresentationTypes', kind, end=False, melodic_ngram_length, limit_to_entries,
+        memo_key = ('PresentationTypes', kind, end, melodic_ngram_length, limit_to_entries,
             body_flex, head_flex, include_hidden_types, combine_unisons)
         if memo_key in self.analyses:
             return self.analyses[memo_key]

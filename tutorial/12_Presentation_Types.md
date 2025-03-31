@@ -1,4 +1,4 @@
-# Classifying Presentation Types:  Fuga, ID, and PEN
+pip install crim_intervals# Classifying Presentation Types:  Fuga, ID, and PEN
 
 One of the key features of CRIM Intervals is its ability to predict complex contrapuntal patterns.  One 
 
@@ -22,7 +22,7 @@ The output is a list, in order of offset, of each presentation type, including i
 * **Singleton soggetti** (just one entry of a given motive in isolation, and not involved in a nearby presentation type) are not reported
 * **Long gaps between entries**:  If two entries are separated by more than about 9 bars (70 offsets), the tool resets to a new pattern (otherwise the tool would classify impossibly long fugas over the course of a piece)
 * **Parallel entries** in any passage. If two voices enter at the *same offset* (normally in parallel thirds or tenths), the function will attempt to identify the voice that follows (or preceeds) other, non-parallel voices at the interval P1, P4, P5, P8, or P12 (which are more typical). If neither of the parallel voices aligns with other parts in this way, the tool takes the upper-most voice as the real entry. The parallel voice is removed from the pattern data, but the name of the voice is stored in another column (Parallel Voice).
-* **Total number of Non-Overlapping Entries** (in which the time interval between entries is in fact greater than the length of the entries themselves) and reports the count in a separate column.  Such 'medium' gaps, after all, are important to the extent that the successive entries do no produce any harmonic intervals with each other.
+* **Total number of Non-Overlapping Entries** (in which the time interval between entries is in fact greater than the length of the entries themselves) and reports pip install crim_intervalsthe count in a separate column.  Such 'medium' gaps, after all, are important to the extent that the successive entries do no produce any harmonic intervals with each other.
 
 Settings:  Handling of **Unisons**, **Flexes**, and **Hidden Patterns**
 
@@ -42,7 +42,9 @@ piece.presentationTypes(limit_to_entries = True,
                         body_flex = 0,
                         include_hidden_types = False,
                         combine_unisons = True,
-                        melodic_ngram_length = 4)
+                        melodic_ngram_length = 4,
+                        kind=4,
+                        end=False)
 ```
 --- 
 
@@ -203,7 +205,9 @@ kwargs = {'limit_to_entries': True, 'head_flex' : 1,
                                     'body_flex' : 0,
                                     'include_hidden_types' : False,
                                     'combine_unisons' : True,
-                                    'melodic_ngram_length' :  4}
+                                    'melodic_ngram_length' :  4,
+                                    'kind': 'd',
+                                    'end': False}
 
 #build a list of dataframes, one for each piece in the corpus
 list_of_dfs = corpus.batch(func, kwargs)
@@ -212,24 +216,6 @@ list_of_dfs = corpus.batch(func, kwargs)
 output = pd.concat(list_of_dfs)
 ```
 
-Or more than one function, for instance in order to use chromatic melodic ngrams:
-
-```python
-func1 = ImportedPiece.Melodic
-kwargs1 = {'kind' : 'c'}
-#build a list of dataframes, one for each piece in the corpus
-list_of_dfs = corpus.batch(func = func1, kwargs = kwargs1, metadata = False)
-
-func2 = ImportedPiece.presentationTypes  # <- NB there are no parentheses here
-#provide the kwargs
-kwargs2 = {'limit_to_entries': True, 'head_flex' : 1, 'body_flex' : 0, 'include_hidden_types' : False, 'combine_unisons' : True,'melodic_ngram_length' : 4}
-
-#build a list of dataframes, one for each piece in the corpus
-list_of_dfs = corpus.batch(func = func1, kwargs = kwargs2, metadata = True)
-
-#concatenate the list to a single dataframe
-output = pd.concat(list_of_dfs)
-```
 
 See [01_Introduction](01_Introduction.md) for more detail on ways to **track errors during import of a corpus** or how to **replace staff names with staff numbers**.
 

@@ -16,17 +16,78 @@ import matplotlib as mplt # OY addition 6/12/24
 class NgramColorManager:
     def __init__(self):
         self.color_map = {}  # Dictionary to store pattern -> color mappings
+        
+        # Pre-defined qualitative color palettes with high contrast
+        self.preset_colors = [
+            # Tab10 palette - highly distinguishable colors
+            '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+            '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+            
+            # Add colors from Set1 for more options
+            '#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', 
+            '#ffff33', '#a65628', '#f781bf', '#999999',
+            
+            # Add some from Dark2 for even more options
+            '#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', 
+            '#e6ab02', '#a6761d', '#666666'
+        ]
+        
+        # Remove any duplicates
+        self.preset_colors = list(dict.fromkeys(self.preset_colors))
     
-    def generate_distinct_colors(self, n):
-        """Generate `n` distinct colors using the HSV color space"""
-        colors = []
-        for i in range(n):
-            hue = i / n
-            saturation = 0.65  # Fixed saturation
-            value = 0.9  # Fixed value
-            color = mplt.colors.to_hex(mplt.colors.hsv_to_rgb((hue, saturation, value)))
-            colors.append(color)
+    def generate_maximally_distinct_colors(self, n):
+        """
+        Generate n colors that are maximally perceptually distinct from each other.
+        Uses a combination of preset palettes and algorithmic generation.
+        """
+        # If we have enough preset colors, use those
+        if n <= len(self.preset_colors):
+            return self.preset_colors[:n]
+        
+        # Start with preset colors
+        colors = self.preset_colors.copy()
+        
+        # For additional colors, use golden ratio method in HSV space
+        # This creates colors that are spread out across the color wheel
+        golden_ratio_conjugate = 0.618033988749895
+        h = 0.1  # Starting hue value
+        
+        while len(colors) < n:
+            h = (h + golden_ratio_conjugate) % 1.0
+            # Use higher saturation and value for more vibrant colors
+            s = 0.85
+            v = 0.95
+            rgb = mplt.colors.hsv_to_rgb([h, s, v])
+            hex_color = mplt.colors.to_hex(rgb)
+            
+            # Only add if not too similar to existing colors
+            if self._is_distinct_enough(hex_color, colors):
+                colors.append(hex_color)
+        
         return colors
+    
+    def _is_distinct_enough(self, new_color, existing_colors, threshold=20):
+        """
+        Check if a new color is perceptually distinct enough from existing colors.
+        Uses CIEDE2000 color difference in LAB space.
+        """
+        # Convert hex to RGB
+        new_rgb = np.array(mplt.colors.to_rgb(new_color)).reshape(1, 1, 3)
+        
+        # Convert RGB to LAB color space
+        new_lab = cspace_converter("sRGB1", "CAM02-UCS")(new_rgb)[0, 0]
+        
+        for color in existing_colors:
+            existing_rgb = np.array(mplt.colors.to_rgb(color)).reshape(1, 1, 3)
+            existing_lab = cspace_converter("sRGB1", "CAM02-UCS")(existing_rgb)[0, 0]
+            
+            # Calculate color difference
+            delta_e = np.sqrt(np.sum((new_lab - existing_lab) ** 2))
+            
+            if delta_e < threshold:
+                return False
+        
+        return True
     
     def get_color_for_pattern(self, pattern):
         """Get a color for a pattern, creating a new one if it doesn't exist"""
@@ -35,13 +96,10 @@ class NgramColorManager:
             pattern_str = ", ".join(str(item) for item in pattern)
             
         if pattern_str not in self.color_map:
-            # Generate a new color for this pattern
-            # We'll use the current size of the color map to determine the hue
-            hue = len(self.color_map) / 100  # Assuming we won't have more than 100 patterns
-            saturation = 0.65
-            value = 0.9
-            color = mplt.colors.to_hex(mplt.colors.hsv_to_rgb((hue, saturation, value)))
-            self.color_map[pattern_str] = color
+            # We'll assign colors in order as new patterns are encountered
+            n = len(self.color_map) + 1
+            colors = self.generate_maximally_distinct_colors(n)
+            self.color_map[pattern_str] = colors[-1]
             
         return self.color_map[pattern_str]
     

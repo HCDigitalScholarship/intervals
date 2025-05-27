@@ -6,6 +6,7 @@ import altair as alt
 import pandas as pd
 import re
 import textdistance
+import numpy as np 
 
 # from ipywidgets import interact, fixed
 from pyvis.network import Network

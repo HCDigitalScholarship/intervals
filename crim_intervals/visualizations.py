@@ -13,82 +13,63 @@ from pyvis.network import Network
 
 import matplotlib as mplt # OY addition 6/12/24
 
-# New class to manage colors across multiple plots
 class NgramColorManager:
     def __init__(self):
         self.color_map = {}  # Dictionary to store pattern -> color mappings
         
-        # Pre-defined qualitative color palettes with high contrast
-        self.preset_colors = [
-            # Tab10 palette - highly distinguishable colors
-            '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
-            '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
-            
-            # Add colors from Set1 for more options
-            '#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', 
-            '#ffff33', '#a65628', '#f781bf', '#999999',
-            
-            # Add some from Dark2 for even more options
-            '#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', 
-            '#e6ab02', '#a6761d', '#666666'
-        ]
-        
-        # Remove any duplicates
-        self.preset_colors = list(dict.fromkeys(self.preset_colors))
+        # Use Matplotlib's qualitative colormaps
+        self.qualitative_cmaps = ['tab10', 'tab20', 'Set1', 'Set2', 'Set3', 'Accent', 'Dark2', 'Paired']
     
-    def generate_maximally_distinct_colors(self, n):
-        """
-        Generate n colors that are maximally perceptually distinct from each other.
-        Uses a combination of preset palettes and algorithmic generation.
-        """
-        # If we have enough preset colors, use those
-        if n <= len(self.preset_colors):
-            return self.preset_colors[:n]
+    def generate_distinct_colors(self, n):
+        """Generate n distinct colors using Matplotlib's qualitative colormaps"""
+        colors = []
         
-        # Start with preset colors
-        colors = self.preset_colors.copy()
+        # First try to use the most distinct colormap (tab10)
+        cmap = mplt.cm.get_cmap('tab10')
+        colors.extend([mplt.colors.to_hex(cmap(i)) for i in range(min(10, n))])
         
-        # For additional colors, use golden ratio method in HSV space
-        # This creates colors that are spread out across the color wheel
-        golden_ratio_conjugate = 0.618033988749895
-        h = 0.1  # Starting hue value
+        # If we need more colors, use other qualitative colormaps
+        if n > 10:
+            remaining = n - 10
+            for cmap_name in self.qualitative_cmaps[1:]:
+                if len(colors) >= n:
+                    break
+                    
+                cmap = mplt.cm.get_cmap(cmap_name)
+                # Get the number of colors in this colormap
+                if cmap_name == 'tab20':
+                    cmap_colors = 20
+                elif cmap_name in ['Set1', 'Set3']:
+                    cmap_colors = 9
+                elif cmap_name in ['Set2', 'Dark2', 'Accent']:
+                    cmap_colors = 8
+                elif cmap_name == 'Paired':
+                    cmap_colors = 12
+                else:
+                    cmap_colors = 10
+                
+                # Add colors from this colormap
+                for i in range(min(cmap_colors, remaining)):
+                    color = mplt.colors.to_hex(cmap(i))
+                    if color not in colors:  # Avoid duplicates
+                        colors.append(color)
+                
+                remaining = n - len(colors)
         
-        while len(colors) < n:
-            h = (h + golden_ratio_conjugate) % 1.0
-            # Use higher saturation and value for more vibrant colors
-            s = 0.85
-            v = 0.95
-            rgb = mplt.colors.hsv_to_rgb([h, s, v])
-            hex_color = mplt.colors.to_hex(rgb)
+        # If we still need more colors, use HSV space with golden ratio
+        if len(colors) < n:
+            remaining = n - len(colors)
+            golden_ratio_conjugate = 0.618033988749895
+            h = 0.1  # Starting hue
             
-            # Only add if not too similar to existing colors
-            if self._is_distinct_enough(hex_color, colors):
-                colors.append(hex_color)
+            for _ in range(remaining):
+                h = (h + golden_ratio_conjugate) % 1.0
+                s = 0.85  # High saturation for vibrant colors
+                v = 0.95  # High value for brightness
+                rgb = mplt.colors.hsv_to_rgb([h, s, v])
+                colors.append(mplt.colors.to_hex(rgb))
         
-        return colors
-    
-    def _is_distinct_enough(self, new_color, existing_colors, threshold=20):
-        """
-        Check if a new color is perceptually distinct enough from existing colors.
-        Uses CIEDE2000 color difference in LAB space.
-        """
-        # Convert hex to RGB
-        new_rgb = np.array(mplt.colors.to_rgb(new_color)).reshape(1, 1, 3)
-        
-        # Convert RGB to LAB color space
-        new_lab = cspace_converter("sRGB1", "CAM02-UCS")(new_rgb)[0, 0]
-        
-        for color in existing_colors:
-            existing_rgb = np.array(mplt.colors.to_rgb(color)).reshape(1, 1, 3)
-            existing_lab = cspace_converter("sRGB1", "CAM02-UCS")(existing_rgb)[0, 0]
-            
-            # Calculate color difference
-            delta_e = np.sqrt(np.sum((new_lab - existing_lab) ** 2))
-            
-            if delta_e < threshold:
-                return False
-        
-        return True
+        return colors[:n]
     
     def get_color_for_pattern(self, pattern):
         """Get a color for a pattern, creating a new one if it doesn't exist"""
@@ -99,23 +80,26 @@ class NgramColorManager:
         if pattern_str not in self.color_map:
             # We'll assign colors in order as new patterns are encountered
             n = len(self.color_map) + 1
-            colors = self.generate_maximally_distinct_colors(n)
+            colors = self.generate_distinct_colors(n)
             self.color_map[pattern_str] = colors[-1]
             
         return self.color_map[pattern_str]
     
     def assign_colors_to_dataframe(self, df, pattern_column='pattern'):
         """Assign colors to a dataframe based on patterns"""
-        # Convert patterns to strings if they're not already
-        if not isinstance(df[pattern_column].iloc[0], str):
-            df = df.copy()
-            df[pattern_column] = df[pattern_column].map(
-                lambda cell: ", ".join(str(item) for item in cell), 
-                na_action='ignore'
-            )
+        # Check if dataframe is not empty
+        if len(df) > 0:
+            # Convert patterns to strings if they're not already
+            if not isinstance(df[pattern_column].iloc[0], str):
+                df = df.copy()
+                df[pattern_column] = df[pattern_column].map(
+                    lambda cell: ", ".join(str(item) for item in cell), 
+                    na_action='ignore'
+                )
+            
+            # Assign colors
+            df['color'] = df[pattern_column].apply(self.get_color_for_pattern)
         
-        # Assign colors
-        df['color'] = df[pattern_column].apply(self.get_color_for_pattern)
         return df
 
 # Create a global instance of the color manager

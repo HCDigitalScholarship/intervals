@@ -6,12 +6,104 @@ import altair as alt
 import pandas as pd
 import re
 import textdistance
+import numpy as np 
 
 # from ipywidgets import interact, fixed
 from pyvis.network import Network
 
 import matplotlib as mplt # OY addition 6/12/24
 
+class NgramColorManager:
+    def __init__(self):
+        self.color_map = {}  # Dictionary to store pattern -> color mappings
+        
+        # Use Matplotlib's qualitative colormaps
+        self.qualitative_cmaps = ['tab10', 'tab20', 'Set1', 'Set2', 'Set3', 'Accent', 'Dark2', 'Paired']
+    
+    def generate_distinct_colors(self, n):
+        """Generate n distinct colors using Matplotlib's qualitative colormaps"""
+        colors = []
+        
+        # First try to use the most distinct colormap (tab10)
+        cmap = mplt.cm.get_cmap('tab10')
+        colors.extend([mplt.colors.to_hex(cmap(i)) for i in range(min(10, n))])
+        
+        # If we need more colors, use other qualitative colormaps
+        if n > 10:
+            remaining = n - 10
+            for cmap_name in self.qualitative_cmaps[1:]:
+                if len(colors) >= n:
+                    break
+                    
+                cmap = mplt.cm.get_cmap(cmap_name)
+                # Get the number of colors in this colormap
+                if cmap_name == 'tab20':
+                    cmap_colors = 20
+                elif cmap_name in ['Set1', 'Set3']:
+                    cmap_colors = 9
+                elif cmap_name in ['Set2', 'Dark2', 'Accent']:
+                    cmap_colors = 8
+                elif cmap_name == 'Paired':
+                    cmap_colors = 12
+                else:
+                    cmap_colors = 10
+                
+                # Add colors from this colormap
+                for i in range(min(cmap_colors, remaining)):
+                    color = mplt.colors.to_hex(cmap(i))
+                    if color not in colors:  # Avoid duplicates
+                        colors.append(color)
+                
+                remaining = n - len(colors)
+        
+        # If we still need more colors, use HSV space with golden ratio
+        if len(colors) < n:
+            remaining = n - len(colors)
+            golden_ratio_conjugate = 0.618033988749895
+            h = 0.1  # Starting hue
+            
+            for _ in range(remaining):
+                h = (h + golden_ratio_conjugate) % 1.0
+                s = 0.85  # High saturation for vibrant colors
+                v = 0.95  # High value for brightness
+                rgb = mplt.colors.hsv_to_rgb([h, s, v])
+                colors.append(mplt.colors.to_hex(rgb))
+        
+        return colors[:n]
+    
+    def get_color_for_pattern(self, pattern):
+        """Get a color for a pattern, creating a new one if it doesn't exist"""
+        pattern_str = pattern
+        if not isinstance(pattern, str):
+            pattern_str = ", ".join(str(item) for item in pattern)
+            
+        if pattern_str not in self.color_map:
+            # We'll assign colors in order as new patterns are encountered
+            n = len(self.color_map) + 1
+            colors = self.generate_distinct_colors(n)
+            self.color_map[pattern_str] = colors[-1]
+            
+        return self.color_map[pattern_str]
+    
+    def assign_colors_to_dataframe(self, df, pattern_column='pattern'):
+        """Assign colors to a dataframe based on patterns"""
+        # Check if dataframe is not empty
+        if len(df) > 0:
+            # Convert patterns to strings if they're not already
+            if not isinstance(df[pattern_column].iloc[0], str):
+                df = df.copy()
+                df[pattern_column] = df[pattern_column].map(
+                    lambda cell: ", ".join(str(item) for item in cell), 
+                    na_action='ignore'
+                )
+            
+            # Assign colors
+            df['color'] = df[pattern_column].apply(self.get_color_for_pattern)
+        
+        return df
+
+# Create a global instance of the color manager
+color_manager = NgramColorManager()
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
     color_scale = alt.Scale(
@@ -123,23 +215,65 @@ def generate_distinct_colors(n):
     return colors
 
 # OY addition - new function for adding colors 6/12/24
+# def ngrams_color_helper(new_processed_ngrams_df: pd.DataFrame) -> pd.DataFrame:
+#     """
+#     Add a Series to the dataframe that assigns a unique hex color to each unique pattern
+#     :param new_processed_ngrams_df: processed crim-intervals getNgram's output where tuples have been converted to strings
+#     :return: a dataframe containing a new column with hex color values
+#     """
+
+#     # Calculate the number of unique values in 'pattern_str'
+#     num_unique_values = new_processed_ngrams_df['pattern'].nunique() #  Function to count unique values in 'pattern_str' column
+#     # # Generate enough hex colors
+#     hex_colors = generate_distinct_colors(num_unique_values)   
+#     # # Step 2: Assign colors to unique values
+#     color_map = dict(zip(new_processed_ngrams_df['pattern'].unique(), hex_colors)) 
+#     # # Add a new column 'color' to the DataFrame
+#     new_processed_ngrams_df['color'] = new_processed_ngrams_df['pattern'].map(color_map)
+
+#     return new_processed_ngrams_df
+
+# def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False):
+#     """
+#     Plot a heatmap for crim-intervals getNgram's processed output.
+#     :param ngrams_df: processed crim-intervals getNgram's output.
+#     :param selected_pattern: list of specific patterns the users want (optional)
+#     :param voices: list of specific voices the users want (optional)
+#     :param heatmap_width: the width of the final heatmap (optional)
+#     :param heatmap_height: the height of the final heatmap (optional)
+#     :return: a bar chart that displays the different patterns and their counts,
+#     and a heatmap with the start offsets of chosen voices / patterns
+#     """
+
+#     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
+#     selector = alt.selection_point(fields=['pattern'])
+#     y = alt.Y("voice", sort=None)
+
+#     # make a copy of the processed n_grams and turn them into Strings
+#     new_processed_ngrams_df = processed_ngrams_df.copy()
+#     new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
+
+#     new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df) # OY addition 6/12/24
+    
+#     heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
+#                              selector, selector, tooltip=['start', 'end', 'pattern'])
+#     if includeCount:
+#         variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
+#         patterns_bar = create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
+#         return alt.vconcat(patterns_bar, heatmap)
+#     else:
+#         return heatmap
+
+# Modified version of your ngrams_color_helper function
 def ngrams_color_helper(new_processed_ngrams_df: pd.DataFrame) -> pd.DataFrame:
     """
     Add a Series to the dataframe that assigns a unique hex color to each unique pattern
+    using the global color manager to ensure consistency across plots.
+    
     :param new_processed_ngrams_df: processed crim-intervals getNgram's output where tuples have been converted to strings
     :return: a dataframe containing a new column with hex color values
     """
-
-    # Calculate the number of unique values in 'pattern_str'
-    num_unique_values = new_processed_ngrams_df['pattern'].nunique() #  Function to count unique values in 'pattern_str' column
-    # # Generate enough hex colors
-    hex_colors = generate_distinct_colors(num_unique_values)   
-    # # Step 2: Assign colors to unique values
-    color_map = dict(zip(new_processed_ngrams_df['pattern'].unique(), hex_colors)) 
-    # # Add a new column 'color' to the DataFrame
-    new_processed_ngrams_df['color'] = new_processed_ngrams_df['pattern'].map(color_map)
-
-    return new_processed_ngrams_df
+    return color_manager.assign_colors_to_dataframe(new_processed_ngrams_df)
 
 def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False):
     """
@@ -152,16 +286,19 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     :return: a bar chart that displays the different patterns and their counts,
     and a heatmap with the start offsets of chosen voices / patterns
     """
-
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
     selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
 
     # make a copy of the processed n_grams and turn them into Strings
     new_processed_ngrams_df = processed_ngrams_df.copy()
-    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
+    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
+        lambda cell: ", ".join(str(item) for item in cell), 
+        na_action='ignore'
+    )
 
-    new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df) # OY addition 6/12/24
+    # Use the color manager to assign consistent colors
+    new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df)
     
     heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
                              selector, selector, tooltip=['start', 'end', 'pattern'])
@@ -171,7 +308,6 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
         return alt.vconcat(patterns_bar, heatmap)
     else:
         return heatmap
-
 
 def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,
                         heatmap_height=300, includeCount=False):

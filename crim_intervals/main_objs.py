@@ -842,7 +842,7 @@ class ImportedPiece:
             "measure_range": mr
         }
         query_string = urllib.parse.urlencode(params)
-        react_app_url = "https://eleon024.github.io/ema_react_app/"
+        react_app_url = "https://RichardFreedman.github.io/ema_react_app/"
         url = ''.join((react_app_url, '?', query_string))
         return url
 

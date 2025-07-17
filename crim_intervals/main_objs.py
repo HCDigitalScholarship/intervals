@@ -643,7 +643,7 @@ class ImportedPiece:
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema
 
-    def emaAddresses(self, df=None, mode=''):
+    def emaAddresses(self, df=None, mode='', combine_unisons=None):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
         like melodic ngrams. The `mode` parameter is detected automatically if it isn't passed.
@@ -699,8 +699,32 @@ class ImportedPiece:
             if isinstance(df, pd.DataFrame):
                 p_types = df.copy()
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
-                mel = self.melodic(end=False)
-                ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)
+                nr = self.notes(combineUnisons = combine_unisons)
+                mel = self.melodic(df = nr, end=False)
+                ngrams = self.ngrams(df=mel, n=ngram_length)
+                durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
+                ngrams_with_full_durs = ngrams.copy()
+
+                # Create a new index that combines the original index with the values from df2
+                new_index = []
+                for idx, row in durations.iterrows():
+                    # Extract the single non-NaN value from each row
+                    non_nan_values = [val for val in row if not pd.isna(val)]
+                    if non_nan_values:  # Check if there are any non-NaN values
+                        non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
+                        # Add it to the original index
+                        new_index.append((idx, idx + non_nan_value))
+                    else:
+                        # Handle the case where all values in the row are NaN
+                        new_index.append((idx, idx))
+
+                # Create a MultiIndex from the new_index
+                multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
+
+                # Set the new index to the result DataFrame
+                ngrams_with_full_durs.index = multi_idx
+                ngrams = ngrams_with_full_durs
+                # ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length +1, exclude=['Rest'])
                 p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
                 return p_types
         
@@ -719,7 +743,7 @@ class ImportedPiece:
                 res.name = 'EMA'
                 return res
 
-    def linkExamples(self, df, piece_url='', mode=''):
+    def linkExamples(self, df, piece_url='', mode='', combine_unisons=None):
         '''
         Given a dataframe of EMA addresses, return a dataframe of clickable
         links to the EMA React app. The `piece_url` parameter is the URL of the
@@ -745,7 +769,7 @@ class ImportedPiece:
             elif 'Presentation_Type' in df.columns:
                 mode = 'p_types'
                 data_col_name = 'Presentation_Type'
-                ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
+                ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
             elif 'CVFs' in df.columns:
                 mode = 'cadences'
                 data_col_name = 'CadType'
@@ -756,7 +780,22 @@ class ImportedPiece:
                     return self.linkExamples(self.cadences(), piece_url)
                 else:
                     mode = 'melodic'
-
+        # July 2025 EMA Handling for P Types - Initialize ema and data_col_name for explicit modes
+        if mode == 'p_types':
+            data_col_name = 'Presentation_Type'
+            ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
+        elif mode == 'homorhythm':
+            data_col_name = 'hr_voices'
+            ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
+        elif mode == 'cadences':
+            data_col_name = 'CadType'
+            ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
+        elif mode == 'melodic':
+            # No need to initialize ema for melodic mode as it's handled separately
+            pass
+        else:
+            # Handle unknown modes
+            raise ValueError(f"Unsupported mode: {mode}")
         fmt = '<a href="{}&{}" rel="noopener noreferrer" target="_blank">{}</a>'
         if mode == 'melodic':
             res = []

@@ -700,7 +700,8 @@ class ImportedPiece:
                 p_types = df.copy()
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
                 mel = self.melodic(end=False)
-                ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)
+                # add 1 to ngrams to include the next event in the pattern
+                ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length + 1)
                 p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
                 return p_types
         

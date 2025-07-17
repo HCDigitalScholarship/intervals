@@ -272,11 +272,13 @@ prefix = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim
 piece_id = 'CRIM_Model_0008.mei'
 url = prefix + piece_id
 piece = importScore(url)
+# note that you must ALSO pass the combine_unisons status to both the presentationTypes method AND the linkExample method!
+combine_unisons = False
 pt = piece.presentationTypes(limit_to_entries = True,
                         head_flex=1,
                         body_flex = 0,
                         include_hidden_types = False,
-                        combine_unisons = True,
+                        combine_unisons = combine_unisons,
                         melodic_ngram_length = 4)
 ```
 
@@ -293,7 +295,8 @@ And then pass these ID's to the `linkExample` function:
 
 
 ```python
-piece.linkExamples(df=ids, piece_url=url)
+# remember to include the combine_unisons status!
+piece.linkExamples(df=ids, piece_url=url, combine_unisons=combine_unisons)
 ```
 
 ![alt text](images/linkedex13.png)

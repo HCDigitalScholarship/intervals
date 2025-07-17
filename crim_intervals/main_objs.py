@@ -701,63 +701,29 @@ class ImportedPiece:
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
                 nr = self.notes(combineUnisons = combine_unisons)
                 mel = self.melodic(df = nr, end=False)
-                
-                #Step 1: Change offsets to 'first'
                 ngrams = self.ngrams(df=mel, offsets='first', n=ngram_length)
-
-                # Step 2: Get durations using the ngram_df
                 durations = self.durations(df=ngrams)
+                ngrams_with_full_durs = ngrams.copy()
 
-                # Step 3 & 4: Create a new DataFrame with a MultiIndex
-                # First, get the non-NA value for each row
-                result_df = ngrams.copy()
-
-                # Create lists to store the new indices and data
-                new_indices = []
-                new_data = []
-
-                # For each row in the ngrams DataFrame
-                for idx, row in ngrams.iterrows():
-                    # Get the duration string for this row
-                    if isinstance(durations.loc[idx], pd.Series):
-                        # If it's a Series, convert to string
-                        duration_str = durations.loc[idx].iloc[0]
+                # Create a new index that combines the original index with the values from df2
+                new_index = []
+                for idx, row in durations.iterrows():
+                    # Extract the single non-NaN value from each row
+                    non_nan_values = [val for val in row if not pd.isna(val)]
+                    if non_nan_values:  # Check if there are any non-NaN values
+                        non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
+                        # Add it to the original index
+                        new_index.append((idx, idx + non_nan_value))
                     else:
-                        # If it's already a string or other type
-                        duration_str = durations.loc[idx]
-                    
-                    # Check if we have a valid duration string
-                    if pd.notna(duration_str):
-                        # Extract numeric values from the string
-                        import re
-                        numeric_values = re.findall(r'(\d+\.\d+|\d+)', str(duration_str))
-                        
-                        if numeric_values:
-                            # Convert the first numeric value to float
-                            try:
-                                duration = float(numeric_values[0])
-                                
-                                # Calculate the end index
-                                last_idx = idx + duration
-                                
-                                # Add to our lists
-                                new_indices.append((idx, last_idx))
-                                new_data.append(row)
-                            except (ValueError, TypeError) as e:
-                                print(f"Error converting duration: {e}")
-                                print(f"Duration string: {duration_str}")
-                                print(f"Extracted numeric values: {numeric_values}")
-                                continue
+                        # Handle the case where all values in the row are NaN
+                        new_index.append((idx, idx))
 
-                # Create a new DataFrame with the MultiIndex
-                if new_indices:
-                    multi_idx = pd.MultiIndex.from_tuples(new_indices, names=["First", "Last"])
-                    result_df = pd.DataFrame(new_data, index=multi_idx, columns=ngrams.columns)
-                else:
-                    # Create an empty DataFrame with the right structure if no valid rows
-                    result_df = pd.DataFrame(columns=ngrams.columns)
-                    result_df.index = pd.MultiIndex.from_tuples([], names=["First", "Last"])
-                ngrams = result_df
+                # Create a MultiIndex from the new_index
+                multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
+
+                # Set the new index to the result DataFrame
+                ngrams_with_full_durs.index = multi_idx
+                ngrams = ngrams_with_full_durs
                 # ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length +1, exclude=['Rest'])
                 p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
                 return p_types

@@ -743,7 +743,7 @@ class ImportedPiece:
                 res.name = 'EMA'
                 return res
 
-    def linkExamples(self, df, piece_url='', mode='', combine_unisons=False):
+    def linkExamples(self, df, piece_url='', mode='', combine_unisons=None):
         '''
         Given a dataframe of EMA addresses, return a dataframe of clickable
         links to the EMA React app. The `piece_url` parameter is the URL of the

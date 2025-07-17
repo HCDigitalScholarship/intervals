@@ -643,7 +643,7 @@ class ImportedPiece:
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema
 
-    def emaAddresses(self, df=None, mode=''):
+    def emaAddresses(self, df=None, mode='', combine_unisons=None):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
         like melodic ngrams. The `mode` parameter is detected automatically if it isn't passed.
@@ -699,9 +699,9 @@ class ImportedPiece:
             if isinstance(df, pd.DataFrame):
                 p_types = df.copy()
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
-                mel = self.melodic(end=False)
-                # add 1 to ngrams to include the next event in the pattern
-                ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length + 1)
+                nr = self.notes(combineUnisons = combine_unisons)
+                mel = self.melodic(df = nr, end=False)
+                ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length)
                 p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
                 return p_types
         
@@ -720,7 +720,7 @@ class ImportedPiece:
                 res.name = 'EMA'
                 return res
 
-    def linkExamples(self, df, piece_url='', mode=''):
+    def linkExamples(self, df, piece_url='', mode='', combine_unisons=False):
         '''
         Given a dataframe of EMA addresses, return a dataframe of clickable
         links to the EMA React app. The `piece_url` parameter is the URL of the
@@ -746,7 +746,7 @@ class ImportedPiece:
             elif 'Presentation_Type' in df.columns:
                 mode = 'p_types'
                 data_col_name = 'Presentation_Type'
-                ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
+                ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
             elif 'CVFs' in df.columns:
                 mode = 'cadences'
                 data_col_name = 'CadType'
@@ -760,7 +760,7 @@ class ImportedPiece:
         # July 2025 EMA Handling for P Types - Initialize ema and data_col_name for explicit modes
         if mode == 'p_types':
             data_col_name = 'Presentation_Type'
-            ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
+            ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
         elif mode == 'homorhythm':
             data_col_name = 'hr_voices'
             ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])

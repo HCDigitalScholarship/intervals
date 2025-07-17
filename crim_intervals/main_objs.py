@@ -701,8 +701,8 @@ class ImportedPiece:
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
                 nr = self.notes(combineUnisons = combine_unisons)
                 mel = self.melodic(df = nr, end=False)
-                ngrams = self.ngrams(df=mel, offsets='first', n=ngram_length)
-                durations = self.durations(df=ngrams)
+                ngrams = self.ngrams(df=mel, n=ngram_length)
+                durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
                 ngrams_with_full_durs = ngrams.copy()
 
                 # Create a new index that combines the original index with the values from df2

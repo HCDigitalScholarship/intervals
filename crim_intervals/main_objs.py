@@ -742,6 +742,11 @@ class ImportedPiece:
                 _measures = self.measures().iloc[:, 0]
                 measures = idf.map(lambda i: _measures.loc[:i].iat[-1])
                 _beats = self.beatIndex()
+                # keep fractions as required
+                _beats_df = pd.DataFrame(_beats).reset_index()
+                _beats_df['index'].apply(lambda x: eval(str(x)) if '/' in str(x) else float(str(x)))
+                _beats = _beats_df.set_index('index', inplace=True)[0]
+                # back to code
                 beats = idf.map(lambda i: _beats[i])
                 res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1, sort=True)
                 res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']

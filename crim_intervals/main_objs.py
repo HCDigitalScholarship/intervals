@@ -703,7 +703,8 @@ class ImportedPiece:
                 mel = self.melodic(df=nr, end=False)
                 ngrams = self.ngrams(df=mel, n=ngram_length)#.reset_index(drop=True)
                 # force index to be float for ngrams
-                ngrams.index = ngrams.index.map(lambda x: float(eval(x)) if '/' in str(x) else float(x))
+                # ngrams.index = ngrams.index.map(lambda x: float(eval(x)) if '/' in str(x) else float(x))
+                ngrams.index = ngrams.index.map(lambda x: float(eval(str(x))) if isinstance(x, str) and '/' in x else float(x))
 
                 # clean out fractional ngrams with fractional offsets for index
                 # ngrams = ngrams[~ngrams.index.astype(str).str.contains('/')]

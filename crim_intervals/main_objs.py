@@ -22,6 +22,7 @@ from glob import glob
 from IPython.display import display, SVG, HTML
 import json
 import urllib.parse
+from fractions import Fraction
 main_objs_dir = os.path.dirname(os.path.abspath(__file__))
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -703,13 +704,47 @@ class ImportedPiece:
                 mel = self.melodic(df = nr, end=False)
                 ngrams = self.ngrams(df=mel, n=ngram_length)
                 # Create mask using lambda function
-                ngrams = ngrams.reset_index()
-                # Evaluate fractions in the index column
-                ngrams['index'] = ngrams['index'].apply(lambda x: eval(str(x)) if '/' in str(x) else float(str(x)))
+                # ngrams = ngrams.reset_index()
+                # # Evaluate fractions in the index column
+                # ngrams['index'] = ngrams['index'].apply(lambda x: eval(str(x)) if '/' in str(x) else float(str(x)))
 
                 # Set the evaluated values back as index
-                ngrams = ngrams.set_index('index')
+                # ngrams = ngrams.set_index('index')
                 durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
+                # function to make sure duration index vals are fractions
+                def vectorized_fraction_conversion(index_series):
+                    # Convert Index to Series for numerical operations
+                    series = pd.Series(index_series)
+                    
+                    # Create masks for .3333 and .6666 patterns
+                    mask_3333 = (series % 1 - 0.3333).abs() < 1e-4
+                    mask_6666 = (series % 1 - 0.6666).abs() < 1e-4
+                    
+                    # Initialize result array
+                    result = series.copy()
+                    
+                    # Convert .3333 values
+                    whole_3333 = series[mask_3333].astype(int)
+                    result[mask_3333] = whole_3333 * 3 + 1
+                    result[mask_3333] = result[mask_3333] / 3
+                    
+                    # Convert .6666 values
+                    whole_6666 = series[mask_6666].astype(int)
+                    result[mask_6666] = whole_6666 * 3 + 2
+                    result[mask_6666] = result[mask_6666] / 3
+                    
+                    # Convert to Fraction where appropriate
+                    def convert_to_fraction(x):
+                        if pd.isna(x):
+                            return x
+                        elif abs(x % 1 - 0.3333) < 1e-4 or abs(x % 1 - 0.6666) < 1e-4:
+                            return Fraction(int(x * 3), 3)
+                        return x
+                    
+                    return result.apply(convert_to_fraction)
+
+                # Usage
+                durations.index = vectorized_fraction_conversion(durations.index)
                 ngrams_with_full_durs = ngrams.copy()
 
                 # Create a new index that combines the original index with the values from df2
@@ -742,10 +777,6 @@ class ImportedPiece:
                 _measures = self.measures().iloc[:, 0]
                 measures = idf.map(lambda i: _measures.loc[:i].iat[-1])
                 _beats = self.beatIndex()
-                # keep fractions as required
-                _beats_df = pd.DataFrame(_beats).reset_index()
-                _beats_df['index'].apply(lambda x: eval(str(x)) if '/' in str(x) else float(str(x)))
-                _beats = _beats_df.set_index('index', inplace=True)[0]
                 # back to code
                 beats = idf.map(lambda i: _beats[i])
                 res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1, sort=True)

@@ -702,8 +702,11 @@ class ImportedPiece:
                 nr = self.notes(combineUnisons=combine_unisons)
                 mel = self.melodic(df=nr, end=False)
                 ngrams = self.ngrams(df=mel, n=ngram_length)#.reset_index(drop=True)
+                # force index to be float for ngrams
+                ngrams.index = ngrams.index.map(lambda x: float(eval(x)) if '/' in str(x) else float(x))
+
                 # clean out fractional ngrams with fractional offsets for index
-                ngrams = ngrams[~ngrams.index.astype(str).str.contains('/')]
+                # ngrams = ngrams[~ngrams.index.astype(str).str.contains('/')]
 
                 durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)#.reset_index(drop=True)
                 ngrams_with_full_durs = ngrams.copy()

@@ -702,6 +702,9 @@ class ImportedPiece:
                 nr = self.notes(combineUnisons=combine_unisons)
                 mel = self.melodic(df=nr, end=False)
                 ngrams = self.ngrams(df=mel, n=ngram_length)#.reset_index(drop=True)
+                # clean out fractional ngrams with fractional offsets for index
+                ngrams = ngrams[~ngrams.index.astype(str).str.contains('/')]
+
                 durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)#.reset_index(drop=True)
                 ngrams_with_full_durs = ngrams.copy()
 

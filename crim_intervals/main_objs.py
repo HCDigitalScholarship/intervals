@@ -703,10 +703,13 @@ class ImportedPiece:
                 mel = self.melodic(df = nr, end=False)
                 ngrams = self.ngrams(df=mel, n=ngram_length)
                 # Create mask using lambda function
+                ngrams = ngrams.reset_index()
+
                 mask = ~ngrams.index.apply(lambda x: '/' in str(x))
 
                 # Drop rows with fractional indices
                 ngrams = ngrams[mask]
+                ngrams = ngrams.set_index('index')
                 durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
                 ngrams_with_full_durs = ngrams.copy()
 

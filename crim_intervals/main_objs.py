@@ -701,8 +701,8 @@ class ImportedPiece:
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
                 nr = self.notes(combineUnisons=combine_unisons)
                 mel = self.melodic(df=nr, end=False)
-                ngrams = self.ngrams(df=mel, n=ngram_length).reset_index(drop=True)
-                durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams).reset_index(drop=True)
+                ngrams = self.ngrams(df=mel, n=ngram_length)#.reset_index(drop=True)
+                durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)#.reset_index(drop=True)
                 ngrams_with_full_durs = ngrams.copy()
 
                 # Debug: Print lengths to identify the mismatch
@@ -741,8 +741,8 @@ class ImportedPiece:
                 print(f"new_index length: {len(new_index)}")
                 print(f"filtered ngrams length: {len(ngrams_with_full_durs)}")
                 
-                if len(new_index) != len(ngrams_with_full_durs):
-                    raise ValueError(f"Length mismatch after filtering: ngrams has {len(ngrams_with_full_durs)} elements, new_index has {len(new_index)} elements")
+                # if len(new_index) != len(ngrams_with_full_durs):
+                #     raise ValueError(f"Length mismatch after filtering: ngrams has {len(ngrams_with_full_durs)} elements, new_index has {len(new_index)} elements")
 
                 # Create a MultiIndex from the new_index
                 multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])

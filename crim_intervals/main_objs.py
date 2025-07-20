@@ -760,76 +760,110 @@ class ImportedPiece:
                 
         #         p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
         #         return p_types
+        # elif mode == 'p_types':
+        #     if isinstance(df, pd.DataFrame):
+        #         p_types = df.copy()
+        #         ngram_length = len(p_types.iloc[0]['Soggetti'][0])
+        #         nr = self.notes(combineUnisons=combine_unisons)
+        #         mel = self.melodic(df=nr, end=False)
+                
+        #         # Recommended solution for index conversion
+        #         def safe_index_conversion(x):
+        #             try:
+        #                 if isinstance(x, (int, float)):
+        #                     return float(x)
+        #                 elif isinstance(x, str) and '/' in x:
+        #                     return float(eval(x))
+        #                 else:
+        #                     return float(x)
+        #             except (ValueError, SyntaxError, TypeError, ZeroDivisionError):
+        #                 return float('nan')
+                
+        #         ngrams = self.ngrams(df=mel, n=ngram_length)
+        #         ngrams.index = ngrams.index.map(safe_index_conversion)
+        #         ngrams = ngrams.dropna()  # Remove any NaN indices
+                
+        #         # Ensure ngrams and durations have matching indices
+        #         durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
+        #         durations.index = durations.index.map(safe_index_conversion)
+        #         durations = durations.dropna()  # Remove any NaN indices
+                
+        #         # Reset indices for clean processing
+        #         ngrams = ngrams.reset_index(drop=True)
+        #         durations = durations.reset_index(drop=True)
+                
+        #         # Debug: Print lengths to identify the mismatch
+        #         print(f"ngrams shape: {ngrams.shape}")
+        #         print(f"durations shape: {durations.shape}")
+        #         print(f"ngrams index length: {len(ngrams.index)}")
+        #         print(f"durations index length: {len(durations.index)}")
+                
+        #         # Create a new index that combines the original index with the values from durations
+        #         new_index = []
+        #         valid_indices = []  # Track which indices from ngrams are valid
+        #         for idx in ngrams.index:  # Iterate through ngrams index instead of durations
+        #             if idx in durations.index:
+        #                 row = durations.loc[idx]
+        #                 non_nan_values = [val for val in row if not pd.isna(val)]
+        #                 if non_nan_values:
+        #                     non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
+        #                     new_index.append((idx, idx + non_nan_value))
+        #                     valid_indices.append(idx)
+        #                 else:
+        #                     new_index.append((idx, idx))
+        #                     valid_indices.append(idx)
+        #             else:
+        #                 print(f"Warning: Index {idx} not found in durations DataFrame")
+                
+        #         # Filter ngrams to only include valid indices
+        #         ngrams_with_full_durs = ngrams.loc[valid_indices]
+                
+        #         # Verify lengths match before assignment
+        #         print(f"new_index length: {len(new_index)}")
+        #         print(f"filtered ngrams length: {len(ngrams_with_full_durs)}")
+                
+        #         # Create a MultiIndex from the new_index
+        #         multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
+                
+        #         # Set the new index to the result DataFrame
+        #         ngrams_with_full_durs.index = multi_idx
+        #         ngrams = ngrams_with_full_durs
+                
+        #         p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
+        #         return p_types
         elif mode == 'p_types':
             if isinstance(df, pd.DataFrame):
                 p_types = df.copy()
                 ngram_length = len(p_types.iloc[0]['Soggetti'][0])
+                
+                # Process notes and melody
                 nr = self.notes(combineUnisons=combine_unisons)
                 mel = self.melodic(df=nr, end=False)
                 
-                # Recommended solution for index conversion
-                def safe_index_conversion(x):
-                    try:
-                        if isinstance(x, (int, float)):
-                            return float(x)
-                        elif isinstance(x, str) and '/' in x:
-                            return float(eval(x))
-                        else:
-                            return float(x)
-                    except (ValueError, SyntaxError, TypeError, ZeroDivisionError):
-                        return float('nan')
-                
+                # Get ngrams with consistent float indices
                 ngrams = self.ngrams(df=mel, n=ngram_length)
                 ngrams.index = ngrams.index.map(safe_index_conversion)
-                ngrams = ngrams.dropna()  # Remove any NaN indices
+                ngrams = ngrams.dropna()
                 
-                # Ensure ngrams and durations have matching indices
+                # Get durations with matching indices
                 durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
                 durations.index = durations.index.map(safe_index_conversion)
-                durations = durations.dropna()  # Remove any NaN indices
+                durations = durations.dropna()
                 
-                # Reset indices for clean processing
-                ngrams = ngrams.reset_index(drop=True)
-                durations = durations.reset_index(drop=True)
+                # Create aligned MultiIndex
+                new_index = [(pos, pos + dur) 
+                            for pos, (_, dur) in zip(ngrams.index, durations.itertuples())]
                 
-                # Debug: Print lengths to identify the mismatch
-                print(f"ngrams shape: {ngrams.shape}")
-                print(f"durations shape: {durations.shape}")
-                print(f"ngrams index length: {len(ngrams.index)}")
-                print(f"durations index length: {len(durations.index)}")
+                # Apply MultiIndex to ngrams
+                ngrams_with_durations = ngrams.copy()
+                ngrams_with_durations.index = pd.MultiIndex.from_tuples(
+                    new_index,
+                    names=["Original_Position", "Adjusted_Position"]
+                )
                 
-                # Create a new index that combines the original index with the values from durations
-                new_index = []
-                valid_indices = []  # Track which indices from ngrams are valid
-                for idx in ngrams.index:  # Iterate through ngrams index instead of durations
-                    if idx in durations.index:
-                        row = durations.loc[idx]
-                        non_nan_values = [val for val in row if not pd.isna(val)]
-                        if non_nan_values:
-                            non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
-                            new_index.append((idx, idx + non_nan_value))
-                            valid_indices.append(idx)
-                        else:
-                            new_index.append((idx, idx))
-                            valid_indices.append(idx)
-                    else:
-                        print(f"Warning: Index {idx} not found in durations DataFrame")
+                # Apply to p_types
+                p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams_with_durations), axis=1)
                 
-                # Filter ngrams to only include valid indices
-                ngrams_with_full_durs = ngrams.loc[valid_indices]
-                
-                # Verify lengths match before assignment
-                print(f"new_index length: {len(new_index)}")
-                print(f"filtered ngrams length: {len(ngrams_with_full_durs)}")
-                
-                # Create a MultiIndex from the new_index
-                multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
-                
-                # Set the new index to the result DataFrame
-                ngrams_with_full_durs.index = multi_idx
-                ngrams = ngrams_with_full_durs
-                
-                p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
                 return p_types
         
         if isinstance(df, pd.DataFrame):

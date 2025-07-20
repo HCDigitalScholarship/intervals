@@ -704,12 +704,10 @@ class ImportedPiece:
                 ngrams = self.ngrams(df=mel, n=ngram_length)
                 # Create mask using lambda function
                 ngrams = ngrams.reset_index()
+                # Evaluate fractions in the index column
+                ngrams['index'] = ngrams['index'].apply(lambda x: eval(str(x)) if '/' in str(x) else float(str(x)))
 
-                mask = ~ngrams['index'].apply(lambda x: '/' in str(x))
-
-
-                # Drop rows with fractional indices
-                ngrams = ngrams[mask]
+                # Set the evaluated values back as index
                 ngrams = ngrams.set_index('index')
                 durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
                 ngrams_with_full_durs = ngrams.copy()

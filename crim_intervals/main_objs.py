@@ -739,6 +739,16 @@ class ImportedPiece:
                     _measures = self.measures().iloc[:, 0]
                     measures = idf.map(lambda i: _measures.loc[:i].iat[-1])
                     _beats = self.beatIndex()
+                    # here filter out fractional beats, which don't work in p types
+                    if mode == 'p_types':
+                        ngram_length = len(p_types.iloc[0]['Soggetti'][0])
+                        nr = self.notes(combineUnisons=combine_unisons)
+                        mel = self.melodic(df=nr, end=False)
+                        ngrams = self.ngrams(df=mel, n=ngram_length)
+                        durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
+                        _beats = _beats.loc[durations.index]
+                    else:
+                        _beats = _beats
                     # back to code
                     beats = idf.map(lambda i: _beats[i])
                     res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1, sort=True)

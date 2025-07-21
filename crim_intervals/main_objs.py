@@ -622,7 +622,7 @@ class ImportedPiece:
     def _ptype_ema_helper(self, row, ngrams):
         # initialize dict and df
         dictionary = {}
-        filtered_df = pd.DataFrame()
+        # filtered_df = pd.DataFrame()
         # get row values for offsets and voices
         offsets = row['Offsets']
         voices = row['Voices']
@@ -705,81 +705,32 @@ class ImportedPiece:
                     mel = self.melodic(df=nr, end=False)
                     ngrams = self.ngrams(df=mel, n=ngram_length)
                     durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
+                    # filtering so the ngrams match the durations
+                    ngrams = ngrams.loc[durations.index]
+                    ngrams_with_full_durs = ngrams.copy()
                     
-                    # Filter out fractional indices from ngrams
-                    def filter_non_fractional_indices(df):
-                        """Remove rows with fractional indices (containing '/')"""
-                        non_fractional_indices = []
-                        
-                        for idx in df.index:
-                            # Skip fractional indices (strings containing '/')
-                            if isinstance(idx, str) and '/' in idx:
-                                print(f"Filtering out fractional index: {idx}")
-                                continue
-                            else:
-                                non_fractional_indices.append(idx)
-                        
-                        # Return DataFrame with only non-fractional indices
-                        filtered_df = df.loc[non_fractional_indices]
-                        print(f"Filtered ngrams: {len(df)} -> {len(filtered_df)} rows (removed {len(df) - len(filtered_df)} fractional indices)")
-                        return filtered_df
-                    
-                    # Filter both ngrams and durations to remove fractional indices
-                    ngrams_filtered = filter_non_fractional_indices(ngrams)
-                    durations_filtered = filter_non_fractional_indices(durations)
-                    
-                    # Now create MultiIndex with only non-fractional indices
+                     # Create a new index that combines the original index with the values from df2
                     new_index = []
-                    
-                    for idx, row in durations_filtered.iterrows():
-                        try:
-                            # Extract duration value
-                            non_nan_values = [val for val in row if not pd.isna(val)]
-                            if non_nan_values:
-                                duration_val = non_nan_values[0]
-                                end_position = float(idx) + duration_val
-                                
-                                # Find the closest non-fractional index for the end position
-                                available_indices = list(ngrams_filtered.index)
-                                closest_end = min(available_indices, 
-                                                key=lambda x: abs(float(x) - end_position))
-                                
-                                new_index.append((idx, closest_end))
-                                print(f"Non-fractional mapping: {idx} + {duration_val} -> ({idx}, {closest_end})")
-                            else:
-                                # No duration data, use start index for both
-                                new_index.append((idx, idx))
-                                
-                        except Exception as e:
-                            print(f"Error processing non-fractional index {idx}: {e}")
+                    for idx, row in durations.iterrows():
+                        # Extract the single non-NaN value from each row
+                        non_nan_values = [val for val in row if not pd.isna(val)]
+                        if non_nan_values:  # Check if there are any non-NaN values
+                            non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
+                            # Add it to the original index
+                            new_index.append((idx, idx + non_nan_value))
+                        else:
+                            # Handle the case where all values in the row are NaN
                             new_index.append((idx, idx))
-                    
-                    # Create MultiIndex with non-fractional indices only
-                    if new_index:
-                        try:
-                            multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
-                            
-                            # Ensure DataFrame length matches index length
-                            if len(multi_idx) <= len(ngrams_filtered):
-                                ngrams_with_full_durs = ngrams_filtered.iloc[:len(multi_idx)].copy()
-                                ngrams_with_full_durs.index = multi_idx
-                                ngrams = ngrams_with_full_durs
-                                print(f"Successfully created MultiIndex with {len(multi_idx)} non-fractional entries")
-                            else:
-                                print(f"Warning: Index length mismatch. Using first {len(ngrams_filtered)} indices")
-                                multi_idx = multi_idx[:len(ngrams_filtered)]
-                                ngrams_filtered.index = multi_idx
-                                ngrams = ngrams_filtered
-                                
-                        except Exception as e:
-                            print(f"Error creating MultiIndex: {e}. Using filtered ngrams without MultiIndex.")
-                            ngrams = ngrams_filtered
-                    else:
-                        print("Warning: No valid indices found. Using filtered ngrams.")
-                        ngrams = ngrams_filtered
+
+                    # Create a MultiIndex from the new_index
+                    multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
+
+                    # Set the new index to the result DataFrame
+                    ngrams_with_full_durs.index = multi_idx
+                    ngrams = ngrams_with_full_durs
                     
                     # Apply the helper function (should work smoothly now)
-                    p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
+                    p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams, combine_unisons), axis=1)
                     return p_types
 
             if isinstance(df, pd.DataFrame):

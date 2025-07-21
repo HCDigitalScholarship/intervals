@@ -640,7 +640,7 @@ class ImportedPiece:
             # updated 4/24 to remove repeating voice error
             short_ngrams.loc[offset, columns_to_replace] = np.nan
             short_ngrams.dropna(how='all', inplace=True)
-        emas = self.emaAddresses(df=short_ngrams, mode='')
+        emas = self.emaAddresses(df=short_ngrams, mode='p_types')
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema
 

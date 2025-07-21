@@ -741,6 +741,7 @@ class ImportedPiece:
                     _beats = self.beatIndex()
                     # here filter out fractional beats, which don't work in p types
                     if mode == 'p_types':
+                        p_types = df.copy()
                         ngram_length = len(p_types.iloc[0]['Soggetti'][0])
                         nr = self.notes(combineUnisons=combine_unisons)
                         mel = self.melodic(df=nr, end=False)

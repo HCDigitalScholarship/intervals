@@ -316,7 +316,7 @@ class ImportedPiece:
 
     def _maxnDurationHelper(self, _col):
         col = _col.dropna()
-        starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', np.nan)))]
+        starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', None)))]
         ends = col[(col == 'Rest') & (col.shift(1) != 'Rest')]
         starts.dropna(inplace=True)
         ends.dropna(inplace=True)
@@ -2449,7 +2449,7 @@ class ImportedPiece:
         Set sns plot size for cadence progress tool.
         """
         if '_plot_default' not in self.analyses:
-            sns.set(rc={'figure.figsize':(15,9)})
+            sns.set_theme(rc={'figure.figsize':(15,9)})
             self.analyses['_plot_default'] = True
 
 
@@ -4029,7 +4029,7 @@ class CorpusBase:
         Set sns plot size for cadence progress tool.
         """
         if '_plot_default' not in self.analyses:
-            sns.set(rc={'figure.figsize':(15,9)})
+            sns.theme(rc={'figure.figsize':(15,9)})
             self.analyses['_plot_default'] = True
 
     def compareCadenceProgressPlots(self, includeType=False, cadTone=None, cadType=None, includeLegend=True, customOrder=None, renderer=""):

@@ -747,7 +747,7 @@ class ImportedPiece:
                         mel = self.melodic(df=nr, end=False)
                         ngrams = self.ngrams(df=mel, n=ngram_length)
                         durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
-                        idf = ngrams.loc[durations.index]
+                        idf = ngrams.loc[durations.index].index.to_frame()
                         _beats = _beats.loc[durations.index]
                     else:
                         _beats = _beats

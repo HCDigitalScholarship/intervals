@@ -697,79 +697,129 @@ class ImportedPiece:
                     return hr
             # for ptypes output
             # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
-            elif mode == 'p_types': # p_type mode
+            elif mode == 'p_types':
                 if isinstance(df, pd.DataFrame):
                     p_types = df.copy()
                     ngram_length = len(p_types.iloc[0]['Soggetti'][0])
-                    nr = self.notes(combineUnisons = combine_unisons)
-                    mel = self.melodic(df = nr, end=False)
+                    nr = self.notes(combineUnisons=combine_unisons)
+                    mel = self.melodic(df=nr, end=False)
                     ngrams = self.ngrams(df=mel, n=ngram_length)
                     durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
-                    ngrams_with_full_durs = ngrams.copy()
                     
-                    # Create a new index that combines the original index with the values from df2
-                    new_index = []
-                    valid_indices = set(ngrams.index)  # Get all valid indices from ngrams
-                    
-                    for idx, row in durations.iterrows():
-                        try:
-                            # Extract the single non-NaN value from each row
-                            non_nan_values = [val for val in row if not pd.isna(val)]
-                            if non_nan_values:  # Check if there are any non-NaN values
-                                non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
-                                end_idx = idx + non_nan_value
-                                
-                                # Check if both start and end indices exist in ngrams
-                                if idx in valid_indices and end_idx in valid_indices:
-                                    new_index.append((idx, end_idx))
+                    # Force durations to use the same index format as ngrams (preserve fractions)
+                    def align_duration_index_to_ngrams(durations_df, ngrams_df, tolerance=1e-6):
+                        """Align durations index to match ngrams index format, preserving fractions"""
+                        aligned_durations = durations_df.copy()
+                        new_index = []
+                        
+                        for dur_idx in durations_df.index:
+                            dur_decimal = float(dur_idx)
+                            best_match = None
+                            min_diff = float('inf')
+                            
+                            # Find the closest matching ngram index
+                            for ngram_idx in ngrams_df.index:
+                                if isinstance(ngram_idx, str) and '/' in ngram_idx:
+                                    ngram_decimal = float(Fraction(ngram_idx))
                                 else:
-                                    # Fallback: use original index if calculated indices don't exist
-                                    print(f"Warning: Index mismatch for idx {idx}. Using fallback indexing.")
-                                    new_index.append((idx, idx))
+                                    ngram_decimal = float(ngram_idx)
+                                
+                                diff = abs(ngram_decimal - dur_decimal)
+                                if diff < min_diff:
+                                    min_diff = diff
+                                    best_match = ngram_idx
+                            
+                            # Use the ngram index format if within tolerance
+                            if min_diff <= tolerance:
+                                new_index.append(best_match)
+                                if isinstance(best_match, str) and '/' in best_match:
+                                    print(f"Aligned duration index: {dur_idx} -> {best_match} (fraction preserved)")
+                                else:
+                                    print(f"Aligned duration index: {dur_idx} -> {best_match}")
                             else:
-                                # Handle the case where all values in the row are NaN
-                                new_index.append((idx, idx))
-                        except (KeyError, IndexError, TypeError) as e:
-                            # Handle any indexing errors
-                            print(f"Error processing index {idx}: {e}. Using fallback indexing.")
-                            new_index.append((idx, idx))
-                        except Exception as e:
-                            # Catch any other unexpected errors
-                            print(f"Unexpected error processing index {idx}: {e}. Skipping this row.")
-                            continue
+                                # Keep original if no close match found
+                                new_index.append(dur_idx)
+                                print(f"Warning: No close match for duration index {dur_idx}, keeping original")
+                        
+                        aligned_durations.index = new_index
+                        return aligned_durations
                     
-                    # Only proceed if we have valid indices
+                    # Align the durations DataFrame to use fraction indices
+                    aligned_durations = align_duration_index_to_ngrams(durations, ngrams)
+                    
+                    # Now create MultiIndex with duration-based end positions
+                    new_index = []
+                    
+                    for idx, row in aligned_durations.iterrows():
+                        try:
+                            # Extract duration value
+                            non_nan_values = [val for val in row if not pd.isna(val)]
+                            if non_nan_values:
+                                duration_val = non_nan_values[0]
+                                
+                                # Calculate end position (preserving fraction format)
+                                if isinstance(idx, str) and '/' in idx:
+                                    start_decimal = float(Fraction(idx))
+                                else:
+                                    start_decimal = float(idx)
+                                
+                                end_decimal = start_decimal + duration_val
+                                
+                                # Find the best matching end index in ngrams
+                                best_end_match = None
+                                min_diff = float('inf')
+                                
+                                for ngram_idx in ngrams.index:
+                                    if isinstance(ngram_idx, str) and '/' in ngram_idx:
+                                        ngram_decimal = float(Fraction(ngram_idx))
+                                    else:
+                                        ngram_decimal = float(ngram_idx)
+                                    
+                                    diff = abs(ngram_decimal - end_decimal)
+                                    if diff < min_diff:
+                                        min_diff = diff
+                                        best_end_match = ngram_idx
+                                
+                                if best_end_match is not None:
+                                    new_index.append((idx, best_end_match))
+                                    # Log the mapping for debugging
+                                    if isinstance(idx, str) and '/' in idx or isinstance(best_end_match, str) and '/' in best_end_match:
+                                        print(f"Duration mapping (fractions preserved): {idx} + {duration_val} -> ({idx}, {best_end_match})")
+                                else:
+                                    # Fallback to using start index for both
+                                    new_index.append((idx, idx))
+                                    print(f"Warning: Could not find end match for {idx}, using start index for both")
+                            else:
+                                # No duration data, use start index for both
+                                new_index.append((idx, idx))
+                                
+                        except Exception as e:
+                            print(f"Error processing index {idx}: {e}. Using fallback.")
+                            new_index.append((idx, idx))
+                    
+                    # Create MultiIndex with preserved fraction formats
                     if new_index:
                         try:
-                            # Create a MultiIndex from the new_index
                             multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
                             
-                            # Ensure the new index length matches the original DataFrame
-                            if len(multi_idx) == len(ngrams_with_full_durs):
+                            # Ensure DataFrame length matches index length
+                            if len(multi_idx) <= len(ngrams):
+                                ngrams_with_full_durs = ngrams.iloc[:len(multi_idx)].copy()
                                 ngrams_with_full_durs.index = multi_idx
+                                ngrams = ngrams_with_full_durs
+                                print(f"Successfully created MultiIndex with {len(multi_idx)} entries, fractions preserved")
                             else:
-                                print(f"Warning: Index length mismatch. Expected {len(ngrams_with_full_durs)}, got {len(multi_idx)}")
-                                # Use only the valid portion or pad as needed
-                                min_len = min(len(multi_idx), len(ngrams_with_full_durs))
-                                ngrams_with_full_durs = ngrams_with_full_durs.iloc[:min_len]
-                                ngrams_with_full_durs.index = multi_idx[:min_len]
-                            
-                            ngrams = ngrams_with_full_durs
+                                print(f"Warning: Index length mismatch. Trimming to {len(ngrams)} entries")
+                                multi_idx = multi_idx[:len(ngrams)]
+                                ngrams.index = multi_idx
+                                
                         except Exception as e:
                             print(f"Error creating MultiIndex: {e}. Using original ngrams.")
-                            # Fall back to original ngrams if MultiIndex creation fails
-                            pass
                     else:
-                        print("Warning: No valid indices found. Using original ngrams.")
+                        print("Warning: No valid indices created. Using original ngrams.")
                     
-                    # Apply the helper function with error handling
-                    try:
-                        p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
-                    except Exception as e:
-                        print(f"Error applying _ptype_ema_helper: {e}")
-                        # You might want to add a fallback here or re-raise the exception
-                        raise
-                    
+                    # Apply the helper function
+                    p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
                     return p_types
 
             if isinstance(df, pd.DataFrame):

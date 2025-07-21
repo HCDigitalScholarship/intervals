@@ -644,11 +644,12 @@ class ImportedPiece:
         complete_ema = self.combineEmaAddresses(emas)
         return complete_ema
 
+    # 
+    # test
     def emaAddresses(self, df=None, mode='', combine_unisons=None):
         '''
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
         like melodic ngrams. The `mode` parameter is detected automatically if it isn't passed.
-
         ***Example***
         mel = piece.melodic()
         ng = piece.ngrams(df=mel, n=4, offsets='both')
@@ -657,135 +658,135 @@ class ImportedPiece:
         '''
         if isinstance(df, pd.DataFrame):
             ret = df.copy()
-        if mode == 'melodic':
-            newCols = []
-            for i in range(len(ret.columns)):
-                part = ret.iloc[:, i].dropna()
-                notes = self.notes().loc[:, part.name].dropna()
-                new_index = []
-                for (_first, _last) in part.index:
-                    new_index.append((notes.loc[:_first].index[-2], _last))
-                part.index = pd.MultiIndex.from_tuples(new_index, names=part.index.names)
-                newCols.append(part)
-            ret = pd.concat(newCols, axis=1, sort=True)
-        elif mode.startswith('c'):  # cadences/cvfs mode
-            ret = self.cvfs(keep_keys=True, offsets='both').copy()
-            ngrams = ret.iloc[:, len(self._getPartNames()):]
-            addresses = self.emaAddresses(df=ngrams, mode='')
-            if isinstance(df, pd.DataFrame) and ('First' in df.index.names and 'Last' in df.index.names):
-                return addresses
-            else:
-                uni = addresses.index.levels[-1].unique()
-                ret = pd.Series(index=uni, name='EMA').astype(str)
-                for un in uni:
-                    val = self.combineEmaAddresses(addresses.loc[(slice(None), un)].to_list())
-                    ret.at[un] = val
-                return ret
-        # hr mode--works with HR dataframe, adding ema address to each hr passage (= row).  
-        # pass in output of hr = piece.homorhythm() as the df and set mode = 'hr'
-        elif mode == 'homorhythm': # hr mode
-            if isinstance(df, pd.DataFrame):
-                hr = df.copy()
-                ngram_length = int(hr.iloc[0]['ngram_length'])
-                nr = self.notes()
-                dur = self.durations(df = nr)
-                ngrams = self.ngrams(df = dur, n = ngram_length, offsets = 'both', exclude=[])
-                hr = hr.reset_index()
-                hr['ema'] = hr.apply(lambda row: self._hr_helper(row, ngrams), axis=1)
-                hr.set_index(['Measure', 'Beat', 'Offset'], inplace=True)
-                return hr  
-        # for ptypes output
-        # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
-        elif mode == 'p_types': # p_type mode
-            if isinstance(df, pd.DataFrame):
-                p_types = df.copy()
-                ngram_length = len(p_types.iloc[0]['Soggetti'][0])
-                nr = self.notes(combineUnisons = combine_unisons)
-                mel = self.melodic(df = nr, end=False)
-                ngrams = self.ngrams(df=mel, n=ngram_length)
-                # Create mask using lambda function
-                # ngrams = ngrams.reset_index()
-                # # Evaluate fractions in the index column
-                # ngrams['index'] = ngrams['index'].apply(lambda x: eval(str(x)) if '/' in str(x) else float(str(x)))
-
-                # Set the evaluated values back as index
-                # ngrams = ngrams.set_index('index')
-                durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
-                # function to make sure duration index vals are fractions
-                def vectorized_fraction_conversion(index_series):
-                    # Convert Index to Series for numerical operations
-                    series = pd.Series(index_series)
+            if mode == 'melodic':
+                newCols = []
+                for i in range(len(ret.columns)):
+                    part = ret.iloc[:, i].dropna()
+                    notes = self.notes().loc[:, part.name].dropna()
+                    new_index = []
+                    for (_first, _last) in part.index:
+                        new_index.append((notes.loc[:_first].index[-2], _last))
+                    part.index = pd.MultiIndex.from_tuples(new_index, names=part.index.names)
+                    newCols.append(part)
+                ret = pd.concat(newCols, axis=1, sort=True)
+            elif mode.startswith('c'):  # cadences/cvfs mode
+                ret = self.cvfs(keep_keys=True, offsets='both').copy()
+                ngrams = ret.iloc[:, len(self._getPartNames()):]
+                addresses = self.emaAddresses(df=ngrams, mode='')
+                if isinstance(df, pd.DataFrame) and ('First' in df.index.names and 'Last' in df.index.names):
+                    return addresses
+                else:
+                    uni = addresses.index.levels[-1].unique()
+                    ret = pd.Series(index=uni, name='EMA').astype(str)
+                    for un in uni:
+                        val = self.combineEmaAddresses(addresses.loc[(slice(None), un)].to_list())
+                        ret.at[un] = val
+                    return ret
+            # hr mode--works with HR dataframe, adding ema address to each hr passage (= row).
+            # pass in output of hr = piece.homorhythm() as the df and set mode = 'hr'
+            elif mode == 'homorhythm': # hr mode
+                if isinstance(df, pd.DataFrame):
+                    hr = df.copy()
+                    ngram_length = int(hr.iloc[0]['ngram_length'])
+                    nr = self.notes()
+                    dur = self.durations(df = nr)
+                    ngrams = self.ngrams(df = dur, n = ngram_length, offsets = 'both', exclude=[])
+                    hr = hr.reset_index()
+                    hr['ema'] = hr.apply(lambda row: self._hr_helper(row, ngrams), axis=1)
+                    hr.set_index(['Measure', 'Beat', 'Offset'], inplace=True)
+                    return hr
+            # for ptypes output
+            # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
+            elif mode == 'p_types': # p_type mode
+                if isinstance(df, pd.DataFrame):
+                    p_types = df.copy()
+                    ngram_length = len(p_types.iloc[0]['Soggetti'][0])
+                    nr = self.notes(combineUnisons = combine_unisons)
+                    mel = self.melodic(df = nr, end=False)
+                    ngrams = self.ngrams(df=mel, n=ngram_length)
+                    durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
+                    ngrams_with_full_durs = ngrams.copy()
                     
-                    # Create masks for .3333 and .6666 patterns
-                    mask_3333 = (series % 1 - 0.3333).abs() < 1e-4
-                    mask_6666 = (series % 1 - 0.6666).abs() < 1e-4
+                    # Create a new index that combines the original index with the values from df2
+                    new_index = []
+                    valid_indices = set(ngrams.index)  # Get all valid indices from ngrams
                     
-                    # Initialize result array
-                    result = series.copy()
+                    for idx, row in durations.iterrows():
+                        try:
+                            # Extract the single non-NaN value from each row
+                            non_nan_values = [val for val in row if not pd.isna(val)]
+                            if non_nan_values:  # Check if there are any non-NaN values
+                                non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
+                                end_idx = idx + non_nan_value
+                                
+                                # Check if both start and end indices exist in ngrams
+                                if idx in valid_indices and end_idx in valid_indices:
+                                    new_index.append((idx, end_idx))
+                                else:
+                                    # Fallback: use original index if calculated indices don't exist
+                                    print(f"Warning: Index mismatch for idx {idx}. Using fallback indexing.")
+                                    new_index.append((idx, idx))
+                            else:
+                                # Handle the case where all values in the row are NaN
+                                new_index.append((idx, idx))
+                        except (KeyError, IndexError, TypeError) as e:
+                            # Handle any indexing errors
+                            print(f"Error processing index {idx}: {e}. Using fallback indexing.")
+                            new_index.append((idx, idx))
+                        except Exception as e:
+                            # Catch any other unexpected errors
+                            print(f"Unexpected error processing index {idx}: {e}. Skipping this row.")
+                            continue
                     
-                    # Convert .3333 values
-                    whole_3333 = series[mask_3333].astype(int)
-                    result[mask_3333] = whole_3333 * 3 + 1
-                    result[mask_3333] = result[mask_3333] / 3
-                    
-                    # Convert .6666 values
-                    whole_6666 = series[mask_6666].astype(int)
-                    result[mask_6666] = whole_6666 * 3 + 2
-                    result[mask_6666] = result[mask_6666] / 3
-                    
-                    # Convert to Fraction where appropriate
-                    def convert_to_fraction(x):
-                        if pd.isna(x):
-                            return x
-                        elif abs(x % 1 - 0.3333) < 1e-4 or abs(x % 1 - 0.6666) < 1e-4:
-                            return Fraction(int(x * 3), 3)
-                        return x
-                    
-                    return result.apply(convert_to_fraction)
-
-                # Usage
-                durations.index = vectorized_fraction_conversion(durations.index)
-                ngrams_with_full_durs = ngrams.copy()
-
-                # Create a new index that combines the original index with the values from df2
-                new_index = []
-                for idx, row in durations.iterrows():
-                    # Extract the single non-NaN value from each row
-                    non_nan_values = [val for val in row if not pd.isna(val)]
-                    if non_nan_values:  # Check if there are any non-NaN values
-                        non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
-                        # Add it to the original index
-                        new_index.append((idx, idx + non_nan_value))
+                    # Only proceed if we have valid indices
+                    if new_index:
+                        try:
+                            # Create a MultiIndex from the new_index
+                            multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
+                            
+                            # Ensure the new index length matches the original DataFrame
+                            if len(multi_idx) == len(ngrams_with_full_durs):
+                                ngrams_with_full_durs.index = multi_idx
+                            else:
+                                print(f"Warning: Index length mismatch. Expected {len(ngrams_with_full_durs)}, got {len(multi_idx)}")
+                                # Use only the valid portion or pad as needed
+                                min_len = min(len(multi_idx), len(ngrams_with_full_durs))
+                                ngrams_with_full_durs = ngrams_with_full_durs.iloc[:min_len]
+                                ngrams_with_full_durs.index = multi_idx[:min_len]
+                            
+                            ngrams = ngrams_with_full_durs
+                        except Exception as e:
+                            print(f"Error creating MultiIndex: {e}. Using original ngrams.")
+                            # Fall back to original ngrams if MultiIndex creation fails
+                            pass
                     else:
-                        # Handle the case where all values in the row are NaN
-                        new_index.append((idx, idx))
+                        print("Warning: No valid indices found. Using original ngrams.")
+                    
+                    # Apply the helper function with error handling
+                    try:
+                        p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
+                    except Exception as e:
+                        print(f"Error applying _ptype_ema_helper: {e}")
+                        # You might want to add a fallback here or re-raise the exception
+                        raise
+                    
+                    return p_types
 
-                # Create a MultiIndex from the new_index
-                multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
-
-                # Set the new index to the result DataFrame
-                ngrams_with_full_durs.index = multi_idx
-                ngrams = ngrams_with_full_durs
-                # ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length +1, exclude=['Rest'])
-                p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
-                return p_types
-        # new approach for p_types mode
-       
-        if isinstance(df, pd.DataFrame):
-            if len(df) >= 1:
-                idf = ret.index.to_frame()
-                _measures = self.measures().iloc[:, 0]
-                measures = idf.map(lambda i: _measures.loc[:i].iat[-1])
-                _beats = self.beatIndex()
-                # back to code
-                beats = idf.map(lambda i: _beats[i])
-                res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1, sort=True)
-                res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
-                ret = self.numberParts(ret)
-                res = pd.concat([res, ret], axis=1, sort=True)
-                res = res.apply(self._emaRowHelper, axis=1)
-                res.name = 'EMA'
-                return res
+            if isinstance(df, pd.DataFrame):
+                if len(df) >= 1:
+                    idf = ret.index.to_frame()
+                    _measures = self.measures().iloc[:, 0]
+                    measures = idf.map(lambda i: _measures.loc[:i].iat[-1])
+                    _beats = self.beatIndex()
+                    # back to code
+                    beats = idf.map(lambda i: _beats[i])
+                    res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1, sort=True)
+                    res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
+                    ret = self.numberParts(ret)
+                    res = pd.concat([res, ret], axis=1, sort=True)
+                    res = res.apply(self._emaRowHelper, axis=1)
+                    res.name = 'EMA'
+                    return res
 
     def linkExamples(self, df, piece_url='', mode='', combine_unisons=None):
         '''

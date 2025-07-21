@@ -747,19 +747,27 @@ class ImportedPiece:
                         mel = self.melodic(df=nr, end=False)
                         ngrams = self.ngrams(df=mel, n=ngram_length)
                         durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
-                        idf = ngrams.loc[durations.index].index.to_frame()
+                        # idf = idf.loc[durations.index]
                         _beats = _beats.loc[durations.index]
+                        beats = idf.map(lambda i: _beats[i])
+                        res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1, sort=True)
+                        res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
+                        ret = self.numberParts(ret)
+                        res = pd.concat([res, ret], axis=1, sort=True)
+                        res = res.apply(self._emaRowHelper, axis=1)
+                        res.name = 'EMA'
+                        return res
                     else:
                         _beats = _beats
-                    # back to code
-                    beats = idf.map(lambda i: _beats[i])
-                    res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1, sort=True)
-                    res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
-                    ret = self.numberParts(ret)
-                    res = pd.concat([res, ret], axis=1, sort=True)
-                    res = res.apply(self._emaRowHelper, axis=1)
-                    res.name = 'EMA'
-                    return res
+                        # back to code
+                        beats = idf.map(lambda i: _beats[i])
+                        res = pd.concat([measures['First'], beats['First'], measures['Last'], beats['Last']], axis=1, sort=True)
+                        res.columns = ['First Measure', 'First Beat', 'Last Measure', 'Last Beat']
+                        ret = self.numberParts(ret)
+                        res = pd.concat([res, ret], axis=1, sort=True)
+                        res = res.apply(self._emaRowHelper, axis=1)
+                        res.name = 'EMA'
+                        return res
 
     def linkExamples(self, df, piece_url='', mode='', combine_unisons=None):
         '''

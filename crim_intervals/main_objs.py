@@ -730,7 +730,7 @@ class ImportedPiece:
                     ngrams = ngrams_with_full_durs
                     
                     # Apply the helper function (should work smoothly now)
-                    p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams, combine_unisons), axis=1)
+                    p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
                     return p_types
 
             if isinstance(df, pd.DataFrame):

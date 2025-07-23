@@ -1566,7 +1566,7 @@ class ImportedPiece:
 
             self.analyses[key] = ret
         return self.analyses[key]
-
+    # update har to correct caching
     def harmonic(self, kind='q', directed=True, compound=True, againstLow=False, df=None):
         '''
         Return harmonic intervals for all voice pairs.
@@ -1602,17 +1602,68 @@ class ImportedPiece:
         _kind = {'z': 'd'}.get(kind, kind)
         settings = (_kind, directed, compound)
         key = ('HarmonicIntervals', kind, directed, compound, againstLow)
+        
+        # Fixed logic: when df is provided OR key not in cache, compute intervals
         if df is not None or key not in self.analyses:
             _df = self._getM21HarmonicIntervals(againstLow, df)
             _df = _df.map(self._intervalMethods[settings], na_action='ignore')
             if kind == 'z':
                 _df = _df.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
             _df = _df.sort_index()
+            
+            # Fixed caching logic: only cache when df is None (standard behavior)
             if df is not None:
-                self.analyses[key] = _df
+                return _df  # Return computed result for custom df without caching
             else:
-                return _df
+                self.analyses[key] = _df  # Cache result for standard behavior
+        
         return self.analyses[key]
+    # def harmonic(self, kind='q', directed=True, compound=True, againstLow=False, df=None):
+    #     '''
+    #     Return harmonic intervals for all voice pairs.
+
+    #     The voice pairs are named with the voice that's lower on the staff given first,
+    #     and the two voices separated with an underscore, e.g. "Bassus_Tenor". If againstLow
+    #     is True, intervals will be measured against the lowest sounding note.
+
+    #     :param str kind: use "q" (default) for diatonic intervals with quality,
+    #         "d" for diatonic intervals without quality, "z" for zero-indexed
+    #         diatonic intervals without quality (i.e. unison = 0, second = 1,
+    #         etc.), or "c" for chromatic intervals. Only the first character is
+    #         used, and it's case insensitive.
+    #     :param bool directed: defaults to True which shows that the voice that
+    #         is lower on the staff is a higher pitch than the voice that is
+    #         higher on the staff. This is desginated with a "-" prefix.
+    #     :param bool compound: whether to use compound (True, default) or simple
+    #         (False) intervals. In the case of simple diatonic intervals, it
+    #         simplifies to within the octave, so octaves don't get simplified to
+    #         unisons. But for semitonal intervals, an interval of an octave
+    #         (12 semitones) would does get simplified to a unison (0 semitones).
+    #     :param bool againstLow: if False (default) harmonic intervals between
+    #         all pairs of voices will be returned. If True harmonic intervals of
+    #         each voice against the lowest sounding note at each moment is returned.
+    #     :param pandas DataFrame df: None (default) is the standard behavior. Pass a
+    #         df of note and rest strings or music21 objects to calculate the harmonic
+    #         interals in any dataframe.
+    #     :returns: `pandas.DataFrame` of harmonic intervals in each pair in the
+    #         format specified by the `kind`, `directed`, and `compound` parameters.
+    #     '''
+    #     kind = kind[0].lower()
+    #     kind = {'s': 'c'}.get(kind, kind)
+    #     _kind = {'z': 'd'}.get(kind, kind)
+    #     settings = (_kind, directed, compound)
+    #     key = ('HarmonicIntervals', kind, directed, compound, againstLow)
+    #     if df is not None or key not in self.analyses:
+    #         _df = self._getM21HarmonicIntervals(againstLow, df)
+    #         _df = _df.map(self._intervalMethods[settings], na_action='ignore')
+    #         if kind == 'z':
+    #             _df = _df.map(ImportedPiece._zeroIndexIntervals, na_action='ignore')
+    #         _df = _df.sort_index()
+    #         if df is not None:
+    #             self.analyses[key] = _df
+    #         else:
+    #             return _df
+    #     return self.analyses[key]
     
     def sonorities(self, kind='d', directed=True, compound='simple', sort=True):
         """

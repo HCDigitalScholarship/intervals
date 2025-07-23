@@ -3233,6 +3233,9 @@ class ImportedPiece:
             entries = self.entries(mel_ng)
         else:
             entries = self.ngrams(df=mel, exclude=['Rest'], n=melodic_ngram_length)
+        # remove entries that start at fractional offsets
+        integer_mask = entries.index % 1 == 0
+        entries = entries[integer_mask]
         # get ngram durs to use for overlap check as part of _temp files
         ng_durs = self.durations(df=entries)
         points = pd.DataFrame(columns=['Composer',

@@ -1524,48 +1524,100 @@ class ImportedPiece:
             plt.title("Total Number of Patterns: " + str(len(graph_pattern_list)) + "\n Piece Name: " + self.metadata["title"])
         plt.show()
 
-
+    # fixed helper
     def _getM21HarmonicIntervals(self, againstLow=False, df=None):
-        """
-        Return m21 interval objects for every pair of intervals in the piece.
+            """
+            Return m21 interval objects for every pair of intervals in the piece.
 
-        This does all pairs between voices if againstLow is False (default) or
-        each voice against the lowest sounding note if againstLow is True.
-        """
-        key = ('M21HarmonicIntervals', againstLow)
-        if key not in self.analyses:
-            if df is None:
-                m21Objs = self._getM21ObjsNoTies()
-            else:
-                sampleVal = df.stack(future_stack=True).dropna().iat[0]
-                if isinstance(sampleVal, str):
-                    m21Objs = df.map(ImportedPiece._strToM21Obj, na_action='ignore')
+            This does all pairs between voices if againstLow is False (default) or
+            each voice against the lowest sounding note if againstLow is True.
+            """
+            key = ('M21HarmonicIntervals', againstLow)
+            
+            # Fixed: Only use cache when df is None (like the melodic version)
+            if key not in self.analyses or df is not None:
+                if df is None:
+                    m21Objs = self._getM21ObjsNoTies()
                 else:
-                    m21Objs = df
-            pairs = []
-            if againstLow:
-                low = self.lowLine()
-                if df is not None:
-                    low = low.loc[df.index[0]: df.index[-1]]
-                low = low.apply(lambda val: note.Note(val) if val != 'Rest' else note.Rest())
-                lowIndex = len(m21Objs.columns)
-                combos = [(lowIndex, x) for x in range(len(m21Objs.columns))]
-                m21Objs = pd.concat([m21Objs, low], axis=1)
-            else:
-                combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
-            for combo in combos:
-                df = m21Objs.iloc[:, list(combo)].dropna(how='all').ffill()
-                ser = df.apply(ImportedPiece._harmonicIntervalHelper, axis=1)
-                # name each column according to the voice names that make up the intervals, e.g. 'Bassus_Altus'
-                ser.name = '_'.join((m21Objs.columns[combo[0]], m21Objs.columns[combo[1]]))
-                pairs.append(ser)
-            if pairs:
-                ret = pd.concat(pairs, axis=1, sort=True)
-            else:
-                ret = pd.DataFrame()
+                    sampleVal = df.stack(future_stack=True).dropna().iat[0]
+                    if isinstance(sampleVal, str):
+                        m21Objs = df.map(ImportedPiece._strToM21Obj, na_action='ignore')
+                    else:
+                        m21Objs = df
+                
+                pairs = []
+                if againstLow:
+                    low = self.lowLine()
+                    if df is not None:
+                        # Fixed: Use the actual df index range, not just first to last
+                        low = low.loc[low.index.intersection(df.index)]
+                    low = low.apply(lambda val: note.Note(val) if val != 'Rest' else note.Rest())
+                    lowIndex = len(m21Objs.columns)
+                    combos = [(lowIndex, x) for x in range(len(m21Objs.columns))]
+                    m21Objs = pd.concat([m21Objs, low], axis=1)
+                else:
+                    combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
+                
+                for combo in combos:
+                    df_combo = m21Objs.iloc[:, list(combo)].dropna(how='all').ffill()
+                    ser = df_combo.apply(ImportedPiece._harmonicIntervalHelper, axis=1)
+                    # name each column according to the voice names that make up the intervals
+                    ser.name = '_'.join((m21Objs.columns[combo[0]], m21Objs.columns[combo[1]]))
+                    pairs.append(ser)
+                
+                if pairs:
+                    ret = pd.concat(pairs, axis=1, sort=True)
+                else:
+                    ret = pd.DataFrame()
 
-            self.analyses[key] = ret
-        return self.analyses[key]
+                # Fixed: Only cache when df is None (like the melodic version)
+                if df is not None:
+                    return ret
+                else:
+                    self.analyses[key] = ret
+            
+            return self.analyses[key]
+    # def _getM21HarmonicIntervals(self, againstLow=False, df=None):
+    #     """
+    #     Return m21 interval objects for every pair of intervals in the piece.
+
+    #     This does all pairs between voices if againstLow is False (default) or
+    #     each voice against the lowest sounding note if againstLow is True.
+    #     """
+    #     key = ('M21HarmonicIntervals', againstLow)
+    #     if key not in self.analyses:
+    #         if df is None:
+    #             m21Objs = self._getM21ObjsNoTies()
+    #         else:
+    #             sampleVal = df.stack(future_stack=True).dropna().iat[0]
+    #             if isinstance(sampleVal, str):
+    #                 m21Objs = df.map(ImportedPiece._strToM21Obj, na_action='ignore')
+    #             else:
+    #                 m21Objs = df
+    #         pairs = []
+    #         if againstLow:
+    #             low = self.lowLine()
+    #             if df is not None:
+    #                 low = low.loc[df.index[0]: df.index[-1]]
+    #             low = low.apply(lambda val: note.Note(val) if val != 'Rest' else note.Rest())
+    #             lowIndex = len(m21Objs.columns)
+    #             combos = [(lowIndex, x) for x in range(len(m21Objs.columns))]
+    #             m21Objs = pd.concat([m21Objs, low], axis=1)
+    #         else:
+    #             combos = combinations(range(len(m21Objs.columns) - 1, -1, -1), 2)
+    #         for combo in combos:
+    #             df = m21Objs.iloc[:, list(combo)].dropna(how='all').ffill()
+    #             ser = df.apply(ImportedPiece._harmonicIntervalHelper, axis=1)
+    #             # name each column according to the voice names that make up the intervals, e.g. 'Bassus_Altus'
+    #             ser.name = '_'.join((m21Objs.columns[combo[0]], m21Objs.columns[combo[1]]))
+    #             pairs.append(ser)
+    #         if pairs:
+    #             ret = pd.concat(pairs, axis=1, sort=True)
+    #         else:
+    #             ret = pd.DataFrame()
+
+    #         self.analyses[key] = ret
+    #     return self.analyses[key]
     # update har to correct caching
     def harmonic(self, kind='q', directed=True, compound=True, againstLow=False, df=None):
         '''

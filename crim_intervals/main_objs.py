@@ -829,22 +829,22 @@ class ImportedPiece:
                 else:
                     mode = 'melodic'
         # July 2025 EMA Handling for P Types - Initialize ema and data_col_name for explicit modes
-        # if mode == 'p_types':
-        #     data_col_name = 'Presentation_Type'
-        #     ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
-        # elif mode == 'homorhythm':
-        #     data_col_name = 'hr_voices'
-        #     ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
-        # elif mode == 'cadences':
-        #     data_col_name = 'CadType'
-        #     ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
-        # elif mode == 'melodic':
-        #     # No need to initialize ema for melodic mode as it's handled separately
-        #     pass
-        # else:
-        #     # Handle unknown modes
-        #     raise ValueError(f"Unsupported mode: {mode}")
-        # fmt = '<a href="{}&{}" rel="noopener noreferrer" target="_blank">{}</a>'
+        if mode == 'p_types':
+            data_col_name = 'Presentation_Type'
+            ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
+        elif mode == 'homorhythm':
+            data_col_name = 'hr_voices'
+            ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
+        elif mode == 'cadences':
+            data_col_name = 'CadType'
+            ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
+        elif mode == 'melodic':
+            # No need to initialize ema for melodic mode as it's handled separately
+            pass
+        else:
+            # Handle unknown modes
+            raise ValueError(f"Unsupported mode: {mode}")
+        fmt = '<a href="{}&{}" rel="noopener noreferrer" target="_blank">{}</a>'
         if mode == 'melodic':
             res = []
             # this loop is needed because the "last" offset of df is the beginning

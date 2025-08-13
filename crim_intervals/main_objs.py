@@ -700,7 +700,7 @@ class ImportedPiece:
             elif mode == 'p_types':
                 if isinstance(df, pd.DataFrame):
                     p_types = df.copy()
-                    ngram_length = len(p_types.iloc[0]['Soggetti'][0])
+                    ngram_length = len(df.iloc[0]['Soggetti'][0])
                     # previous version
                     # nr = self.notes(combineUnisons=combine_unisons)
                     # mel = self.melodic(df=nr, end=False)
@@ -751,7 +751,8 @@ class ImportedPiece:
                     ngrams = stacked_ngrams.to_frame() if isinstance(stacked_ngrams, pd.Series) else stacked_ngrams
                     
                     # Apply the helper function (should work smoothly now)
-                    p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
+                    df['ema'] = df.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
+                    p_types = df
                     return p_types
 
             if isinstance(df, pd.DataFrame):

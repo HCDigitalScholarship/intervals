@@ -668,7 +668,7 @@ class ImportedPiece:
         short_ngrams_with_full_durs.index = multi_idx
 
         # ngrams = short_ngrams_with_full_durs
-        emas = self.emaAddresses(df=short_ngrams_with_full_durs, mode='')
+        emas = self.emaAddresses(df=short_ngrams_with_full_durs, mode='p_types')
         complete_ema = self.combineEmaAddresses(emas)
 
         return complete_ema

@@ -820,7 +820,7 @@ class ImportedPiece:
         if mode == 'melodic':
             res = []
             # this loop is needed because the "last" offset of df is the beginning
-            # of it's last event, whereas in temp it's the beginning of the next event
+            # of its last event, whereas in temp it's the beginning of the next event
             for col in range(len(df.columns)):
                 col_urls = pd.DataFrame(self.emaAddresses(df.take([col], axis=1), mode=mode).dropna())
                 col_urls = col_urls.map(ImportedPiece._constructColumnwiseUrl, na_action='ignore', piece_url=piece_url)
@@ -863,7 +863,7 @@ class ImportedPiece:
             "measure_range": mr
         }
         query_string = urllib.parse.urlencode(params)
-        react_app_url = "https://RichardFreedman.github.io/ema_react_app/"
+        react_app_url = "https://eleon024.github.io/ema_react_app/"
         url = ''.join((react_app_url, '?', query_string))
         return url
 

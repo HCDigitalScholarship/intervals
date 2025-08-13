@@ -724,7 +724,7 @@ class ImportedPiece:
         short_ngrams_with_full_durs.index = multi_idx
         
         # Generate EMA addresses using the isolated DataFrame
-        emas = self.emaAddresses(df=short_ngrams_with_full_durs, mode='mel')
+        emas = self.emaAddresses(df=short_ngrams_with_full_durs, mode='')
         complete_ema = self.combineEmaAddresses(emas)
         
         return complete_ema

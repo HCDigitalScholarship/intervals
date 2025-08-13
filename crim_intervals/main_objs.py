@@ -700,7 +700,7 @@ class ImportedPiece:
             elif mode == 'p_types':
                 if isinstance(df, pd.DataFrame):
                     p_types = df.copy()
-                    ngram_length = len(df.iloc[0]['Soggetti'][0])
+                    ngram_length = 4
                     # previous version
                     # nr = self.notes(combineUnisons=combine_unisons)
                     # mel = self.melodic(df=nr, end=False)

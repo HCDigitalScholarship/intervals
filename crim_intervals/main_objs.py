@@ -730,9 +730,9 @@ class ImportedPiece:
         elif mode == 'p_types': # p_type mode
             if isinstance(df, pd.DataFrame):
                 # print(df.columns)
-                # p_types = df.copy()
+                p_types = df.copy()
                 # ngram_length = 4
-                ngram_length = len(df.iloc[0]['Soggetti'][0])
+                ngram_length = len(p_types.iloc[0]['Soggetti'][0])
                 nr = self.notes(combineUnisons = combine_unisons)
                 mel = self.melodic(df = nr, end=False)
                 ngrams = self.ngrams(df=mel, n=ngram_length)
@@ -740,8 +740,8 @@ class ImportedPiece:
                 # now get the ema addresses for each row of p_types
                 # note that we need to pass the mel, ngrams, durs and ngram length to the helper function
                 # so that it can calculate the ema addresses for each row
-                df['ema'] = df.apply(lambda row: self._ptype_ema_helper(row, mel, ngrams, ngram_length), axis=1)
-                return df
+                p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, mel, ngrams, ngram_length), axis=1)
+                return p_types
         
         if isinstance(df, pd.DataFrame):
             if len(df) >= 1:
@@ -800,7 +800,7 @@ class ImportedPiece:
         # Set data column name and generate EMA addresses based on mode
         if mode == 'p_types':
             data_col_name = 'Presentation_Type'
-            ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
+            # ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
         elif mode == 'homorhythm':
             data_col_name = 'hr_voices'
             ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])

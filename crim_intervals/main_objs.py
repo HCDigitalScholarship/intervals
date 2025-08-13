@@ -729,10 +729,10 @@ class ImportedPiece:
         # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
         elif mode == 'p_types': # p_type mode
             if isinstance(df, pd.DataFrame):
-                print(df.columns)
+                # print(df.columns)
                 # p_types = df.copy()
-                ngram_length = 4
-                # ngram_length = len(df.iloc[0]['Soggetti'][0])
+                # ngram_length = 4
+                ngram_length = len(df.iloc[0]['Soggetti'][0])
                 nr = self.notes(combineUnisons = combine_unisons)
                 mel = self.melodic(df = nr, end=False)
                 ngrams = self.ngrams(df=mel, n=ngram_length)

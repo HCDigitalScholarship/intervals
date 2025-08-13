@@ -3413,7 +3413,7 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOptions({"pageHeight":  1500, # Height in pixels
+        tk.setOptions({"adjustPageHeight": True, # Automatic page height
                        "pageWidth":  1500    # Width in pixels
                        })
         # adding option to import filtered df of cadences
@@ -3475,7 +3475,7 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOptions({"pageHeight":  1500, # Height in pixels
+        tk.setOptions({"adjustPageHeight": True, # Automatic page height
                        "pageWidth":  3000    # Width in pixels
                        })
 
@@ -3547,7 +3547,7 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOptions({"pageHeight":  1500, # Height in pixels
+        tk.setOptions({"adjustPageHeight": True, # Automatic page height
                        "pageWidth":  3000    # Width in pixels
                        })
         print("Results:")
@@ -3651,7 +3651,7 @@ class ImportedPiece:
         tk = verovio.toolkit()
         tk.loadData(fetched_mei_string)
         tk.setScale(30)
-        tk.setOptions({"pageHeight":  1500, # Height in pixels
+        tk.setOptions({"adjustPageHeight": True, # Automatic page height
                        "pageWidth":  3000    # Width in pixels
                        })
 

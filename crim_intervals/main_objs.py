@@ -619,11 +619,10 @@ class ImportedPiece:
         ema = full_ema['EMA']
         return ema
 
-    def _ptype_ema_helper(self, row, ngrams):
+    def _ptype_ema_helper(self, row, mel, ngrams, durations, ngram_length):
         # initialize dict and df
         dictionary = {}
-        filtered_df = pd.DataFrame()
-        # get row values for offsets and voices
+        # get row values for offsets and voices for the given row from p_types
         offsets = row['Offsets']
         voices = row['Voices']
         # make dict
@@ -633,15 +632,45 @@ class ImportedPiece:
             dictionary[f].append(s)
         # slice of ngrams corresponding to this point
         short_ngrams = ngrams.loc[offsets]
-        # use dict values to build offset and column sets
-        for offset, voice_list in dictionary.items():
-            columns_to_replace = short_ngrams.columns.difference(voice_list)
-            # Replace the values with NaN
-            # updated 4/24 to remove repeating voice error
-            short_ngrams.loc[offset, columns_to_replace] = np.nan
-            short_ngrams.dropna(how='all', inplace=True)
-        emas = self.emaAddresses(df=short_ngrams, mode='')
+        
+        # now deal with the durations
+        durations = self.durations(df=mel, n=ngram_length, mask_df=short_ngrams)
+
+        # Step 1: Mask durations with ngrams
+        masked_durations = durations.where(short_ngrams.notna())
+
+        # Step 2: Create the new MultiIndex directly from the original DataFrame structure
+        first_level = []  # Original row indices
+        second_level = []  # Original row index + duration value
+
+        for row_idx in short_ngrams.index:
+            # For each row, find the corresponding duration value
+            # Get the first non-NaN duration value from the masked durations for this row
+            row_durations = masked_durations.loc[row_idx]
+            non_nan_durations = row_durations.dropna()
+            
+            if len(non_nan_durations) > 0:
+                # Use the first non-NaN duration value
+                duration_val = non_nan_durations.iloc[0]
+                second_idx = row_idx + duration_val
+            else:
+                # No valid duration, use original index
+                second_idx = row_idx
+            
+            first_level.append(row_idx)
+            second_level.append(second_idx)
+
+        # Step 3: Create MultiIndex and new DataFrame
+        multi_idx = pd.MultiIndex.from_arrays([first_level, second_level], names=["First", "Last"])
+
+        # Step 4: Create the final DataFrame with MultiIndex
+        short_ngrams_with_full_durs = short_ngrams.copy()
+        short_ngrams_with_full_durs.index = multi_idx
+
+        # ngrams = short_ngrams_with_full_durs
+        emas = self.emaAddresses(df=short_ngrams_with_full_durs, mode='')
         complete_ema = self.combineEmaAddresses(emas)
+
         return complete_ema
 
     # 
@@ -727,8 +756,10 @@ class ImportedPiece:
                 # Set the new index to the result DataFrame
                 ngrams_with_full_durs.index = multi_idx
                 ngrams = ngrams_with_full_durs
-                # ngrams = self.ngrams(df = mel, offsets = 'both', n = ngram_length +1, exclude=['Rest'])
-                p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)
+                # now get the ema addresses for each row of p_types
+                # note that we need to pass the mel, ngrams, durs and ngram length to the helper function
+                # so that it can calculate the ema addresses for each row
+                p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, mel, ngrams, durations, ngram_length), axis=1)
                 return p_types
         
         if isinstance(df, pd.DataFrame):

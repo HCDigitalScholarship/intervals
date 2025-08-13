@@ -701,33 +701,51 @@ class ImportedPiece:
                 if isinstance(df, pd.DataFrame):
                     p_types = df.copy()
                     ngram_length = len(p_types.iloc[0]['Soggetti'][0])
+                    # previous version
+                    # nr = self.notes(combineUnisons=combine_unisons)
+                    # mel = self.melodic(df=nr, end=False)
+                    # ngrams = self.ngrams(df=mel, n=ngram_length)
+                    # durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
+                    # # filtering so the ngrams match the durations
+                    # ngrams = ngrams.loc[durations.index]
+                    # ngrams_with_full_durs = ngrams.copy()
+                    
+                    #  # Create a new index that combines the original index with the values from df2
+                    # new_index = []
+                    # for idx, row in durations.iterrows():
+                    #     # Extract the single non-NaN value from each row
+                    #     non_nan_values = [val for val in row if not pd.isna(val)]
+                    #     if non_nan_values:  # Check if there are any non-NaN values
+                    #         non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
+                    #         # Add it to the original index
+                    #         new_index.append((idx, idx + non_nan_value))
+                    #     else:
+                    #         # Handle the case where all values in the row are NaN
+                    #         new_index.append((idx, idx))
+
+                    # # Create a MultiIndex from the new_index
+                    # multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
+
+                    # # Set the new index to the result DataFrame
+                    # ngrams_with_full_durs.index = multi_idx
+                    # ngrams = ngrams_with_full_durs
+                    # new version August 25
                     nr = self.notes(combineUnisons=combine_unisons)
                     mel = self.melodic(df=nr, end=False)
                     ngrams = self.ngrams(df=mel, n=ngram_length)
                     durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
+
                     # filtering so the ngrams match the durations
                     ngrams = ngrams.loc[durations.index]
-                    ngrams_with_full_durs = ngrams.copy()
-                    
-                     # Create a new index that combines the original index with the values from df2
-                    new_index = []
-                    for idx, row in durations.iterrows():
-                        # Extract the single non-NaN value from each row
-                        non_nan_values = [val for val in row if not pd.isna(val)]
-                        if non_nan_values:  # Check if there are any non-NaN values
-                            non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
-                            # Add it to the original index
-                            new_index.append((idx, idx + non_nan_value))
-                        else:
-                            # Handle the case where all values in the row are NaN
-                            new_index.append((idx, idx))
 
-                    # Create a MultiIndex from the new_index
-                    multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
+                    # STACK APPROACH - Most pandas-native
+                    stacked_durations = durations.stack()  # Automatically drops NaN
+                    second_level = stacked_durations.index.get_level_values(0) + stacked_durations.values
 
-                    # Set the new index to the result DataFrame
-                    ngrams_with_full_durs.index = multi_idx
-                    ngrams = ngrams_with_full_durs
+                    ngrams.index = pd.MultiIndex.from_arrays([
+                        stacked_durations.index.get_level_values(0),
+                        second_level
+                    ], names=["First", "Last"])
                     
                     # Apply the helper function (should work smoothly now)
                     p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)

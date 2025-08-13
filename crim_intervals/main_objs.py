@@ -619,7 +619,7 @@ class ImportedPiece:
         ema = full_ema['EMA']
         return ema
 
-    def _ptype_ema_helper(self, row, mel, ngrams, durations, ngram_length):
+    def _ptype_ema_helper(self, row, mel, ngrams, ngram_length):
         # initialize dict and df
         dictionary = {}
         # get row values for offsets and voices for the given row from p_types
@@ -734,32 +734,32 @@ class ImportedPiece:
                 nr = self.notes(combineUnisons = combine_unisons)
                 mel = self.melodic(df = nr, end=False)
                 ngrams = self.ngrams(df=mel, n=ngram_length)
-                durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
-                ngrams_with_full_durs = ngrams.copy()
+                # durations = self.durations(df=mel, n=ngram_length, mask_df=ngrams)
+                # ngrams_with_full_durs = ngrams.copy()
 
-                # Create a new index that combines the original index with the values from df2
-                new_index = []
-                for idx, row in durations.iterrows():
-                    # Extract the single non-NaN value from each row
-                    non_nan_values = [val for val in row if not pd.isna(val)]
-                    if non_nan_values:  # Check if there are any non-NaN values
-                        non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
-                        # Add it to the original index
-                        new_index.append((idx, idx + non_nan_value))
-                    else:
-                        # Handle the case where all values in the row are NaN
-                        new_index.append((idx, idx))
+                # # Create a new index that combines the original index with the values from df2
+                # new_index = []
+                # for idx, row in durations.iterrows():
+                #     # Extract the single non-NaN value from each row
+                #     non_nan_values = [val for val in row if not pd.isna(val)]
+                #     if non_nan_values:  # Check if there are any non-NaN values
+                #         non_nan_value = non_nan_values[0]  # Take the first (and only) non-NaN value
+                #         # Add it to the original index
+                #         new_index.append((idx, idx + non_nan_value))
+                #     else:
+                #         # Handle the case where all values in the row are NaN
+                #         new_index.append((idx, idx))
 
-                # Create a MultiIndex from the new_index
-                multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
+                # # Create a MultiIndex from the new_index
+                # multi_idx = pd.MultiIndex.from_tuples(new_index, names=["First", "Last"])
 
-                # Set the new index to the result DataFrame
-                ngrams_with_full_durs.index = multi_idx
-                ngrams = ngrams_with_full_durs
+                # # Set the new index to the result DataFrame
+                # ngrams_with_full_durs.index = multi_idx
+                # ngrams = ngrams_with_full_durs
                 # now get the ema addresses for each row of p_types
                 # note that we need to pass the mel, ngrams, durs and ngram length to the helper function
                 # so that it can calculate the ema addresses for each row
-                p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, mel, ngrams, durations, ngram_length), axis=1)
+                p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, mel, ngrams, ngram_length), axis=1)
                 return p_types
         
         if isinstance(df, pd.DataFrame):

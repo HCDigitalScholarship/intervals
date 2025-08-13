@@ -774,28 +774,30 @@ class ImportedPiece:
                 print('No piece URL was passed and the piece was not downloaded from a public respository. Please provide a piece_url.')
                 return
 
+        # Initialize variables
+        data_col_name = None
+        ema = None
+        
+        # Detect mode if not passed, or validate if passed
         if mode != '':
             mode = mode.lower()
         else:   # detect mode if it is not passed
             if 'hr_voices' in df.columns:
                 mode = 'homorhythm'
-                data_col_name = 'hr_voices'
-                ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
             elif 'Presentation_Type' in df.columns:
                 mode = 'p_types'
-                data_col_name = 'Presentation_Type'
-                ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
             elif 'CVFs' in df.columns:
                 mode = 'cadences'
-                data_col_name = 'CadType'
-                ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
             elif all(self._getPartNames() == df.columns):
                 if any(char in df.values for char in 'CAyca'):
                     print('Running on cadences which have the same ema addresses as cvfs...')
                     return self.linkExamples(self.cadences(), piece_url)
                 else:
                     mode = 'melodic'
-        # July 2025 EMA Handling for P Types - Initialize ema and data_col_name for explicit modes
+            else:
+                raise ValueError(f"Cannot detect mode from DataFrame columns: {df.columns.tolist()}")
+
+        # Set data column name and generate EMA addresses based on mode
         if mode == 'p_types':
             data_col_name = 'Presentation_Type'
             ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
@@ -806,12 +808,15 @@ class ImportedPiece:
             data_col_name = 'CadType'
             ema = pd.DataFrame(self.emaAddresses(df, mode=mode))
         elif mode == 'melodic':
-            # No need to initialize ema for melodic mode as it's handled separately
+            # Melodic mode is handled separately below - no need to initialize ema
             pass
         else:
             # Handle unknown modes
             raise ValueError(f"Unsupported mode: {mode}")
+
+        # Format string for creating HTML links
         fmt = '<a href="{}&{}" rel="noopener noreferrer" target="_blank">{}</a>'
+        
         if mode == 'melodic':
             res = []
             # this loop is needed because the "last" offset of df is the beginning
@@ -821,9 +826,9 @@ class ImportedPiece:
                 col_urls = col_urls.map(ImportedPiece._constructColumnwiseUrl, na_action='ignore', piece_url=piece_url)
                 col_data = df.iloc[:, col].dropna()
                 links = [] if col_data.empty else [fmt.format(url,
-                                                              urllib.parse.urlencode({'observation': f' {col_data.iat[ii]}'}),
-                                                              col_data.iat[ii])
-                                                   for ii, url in enumerate(col_urls['EMA'])]
+                    urllib.parse.urlencode({'observation': f' {col_data.iat[ii]}'}),
+                    col_data.iat[ii])
+                    for ii, url in enumerate(col_urls['EMA'])]
                 col_links = pd.Series(links, name=col_data.name, index=col_data.index)   # use df's index vals
                 res.append(col_links)
             res = pd.concat(res, axis=1, sort=True)
@@ -831,13 +836,14 @@ class ImportedPiece:
             col_urls = ema.map(lambda cell: ImportedPiece._constructColumnwiseUrl(cell, piece_url), na_action='ignore')
             col_data = df.loc[:, data_col_name]
             links = [fmt.format(col_urls.iat[col_urls.index.get_loc(ndx), 0],
-                                urllib.parse.urlencode({'observation': f' {col_data.at[ndx]}'}),
-                                col_data.at[ndx])
-                    if isinstance(col_data.at[ndx], (str, list)) else np.nan for ndx in col_data.index]
+                urllib.parse.urlencode({'observation': f' {col_data.at[ndx]}'}),
+                col_data.at[ndx])
+                if isinstance(col_data.at[ndx], (str, list)) else np.nan for ndx in col_data.index]
             res = df.copy()
             res[data_col_name] = links
             if 'ema' in res.columns:
                 res.drop(columns='ema', inplace=True)
+        
         display(HTML(res.to_html(render_links=True, escape=False)))
 
     def _constructColumnwiseUrl(cell, piece_url):

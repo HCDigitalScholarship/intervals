@@ -738,14 +738,17 @@ class ImportedPiece:
                     # filtering so the ngrams match the durations
                     ngrams = ngrams.loc[durations.index]
 
-                    # STACK APPROACH - Most pandas-native
-                    stacked_durations = durations.stack()  # Automatically drops NaN
-                    second_level = stacked_durations.index.get_level_values(0) + stacked_durations.values
+                    # ONE-LINER SOLUTION: Stack both and align
+                    stacked_durations = durations.stack()
+                    stacked_ngrams = ngrams.stack().loc[stacked_durations.index]
 
-                    ngrams.index = pd.MultiIndex.from_arrays([
+                    # Create MultiIndex and assign
+                    stacked_ngrams.index = pd.MultiIndex.from_arrays([
                         stacked_durations.index.get_level_values(0),
-                        second_level
+                        stacked_durations.index.get_level_values(0) + stacked_durations.values
                     ], names=["First", "Last"])
+
+                    ngrams = stacked_ngrams.to_frame() if isinstance(stacked_ngrams, pd.Series) else stacked_ngrams
                     
                     # Apply the helper function (should work smoothly now)
                     p_types['ema'] = p_types.apply(lambda row: self._ptype_ema_helper(row, ngrams), axis=1)

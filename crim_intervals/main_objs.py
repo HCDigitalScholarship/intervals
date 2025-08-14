@@ -873,7 +873,8 @@ class ImportedPiece:
         # Set data column name and generate EMA addresses based on mode
         if mode == 'p_types':
             data_col_name = 'Presentation_Type'
-            ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
+            # ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
+            ema = df['ema']
         elif mode == 'homorhythm':
             data_col_name = 'hr_voices'
             ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])
@@ -936,7 +937,7 @@ class ImportedPiece:
             "measure_range": mr
         }
         query_string = urllib.parse.urlencode(params)
-        react_app_url = "https://eleon024.github.io/ema_react_app/"
+        react_app_url = "https://RichardFreedman.github.io/ema_react_app/"
         url = ''.join((react_app_url, '?', query_string))
         return url
 

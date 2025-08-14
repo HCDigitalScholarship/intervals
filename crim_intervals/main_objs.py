@@ -687,18 +687,24 @@ class ImportedPiece:
             dictionary[f].append(s)
         
         # Slice of ngrams corresponding to this point - CREATE DEEP COPY
-        short_ngrams = ngrams.loc[offsets].copy(deep=True)
-        
+        short_ngrams = ngrams.loc[offsets]
+        # use dict values to build offset and column sets
+        for offset, voice_list in dictionary.items():
+            columns_to_replace = short_ngrams.columns.difference(voice_list)
+            # Replace the values with NaN
+            # updated 4/24 to remove repeating voice error
+            short_ngrams.loc[offset, columns_to_replace] = np.nan
+            short_ngrams.dropna(how='all', inplace=True)
         # Now deal with the durations
         durations = self.durations(df=mel, n=ngram_length, mask_df=short_ngrams)
         
         # Step 1: Mask durations with ngrams
         masked_durations = durations.where(short_ngrams.notna())
-        
+
         # Step 2: Create the new MultiIndex directly from the original DataFrame structure
         first_level = []  # Original row indices
         second_level = []  # Original row index + duration value
-        
+
         for row_idx in short_ngrams.index:
             # For each row, find the corresponding duration value
             # Get the first non-NaN duration value from the masked durations for this row
@@ -712,19 +718,19 @@ class ImportedPiece:
             else:
                 # No valid duration, use original index
                 second_idx = row_idx
-                
+            
             first_level.append(row_idx)
             second_level.append(second_idx)
-        
+
         # Step 3: Create MultiIndex and new DataFrame
         multi_idx = pd.MultiIndex.from_arrays([first_level, second_level], names=["First", "Last"])
-        
-        # Step 4: Create the final DataFrame with MultiIndex - ENSURE COMPLETE ISOLATION
-        short_ngrams_with_full_durs = short_ngrams.copy(deep=True)
+
+        # Step 4: Create the final DataFrame with MultiIndex
+        short_ngrams_with_full_durs = short_ngrams.copy()
         short_ngrams_with_full_durs.index = multi_idx
-        
-        # Generate EMA addresses using the isolated DataFrame
-        emas = self.emaAddresses(df=short_ngrams_with_full_durs, mode='')
+
+        # # ngrams = short_ngrams_with_full_durs
+        emas = self.emaAddresses(df=short_ngrams_with_full_durs, mode='mel')
         complete_ema = self.combineEmaAddresses(emas)
         
         return complete_ema
@@ -873,8 +879,8 @@ class ImportedPiece:
         # Set data column name and generate EMA addresses based on mode
         if mode == 'p_types':
             data_col_name = 'Presentation_Type'
-            # ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
-            ema = df['ema']
+            ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
+            # ema = df['ema']
         elif mode == 'homorhythm':
             data_col_name = 'hr_voices'
             ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])

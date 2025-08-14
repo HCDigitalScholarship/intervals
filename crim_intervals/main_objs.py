@@ -619,59 +619,7 @@ class ImportedPiece:
         ema = full_ema['EMA']
         return ema
 
-    # def _ptype_ema_helper(self, row, mel, ngrams, ngram_length):
-    #     # initialize dict and df
-    #     dictionary = {}
-    #     # get row values for offsets and voices for the given row from p_types
-    #     offsets = row['Offsets']
-    #     voices = row['Voices']
-    #     # make dict
-    #     for f, s in zip(offsets, voices):
-    #         if f not in dictionary:
-    #             dictionary[f] = []
-    #         dictionary[f].append(s)
-    #     # slice of ngrams corresponding to this point
-    #     short_ngrams = ngrams.loc[offsets]
-        
-    #     # now deal with the durations
-    #     durations = self.durations(df=mel, n=ngram_length, mask_df=short_ngrams)
 
-    #     # Step 1: Mask durations with ngrams
-    #     masked_durations = durations.where(short_ngrams.notna())
-
-    #     # Step 2: Create the new MultiIndex directly from the original DataFrame structure
-    #     first_level = []  # Original row indices
-    #     second_level = []  # Original row index + duration value
-
-    #     for row_idx in short_ngrams.index:
-    #         # For each row, find the corresponding duration value
-    #         # Get the first non-NaN duration value from the masked durations for this row
-    #         row_durations = masked_durations.loc[row_idx]
-    #         non_nan_durations = row_durations.dropna()
-            
-    #         if len(non_nan_durations) > 0:
-    #             # Use the first non-NaN duration value
-    #             duration_val = non_nan_durations.iloc[0]
-    #             second_idx = row_idx + duration_val
-    #         else:
-    #             # No valid duration, use original index
-    #             second_idx = row_idx
-            
-    #         first_level.append(row_idx)
-    #         second_level.append(second_idx)
-
-    #     # Step 3: Create MultiIndex and new DataFrame
-    #     multi_idx = pd.MultiIndex.from_arrays([first_level, second_level], names=["First", "Last"])
-
-    #     # Step 4: Create the final DataFrame with MultiIndex
-    #     short_ngrams_with_full_durs = short_ngrams.copy()
-    #     short_ngrams_with_full_durs.index = multi_idx
-
-    #     # ngrams = short_ngrams_with_full_durs
-    #     emas = self.emaAddresses(df=short_ngrams_with_full_durs, mode='mel')
-    #     complete_ema = self.combineEmaAddresses(emas)
-
-    #     return complete_ema
     def _ptype_ema_helper(self, row, mel, ngrams, ngram_length):
         # Initialize dict and df
         dictionary = {}
@@ -804,23 +752,6 @@ class ImportedPiece:
                 # so that it can calculate the ema addresses for each row
                 df['ema'] = df.apply(lambda row: self._ptype_ema_helper(row, mel, ngrams, ngram_length), axis=1)
                 return df
-        # elif mode == 'p_types': # p_type mode
-        #     if isinstance(df, pd.DataFrame):
-        #         # Create a complete copy to avoid any reference issues
-        #         p_types_df = df.copy(deep=True)
-                
-        #         ngram_length = len(p_types_df.iloc[0]['Soggetti'][0])
-        #         nr = self.notes(combineUnisons=combine_unisons)
-        #         mel = self.melodic(df=nr, end=False)
-        #         ngrams = self.ngrams(df=mel, n=ngram_length)
-                
-        #         # Apply the helper function to each row
-        #         p_types_df['ema'] = p_types_df.apply(
-        #             lambda row: self._ptype_ema_helper(row, mel, ngrams, ngram_length), 
-        #             axis=1
-        #         )
-                
-        #         return p_types_df
         
         if isinstance(df, pd.DataFrame):
             if len(df) >= 1:
@@ -880,7 +811,7 @@ class ImportedPiece:
         if mode == 'p_types':
             data_col_name = 'Presentation_Type'
             ema = pd.DataFrame(self.emaAddresses(df, mode=mode, combine_unisons=combine_unisons)['ema'])
-            # ema = df['ema']
+
         elif mode == 'homorhythm':
             data_col_name = 'hr_voices'
             ema = pd.DataFrame(self.emaAddresses(df, mode=mode)['ema'])

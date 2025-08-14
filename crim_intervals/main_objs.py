@@ -783,38 +783,38 @@ class ImportedPiece:
                 return hr  
         # for ptypes output
         # pass in output of p_types = piece.presentationTypes() as the df and set mode = 'p_types'
-        # elif mode == 'p_types': # p_type mode
-        #     if isinstance(df, pd.DataFrame):
-        #         # print(df.columns)
-        #         # p_types = df.copy()
-        #         # ngram_length = 4
-        #         ngram_length = len(df.iloc[0]['Soggetti'][0])
-        #         nr = self.notes(combineUnisons = combine_unisons)
-        #         mel = self.melodic(df = nr, end=False)
-        #         ngrams = self.ngrams(df=mel, n=ngram_length)
-                
-        #         # now get the ema addresses for each row of p_types
-        #         # note that we need to pass the mel, ngrams, durs and ngram length to the helper function
-        #         # so that it can calculate the ema addresses for each row
-        #         df['ema'] = df.apply(lambda row: self._ptype_ema_helper(row, mel, ngrams, ngram_length), axis=1)
-        #         return df
         elif mode == 'p_types': # p_type mode
             if isinstance(df, pd.DataFrame):
-                # Create a complete copy to avoid any reference issues
-                p_types_df = df.copy(deep=True)
-                
-                ngram_length = len(p_types_df.iloc[0]['Soggetti'][0])
-                nr = self.notes(combineUnisons=combine_unisons)
-                mel = self.melodic(df=nr, end=False)
+                # print(df.columns)
+                # p_types = df.copy()
+                # ngram_length = 4
+                ngram_length = len(df.iloc[0]['Soggetti'][0])
+                nr = self.notes(combineUnisons = combine_unisons)
+                mel = self.melodic(df = nr, end=False)
                 ngrams = self.ngrams(df=mel, n=ngram_length)
                 
-                # Apply the helper function to each row
-                p_types_df['ema'] = p_types_df.apply(
-                    lambda row: self._ptype_ema_helper(row, mel, ngrams, ngram_length), 
-                    axis=1
-                )
+                # now get the ema addresses for each row of p_types
+                # note that we need to pass the mel, ngrams, durs and ngram length to the helper function
+                # so that it can calculate the ema addresses for each row
+                df['ema'] = df.apply(lambda row: self._ptype_ema_helper(row, mel, ngrams, ngram_length), axis=1)
+                return df
+        # elif mode == 'p_types': # p_type mode
+        #     if isinstance(df, pd.DataFrame):
+        #         # Create a complete copy to avoid any reference issues
+        #         p_types_df = df.copy(deep=True)
                 
-                return p_types_df
+        #         ngram_length = len(p_types_df.iloc[0]['Soggetti'][0])
+        #         nr = self.notes(combineUnisons=combine_unisons)
+        #         mel = self.melodic(df=nr, end=False)
+        #         ngrams = self.ngrams(df=mel, n=ngram_length)
+                
+        #         # Apply the helper function to each row
+        #         p_types_df['ema'] = p_types_df.apply(
+        #             lambda row: self._ptype_ema_helper(row, mel, ngrams, ngram_length), 
+        #             axis=1
+        #         )
+                
+        #         return p_types_df
         
         if isinstance(df, pd.DataFrame):
             if len(df) >= 1:

@@ -1722,7 +1722,21 @@ class ImportedPiece:
     #         else:
     #             return _df
     #     return self.analyses[key]
+
+    # helper for sonorities sorting
     
+    def _sort_and_join_intervals(self, row):
+        unique_intervals = row.unique()
+        
+        # Convert 'Rest' to None and filter out None values
+        cleaned_intervals = [int(interval) if interval != 'Rest' else None for interval in unique_intervals]
+        cleaned_intervals = [interval for interval in cleaned_intervals if interval is not None]
+        
+        # Sort the cleaned notes in descending order
+        sorted_intervals = sorted(cleaned_intervals, reverse=True)
+        
+        return '/'.join(map(str, sorted_intervals))
+
     def sonorities(self, kind='d', directed=True, compound='simple', sort=True):
         """
         Return a dataframe of sonorities that are similar to a continuo part but not reduced.
@@ -1734,10 +1748,12 @@ class ImportedPiece:
         against the lowest line.
         """
         har = self.harmonic(kind=kind, directed=directed, compound=compound, againstLow=True).ffill()
+        
         if sort:
-            son = har.apply(lambda row: '/'.join(sorted([int(note) for note in row.unique() if note != 'Rest'], reverse=True)[:-1]), axis=1)
+            son = har.apply(self._sort_and_join_intervals, axis=1)
         else:
             son = har.apply(lambda row: '/'.join([note for note in row.unique() if note != 'Rest']), axis=1)
+        
         son.name = 'Sonority'
         return pd.DataFrame(son)
 

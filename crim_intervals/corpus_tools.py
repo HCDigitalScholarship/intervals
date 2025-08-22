@@ -456,7 +456,7 @@ def corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice = 'd', metadata_c
 
 
 # sonorities plus bassline grams in a corpus. 
-def corpus_sonority_ngrams(corpus, 
+def corpus_sonority_ngrams(self, 
                            ngram_length=4, 
                            metadata_choice=True, 
                            include_offset=False,

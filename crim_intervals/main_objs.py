@@ -1735,7 +1735,7 @@ class ImportedPiece:
         """
         har = self.harmonic(kind=kind, directed=directed, compound=compound, againstLow=True).ffill()
         if sort:
-            son = har.apply(lambda row: '/'.join(sorted([note for note in row.unique() if note != 'Rest'], reverse=True)[:-1]), axis=1)
+            son = har.apply(lambda row: '/'.join(sorted([int(note) for note in row.unique() if note != 'Rest'], reverse=True)[:-1]), axis=1)
         else:
             son = har.apply(lambda row: '/'.join([note for note in row.unique() if note != 'Rest']), axis=1)
         son.name = 'Sonority'

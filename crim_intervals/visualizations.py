@@ -7,6 +7,9 @@ import pandas as pd
 import re
 import textdistance
 import numpy as np 
+from crim_intervals import ImportedPiece
+import pandas as pd
+import plotly.express as px
 
 # from ipywidgets import interact, fixed
 from pyvis.network import Network
@@ -104,6 +107,7 @@ class NgramColorManager:
 
 # Create a global instance of the color manager
 color_manager = NgramColorManager()
+
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
     color_scale = alt.Scale(
@@ -696,3 +700,207 @@ def _manipulate_processed_network_df(df, interval_column, search_pattern_starts_
 #     networks_dict = create_interval_networks(df[interval_column], interval_type)
 #     df = process_network_df(df, interval_column, ema_column)
 #     return networks_dict, create_interactive_compare_df(df, interval_column)
+
+# new cadence visualization functions
+
+
+# cadence radar
+def cadence_radar(cadences, groupby_column='Title', chart_title="Radar Plot of Cadence Tones"):
+    """
+    Create a radar plot showing distribution of cadence tones.
+    The optional chart_title parameter allows for a custom title.
+
+    Cadences df must contain 'Composer', 'Title' and 'Tone' columns.  Groupby colum
+
+    Parameters:
+    -----------
+    cadences : pd.DataFrame
+        DataFrame containing cadence data
+
+    groupby_column : str
+        Column name to group by (default is 'Title'); could also be 'Composer'
+    chart_title : str
+        Title for the chart (default is "Radar Plot of Cadence Tones")  
+
+
+
+    Returns:
+    --------
+    fig : go.Figure
+        Plotly Figure object representing the radar plot
+
+    Notes:
+    ------
+    This function creates a radar plot to visualize the relative distribution of cadence tones across different titles in the corpus.
+    It uses Plotly Express to generate the plot and applies various customizations such as color mapping, legend positioning, and layout adjustments.
+    The plot displays the percentage of occurrence for each tone within each title, allowing for easy comparison between titles and tones.
+    """
+    # Define constants at function scope
+    tone_order = {'C': 0, 'D': 1, 'E-': 2, 'E': 3, 'F': 4,
+        'G': 5, 'A': 6, 'B-': 7
+    }
+
+    
+    # Vectorized approach using groupby operations
+    grouped = cadences.groupby([groupby_column, 'Tone']).size().reset_index(name='count')
+    
+    # Calculate percentages efficiently
+    title_sums = grouped.groupby(groupby_column)['count'].sum()
+    grouped['Percentage'] = (grouped['count'] / grouped['Title'].map(title_sums)) * 100
+    
+    # Create radar plot
+    fig = px.line_polar(
+        grouped[grouped['count'] > 0],
+        r='Percentage',
+        theta='Tone',
+        line_close=True,
+        color=groupby_column,
+        markers=True,
+        category_orders={'Tone': sorted(tone_order.keys(), key=lambda x: tone_order[x])}
+    )
+    
+    # Apply optimizations
+    fig.update_traces(fill='toself', line=dict(width=2))
+    
+    # Update layout with bottom legend
+    fig.update_layout(
+        width=800,
+        height=600,
+        legend=dict(
+            orientation="h",  # Horizontal layout for better space usage
+            yanchor="bottom",
+            y=-0.4,           # Position below plot
+            xanchor="center",
+            x=0.5,            # Center horizontally
+            xref="container", # Scale with container
+            yref="container", # Scale with container
+            title=dict(
+                text=groupby_column,
+                side="top",
+                font_size=12
+            ),
+            itemsizing='constant',
+            itemwidth=30,
+            bordercolor="black",
+            borderwidth=1,
+            bgcolor="rgba(255,255,255,0.8)"
+        ),
+        title=dict(text=chart_title, x=0.5),
+        polar=dict(
+            radialaxis=dict(visible=True, title='Percentage')
+        ),
+        margin=dict(b=120)  # Bottom margin for legend
+    )
+    
+    return fig
+
+
+
+# cadence progress viz
+def cadence_progress(cadences, chart_title="Radar Plot of Cadence Tones"):
+    """
+    Create a scatter plot showing progress of cadences in a composition.
+    Cadence df must contain 'Composer', 'Title', 'Progress', 'Tone', and 'CadType' columns.
+
+    Parameters:
+    -----------
+    cadences : pd.DataFrame
+        DataFrame containing cadence data
+    chart_title : str
+        Title for the chart (default is "Radar Plot of Cadence Tones")
+
+    Returns:
+    --------
+    fig : go.Figure
+        Plotly Figure object representing the scatter plot
+
+    Notes:
+    ------
+    This function generates a scatter plot to visualize the progression of cadences in a specific composition.
+    It categorizes cadences based on their type and assigns distinct colors to each cadence type.
+    The plot displays the cadence progression along the x-axis and the tone along the y-axis, allowing for easy identification of cadence changes throughout the composition.
+    Custom color mappings are used to differentiate between original and modified cadence types.
+    The plot includes a horizontal legend for easy identification of cadence types.
+    """
+    # Define custom ordering for CadTypes
+    custom_order = ['Authentic', 'Evaded Authentic', 
+        'Clausula Vera', 'Evaded Clausula Vera', 'Abandoned Clausula Vera', 'Phrygian Clausula Vera',
+        'Double Leading Tone', 'Evaded Double Leading Tone', 'Abandoned Double Leading Tone',
+        'Altizans Only', 'Phrygian Altizans', 'Evaded Altizans Only',
+        'Phrygian', 'Reinterpreted', 'Quince', 'Leaping Contratenor']
+
+    # order for y axis tones:
+    custom_tone_order = ['E-', 'B-', 'F', 'C', 'G', 'D', 'A', 'E', 'B']  
+
+    # color map for cadences--the evaded types are less saturated than corresponding regular types
+    color_mapping = {'Authentic': '#FF0000',
+     'Clausula Vera': '#0000FF',
+     'Double Leading Tone': '#00FF00',
+     'Altizans Only': '#800080',
+     'Phrygian': '#00FF00',
+     'Reinterpreted': '#00FFFF',
+     'Quince': '#4B0082',
+     'Leaping Contratenor': '#000000',
+     'Phrygian Clausula Vera': '#FF00FF',
+     'Evaded Authentic': '#FF6666',
+     'Evaded Clausula Vera': '#6666FF',
+     'Evaded Double Leading Tone': '#66FF66',
+     'Evaded Altizans Only': '#CC99CC',
+     'Evaded Phrygian': '#66FF66',
+     'Evaded Reinterpreted': '#99FFFF',
+     'Evaded Quince': '#9966CC',
+     'Evaded Phrygian Clausula Vera': '#FF66FF',
+     'Abandoned Clausula Vera': '#CCCCFF',
+     'Abandoned Double Leading Tone': '#CCFFCC',
+     'Abandoned Phrygian': '#FFE5CC',
+     'Abandoned Authentic': '#FFCCCC',
+     'Abandoned Phrygian Clausula Vera': '#FFCCFF'}
+    
+    composer = cadences['Composer'].iloc[0]
+    title = cadences['Title'].iloc[0]
+
+    # Ensure the Tone column is categorical with correct ordering
+    cadences['Tone'] = pd.Categorical(
+        cadences['Tone'],
+        categories=custom_tone_order,  # specify tone order for y axis
+        ordered=True
+    )
+    
+    # Create figure with explicit category ordering
+    fig = px.scatter(
+        cadences,
+        x='Progress',
+        y='Tone',
+        color='CadType',
+        color_discrete_map=color_mapping, # use color mapping from above
+        category_orders={'Tone': custom_tone_order}
+    )
+    
+    # Configure Y-axis to show E- at bottom
+    fig.update_layout(
+        yaxis=dict(
+            categoryorder='array',
+            categoryarray=custom_tone_order,  # specify tone order for y axis
+            autorange=True,
+            fixedrange=True,
+            scaleanchor='y',
+            scaleratio=1,
+            showgrid=True,
+            showticklabels=True
+        ),
+        yaxis_range=[None, None]  # Allow Plotly to determine range
+    )
+    
+    # Update marker properties
+    fig.update_traces(marker=dict(size=25))
+    
+    # Customize layout
+    fig.update_layout(
+        title=f'Progress of Cadences in {composer}: {title}',
+        legend=dict(
+            title_text="Cadence Type",
+        orientation="v"
+        )
+    )
+    
+    return fig

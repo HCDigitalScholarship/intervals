@@ -12,6 +12,15 @@ from crim_intervals import ImportedPiece
 import pandas as pd
 from collections import Counter 
 
+def extract_letter(value):
+    # Find the index of the first digit
+    if value is not None:
+        for i, char in enumerate(value):
+            if char.isdigit():
+                # Return everything before the first digit
+                return value[:i]
+        # If no digit is found, return the entire string
+        return value
 
 def corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False):
     """

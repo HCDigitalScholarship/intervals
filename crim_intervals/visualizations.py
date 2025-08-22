@@ -746,7 +746,7 @@ def cadence_radar(cadences, groupby_column='Title', chart_title="Radar Plot of C
     
     # Calculate percentages efficiently
     title_sums = grouped.groupby(groupby_column)['count'].sum()
-    grouped['Percentage'] = (grouped['count'] / grouped['Title'].map(title_sums)) * 100
+    grouped['Percentage'] = (grouped['count'] / grouped[groupby_column].map(title_sums)) * 100
     
     # Create radar plot
     fig = px.line_polar(

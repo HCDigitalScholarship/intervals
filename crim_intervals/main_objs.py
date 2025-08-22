@@ -1734,6 +1734,9 @@ class ImportedPiece:
         
         # Sort the cleaned notes in descending order
         sorted_intervals = sorted(cleaned_intervals, reverse=True)
+
+        # Omit the last interval (which will be 1)
+        sorted_intervals = sorted_intervals[:-1]
         
         return '/'.join(map(str, sorted_intervals))
 

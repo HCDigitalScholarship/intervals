@@ -8,6 +8,7 @@
 # import crim_intervals.corpus_tools as corpus_tools
 # corpus_tools.corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False)
 
+from crim_intervals import ImportedPiece
 
 
 def corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False):
@@ -456,7 +457,7 @@ def corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice = 'd', metadata_c
 
 
 # sonorities plus bassline grams in a corpus. 
-def corpus_sonority_ngrams(self, 
+def corpus_sonority_ngrams(corpus, 
                            ngram_length=4, 
                            metadata_choice=True, 
                            include_offset=False,

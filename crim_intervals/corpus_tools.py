@@ -9,6 +9,8 @@
 # corpus_tools.corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False)
 
 from crim_intervals import ImportedPiece
+import pandas as pd
+from collections import Counter 
 
 
 def corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False):

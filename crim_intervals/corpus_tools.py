@@ -620,3 +620,106 @@ def corpus_presentation_types(corpus,
 
     return corpus_presentation_types
 
+
+def find_mode_range(df, top_n=7):
+    """
+    Finds the range of notes in a given voice, and thus helps us distinguish modal types.
+    df:  corpus notes, with pitch classes, such as `corpus_note_durs(corpus, pitch_class=False)`
+    the df will then be processed to include percentages for each pitch class in each voice in each piece
+
+    final_value:  the final tone of each piece (which is key to determining the mode!)
+    voice_value:  which voice you want to check
+    top_n: the n highest percentage scoring notes (which are most likely to represent the core range of the voice
+    """
+    # filtered_df = df[(df['Final'] == final_value) & 
+    #                  (df['Voice'] == voice_value) & 
+    #                  (df['Notes'] != 'Rest')]
+    # no rests
+    filtered_df = df[(df['Notes'] != 'Rest')]
+    
+    # Step 4: Group by Title and Note, sum Durations
+    # grouped_df = filtered_df.groupby(['Title', 'Notes'])['Durs'].sum().reset_index()
+    
+    # Step 5: Find top N durations for each Title
+    top_durations = filtered_df.groupby(['CompTitle', 'Voice']).apply(
+        lambda x: x.nlargest(top_n, 'Percentage')).reset_index(drop=True)
+    
+    # Define note order - natural notes only, 
+    base_notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
+    octaves = list(range(2, 6))  # Octaves 2-5
+    
+    # Create a comprehensive mapping for note positions
+    note_positions = {}
+    position = 0
+    
+    for octave in octaves:
+        for note in base_notes:
+            natural_note = f"{note}{octave}"
+            flat_note = f"{note}-{octave}"
+            sharp_note = f"{note}#{octave}"
+            
+            # Alternative flat notation
+            alt_flat_note = f"{note}b{octave}"
+            
+            note_positions[natural_note] = position
+            note_positions[flat_note] = position - 0.5
+            note_positions[alt_flat_note] = position - 0.5
+            note_positions[sharp_note] = position + 0.5
+            
+            position += 1
+    
+    # Function to get position from the mapping
+    def get_note_position(note):
+        if note in note_positions:
+            return note_positions[note]
+        
+        # Handle different notation formats
+        # For notes like "B-4" (with no space between letter and flat)
+        if '-' in note:
+            parts = note.split('-')
+            if len(parts) == 2:
+                letter, octave = parts[0], parts[1]
+                alt_format = f"{letter}-{octave}"
+                if alt_format in note_positions:
+                    return note_positions[alt_format]
+        
+        # For notes like "F#4" (with no space between letter and sharp)
+        if '#' in note:
+            parts = note.split('#')
+            if len(parts) == 2:
+                letter, octave = parts[0], parts[1]
+                alt_format = f"{letter}#{octave}"
+                if alt_format in note_positions:
+                    return note_positions[alt_format]
+        
+        # If we can't determine the position, return a very low value
+        print(f"Warning: Could not determine position for note: {note}")
+        return -1000
+    
+    # Apply the position mapping
+    top_durations['NotePosition'] = top_durations['Notes'].apply(get_note_position)
+    
+    # Find lowest and highest notes
+    result = []
+    for comptitle, group in top_durations.groupby(['CompTitle', 'Voice']):
+        if len(group) > 0:
+            sorted_group = group.sort_values('NotePosition')
+            lowest_note = sorted_group.iloc[0]['Notes']
+            highest_note = sorted_group.iloc[-1]['Notes']
+            voice = sorted_group.iloc[0]['Voice']
+            title = sorted_group.iloc[0]['Title']
+            composer = sorted_group.iloc[0]['Composer']
+            comptitle = comptitle
+            final = sorted_group.iloc[0]['Final']
+            result.append({
+                'Composer': composer,
+                'Title': title,
+                'CompTitle': comptitle[0],
+                'Voice': voice,
+                'Final': final,
+                'LowestNote': lowest_note,
+                'HighestNote': highest_note,
+                'Range': f"{lowest_note} to {highest_note}"
+            })
+        
+    return pd.DataFrame(result)

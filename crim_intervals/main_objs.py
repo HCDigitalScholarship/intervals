@@ -4378,3 +4378,102 @@ class CorpusBase:
             return plt
         else:
             plt.show()
+    # corpus sonorities plus bassline grams in a corpus. 
+    def corpus_sonority_ngrams(corpus, 
+                            ngram_length=4, 
+                            metadata_choice=True, 
+                            include_offset=False,
+                            include_progress=True,
+                            compound=True,
+                            sort=False,
+                            minimum_beat_strength = 0.0
+    ):
+        """
+        Generate sonority n-grams in a corpus.
+
+        Parameters:
+        -----------
+        corpus : object
+            Corpus object
+        ngram_length : int
+            Length of n-grams to generate; 4 by default
+        metadata: bool
+            whether to include composer, title, and data
+        include_offset: bool
+            whether to include offset along with measure and beat
+        include_progress: bool
+            whether to include progress column
+        minimum_beat_strength: float
+            minimum value for beat strength to report
+        sort: bool
+            if true, sorts intervals from largest to smallest; no unison
+        
+
+        Returns:
+        --------
+        pd.DataFrame
+            DataFrame containing generated n-grams
+        """
+
+        func0 = ImportedPiece.beatStrengths
+        list_of_beat_strength_dfs = corpus.batch(func0, metadata=False)
+
+        func1 = ImportedPiece.sonorities
+        list_of_sonority_dfs = corpus.batch(func=func1, 
+                                            kwargs={'sort': sort, 'compound': compound}, 
+                                            metadata=False)
+        paired_sonority_bs_dfs = zip(list_of_sonority_dfs,list_of_beat_strength_dfs)
+
+        # filtering for beat strength
+        list_filtered_sonority_dfs = []
+        for pair in paired_sonority_bs_dfs:
+            son = pair[0]
+            bs = pair[1]
+            strong_beat_positions = bs[(bs > minimum_beat_strength).any(axis=1)].index
+            filtered_sonorities = son[son.index.isin(strong_beat_positions)]
+            list_filtered_sonority_dfs.append(filtered_sonorities)
+
+        func2 = ImportedPiece.lowLine
+        list_of_lowLine_dfs = corpus.batch(func=func2, metadata=False)
+        paired_lowline_bs_dfs = zip(list_of_lowLine_dfs,list_of_beat_strength_dfs)
+
+        list_of_fitered_lowLine_dfs = []
+        for pair in paired_lowline_bs_dfs:
+            low = pair[0]
+            bs = pair[1]
+            strong_beat_positions = bs[(bs > minimum_beat_strength).any(axis=1)].index
+            filtered_lowline = low[low.index.isin(strong_beat_positions)]
+            list_of_fitered_lowLine_dfs.append(filtered_lowline)
+
+        # create df with both filtered sonorities and lowline
+        paired_dfs = zip(list_filtered_sonority_dfs, list_of_fitered_lowLine_dfs)
+        list_combined_dfs = []
+        for pair in paired_dfs:
+            sonorities_with_bass = pd.merge(pair[0], pair[1], left_index=True, right_index=True, how='left')
+            list_combined_dfs.append(sonorities_with_bass)
+            for df in list_combined_dfs:
+                df['Low Line'].fillna('Held', inplace=True)
+                df['Low_Sonority'] = df['Low Line'] + "_" + df['Sonority']
+
+
+        func3 = ImportedPiece.ngrams
+        list_of_son_bass_ngrams_dfs = corpus.batch(func=func3, 
+                                                kwargs={'n': ngram_length, 'df': list_combined_dfs}, 
+                                                metadata=False)
+        func4 = ImportedPiece.detailIndex
+        list_of_detail_index_dfs = corpus.batch(func=func4, 
+                                                kwargs={'offset': include_offset,'df': list_of_son_bass_ngrams_dfs, 'progress' : include_progress}, 
+                                                metadata=True)
+        func5 = ImportedPiece.numberParts
+        list_of_numberParts_dfs = corpus.batch(func = func5,
+                                kwargs = {'df' : list_of_detail_index_dfs},
+                                metadata=metadata_choice)
+        for df in list_of_numberParts_dfs:
+            if len(df) > 0:
+                df['Low_Sonority'] = df['Low_Sonority'].apply(lambda x: '_'.join(x) if isinstance(x, tuple) else x)
+
+        corpus_son_bass_ngrams = pd.concat(list_of_numberParts_dfs)
+        
+        cols_to_move = ['Composer', 'Title', 'Date']
+        corpus_son_bass_ngrams = corpus_son_bass_ngrams[cols_to_move + [col for col in corpus_son_bass_ngrams.columns if col not in cols_to_move]]
+        return corpus_son_bass_ngrams

@@ -4379,7 +4379,7 @@ class CorpusBase:
         else:
             plt.show()
     # corpus sonorities plus bassline grams in a corpus. 
-    def corpus_sonority_ngrams(corpus, 
+    def corpus_sonority_ngrams(self, 
                             ngram_length=4, 
                             metadata_choice=True, 
                             include_offset=False,

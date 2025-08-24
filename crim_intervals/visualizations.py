@@ -407,10 +407,10 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
 
-    # make a copy of the processed n_grams and turn them into Strings
+    # Make a copy of the processed n_grams and convert them to strings
     new_processed_ngrams_df = processed_ngrams_df.copy()
     new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
-        lambda cell: ", ".join(str(item) for item in cell), 
+        lambda cell: ", ".join(map(str, cell)), 
         na_action='ignore'
     )
 

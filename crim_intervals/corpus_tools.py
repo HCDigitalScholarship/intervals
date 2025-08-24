@@ -239,7 +239,7 @@ def corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=Tr
     mel = pd.concat(list_of_dfs)
     cols_to_move = ['Composer', 'Title', 'Date']
     mel = mel[cols_to_move + [col for col in mel.columns if col not in cols_to_move]]
-    mel.reset_index(in_place=True)
+    mel = mel.reset_index
     return mel
 
 # harmonic intervals in a corpus
@@ -282,7 +282,8 @@ def corpus_har(corpus, kind_choice='d', compound_choice=True, directed_choice=Tr
     har = pd.concat(list_of_dfs)
     cols_to_move = ['Composer', 'Title', 'Date']
     har = har[cols_to_move + [col for col in har.columns if col not in cols_to_move]]
-    har.reset_index(in_place=True)
+    har = har.reset_index
+
     return har
 
 # contrapuntal grams in a corpus.  These are contrapuntal by default
@@ -365,7 +366,7 @@ def corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice = 'd', end_choice=
     corpus_mel_ngrams = pd.concat(list_of_dfs)
     cols_to_move = ['Composer', 'Title', 'Date']
     corpus_mel_ngrams = corpus_mel_ngrams[cols_to_move + [col for col in corpus_mel_ngrams.columns if col not in cols_to_move]]
-    corpus_mel_ngrams.reset_index(in_place=True)
+    corpus_mel_ngrams = corpus_mel_ngrams.reset_index()
     return corpus_mel_ngrams
 
 # melodic grams with durational ration in a corpus. 
@@ -436,7 +437,7 @@ def corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4,
 
     cols_to_move = ['Composer', 'Title', 'Date']
     corpus_mel_dur_rat_ngrams = corpus_mel_dur_rat_ngrams[cols_to_move + [col for col in corpus_mel_dur_rat_ngrams.columns if col not in cols_to_move]]
-    corpus_mel_dur_rat_ngrams.reset_index(in_place=True)
+    corpus_mel_dur_rat_ngrams = corpus_mel_dur_rat_ngrams.reset_index()
     return corpus_mel_dur_rat_ngrams
 
 # harmonic grams in a corpus. 
@@ -483,7 +484,7 @@ def corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice = 'd', metadata_c
     corpus_har_ngrams = pd.concat(list_of_dfs)
     cols_to_move = ['Composer', 'Title', 'Date']
     corpus_har_ngrams = corpus_har_ngrams[cols_to_move + [col for col in corpus_har_ngrams.columns if col not in cols_to_move]]
-    corpus_har_ngrams.reset_index(in_place=True)
+    corpus_har_ngrams = corpus_har_ngrams.reset_index()
     return corpus_har_ngrams
 
 
@@ -587,6 +588,7 @@ def corpus_sonority_ngrams(corpus,
     
     cols_to_move = ['Composer', 'Title', 'Date']
     corpus_son_bass_ngrams = corpus_son_bass_ngrams[cols_to_move + [col for col in corpus_son_bass_ngrams.columns if col not in cols_to_move]]
+    corpus_son_bass_ngrams = corpus_son_bass_ngrams.reset_index()
     return corpus_son_bass_ngrams
 
 

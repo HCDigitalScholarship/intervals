@@ -357,11 +357,8 @@ def corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice = 'd', end_choice=
     list_of_detail_index = corpus.batch(func=func3, kwargs={'offset': include_offset,'df': list_of_melodic_ngrams, 'progress' : True}, metadata=False)
     func4 = ImportedPiece.numberParts
     list_of_dfs = corpus.batch(func = func4,
-                               kwargs = {'df' : list_of_dfs},
+                               kwargs = {'df' : list_of_detail_index},
                                metadata=metadata_choice)
-
-    corpus_mel_ngrams = pd.concat(list_of_detail_index)
-    
     
     corpus_mel_ngrams = pd.concat(list_of_dfs)
     cols_to_move = ['Composer', 'Title', 'Date']
@@ -369,13 +366,12 @@ def corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice = 'd', end_choice=
     corpus_mel_ngrams = corpus_mel_ngrams.reset_index()
     return corpus_mel_ngrams
 
-# melodic grams with durational ration in a corpus. 
+# melodic grams with durational ratio in a corpus. 
 def corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4, 
                                             end_choice = False, 
                                             kind_choice = 'd', 
                                             metadata_choice=True, 
-                                            include_offset=False
- ):
+                                            include_offset=False):
     """
     Generate n-grams in a corpus.
 
@@ -400,20 +396,25 @@ def corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4,
     """
     func1 = ImportedPiece.melodic
     list_of_mel_dfs = corpus.batch(func=func1, kwargs={'kind': kind_choice, 'end' : end_choice}, metadata=False)
+
     func2 = ImportedPiece.numberParts
     list_of_mel_dfs = corpus.batch(func = func2,
                                kwargs = {'df' : list_of_mel_dfs},
                                metadata=metadata_choice)
+    
     func3 = ImportedPiece.durationalRatios
     list_of_dur_rat_dfs = corpus.batch(func=func3, kwargs={'end' : end_choice}, metadata=False)
+    # number the parts using func2 above
     list_of_dur_rat_dfs = corpus.batch(func = func2,
                                kwargs = {'df' : list_of_dur_rat_dfs},
                                metadata=False)
+    # round the values
     list_of_dur_rat_dfs_rounded = []
     for df in list_of_dur_rat_dfs:
         df_rounded = df.apply(lambda x: x.astype('float64')).round(2)
 
         list_of_dur_rat_dfs_rounded.append(df_rounded)
+
     func4 = ImportedPiece.ngrams
     list_of_mel_dur_ngrams = corpus.batch(func=func4, kwargs={'n': ngram_length, 
                                                               'df': list_of_mel_dfs, 
@@ -423,8 +424,6 @@ def corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4,
         df_joined = df.applymap(lambda x: '_'.join(x) if isinstance(x, tuple) else x)
 
         list_of_mel_dur_rounded_no_tuple.append(df_joined)
-
-
     
     func5 = ImportedPiece.detailIndex
     list_of_detail_index = corpus.batch(func=func5, kwargs={'offset': include_offset, 
@@ -432,7 +431,6 @@ def corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4,
                                                             'progress' : True}, 
                                                             metadata=metadata_choice)
     
-
     corpus_mel_dur_rat_ngrams = pd.concat(list_of_detail_index)
 
     cols_to_move = ['Composer', 'Title', 'Date']
@@ -465,7 +463,7 @@ def corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice = 'd', metadata_c
     pd.DataFrame
         DataFrame containing generated n-grams
     """
-    func1 = ImportedPiece.melodic
+    func1 = ImportedPiece.harmonic
     list_of_dfs = corpus.batch(func=func1, kwargs={'kind': kind_choice}, metadata=False)
     func2 = ImportedPiece.ngrams
     list_of_harmonic_ngrams = corpus.batch(func=func2, kwargs={'n': ngram_length, 'df': list_of_dfs}, metadata=False)
@@ -475,10 +473,10 @@ def corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice = 'd', metadata_c
                                                             'progress' : True}, metadata=False)
     func4 = ImportedPiece.numberParts
     list_of_dfs = corpus.batch(func = func4,
-                               kwargs = {'df' : list_of_dfs},
+                               kwargs = {'df' : list_of_detail_index},
                                metadata=metadata_choice)
 
-    corpus_har_ngrams = pd.concat(list_of_detail_index)
+    corpus_har_ngrams = pd.concat(list_of_dfs)
     
     
     corpus_har_ngrams = pd.concat(list_of_dfs)

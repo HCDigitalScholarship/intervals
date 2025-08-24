@@ -415,9 +415,9 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
                 processed_ngrams_duration_df.loc[processed_ngrams_duration_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
     
     # Sort by id
-    processed_ngrams_df = processed_ngrams_df.sort_values(by='id')
-    if compare_mode and processed_ngrams_duration_df is not None:
-        processed_ngrams_duration_df = processed_ngrams_duration_df.sort_values(by='id')
+    # processed_ngrams_df = processed_ngrams_df.sort_values(by='id')
+    # if compare_mode and processed_ngrams_duration_df is not None:
+    #     processed_ngrams_duration_df = processed_ngrams_duration_df.sort_values(by='id')
     
     selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)

@@ -431,24 +431,24 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     
     if compare_mode:
         # Handle comparison mode - also convert tuples to strings here
-        if processed_ngrams_duration_df is not None:
-            processed_ngrams_duration_df = processed_ngrams_duration_df.copy()
-            processed_ngrams_duration_df['pattern'] = processed_ngrams_duration_df['pattern'].map(
+        if processed_ngrams_df is not None:
+            processed_ngrams_df = processed_ngrams_df.copy()
+            processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
                 lambda cell: ", ".join(map(str, cell)) if isinstance(cell, (tuple, list)) else str(cell),
                 na_action='ignore'
             )
-            processed_ngrams_duration_df = color_manager.assign_colors_to_dataframe(processed_ngrams_duration_df)
+            processed_ngrams_df = color_manager.assign_colors_to_dataframe(processed_ngrams_df)
         
         # Find shared patterns between both dataframes (now using string patterns)
         shared_patterns = set(processed_ngrams_df['pattern']).intersection(
-            set(processed_ngrams_duration_df['pattern']) if processed_ngrams_duration_df is not None else set()
+            set(processed_ngrams_df['pattern']) if processed_ngrams_df is not None else set()
         )
         
         # Update colors for shared patterns
         for pattern in shared_patterns:
             processed_ngrams_df.loc[processed_ngrams_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
-            if processed_ngrams_duration_df is not None:
-                processed_ngrams_duration_df.loc[processed_ngrams_duration_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
+            if processed_ngrams_df is not None:
+                processed_ngrams_df.loc[processed_ngrams_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
     
     # Sort by id
     # processed_ngrams_df = processed_ngrams_df.sort_values(by='id')

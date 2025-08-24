@@ -440,9 +440,13 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
             processed_ngrams_df = color_manager.assign_colors_to_dataframe(processed_ngrams_df)
         
         # Find shared patterns between both dataframes (now using string patterns)
-        shared_patterns = set(processed_ngrams_df['pattern']).intersection(
-            set(processed_ngrams_df['pattern']) if processed_ngrams_df is not None else set()
-        )
+        if shared_patterns:
+            shared_patterns = set(shared_patterns)
+            processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
+                lambda cell: cell if isinstance(cell, (tuple, list)) else str(cell),
+                na_action='ignore'
+            )
+            shared_patterns = set(processed_ngrams_df['pattern']).intersection(shared_patterns)
         
         # Update colors for shared patterns
         for pattern in shared_patterns:

@@ -451,12 +451,35 @@ def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], 
                                             voices=voices)
     return _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=chart_width, chart_height=chart_height)
 
+# 2024 version
+# def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300):
+#     """
+#     Plot a bar chart for crim-intervals getNgram's processed output.
+#     :param ngrams_df: processed crim-intervals getNgram's output.
+#     :param selected_pattern: list of specific patterns the users want (optional)
+#     :param voices: list of specific voices the users want (optional)
+#     :param chart_width: the width of the final bar chart (optional)
+#     :param chart_height: the height of the final bar chart (optional)
+#     :return: a bar chart that displays the different patterns and their counts
+#     """
+
+#     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
+#     selector = alt.selection_point(fields=['pattern'])
+#     y = alt.Y("voice", sort=None)
+
+#     # make a copy of the processed n_grams and turn them into Strings
+#     new_processed_ngrams_df = processed_ngrams_df.copy()
+#     new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
+
+#     variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
+#     return create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
+
+# 2025
+
 def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300):
     """
     Plot a bar chart for crim-intervals getNgram's processed output.
-    :param ngrams_df: processed crim-intervals getNgram's output.
-    :param selected_pattern: list of specific patterns the users want (optional)
-    :param voices: list of specific voices the users want (optional)
+    :param processed_ngrams_df: processed crim-intervals getNgram's output.
     :param chart_width: the width of the final bar chart (optional)
     :param chart_height: the height of the final bar chart (optional)
     :return: a bar chart that displays the different patterns and their counts
@@ -466,13 +489,13 @@ def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=
     selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
 
-    # make a copy of the processed n_grams and turn them into Strings
-    new_processed_ngrams_df = processed_ngrams_df.copy()
-    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
+    # Convert ngrams to strings in both the original and new DataFrames
+    processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(map(str, cell)), na_action='ignore')
 
     variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
-    return create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
+    return create_bar_chart(variable, 'count(pattern)', 'pattern', processed_ngrams_df, selector, selector)
 
+# unchanged
 def _from_ema_to_offsets(df, ema_column):
     """
     This method adds a columns of start and end measure of patterns into

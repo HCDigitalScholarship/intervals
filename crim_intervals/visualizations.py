@@ -383,54 +383,60 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     :return: a bar chart that displays the different patterns and their counts,
     and a heatmap with the start offsets of chosen voices / patterns
     """
+    # Convert tuples to strings FIRST, before any other processing
+    processed_ngrams_df = processed_ngrams_df.copy()
+    processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
+        lambda cell: ", ".join(map(str, cell)) if isinstance(cell, (tuple, list)) else str(cell),
+        na_action='ignore'
+    )
+    
     color_manager = NgramColorManager()
     processed_ngrams_df = color_manager.assign_colors_to_dataframe(processed_ngrams_df)
     
     if compare_mode:
-        # Handle comparison mode
-        ngrams_duration_df = color_manager.assign_colors_to_dataframe(processed_ngrams_duration_df) if processed_ngrams_duration_df is not None else None
+        # Handle comparison mode - also convert tuples to strings here
+        if processed_ngrams_duration_df is not None:
+            processed_ngrams_duration_df = processed_ngrams_duration_df.copy()
+            processed_ngrams_duration_df['pattern'] = processed_ngrams_duration_df['pattern'].map(
+                lambda cell: ", ".join(map(str, cell)) if isinstance(cell, (tuple, list)) else str(cell),
+                na_action='ignore'
+            )
+            processed_ngrams_duration_df = color_manager.assign_colors_to_dataframe(processed_ngrams_duration_df)
         
-        # Find shared patterns between both dataframes
-        shared_patterns = set(processed_ngrams_df['pattern']).intersection(set(processed_ngrams_duration_df['pattern']))
+        # Find shared patterns between both dataframes (now using string patterns)
+        shared_patterns = set(processed_ngrams_df['pattern']).intersection(
+            set(processed_ngrams_duration_df['pattern']) if processed_ngrams_duration_df is not None else set()
+        )
         
         # Update colors for shared patterns
         for pattern in shared_patterns:
             processed_ngrams_df.loc[processed_ngrams_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
             if processed_ngrams_duration_df is not None:
                 processed_ngrams_duration_df.loc[processed_ngrams_duration_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
-        
-        # Sort by id
-        processed_ngrams_df = processed_ngrams_df.sort_values(by='id')
-        if processed_ngrams_duration_df is not None:
-            processed_ngrams_duration_df = processed_ngrams_duration_df.sort_values(by='id')
-
+    
+    # Sort by id
+    processed_ngrams_df = processed_ngrams_df.sort_values(by='id')
+    if compare_mode and processed_ngrams_duration_df is not None:
+        processed_ngrams_duration_df = processed_ngrams_duration_df.sort_values(by='id')
+    
     selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
-
-    # Make a copy of the processed n_grams and convert them to strings
-    new_processed_ngrams_df = processed_ngrams_df.copy()
-    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
-        lambda cell: ", ".join(map(str, cell)), 
-        na_action='ignore'
-    )
-
-    # Use the color manager to assign consistent colors
-    new_processed_ngrams_df = color_manager.assign_colors_to_dataframe(new_processed_ngrams_df)
     
-    heatmap = create_heatmap('start', 'end', y, 'color', new_processed_ngrams_df, heatmap_width, heatmap_height,
-                             selector, selector, tooltip=['start', 'end', 'pattern'])
+    # No need to create a new dataframe and convert again - already done above
+    heatmap = create_heatmap('start', 'end', y, 'color', processed_ngrams_df, heatmap_width, heatmap_height,
+                            selector, selector, tooltip=['start', 'end', 'pattern'])
     
     if includeCount:
         variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
-        patterns_bar = create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
+        patterns_bar = create_bar_chart(variable, 'count(pattern)', 'pattern', processed_ngrams_df, selector, selector)
         chart = alt.vconcat(patterns_bar, heatmap)
     else:
         chart = heatmap
-
+    
     # Apply title if provided
     if title is not None:
         chart = chart.properties(title=title)
-
+    
     return chart
 
 def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], chart_width=800,
@@ -484,17 +490,19 @@ def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=
     :param chart_height: the height of the final bar chart (optional)
     :return: a bar chart that displays the different patterns and their counts
     """
-
-    processed_ngrams_df = processed_ngrams_df.dropna(how='any')
+    processed_ngrams_df = processed_ngrams_df.dropna(how='any').copy()
+    
+    # Convert ngrams to strings - improved version with type checking
+    processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
+        lambda cell: ", ".join(map(str, cell)) if isinstance(cell, (tuple, list)) else str(cell), 
+        na_action='ignore'
+    )
+    
     selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
-
-    # Convert ngrams to strings in both the original and new DataFrames
-    processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(map(str, cell)), na_action='ignore')
-
     variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
+    
     return create_bar_chart(variable, 'count(pattern)', 'pattern', processed_ngrams_df, selector, selector)
-
 # unchanged
 def _from_ema_to_offsets(df, ema_column):
     """

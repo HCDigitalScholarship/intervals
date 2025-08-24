@@ -226,9 +226,13 @@ def corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=Tr
                                          'compound' : compound_choice,
                                          'directed': directed_choice}, 
                                 metadata=False)
-    func1 = ImportedPiece.numberParts
-    list_of_dfs = corpus.batch(func = func1,
-                               kwargs = {'df' : list_of_dfs},
+    func1 = ImportedPiece.detailIndex
+    list_of_detail_index_dfs = corpus.batch(func=func1, 
+                                            kwargs={'df': list_of_dfs, 'progress' : True}, 
+                                            metadata=False)
+    func2 = ImportedPiece.numberParts
+    list_of_dfs = corpus.batch(func = func2,
+                               kwargs = {'df' : list_of_detail_index_dfs},
                                metadata=True)
     
     
@@ -264,9 +268,13 @@ def corpus_har(corpus, kind_choice='d', compound_choice=True, directed_choice=Tr
                                          'compound' : compound_choice,
                                          'directed': directed_choice},
                                 metadata=False)
-    func1 = ImportedPiece.numberParts
-    list_of_dfs = corpus.batch(func = func1,
-                               kwargs = {'df' : list_of_dfs},
+    func1 = ImportedPiece.detailIndex
+    list_of_detail_index_dfs = corpus.batch(func=func1, 
+                                            kwargs={'df': list_of_dfs, 'progress' : True}, 
+                                            metadata=False)
+    func2 = ImportedPiece.numberParts
+    list_of_dfs = corpus.batch(func = func2,
+                               kwargs = {'df' : list_of_detail_index_dfs},
                                metadata=True)
     
     
@@ -298,11 +306,14 @@ def corpus_contrapuntal_ngrams(corpus, ngram_length):
     list_of_dfs = corpus.batch(func = func, 
                                 kwargs = {'n': ngram_length}, 
                                 metadata=False)
-    func1 = ImportedPiece.numberParts
-    list_of_dfs = corpus.batch(func = func1,
-                               kwargs = {'df' : list_of_dfs},
+    func1 = ImportedPiece.detailIndex
+    list_of_detail_index_dfs = corpus.batch(func=func1, 
+                                            kwargs={'df': list_of_dfs, 'progress' : True}, 
+                                            metadata=False)
+    func2 = ImportedPiece.numberParts
+    list_of_dfs = corpus.batch(func = func2,
+                               kwargs = {'df' : list_of_detail_index_dfs},
                                metadata=True)
-    
     
     ngrams = pd.concat(list_of_dfs)
     cols_to_move = ['Composer', 'Title', 'Date']
@@ -339,7 +350,7 @@ def corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice = 'd', end_choice=
     func2 = ImportedPiece.ngrams
     list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': ngram_length, 'df': list_of_dfs}, metadata=False)
     func3 = ImportedPiece.detailIndex
-    list_of_detail_index = corpus.batch(func=func3, kwargs={'offset': include_offset,'df': list_of_melodic_ngrams}, metadata=False)
+    list_of_detail_index = corpus.batch(func=func3, kwargs={'offset': include_offset,'df': list_of_melodic_ngrams, 'progress' : True}, metadata=False)
     func4 = ImportedPiece.numberParts
     list_of_dfs = corpus.batch(func = func4,
                                kwargs = {'df' : list_of_dfs},
@@ -412,7 +423,8 @@ def corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4,
     
     func5 = ImportedPiece.detailIndex
     list_of_detail_index = corpus.batch(func=func5, kwargs={'offset': include_offset, 
-                                                            'df': list_of_mel_dur_rounded_no_tuple}, 
+                                                            'df': list_of_mel_dur_rounded_no_tuple,
+                                                            'progress' : True}, 
                                                             metadata=metadata_choice)
     
 
@@ -452,7 +464,9 @@ def corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice = 'd', metadata_c
     func2 = ImportedPiece.ngrams
     list_of_harmonic_ngrams = corpus.batch(func=func2, kwargs={'n': ngram_length, 'df': list_of_dfs}, metadata=False)
     func3 = ImportedPiece.detailIndex
-    list_of_detail_index = corpus.batch(func=func3, kwargs={'offset': include_offset,'df': list_of_harmonic_ngrams}, metadata=False)
+    list_of_detail_index = corpus.batch(func=func3, kwargs={'offset': include_offset,
+                                                            'df': list_of_harmonic_ngrams,
+                                                            'progress' : True}, metadata=False)
     func4 = ImportedPiece.numberParts
     list_of_dfs = corpus.batch(func = func4,
                                kwargs = {'df' : list_of_dfs},
@@ -551,7 +565,9 @@ def corpus_sonority_ngrams(corpus,
                                                metadata=False)
     func4 = ImportedPiece.detailIndex
     list_of_detail_index_dfs = corpus.batch(func=func4, 
-                                            kwargs={'offset': include_offset,'df': list_of_son_bass_ngrams_dfs, 'progress' : include_progress}, 
+                                            kwargs={'offset': include_offset,
+                                                    'df': list_of_son_bass_ngrams_dfs, 
+                                                    'progress' : include_progress}, 
                                             metadata=True)
     func5 = ImportedPiece.numberParts
     list_of_numberParts_dfs = corpus.batch(func = func5,

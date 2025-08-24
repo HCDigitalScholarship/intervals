@@ -239,7 +239,7 @@ def corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=Tr
     mel = pd.concat(list_of_dfs)
     cols_to_move = ['Composer', 'Title', 'Date']
     mel = mel[cols_to_move + [col for col in mel.columns if col not in cols_to_move]]
-    mel = mel.reset_index
+    mel = mel.reset_index()
     return mel
 
 # harmonic intervals in a corpus
@@ -282,7 +282,7 @@ def corpus_har(corpus, kind_choice='d', compound_choice=True, directed_choice=Tr
     har = pd.concat(list_of_dfs)
     cols_to_move = ['Composer', 'Title', 'Date']
     har = har[cols_to_move + [col for col in har.columns if col not in cols_to_move]]
-    har = har.reset_index
+    har = har.reset_index()
 
     return har
 
@@ -321,7 +321,7 @@ def corpus_contrapuntal_ngrams(corpus, ngram_length):
     ngrams = pd.concat(list_of_dfs)
     cols_to_move = ['Composer', 'Title', 'Date']
     ngrams = ngrams[cols_to_move + [col for col in ngrams.columns if col not in cols_to_move]]
-    ngrams.reset_index(in_place=True)
+    ngrams = ngrams.reset_index()
     return ngrams
 
 # melodic grams in a corpus. 

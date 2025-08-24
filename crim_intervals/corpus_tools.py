@@ -287,7 +287,7 @@ def corpus_har(corpus, kind_choice='d', compound_choice=True, directed_choice=Tr
     return har
 
 # contrapuntal grams in a corpus.  These are contrapuntal by default
-def corpus_contrapuntal_ngrams(corpus, ngram_length):
+def corpus_contrapuntal_ngrams(corpus, ngram_length=3):
     """
     Generate n-grams in a corpus.
 

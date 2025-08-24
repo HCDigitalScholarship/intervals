@@ -279,12 +279,84 @@ def ngrams_color_helper(new_processed_ngrams_df: pd.DataFrame) -> pd.DataFrame:
     """
     return color_manager.assign_colors_to_dataframe(new_processed_ngrams_df)
 
-def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False, title=None):
+# 2024 version.  To not edit!
+# def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False, title=None):
+#     """
+#     Plot a heatmap for crim-intervals getNgram's processed output.
+#     :param ngrams_df: processed crim-intervals getNgram's output.
+#     :param selected_pattern: list of specific patterns the users want (optional)
+#     :param voices: list of specific voices the users want (optional)
+#     :param heatmap_width: the width of the final heatmap (optional)
+#     :param heatmap_height: the height of the final heatmap (optional)
+#     :param includeCount: whether to include count bar chart (optional)
+#     :param title: title for the chart, defaults to None (optional)
+#     :return: a bar chart that displays the different patterns and their counts,
+#     and a heatmap with the start offsets of chosen voices / patterns
+#     """
+#     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
+#     selector = alt.selection_point(fields=['pattern'])
+#     y = alt.Y("voice", sort=None)
+
+#     # make a copy of the processed n_grams and turn them into Strings
+#     new_processed_ngrams_df = processed_ngrams_df.copy()
+#     new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
+#         lambda cell: ", ".join(str(item) for item in cell), 
+#         na_action='ignore'
+#     )
+
+#     # Use the color manager to assign consistent colors
+#     new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df)
+    
+#     heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
+#                              selector, selector, tooltip=['start', 'end', 'pattern'])
+    
+#     if includeCount:
+#         variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
+#         patterns_bar = create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
+#         chart = alt.vconcat(patterns_bar, heatmap)
+#     else:
+#         chart = heatmap
+    
+#     # Apply title if provided
+#     if title is not None:
+#         chart = chart.properties(title=title)
+    
+#     return chart
+
+# def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,
+#                         heatmap_height=300, includeCount=False, title=None):
+#     """
+#     Plot a heatmap for crim-intervals getNgram's output.
+#     :param ngrams_df: crim-intervals getNgram's output
+#     :param ngrams_duration: if not None, rely on durations in the
+#     df to calculate the durations of the ngrams.
+#     :param selected_patterns: list of specific patterns the users want (optional)
+#     :param voices: list of specific voices the users want (optional)
+#     :param heatmap_width: the width of the final heatmap (optional)
+#     :param heatmap_height: the height of the final heatmap (optional)
+#     :param includeCount: whether to include count bar chart (optional)
+#     :param title: title for the chart, defaults to None (optional)
+#     :return: a bar chart that displays the different patterns and their counts,
+#     and a heatmap with the start offsets of chosen voices / patterns
+#     """
+#     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
+#                                             selected_pattern=selected_patterns,
+#                                             voices=voices)
+#     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, 
+#                                    heatmap_height=heatmap_height, includeCount=includeCount, title=title)
+
+
+# 2025 with compare mode for color matching
+
+def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], compare_mode=False, heatmap_width=800, heatmap_height=300, includeCount=False, title=None):
     """
-    Plot a heatmap for crim-intervals getNgram's processed output.
-    :param ngrams_df: processed crim-intervals getNgram's output.
-    :param selected_pattern: list of specific patterns the users want (optional)
+    Plot a heatmap for crim-intervals getNgram's output.
+    :param ngrams_df: crim-intervals getNgram's output
+    :param ngrams_duration: if not None, rely on durations in the
+    df to calculate the durations of the ngrams.
+    :param selected_patterns: list of specific patterns the users want (optional)
     :param voices: list of specific voices the users want (optional)
+    :param compare_mode: whether to compare two dataframes (optional)
     :param heatmap_width: the width of the final heatmap (optional)
     :param heatmap_height: the height of the final heatmap (optional)
     :param includeCount: whether to include count bar chart (optional)
@@ -292,7 +364,46 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     :return: a bar chart that displays the different patterns and their counts,
     and a heatmap with the start offsets of chosen voices / patterns
     """
-    processed_ngrams_df = processed_ngrams_df.dropna(how='any')
+    processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
+                                            selected_pattern=selected_patterns,
+                                            voices=voices)
+    
+    return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, 
+                                   heatmap_height=heatmap_height, includeCount=includeCount, title=title, compare_mode=compare_mode)
+
+def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False, title=None, compare_mode=False):
+    """
+    Plot a heatmap for crim-intervals getNgram's processed output.
+    :param processed_ngrams_df: processed crim-intervals getNgram's output
+    :param heatmap_width: the width of the final heatmap (optional)
+    :param heatmap_height: the height of the final heatmap (optional)
+    :param includeCount: whether to include count bar chart (optional)
+    :param title: title for the chart, defaults to None (optional)
+    :param compare_mode: whether to compare two dataframes (optional)
+    :return: a bar chart that displays the different patterns and their counts,
+    and a heatmap with the start offsets of chosen voices / patterns
+    """
+    color_manager = NgramColorManager()
+    processed_ngrams_df = color_manager.assign_colors_to_dataframe(processed_ngrams_df)
+    
+    if compare_mode:
+        # Handle comparison mode
+        ngrams_duration_df = color_manager.assign_colors_to_dataframe(processed_ngrams_duration_df) if processed_ngrams_duration_df is not None else None
+        
+        # Find shared patterns between both dataframes
+        shared_patterns = set(processed_ngrams_df['pattern']).intersection(set(processed_ngrams_duration_df['pattern']))
+        
+        # Update colors for shared patterns
+        for pattern in shared_patterns:
+            processed_ngrams_df.loc[processed_ngrams_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
+            if processed_ngrams_duration_df is not None:
+                processed_ngrams_duration_df.loc[processed_ngrams_duration_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
+        
+        # Sort by id
+        processed_ngrams_df = processed_ngrams_df.sort_values(by='id')
+        if processed_ngrams_duration_df is not None:
+            processed_ngrams_duration_df = processed_ngrams_duration_df.sort_values(by='id')
+
     selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
 
@@ -304,9 +415,9 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     )
 
     # Use the color manager to assign consistent colors
-    new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df)
+    new_processed_ngrams_df = color_manager.assign_colors_to_dataframe(new_processed_ngrams_df)
     
-    heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
+    heatmap = create_heatmap('start', 'end', y, 'color', new_processed_ngrams_df, heatmap_width, heatmap_height,
                              selector, selector, tooltip=['start', 'end', 'pattern'])
     
     if includeCount:
@@ -315,34 +426,12 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
         chart = alt.vconcat(patterns_bar, heatmap)
     else:
         chart = heatmap
-    
+
     # Apply title if provided
     if title is not None:
         chart = chart.properties(title=title)
-    
-    return chart
 
-def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,
-                        heatmap_height=300, includeCount=False, title=None):
-    """
-    Plot a heatmap for crim-intervals getNgram's output.
-    :param ngrams_df: crim-intervals getNgram's output
-    :param ngrams_duration: if not None, rely on durations in the
-    df to calculate the durations of the ngrams.
-    :param selected_patterns: list of specific patterns the users want (optional)
-    :param voices: list of specific voices the users want (optional)
-    :param heatmap_width: the width of the final heatmap (optional)
-    :param heatmap_height: the height of the final heatmap (optional)
-    :param includeCount: whether to include count bar chart (optional)
-    :param title: title for the chart, defaults to None (optional)
-    :return: a bar chart that displays the different patterns and their counts,
-    and a heatmap with the start offsets of chosen voices / patterns
-    """
-    processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
-                                            selected_pattern=selected_patterns,
-                                            voices=voices)
-    return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, 
-                                   heatmap_height=heatmap_height, includeCount=includeCount, title=title)
+    return chart
 
 def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], chart_width=800,
                         chart_height=300):

@@ -74,56 +74,20 @@ class NgramColorManager:
         
         return colors[:n]
 # 2024
-    # def get_color_for_pattern(self, pattern):
-    #     """Get a color for a pattern, creating a new one if it doesn't exist"""
-    #     pattern_str = pattern
-    #     if not isinstance(pattern, str):
-    #         pattern_str = ", ".join(str(item) for item in pattern)
-            
-    #     if pattern_str not in self.color_map:
-    #         # We'll assign colors in order as new patterns are encountered
-    #         n = len(self.color_map) + 1
-    #         colors = self.generate_distinct_colors(n)
-    #         self.color_map[pattern_str] = colors[-1]
-            
-    #     return self.color_map[pattern_str]
-    
-    # def assign_colors_to_dataframe(self, df, pattern_column='pattern'):
-    #     """Assign colors to a dataframe based on patterns"""
-    #     # Check if dataframe is not empty
-    #     if len(df) > 0:
-    #         # Convert patterns to strings if they're not already
-    #         if not isinstance(df[pattern_column].iloc[0], str):
-    #             df = df.copy()
-    #             df[pattern_column] = df[pattern_column].map(
-    #                 lambda cell: ", ".join(str(item) for item in cell), 
-    #                 na_action='ignore'
-    #             )
-            
-    #         # Assign colors
-    #         df['color'] = df[pattern_column].apply(self.get_color_for_pattern)
-        
-    #     return df
-
-    # 2025
     def get_color_for_pattern(self, pattern):
         """Get a color for a pattern, creating a new one if it doesn't exist"""
-        # Add this single line to handle NaN values
-        if pd.isna(pattern):
-            pattern = "Missing Pattern"
-        
         pattern_str = pattern
         if not isinstance(pattern, str):
             pattern_str = ", ".join(str(item) for item in pattern)
-        
+            
         if pattern_str not in self.color_map:
             # We'll assign colors in order as new patterns are encountered
             n = len(self.color_map) + 1
             colors = self.generate_distinct_colors(n)
             self.color_map[pattern_str] = colors[-1]
-        
+            
         return self.color_map[pattern_str]
-
+    
     def assign_colors_to_dataframe(self, df, pattern_column='pattern'):
         """Assign colors to a dataframe based on patterns"""
         # Check if dataframe is not empty
@@ -131,15 +95,51 @@ class NgramColorManager:
             # Convert patterns to strings if they're not already
             if not isinstance(df[pattern_column].iloc[0], str):
                 df = df.copy()
-                # Replace the map with apply to handle NaN values properly
-                df[pattern_column] = df[pattern_column].apply(
-                    lambda cell: ", ".join(str(item) for item in cell) if pd.notna(cell) else "Missing Pattern"
+                df[pattern_column] = df[pattern_column].map(
+                    lambda cell: ", ".join(str(item) for item in cell), 
+                    na_action='ignore'
                 )
             
             # Assign colors
             df['color'] = df[pattern_column].apply(self.get_color_for_pattern)
         
         return df
+
+    # 2025
+    # def get_color_for_pattern(self, pattern):
+    #     """Get a color for a pattern, creating a new one if it doesn't exist"""
+    #     # Add this single line to handle NaN values
+    #     if pd.isna(pattern):
+    #         pattern = "Missing Pattern"
+        
+    #     pattern_str = pattern
+    #     if not isinstance(pattern, str):
+    #         pattern_str = ", ".join(str(item) for item in pattern)
+        
+    #     if pattern_str not in self.color_map:
+    #         # We'll assign colors in order as new patterns are encountered
+    #         n = len(self.color_map) + 1
+    #         colors = self.generate_distinct_colors(n)
+    #         self.color_map[pattern_str] = colors[-1]
+        
+    #     return self.color_map[pattern_str]
+
+    # def assign_colors_to_dataframe(self, df, pattern_column='pattern'):
+    #     """Assign colors to a dataframe based on patterns"""
+    #     # Check if dataframe is not empty
+    #     if len(df) > 0:
+    #         # Convert patterns to strings if they're not already
+    #         if not isinstance(df[pattern_column].iloc[0], str):
+    #             df = df.copy()
+    #             # Replace the map with apply to handle NaN values properly
+    #             df[pattern_column] = df[pattern_column].apply(
+    #                 lambda cell: ", ".join(str(item) for item in cell) if pd.notna(cell) else "Missing Pattern"
+    #             )
+            
+    #         # Assign colors
+    #         df['color'] = df[pattern_column].apply(self.get_color_for_pattern)
+        
+    #     return df
 
 # Create a global instance of the color manager
 color_manager = NgramColorManager()

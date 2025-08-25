@@ -402,7 +402,7 @@ def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], 
                                             voices=voices)
     return _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=chart_width, chart_height=chart_height)
 
-2024 version
+# 2024 version
 def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300):
     """
     Plot a bar chart for crim-intervals getNgram's processed output.

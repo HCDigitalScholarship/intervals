@@ -3,4 +3,4 @@ from .main import *
 # from .main_objs import *
 from .visualizations import *
 from .corpus_tools import *
-__version__ = "2.0.56"
+__version__ = "2.0.57"

@@ -146,6 +146,27 @@ color_manager = NgramColorManager()
 
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
+    """
+    Create a bar chart using Altair.
+
+    Args:
+        variable (str): Name of the variable to encode on the x-axis.
+        count (str): Name of the column containing count data.
+        color (str): Name of the column containing color data.
+        data (pandas.DataFrame): Input data for the chart.
+        condition (callable): Condition for determining opacity of bars.
+        *selectors: Additional selectors for the chart.
+
+    Returns:
+        altair.Chart: An Altair chart object representing the bar chart.
+
+    Description:
+        This function creates a bar chart using Altair. It encodes the specified
+        variable on the x-axis and count on the y-axis. Colors are determined by
+        the 'pattern' column, with a custom color scale defined by the unique
+        values in the 'pattern' and 'color' columns. Bar opacity is controlled
+        by the provided condition.
+    """
     color_scale = alt.Scale(
         domain = data['pattern'].unique(),
         range = data['color'].unique()
@@ -163,6 +184,31 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
 
 
 def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip):
+    """
+    Create a heatmap using Altair.
+
+    Args:
+        x (str): Name of the x-coordinate column.
+        x2 (str): Name of the secondary x-coordinate column.
+        y (str): Name of the y-coordinate column.
+        color (str): Name of the column containing color data.
+        data (pandas.DataFrame): Input data for the chart.
+        heat_map_width (int): Width of the heatmap in pixels.
+        heat_map_height (int): Height of the heatmap in pixels.
+        selector_condition (callable): Condition for determining opacity of heatmap cells.
+        *selectors: Additional selectors for the chart.
+        tooltip (list): List of columns to include in the tooltip.
+
+    Returns:
+        altair.Chart: An Altair chart object representing the heatmap.
+
+    Description:
+        This function creates a heatmap using Altair. It encodes the specified
+        x, x2, and y coordinates, coloring cells based on the 'pattern' column
+        with a custom color scale defined by the unique values in the 'pattern'
+        and 'color' columns. Heatmap opacity is controlled by the provided
+        selector condition. A tooltip is added for additional data points.
+    """
     color_scale = alt.Scale(
         domain = data['pattern'].unique(),
         range = data['color'].unique()

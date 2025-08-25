@@ -410,7 +410,7 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
 
 def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, 
                             includeCount=False, title=None, 
-                            compare_mode=False, selected_patterns=selected_patterns):
+                            compare_mode=False, selected_patterns=None):
     """
     Plot a heatmap for crim-intervals getNgram's processed output.
     :param processed_ngrams_df: processed crim-intervals getNgram's output

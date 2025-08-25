@@ -439,7 +439,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
             processed_ngrams_df = processed_ngrams_df.copy()
             processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
                 lambda cell: ", ".join(map(str, cell)) if isinstance(cell, (tuple, list)) else str(cell),
-                na action='ignore'
+                na_action='ignore'
             )
             processed_ngrams_df = color_manager.assign_colors_to_dataframe(processed_ngrams_df)
         

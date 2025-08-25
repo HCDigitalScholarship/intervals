@@ -439,15 +439,16 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
             processed_ngrams_df = processed_ngrams_df.copy()
             processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
                 lambda cell: ", ".join(map(str, cell)) if isinstance(cell, (tuple, list)) else str(cell),
-                na_action='ignore'
+                na action='ignore'
             )
             processed_ngrams_df = color_manager.assign_colors_to_dataframe(processed_ngrams_df)
         
+        
         # Update colors for selected patterns
         for pattern in selected_patterns:
-            processed_ngrams_df.loc[processed_ngrams_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
-            if processed_ngrams_df is not None:
-                processed_ngrams_df.loc[processed_ngrams_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
+            if pattern in processed_ngrams_df['pattern'].values:
+                new_color = color_manager.get_color_for_pattern(pattern)
+                processed_ngrams_df.loc[processed_ngrams_df['pattern'] == pattern, 'color'] = new_color
     
     # Sort by id
     # processed_ngrams_df = processed_ngrams_df.sort_values(by='id')

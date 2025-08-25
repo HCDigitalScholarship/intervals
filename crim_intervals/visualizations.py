@@ -405,9 +405,12 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
                                             voices=voices)
     
     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, 
-                                   heatmap_height=heatmap_height, includeCount=includeCount, title=title, compare_mode=compare_mode)
+                                   heatmap_height=heatmap_height, includeCount=includeCount, 
+                                   title=title, compare_mode=compare_mode, selected_patterns=selected_patterns)
 
-def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False, title=None, compare_mode=False):
+def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, 
+                            includeCount=False, title=None, 
+                            compare_mode=False, selected_patterns=selected_patterns):
     """
     Plot a heatmap for crim-intervals getNgram's processed output.
     :param processed_ngrams_df: processed crim-intervals getNgram's output
@@ -416,6 +419,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     :param includeCount: whether to include count bar chart (optional)
     :param title: title for the chart, defaults to None (optional)
     :param compare_mode: whether to compare two dataframes (optional)
+    :param selected_patterns: some subset to show
     :return: a bar chart that displays the different patterns and their counts,
     and a heatmap with the start offsets of chosen voices / patterns
     """
@@ -439,17 +443,8 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
             )
             processed_ngrams_df = color_manager.assign_colors_to_dataframe(processed_ngrams_df)
         
-        # Find shared patterns between both dataframes (now using string patterns)
-        if shared_patterns:
-            shared_patterns = set(shared_patterns)
-            processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
-                lambda cell: cell if isinstance(cell, (tuple, list)) else str(cell),
-                na_action='ignore'
-            )
-            shared_patterns = set(processed_ngrams_df['pattern']).intersection(shared_patterns)
-        
-        # Update colors for shared patterns
-        for pattern in shared_patterns:
+        # Update colors for selected patterns
+        for pattern in selected_patterns:
             processed_ngrams_df.loc[processed_ngrams_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)
             if processed_ngrams_df is not None:
                 processed_ngrams_df.loc[processed_ngrams_df['pattern'] == pattern, 'color'] = color_manager.get_color_for_pattern(pattern)

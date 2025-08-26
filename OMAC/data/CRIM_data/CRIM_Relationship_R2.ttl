@@ -1,0 +1,43 @@
+@prefix od: <http://www.omac.org/data#>.
+@prefix ow: <http://www.omac.org/work#>.
+@prefix oc: <http://www.omac.org/claim#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix dbp: <http://dbpedia.org/property/>.
+@prefix viaf: <http://viaf.org/viaf/>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+
+viaf:89469141
+     dbp:name "Claudin de Sermisy"^^xsd:string.
+
+viaf:180445237
+  dcterms:title "Missa tota pulchra es"^^xsd:string;
+  dbp:genre <http://dbpedia.org/resource/Mass_(music)>;
+  ow:composed_by viaf:89469141.
+
+od:Credo_180445237
+      dcterms:title "Credo"^^xsd:string;
+      ow:section_of viaf:180445237;
+      oc:derivative_of od:Tota_pulchra_es.
+      #the last triple can be derived by reasoning over the ontology; it is here added for the sake of clarity/testing purposes.
+
+od:Tota_pulchra_es
+    dcterms:title "Tota pulchra es"^^xsd:string;
+    ow:composed_by viaf:89469141;
+    oc:model_for od:Credo_180445237.
+    #the last triple can be derived by reasoning over the ontology; it is here added for the sake of clarity/testing purposes.
+
+
+od:claim_R2
+  rdf:type oc:NonMechanicalTransformation;
+  oc:has_model od:Tota_pulchra_es;
+  oc:has_derivative od:Credo_180445237;
+  oc:stated_by od:Ian_Lorenz;
+  oc:new_counter_subject "false"^^xsd:boolean;
+  oc:old_counter_subject_shifted_metrically "true"^^xsd:boolean;
+  oc:old_counter_subject_transposed "false"^^xsd:boolean;
+  oc:new_combination "false"^^xsd:boolean.
+
+
+od:Ian_Lorenz
+   dbp:name "Ian Lorenz"^^xsd:string.

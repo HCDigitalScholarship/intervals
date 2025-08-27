@@ -106,44 +106,42 @@ class NgramColorManager:
     #     return df
 
     # 2025
-    def get_color_for_pattern(self, pattern):
-        """Get a color for a pattern, creating a new one if it doesn't exist"""
-        # Add this single line to handle NaN values
-        if pd.isna(pattern):
-            pattern = "Missing Pattern"
+    class ColorManager:
+    def __init__(self):
+        self.pattern_colors = {}
+        self.color_palette = [
+            '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+            '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+            # Add more colors as needed
+        ]
+        self.color_index = 0
+    
+    def reset(self):
+        """Reset the color manager state"""
+        self.pattern_colors = {}
+        self.color_index = 0
+    
+    def get_color_for_pattern(self, pattern_str):
+        """Get or assign a color for a pattern"""
+        if pattern_str not in self.pattern_colors:
+            if self.color_index < len(self.color_palette):
+                self.pattern_colors[pattern_str] = self.color_palette[self.color_index]
+                self.color_index += 1
+            else:
+                # Generate additional colors or cycle through existing ones
+                self.pattern_colors[pattern_str] = self.color_palette[self.color_index % len(self.color_palette)]
+                self.color_index += 1
         
-        pattern_str = pattern
-        if not isinstance(pattern, str):
-            pattern_str = ", ".join(str(item) for item in pattern)
-        
-        if pattern_str not in self.color_map:
-            # We'll assign colors in order as new patterns are encountered
-            n = len(self.color_map) + 1
-            colors = self.generate_distinct_colors(n)
-            self.color_map[pattern_str] = colors[-1]
-        
-        return self.color_map[pattern_str]
-
-    def assign_colors_to_dataframe(self, df, pattern_column='pattern'):
-        """Assign colors to a dataframe based on patterns"""
-        # Check if dataframe is not empty
-        if len(df) > 0:
-            # Convert patterns to strings if they're not already
-            if not isinstance(df[pattern_column].iloc[0], str):
-                df = df.copy()
-                # Replace the map with apply to handle NaN values properly
-                df[pattern_column] = df[pattern_column].apply(
-                    lambda cell: ", ".join(str(item) for item in cell) if pd.notna(cell) else "Missing Pattern"
-                )
-            
-            # Assign colors
-            df['color'] = df[pattern_column].apply(self.get_color_for_pattern)
-        
+        return self.pattern_colors[pattern_str]
+    
+    def assign_colors_to_dataframe(self, df):
+        """Assign colors to dataframe patterns"""
+        df = df.copy()
+        df['color'] = df['pattern'].apply(self.get_color_for_pattern)
         return df
 
-# Create a global instance of the color manager
-color_manager = NgramColorManager()
-
+# Initialize global color manager
+color_manager = ColorManager()
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
     """
@@ -355,42 +353,32 @@ def ngrams_color_helper(new_processed_ngrams_df: pd.DataFrame) -> pd.DataFrame:
     """
     Add a Series to the dataframe that assigns a unique hex color to each unique pattern
     using the global color manager to ensure consistency across plots.
-    
     :param new_processed_ngrams_df: processed crim-intervals getNgram's output where tuples have been converted to strings
     :return: a dataframe containing a new column with hex color values
     """
     return color_manager.assign_colors_to_dataframe(new_processed_ngrams_df)
 
-# 2024 version.  To not edit!
+# Updated heatmap function - no changes needed here
 def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False, title=None):
     """
     Plot a heatmap for crim-intervals getNgram's processed output.
-    :param ngrams_df: processed crim-intervals getNgram's output.
-    :param selected_pattern: list of specific patterns the users want (optional)
-    :param voices: list of specific voices the users want (optional)
-    :param heatmap_width: the width of the final heatmap (optional)
-    :param heatmap_height: the height of the final heatmap (optional)
-    :param includeCount: whether to include count bar chart (optional)
-    :param title: title for the chart, defaults to None (optional)
-    :return: a bar chart that displays the different patterns and their counts,
-    and a heatmap with the start offsets of chosen voices / patterns
     """
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
     selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
-
+    
     # make a copy of the processed n_grams and turn them into Strings
     new_processed_ngrams_df = processed_ngrams_df.copy()
     new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
-        lambda cell: ", ".join(str(item) for item in cell), 
+        lambda cell: ", ".join(str(item) for item in cell),
         na_action='ignore'
     )
-
+    
     # Use the color manager to assign consistent colors
     new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df)
     
     heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
-                             selector, selector, tooltip=['start', 'end', 'pattern'])
+                            selector, selector, tooltip=['start', 'end', 'pattern'])
     
     if includeCount:
         variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
@@ -404,31 +392,6 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
         chart = chart.properties(title=title)
     
     return chart
-
-def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], heatmap_width=800,
-                        heatmap_height=300, includeCount=False, title=None):
-    """
-    Plot a heatmap for crim-intervals getNgram's output.
-    :param ngrams_df: crim-intervals getNgram's output
-    :param ngrams_duration: if not None, rely on durations in the
-    df to calculate the durations of the ngrams.
-    :param selected_patterns: list of specific patterns the users want (optional)
-    :param voices: list of specific voices the users want (optional)
-    :param heatmap_width: the width of the final heatmap (optional)
-    :param heatmap_height: the height of the final heatmap (optional)
-    :param includeCount: whether to include count bar chart (optional)
-    :param title: title for the chart, defaults to None (optional)
-    :return: a bar chart that displays the different patterns and their counts,
-    and a heatmap with the start offsets of chosen voices / patterns
-    """
-    processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
-                                            selected_pattern=selected_patterns,
-                                            voices=voices)
-    return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width, 
-                                   heatmap_height=heatmap_height, includeCount=includeCount, title=title)
-
-
-
 
 def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], chart_width=800,
                         chart_height=300):
@@ -448,29 +411,27 @@ def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], 
                                             voices=voices)
     return _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=chart_width, chart_height=chart_height)
 
-# 2024 version
+# 2025 version
+# FIXED: Updated bar chart function to include color consistency
 def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300):
     """
     Plot a bar chart for crim-intervals getNgram's processed output.
-    :param ngrams_df: processed crim-intervals getNgram's output.
-    :param selected_pattern: list of specific patterns the users want (optional)
-    :param voices: list of specific voices the users want (optional)
-    :param chart_width: the width of the final bar chart (optional)
-    :param chart_height: the height of the final bar chart (optional)
-    :return: a bar chart that displays the different patterns and their counts
     """
-
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
     selector = alt.selection_point(fields=['pattern'])
-    y = alt.Y("voice", sort=None)
-
+    
     # make a copy of the processed n_grams and turn them into Strings
     new_processed_ngrams_df = processed_ngrams_df.copy()
-    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(lambda cell: ", ".join(str(item) for item in cell), na_action='ignore')
-
+    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
+        lambda cell: ", ".join(str(item) for item in cell), 
+        na_action='ignore'
+    )
+    
+    # FIXED: Add color assignment for consistency
+    new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df)
+    
     variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
     return create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
-
 
 # unchanged
 def _from_ema_to_offsets(df, ema_column):

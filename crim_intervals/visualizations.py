@@ -81,6 +81,20 @@ class ColorManager:
         self.pattern_colors = {}
         self.color_index = 0
     
+    def pre_register_patterns(self, patterns):
+        """
+        Pre-register patterns with the color manager to ensure consistency.
+        
+        Args:
+            patterns: List of patterns (tuples, lists, or strings) to register
+        """
+        for pattern in patterns:
+            if isinstance(pattern, (list, tuple)):
+                pattern_str = ", ".join(str(item) for item in pattern)
+            else:
+                pattern_str = str(pattern)
+            self.get_color_for_pattern(pattern_str)
+    
     def get_color_for_pattern(self, pattern_str):
         """Get or assign a color for a pattern"""
         if pattern_str not in self.pattern_colors:

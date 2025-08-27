@@ -107,38 +107,38 @@ class NgramColorManager:
 
     # 2025
     class ColorManager:
-    def __init__(self):
-        self.pattern_colors = {}
-        self.color_palette = [
-            '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-            '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
-            # Add more colors as needed
-        ]
-        self.color_index = 0
-    
-    def reset(self):
-        """Reset the color manager state"""
-        self.pattern_colors = {}
-        self.color_index = 0
-    
-    def get_color_for_pattern(self, pattern_str):
-        """Get or assign a color for a pattern"""
-        if pattern_str not in self.pattern_colors:
-            if self.color_index < len(self.color_palette):
-                self.pattern_colors[pattern_str] = self.color_palette[self.color_index]
-                self.color_index += 1
-            else:
-                # Generate additional colors or cycle through existing ones
-                self.pattern_colors[pattern_str] = self.color_palette[self.color_index % len(self.color_palette)]
-                self.color_index += 1
+        def __init__(self):
+            self.pattern_colors = {}
+            self.color_palette = [
+                '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+                '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+                # Add more colors as needed
+            ]
+            self.color_index = 0
         
-        return self.pattern_colors[pattern_str]
-    
-    def assign_colors_to_dataframe(self, df):
-        """Assign colors to dataframe patterns"""
-        df = df.copy()
-        df['color'] = df['pattern'].apply(self.get_color_for_pattern)
-        return df
+        def reset(self):
+            """Reset the color manager state"""
+            self.pattern_colors = {}
+            self.color_index = 0
+        
+        def get_color_for_pattern(self, pattern_str):
+            """Get or assign a color for a pattern"""
+            if pattern_str not in self.pattern_colors:
+                if self.color_index < len(self.color_palette):
+                    self.pattern_colors[pattern_str] = self.color_palette[self.color_index]
+                    self.color_index += 1
+                else:
+                    # Generate additional colors or cycle through existing ones
+                    self.pattern_colors[pattern_str] = self.color_palette[self.color_index % len(self.color_palette)]
+                    self.color_index += 1
+            
+            return self.pattern_colors[pattern_str]
+        
+        def assign_colors_to_dataframe(self, df):
+            """Assign colors to dataframe patterns"""
+            df = df.copy()
+            df['color'] = df['pattern'].apply(self.get_color_for_pattern)
+            return df
 
 # Initialize global color manager
 color_manager = ColorManager()

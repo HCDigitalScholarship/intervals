@@ -609,39 +609,6 @@ def _manipulate_processed_network_df(df, interval_column, search_pattern_starts_
     return filtered_df.fillna("-").style.map(
         lambda x: "background: #ccebc5" if search_pattern_starts_with in x else "")
 
-# uses INTERACT, and so removed 2024
-# def create_interactive_compare_df(df, interval_column):
-#     """
-#     This method returns a wdiget allowing users to interact with
-#     the simple observations dataframe.
-#     :param df: the dataframe the user interact with
-#     :param interval_column: the column of intervals
-#     :return: a widget that filters and colors a dataframe based on the users
-#     search pattern.
-#     """
-#     return interact(_manipulate_processed_network_df, df=fixed(df),
-#                     interval_column=fixed(interval_column), search_pattern_starts_with='Input search pattern')
-
-
-# def create_comparisons_networks_and_interactive_df(df, interval_column, interval_type, ema_column, patterns=[]):
-#     """
-#     Generate a dictionary of networks and a simple dataframe allowing the users
-#     search through the intervals.
-#     :param df: the dataframe the user interact with
-#     :param interval_column: the column of intervals
-#     :param interval_type: put "time" or "melodic"
-#     :param ema_column: column containing ema address
-#     :param patterns: we could only choose to look at specific patterns (optional)
-#     :return: a dictionary of networks created and a clean interactive df
-#     """
-#     # process df
-#     if patterns:
-#         df = df[df[interval_column].isin(patterns)].copy()
-
-#     networks_dict = create_interval_networks(df[interval_column], interval_type)
-#     df = process_network_df(df, interval_column, ema_column)
-#     return networks_dict, create_interactive_compare_df(df, interval_column)
-
 # new cadence visualization functions
 
 

@@ -44,7 +44,9 @@ corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)
 
 ## Functions
 
-### corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False)
+###  corpus_notes
+
+Typical use: `corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False)`
 
 Creates a table of notes and rests in a corpus.
 
@@ -56,7 +58,9 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing processed notes
 
-### corpus_note_scaled(corpus, combine_unisons_choice=True, combine_rests_choice=False)
+### corpus_note_scaled
+
+Typical use: `corpus_note_scaled(corpus, combine_unisons_choice=True, combine_rests_choice=False)`
 
 Counts occurrences of notes and rests in a corpus, including scaled counts.
 
@@ -68,7 +72,10 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing note counts
 
-### corpus_note_durs(corpus, pitch_class=True)
+### corpus_note_durs
+
+Typical use: `corpus_note_durs(corpus, pitch_class=True)`
+
 
 Calculates durations of notes in a corpus.
 
@@ -79,7 +86,9 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing note durations
 
-### corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)
+### corpus_mel
+
+Typical use: `corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)`
 
 Generate melodic intervals in a corpus.
 
@@ -92,7 +101,9 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing generated melodic intervals
 
-### corpus_har(corpus, kind_choice='d', compound_choice=True, directed_choice=True)
+### corpus_har
+
+Typical use: `corpus_har(corpus, kind_choice='d', compound_choice=True, directed_choice=True)`
 
 Generate harmonic intervals in a corpus.
 
@@ -105,7 +116,9 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing generated harmonic intervals
 
-### corpus_contrapuntal_ngrams(corpus, ngram_length)
+### corpus_contrapuntal_ngrams
+
+Typical use: `corpus_contrapuntal_ngrams(corpus, ngram_length)`
 
 Generate n-grams in a corpus.
 
@@ -116,7 +129,9 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing generated n-grams
 
-### corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice='d', end_choice=False, metadata_choice=True, include_offset=False)
+### corpus_melodic_ngrams
+
+Typical use:  `corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice='d', end_choice=False, metadata_choice=True, include_offset=False)`
 
 Generate n-grams in a corpus.
 
@@ -131,7 +146,9 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing generated n-grams
 
-### corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4, end_choice=False, kind_choice='d', metadata_choice=True, include_offset=False)
+### corpus_melodic_durational_ratios_ngrams
+
+Typical use:  `corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4, end_choice=False, kind_choice='d', metadata_choice=True, include_offset=False)`
 
 Generate n-grams in a corpus with durational ratios.
 
@@ -146,7 +163,9 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing generated n-grams
 
-### corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice='d', metadata_choice=True, include_offset=False)
+### corpus_harmonic_ngrams
+
+Typical use:  `corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice='d', metadata_choice=True, include_offset=False)`
 
 Generate n-grams in a corpus.
 
@@ -160,7 +179,9 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing generated n-grams
 
-### corpus_sonority_ngrams(corpus, ngram_length=4, metadata_choice=True, include_offset=False, include_progress=True, compound=True, sort=False, minimum_beat_strength=0.0)
+### corpus_sonority_ngrams
+
+Typical use: `corpus_sonority_ngrams(corpus, ngram_length=4, metadata_choice=True, include_offset=False, include_progress=True, compound=True, sort=False, minimum_beat_strength=0.0)`
 
 Generate sonority n-grams in a corpus.
 
@@ -177,7 +198,9 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing generated n-grams
 
-### corpus_cadences(corpus)
+### corpus_cadences
+
+Typical use:  `corpus_cadences(corpus)`
 
 Generate cadences in a corpus.
 
@@ -187,8 +210,9 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing cadence information
 
-### corpus_presentation_types(corpus, limit_to_entries=True, head_flex=1, body_flex=0, include_hidden_types=False, combine_unisons=True, melodic_ngram_length=4, kind='d', end=False)
+### corpus_presentation_types
 
+Typical use:  `corpus_presentation_types(corpus, limit_to_entries=True, head_flex=1, body_flex=0, include_hidden_types=False, combine_unisons=True, melodic_ngram_length=4, kind='d', end=False)`
 Generate presentation types in a corpus.
 
 Parameters:

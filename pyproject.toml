@@ -19,7 +19,6 @@ httpcore = "1.0.2"
 httpx = "0.27.0"
 idna = "3.1"
 ipython = ">=7.23.1,<8.0"
-joblib = "1.0.1"
 jsonschema = ">=3.1"
 lxml = "5.1.0"
 matplotlib = "^3.9.2"
@@ -43,7 +42,8 @@ textdistance = "4.2.1"
 xlsxwriter = "3.0.2"
 webcolors = "1.11.1"
 requests = "2.31.0"
-verovio = "4.1.0"
+verovio = "5.5.0"
+joblib = "^1.5.2"
 
 
 

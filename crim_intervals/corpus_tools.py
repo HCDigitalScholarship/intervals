@@ -589,7 +589,6 @@ def corpus_sonority_ngrams(corpus,
     corpus_son_bass_ngrams = corpus_son_bass_ngrams.reset_index()
     return corpus_son_bass_ngrams
 
-
 def corpus_cadences(corpus):
 
     #select function.  remember to omit "()"

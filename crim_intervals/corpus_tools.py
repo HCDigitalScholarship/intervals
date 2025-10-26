@@ -325,7 +325,14 @@ def corpus_contrapuntal_ngrams(corpus, ngram_length=3):
     return ngrams
 
 # melodic grams in a corpus. 
-def corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice = 'd', end_choice=False, metadata_choice=True, include_offset=False
+def corpus_melodic_ngrams(corpus, 
+                          ngram_length=4, 
+                          kind_choice = 'd', 
+                          compound_choice=True, 
+                          directed_choice=True,
+                          end_choice=False, 
+                          metadata_choice=True, 
+                          include_offset=False
  ):
     """
     Generate n-grams in a corpus.
@@ -338,6 +345,10 @@ def corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice = 'd', end_choice=
         Length of n-grams to generate; 4 by default
     kind_choice : str
         'd' for diatonic, by default
+    compound_choice : bool
+        Whether to allow compound intervals
+    directed_choice : bool
+        Whether to allow directed intervals
     end_choice: bool
         False to give position as of the first note of the interval
     metadata: bool
@@ -350,7 +361,10 @@ def corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice = 'd', end_choice=
         DataFrame containing generated n-grams
     """
     func1 = ImportedPiece.melodic
-    list_of_dfs = corpus.batch(func=func1, kwargs={'kind': kind_choice, 'end': end_choice}, metadata=False)
+    list_of_dfs = corpus.batch(func=func1, kwargs={'kind': kind_choice, 
+                                                   'compound' : compound_choice,
+                                                   'directed': directed_choice,
+                                                   'end': end_choice}, metadata=False)
     func2 = ImportedPiece.ngrams
     list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': ngram_length, 'df': list_of_dfs}, metadata=False)
     func3 = ImportedPiece.detailIndex
@@ -370,6 +384,8 @@ def corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice = 'd', end_choice=
 def corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4, 
                                             end_choice = False, 
                                             kind_choice = 'd', 
+                                            compound_choice=True, 
+                                            directed_choice=True,
                                             metadata_choice=True, 
                                             include_offset=False):
     """
@@ -385,6 +401,10 @@ def corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4,
         'd' for diatonic, by default
     end_choice: bool
         False to give position as of the first note of the interval
+    compound_choice : bool
+        Whether to allow compound intervals
+    directed_choice : bool
+        Whether to allow directed intervals
     metadata: bool
         whether to include composer, title, and data
     
@@ -395,7 +415,11 @@ def corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4,
         DataFrame containing generated n-grams
     """
     func1 = ImportedPiece.melodic
-    list_of_mel_dfs = corpus.batch(func=func1, kwargs={'kind': kind_choice, 'end' : end_choice}, metadata=False)
+    list_of_mel_dfs = corpus.batch(func=func1, kwargs={'kind': kind_choice, 
+                                                       'end' : end_choice,
+                                                       'compound' : compound_choice,
+                                                       'directed': directed_choice,
+                                                       }, metadata=False)
 
     func2 = ImportedPiece.numberParts
     list_of_mel_dfs = corpus.batch(func = func2,
@@ -439,7 +463,14 @@ def corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4,
     return corpus_mel_dur_rat_ngrams
 
 # harmonic grams in a corpus. 
-def corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice = 'd', metadata_choice=True, include_offset=False
+def corpus_harmonic_ngrams(corpus, 
+                           ngram_length=4, 
+                           kind_choice = 'd', 
+                           compound_choice=True, 
+                           directed_choice=True,
+                           metadata_choice=True, 
+                           againstLow_choice=False,
+                           include_offset=False
  ):
     """
     Generate n-grams in a corpus.
@@ -452,8 +483,12 @@ def corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice = 'd', metadata_c
         Length of n-grams to generate; 4 by default
     kind_choice : str
         'd' for diatonic, by default
-    end_choice: bool
-        False to give position as of the first note of the interval
+    compound_choice : bool
+        Whether to allow compound intervals
+    directed_choice : bool
+        Whether to allow directed intervals
+    againstLow_choice : bool
+        Whether to calculate intervals against the lowest note
     metadata: bool
         whether to include composer, title, and data
     
@@ -464,7 +499,10 @@ def corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice = 'd', metadata_c
         DataFrame containing generated n-grams
     """
     func1 = ImportedPiece.harmonic
-    list_of_dfs = corpus.batch(func=func1, kwargs={'kind': kind_choice}, metadata=False)
+    list_of_dfs = corpus.batch(func=func1, kwargs={'kind': kind_choice,
+                                                   'compound': compound_choice,
+                                                   'directed': directed_choice,
+                                                   'againstLow' : againstLow_choice}, metadata=False)
     func2 = ImportedPiece.ngrams
     list_of_harmonic_ngrams = corpus.batch(func=func2, kwargs={'n': ngram_length, 'df': list_of_dfs}, metadata=False)
     func3 = ImportedPiece.detailIndex

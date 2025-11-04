@@ -568,7 +568,13 @@ def corpus_sonority_ngrams(corpus,
     list_of_sonority_dfs = corpus.batch(func=func1, 
                                         kwargs={'sort': sort, 'compound': compound}, 
                                         metadata=False)
-    paired_sonority_bs_dfs = zip(list_of_sonority_dfs,list_of_beat_strength_dfs)
+    list_filtered_sonorities = []
+    for df in list_of_sonority_dfs:
+        df = df[df['Sonority'] != '']
+        list_filtered_sonorities.append(df)
+
+        
+    paired_sonority_bs_dfs = zip(list_filtered_sonorities,list_of_beat_strength_dfs)
 
     # filtering for beat strength
     list_filtered_sonority_dfs = []
@@ -589,10 +595,17 @@ def corpus_sonority_ngrams(corpus,
         bs = pair[1]
         strong_beat_positions = bs[(bs > minimum_beat_strength).any(axis=1)].index
         filtered_lowline = low[low.index.isin(strong_beat_positions)]
-        list_of_fitered_lowLine_dfs.append(filtered_lowline)
+        lowline_df = pd.DataFrame(filtered_lowline)
+        list_of_fitered_lowLine_dfs.append(lowline_df)
+
+    # now melodic ints based on lowline
+    func2a = ImportedPiece.melodic
+    list_low_melodic_dfs = corpus.batch(func=func2a, 
+                                        kwargs={'end': False, 'df': list_of_fitered_lowLine_dfs}, 
+                                        metadata=False)
 
     # create df with both filtered sonorities and lowline
-    paired_dfs = zip(list_filtered_sonority_dfs, list_of_fitered_lowLine_dfs)
+    paired_dfs = zip(list_filtered_sonority_dfs, list_low_melodic_dfs)
     list_combined_dfs = []
     for pair in paired_dfs:
         sonorities_with_bass = pd.merge(pair[0], pair[1], left_index=True, right_index=True, how='left')

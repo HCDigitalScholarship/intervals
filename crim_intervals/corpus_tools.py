@@ -216,6 +216,24 @@ def corpus_note_durs(corpus, pitch_class=True):
     return corpus_note_durs
 
 def corpus_note_weights(corpus, include_rests=True):
+    """
+    Calculate pitch class weights by duration in a corpus.
+    Notes are grouped by pitch class and weighted by their total duration,
+    yielding a scaled proportion for each pitch class per piece.
+
+    Parameters:
+    -----------
+    corpus : object
+        Corpus object
+    include_rests : bool, optional
+        Whether to include rests in the pitch class counts (default: True)
+
+    Returns:
+    --------
+    pd.DataFrame
+        DataFrame containing pitch class, raw duration count, scaled proportion,
+        composer, and title for each piece in the corpus
+    """
     pc_order = pitch_class_order_with_rests if include_rests else pitch_class_order_no_rests
 
     func  = ImportedPiece.notes

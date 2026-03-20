@@ -12,15 +12,31 @@ from crim_intervals import ImportedPiece
 import pandas as pd
 from collections import Counter 
 
-def extract_letter(value):
-    # Find the index of the first digit
-    if value is not None:
-        for i, char in enumerate(value):
-            if char.isdigit():
-                # Return everything before the first digit
-                return value[:i]
-        # If no digit is found, return the entire string
-        return value
+pitch_class_order_no_rests = ['C', 'C#', 'D-','D', 'D#', 'E-', 'E', 'F-', 'E#', 'F', 'F#', 'G-', 'F##', 'G', 'G#', 'A-','A', 'A#', 'B-', 'B', 'B#']
+pitch_class_order_with_rests = pitch_class_order_no_rests + ['Rest']
+
+# REST tokens as seen in CRIM Intervals output
+REST_TOKENS = {'r', 'rest', 'Rest', '-', ''}
+
+def standardize_note(note):
+    if '-' in note:
+        return note.replace('-', 'b')
+    return note
+
+def extract_letter(value, include_rests=True):
+    """Extract pitch class from a note string.
+
+    Returns 'Rest' for rest tokens (if include_rests=True),
+    None for rest tokens (if include_rests=False),
+    or the pitch class letter+accidental for pitched notes.
+    """
+    if pd.isna(value):
+        return None
+    s = str(value).strip()
+    if s.lower() in REST_TOKENS:
+        return 'Rest' if include_rests else None
+    # Strip octave digit(s) from end to get pitch class
+    return s.rstrip('0123456789')
 
 def corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False):
     """
@@ -198,6 +214,70 @@ def corpus_note_durs(corpus, pitch_class=True):
              
     corpus_note_durs = pd.concat(note_dur_dfs)
     return corpus_note_durs
+
+def corpus_note_weights(corpus, include_rests=True):
+    pc_order = pitch_class_order_with_rests if include_rests else pitch_class_order_no_rests
+
+    func  = ImportedPiece.notes
+    func2 = ImportedPiece.durations
+    list_of_note_dfs = corpus.batch(func=func,  metadata=True)
+    list_of_dur_dfs  = corpus.batch(func=func2, metadata=False)
+
+    weighted_note_dfs = []
+    weighted_notes = pd.DataFrame()
+
+    for a, b in zip(list_of_note_dfs, list_of_dur_dfs):
+        metadata = a.iloc[1][['Composer', 'Title']].tolist()
+        a = a.drop(columns=['Composer', 'Title', 'Date'])
+
+        melted_notes = a.melt()
+        melted_durs  = b.melt()
+
+        note_dur = pd.merge(melted_notes, melted_durs, left_index=True, right_index=True)
+        note_dur = note_dur.dropna()
+
+        note_dur['value_x_clean'] = note_dur['value_x'].apply(
+            lambda v: extract_letter(v, include_rests=include_rests)
+        )
+
+        # Drop only rows where extract_letter returned None
+        # (unrecognized tokens, or rests when include_rests=False)
+        note_dur = note_dur[note_dur['value_x_clean'].notna()]
+
+        note_dur_sums = (
+            note_dur.groupby('value_x_clean')['value_y']
+                    .sum()
+                    .reset_index()
+                    .rename(columns={'value_x_clean': 'pitch_class', 'value_y': 'count'})
+        )
+
+        total_dur = note_dur_sums['count'].sum()
+        note_dur_sums['scaled'] = (note_dur_sums['count'] / total_dur).round(4)
+
+        note_dur_sums['pitch_class'] = pd.Categorical(
+            note_dur_sums['pitch_class'], categories=pc_order, ordered=True
+        )
+        weighted_notes = (note_dur_sums
+                          .sort_values('pitch_class')
+                          .dropna(subset=['pitch_class'])
+                          .copy())
+
+        weighted_notes['composer'] = metadata[0]
+        weighted_notes['title']    = metadata[1]
+        weighted_note_dfs.append(weighted_notes)
+        weighted_notes = pd.concat(weighted_note_dfs, ignore_index=True)
+        weighted_notes = weighted_notes.rename(columns={'index': 'pitch_class'})
+        weighted_notes['pitch_class'] = pd.Categorical(weighted_notes['pitch_class'], categories=pitch_class_order_with_rests, ordered=True)
+
+        # Sort the DataFrame
+        weighted_notes_sorted = weighted_notes.sort_values('pitch_class')
+        weighted_notes_sorted['pitch_class'] = weighted_notes_sorted['pitch_class'].astype(str)
+
+        # Reset the index and correct flat names
+        weighted_notes_sorted = weighted_notes_sorted.reset_index(drop=True)
+        weighted_notes_sorted['pitch_class'] = weighted_notes_sorted['pitch_class'].map(standardize_note)
+
+    return weighted_notes
 
 # melodic intervals in a corpus
 def corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True):

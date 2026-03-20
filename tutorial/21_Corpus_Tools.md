@@ -6,6 +6,7 @@
    - [corpus_notes](#corpus_notes)
    - [corpus_note_scaled](#corpus_note_scaled)
    - [corpus_note_durs](#corpus_note_durs)
+   - [corpus_note_weights](#corpus_note_weights)
    - [corpus_mel](#corpus_mel)
    - [corpus_har](#corpus_har)
    - [corpus_contrapuntal_ngrams](#corpus_contrapuntal_ngrams)
@@ -76,7 +77,6 @@ Returns:
 
 Typical use: `corpus_note_durs(corpus, pitch_class=True)`
 
-
 Calculates durations of notes in a corpus.
 
 Parameters:
@@ -85,6 +85,19 @@ Parameters:
 
 Returns:
 - `pd.DataFrame`: DataFrame containing note durations
+
+### corpus_note_weights
+
+Typical use: `corpus_note_weights(corpus, include_rests=True)`
+
+Calculates pitch class weights by duration in a corpus. Notes are grouped by pitch class and weighted by their total duration, yielding a scaled proportion for each pitch class per piece. Pitch classes are ordered chromatically and flat names are standardized (e.g. `D-` becomes `Db`).
+
+Parameters:
+- `corpus` (object): Corpus object
+- `include_rests` (bool): Whether to include rests in the pitch class counts (default: True)
+
+Returns:
+- `pd.DataFrame`: DataFrame with columns `pitch_class`, `count` (total duration), `scaled` (proportion of total duration), `composer`, and `title` for each piece in the corpus
 
 ### corpus_mel
 

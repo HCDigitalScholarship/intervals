@@ -1,0 +1,50 @@
+@prefix ow: <http://www.omac.org/work#>.
+@prefix od: <http://www.omac.org/data#>.
+@prefix viaf: <http://viaf.org/viaf/>.
+@prefix dbp: <http://dbpedia.org/property/>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix dbr: <http://dbpedia.org/resource/>.
+
+viaf:313248882
+  dcterms:title "Missa Je suis déshéritée"^^xsd:string;
+  rdf:type ow:MusicalWork;
+  ow:composed_by viaf:51955127;
+  dbp:composed "1556"^^xsd:gYear;
+  dbp:genre <http://dbpedia.org/resource/Mass_(music)>;
+  ow:CRIM_identifier "CRIM_Mass_0006"^^xsd:string; #testing triple within CRIM project
+  dbp:url "http://crimproject.org/masses/CRIM_Mass_0006/"^^xsd:anyURI; #testing triple within CRIM project
+  ow:has_section od:Kyrie-MJD, od:Gloria-MJD, od:Credo-MJD, od:Sanctus-MJD, od:AgnusDei-MJD;
+  ow:sections_number "5"^^xsd:int.
+
+
+viaf:51955127
+   rdf:type ow:Composer;
+   dbp:firstname "Jean"^^xsd:string;
+   dbp:familyname "Guyon"^^xsd:string;
+   dbp:name "Jean Guyon"^^xsd:string.
+
+od:Kyrie-MJD
+  dbp:genre dbr:Kyrie;
+  ow:section_order "1"^^xsd:int;
+  ow:has_subsection od:Kyrie1-MJD, od:Christe-MJD, od:Kyrie2-MJD.
+
+od:Gloria-MJD
+  dbp:genre dbr:Gloria;
+  ow:section_order "2"^^xsd:int.
+
+od:Credo-MJD
+  dbp:genre dbr:Credo;
+  ow:section_order "3"^^xsd:int.
+
+od:Sanctus-MJD
+  ow:section_order "4"^^xsd:int;
+  dbp:genre dbr:Sanctus;
+  od:has_subsection od:Sanctus_ss_MJD, od:PleniSunt_MJD, od:Osanna_MJD, od:Benedictus_MJD.
+
+od:AgnusDei-MJD
+  ow:section_order "5"^^xsd:int;
+  dbp:genre <http://dbpedia.org/resource/Agnus_Dei_(music)>;
+  ow:has_subsection od:AgnusDei1_MJD, od:AgnusDei2_MJD.

@@ -1,0 +1,34 @@
+@prefix od: <http://www.omac.org/data#>.
+@prefix ow: <http://www.omac.org/work#>.
+@prefix oc: <http://www.omac.org/claim#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix dbp: <http://dbpedia.org/property/>.
+@prefix viaf: <http://viaf.org/viaf/>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+
+viaf:89469141 dbp:name "Claudin de Sermisy"^^xsd:string.
+
+od:Tota_pulchra_es
+    ow:composed_by viaf:89469141;
+    dcterms:title "Tota pulchra es"^^xsd:string.
+
+od:claim_P1
+     rdf:type oc:StructureClaim;
+     oc:stated_by od:Ian_Lorenz;
+     oc:refers_to od:segment_P1;
+     oc:refers_to od:Tota_pulchra_es; #this triple can be inferred; it is here included for the sake of example.
+     oc:has_schema oc:Fuga_schema;
+     oc:melodic_interval_of_entry "4-"^^xsd:string;
+     oc:time_interval_of_entry "B2"^^xsd:string;
+     oc:periodic "false"^^xsd:boolean;
+     oc:strict "false"^^xsd:boolean;
+     oc:flexed "false"^^xsd:boolean;
+     oc:sequential "false"^^xsd:boolean;
+     oc:inverted "false"^^xsd:boolean;
+     oc:retrograde "false"^^xsd:boolean;
+     oc:remarks "Makes up a longer ID"^^xsd:string.
+
+od:segment_P1
+    rdf:type oc:AnalyticSegment;
+    oc:segment_of od:Tota_pulchra_es.

@@ -53,6 +53,7 @@ jobs:
       - name: Publish to PyPI
         run: |
           poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
+          rm -rf dist/
           poetry publish --build --no-interaction
 
       - name: Commit bumped version and updated README

@@ -1,75 +1,67 @@
 name: interval-test
 
-on: [ push ]
+on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     strategy:
       matrix:
-        python-version: [ '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12']
 
     steps:
-      - name: Use Node.js 20.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4          # MUST be first
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest pytest-cov
           pip install -r requirements.txt
+
       - name: Lint with flake8
         run: |
-          # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide 
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
       - name: Test with pytest
         run: |
-          # python -m pytest  --cov visualizations --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
-          # python -m pytest  --cov main_objs --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report term-missing --cov-report=html
-      - name: Install poetry and "patch" the build
-        if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == '3.11' }}
+          python -m pytest
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build                          # only runs if ALL matrix jobs pass
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install poetry and bump version
         run: |
           pip install poetry
           poetry self add poetry-bumpversion
           poetry version patch
-      - name: Publish to Pypi
-        if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == '3.11' }}   # This ensures publishing only happens on main branch
+
+      - name: Publish to PyPI
         run: |
           poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
           poetry publish --build
-      
-      - name: Update Markdown with New Version
-        if: ${{ github.ref == 'refs/heads/main' && matrix.python-version == '3.11' }} # Same condition to ensure it runs only on main branch 
+
+      - name: Commit bumped version and updated README
         run: |
           VERSION=$(poetry version -s)
-          sed -i "s/Current Version: .*/Current Version: $VERSION/" README.md
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git commit -am "Update README.md with new version $VERSION [skip ci]" # Add [skip ci] to prevent re-triggering
+          git commit -am "Update README.md with new version $VERSION [skip ci]"
           git push
-
-      - uses: actions/checkout@v4
-      - uses: stefanzweifel/git-auto-commit-action@v4
-
-
-
-          
-      # - name: Build and publish to PyPI
-      #   env:
-      #     TWINE_USERNAME: __token__  # Replace with your PyPI username or token
-      #     TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}  # Add this token as a GitHub repository secret
-        # run: |
-        #   poetry build
-        #   twine upload ./crim_intervals

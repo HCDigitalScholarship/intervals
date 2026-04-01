@@ -12,6 +12,7 @@ import pandas as pd
 import plotly.express as px
 
 # from ipywidgets import interact, fixed
+# remember to [skip ci] when you change this file to avoid running the tests for the whole package since this file is only for visualizations and doesn't have any logic that needs testing.
 from pyvis.network import Network
 
 import matplotlib as mplt # OY addition 6/12/24

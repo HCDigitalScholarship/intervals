@@ -1624,7 +1624,7 @@ class ImportedPiece:
 
     #         self.analyses[key] = ret
     #     return self.analyses[key]
-    # update har to correct caching
+    # update har to correct caching. etc
     def harmonic(self, kind='q', directed=True, compound=True, againstLow=False, df=None):
         '''
         Return harmonic intervals for all voice pairs.

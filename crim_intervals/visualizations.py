@@ -17,57 +17,40 @@ from pyvis.network import Network
 import matplotlib as mplt # OY addition 6/12/24
 
 class NgramColorManager:
-    def __init__(self):
-        self.color_map = {}  # Dictionary to store pattern -> color mappings
-        # Use Matplotlib's qualitative colormaps
-        self.qualitative_cmaps = ['tab10', 'tab20', 'Set1', 'Set2', 'Set3', 'Accent', 'Dark2', 'Paired']
-    
+    # Paul Tol's qualitative palette — 12 colors varying hue and saturation
+    # for maximum human distinguishability. See https://personal.sron.nl/~pault/
+    CURATED_12 = [
+        '#4477AA',  # blue
+        '#CC6677',  # rose
+        '#228833',  # green
+        '#DDCC77',  # sand
+        '#AA3377',  # purple
+        '#66CCEE',  # cyan
+        '#EE6633',  # orange
+        '#BBBBBB',  # grey
+        '#117733',  # forest
+        '#332288',  # indigo
+        '#882255',  # wine
+        '#44AA99',  # teal
+    ]
+
     def generate_distinct_colors(self, n):
-        """Generate n distinct colors using Matplotlib's qualitative colormaps"""
-        colors = []
-        # First try to use the most distinct colormap (tab10)
-        cmap = mplt.cm.get_cmap('tab10')
-        colors.extend([mplt.colors.to_hex(cmap(i)) for i in range(min(10, n))])
-        
-        # If we need more colors, use other qualitative colormaps
-        if n > 10:
-            remaining = n - 10
-            for cmap_name in self.qualitative_cmaps[1:]:
-                if len(colors) >= n:
-                    break
-                cmap = mplt.cm.get_cmap(cmap_name)
-                # Get the number of colors in this colormap
-                if cmap_name == 'tab20':
-                    cmap_colors = 20
-                elif cmap_name in ['Set1', 'Set3']:
-                    cmap_colors = 9
-                elif cmap_name in ['Set2', 'Dark2', 'Accent']:
-                    cmap_colors = 8
-                elif cmap_name == 'Paired':
-                    cmap_colors = 12
-                else:
-                    cmap_colors = 10
-                
-                # Add colors from this colormap
-                for i in range(min(cmap_colors, remaining)):
-                    color = mplt.colors.to_hex(cmap(i))
-                    if color not in colors:  # Avoid duplicates
-                        colors.append(color)
-                remaining = n - len(colors)
-        
-        # If we still need more colors, use HSV space with golden ratio
-        if len(colors) < n:
-            remaining = n - len(colors)
+        """Return n distinct colors.
+
+        Uses the curated 12-color palette for the first 12 entries, then
+        extends with golden-ratio HSV sampling for any additional colors needed.
+        """
+        colors = list(self.CURATED_12[:n])
+        if n > len(self.CURATED_12):
             golden_ratio_conjugate = 0.618033988749895
-            h = 0.1  # Starting hue
-            for _ in range(remaining):
+            h = 0.1
+            for _ in range(n - len(self.CURATED_12)):
                 h = (h + golden_ratio_conjugate) % 1.0
-                s = 0.85  # High saturation for vibrant colors
-                v = 0.95  # High value for brightness
-                rgb = mplt.colors.hsv_to_rgb([h, s, v])
-                colors.append(mplt.colors.to_hex(rgb))
-        
-        return colors[:n]
+                # Alternate saturation between two levels to aid distinction
+                s = 0.85 if len(colors) % 2 == 0 else 0.55
+                v = 0.90
+                colors.append(mplt.colors.to_hex(mplt.colors.hsv_to_rgb([h, s, v])))
+        return colors
 
 class ColorManager:
     def __init__(self):

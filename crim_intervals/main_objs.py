@@ -29,6 +29,20 @@ MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
 suppliedPattern = re.compile("<supplied.*?(<accid.*?\/>).*?<\/supplied>", flags=re.DOTALL)
 datePattern = re.compile('date isodate="(1\d*)')
+_xmlModelPI = re.compile(r'<\?xml-model\b[^?]*\?>\s*', flags=re.DOTALL)
+_extMetaBlock = re.compile(r'<extMeta\b[^>]*>.*?</extMeta>\s*', flags=re.DOTALL)
+
+
+def _prepare_mei_for_music21(mei_text):
+    """Strip elements that cause music21's MEI parser to fail on MEI 5.1 (full/all) files.
+
+    Removes:
+      - <?xml-model?> processing instructions (schema references music21 doesn't handle)
+      - <extMeta> blocks (contain a humdrum namespace that confuses music21)
+    """
+    mei_text = _xmlModelPI.sub('', mei_text)
+    mei_text = _extMetaBlock.sub('', mei_text)
+    return mei_text
 
 accepted_filetypes = ('mei', 'mid', 'midi', 'abc', 'xml', 'musicxml')
 pathDict = {}
@@ -85,11 +99,15 @@ def importScore(path, recurse=False, verbose=False):
                 print('Downloading remote score...')
             try:
                 to_import = httpx.get(path).text
-                mei_doc = ET.fromstring(to_import.encode('utf-8')) if path.endswith('.mei') else None
             except:
                 print('Error downloading',  str(path) + ', please check',
                       'your url and try again. Continuing to next file.')
                 return None
+            if path.endswith('.mei'):
+                try:
+                    mei_doc = ET.fromstring(to_import.encode('utf-8'))
+                except (ET.ParseError, ValueError) as err:
+                    print('Warning: could not parse MEI metadata for {}: {}'.format(path, err))
         elif os.path.isfile(path):  # `path` is formatted like a file path
             ending = path.rsplit('.', 1)[1]
             if ending not in accepted_filetypes:
@@ -113,6 +131,7 @@ def importScore(path, recurse=False, verbose=False):
         try:
             if mei_doc is not None:
                 to_import = re.sub(suppliedPattern, '\\1', to_import)
+                to_import = _prepare_mei_for_music21(to_import)
                 _date = re.search(datePattern, to_import)
                 if _date:
                     date = int(_date.group(1))
@@ -120,8 +139,8 @@ def importScore(path, recurse=False, verbose=False):
             pathDict[path] = ImportedPiece(score, path, mei_doc, date)
             if verbose:
                 print("Successfully imported", path[:180])
-        except:
-            print("Import of", str(path[:180]), "failed, please check your file, path, or url.")
+        except Exception as err:
+            print("Import of", str(path[:180]), "failed:", err)
             return None
 
     return pathDict[path]

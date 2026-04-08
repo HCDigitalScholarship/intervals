@@ -85,7 +85,7 @@ def importScore(path, recurse=False, verbose=False):
                 print('Downloading remote score...')
             try:
                 to_import = httpx.get(path).text
-                mei_doc = ET.fromstring(to_import.encode('utf-8')) if path.endswith('.mei') else None
+                mei_doc = ET.fromstring(to_import) if path.endswith('.mei') else None
             except:
                 print('Error downloading',  str(path) + ', please check',
                       'your url and try again. Continuing to next file.')
@@ -98,8 +98,8 @@ def importScore(path, recurse=False, verbose=False):
                 try:
                     with open(path, "r") as file:
                         to_import = file.read()
-                        mei_doc = ET.fromstring(to_import.encode('utf-8'))
-                except (ET.ParseError, ValueError) as err:
+                        mei_doc = ET.fromstring(to_import)
+                except ET.ParseError as err:
                     print('Error reading the mei file tree of {}'.format(path), err, sep='\n')
             else:
                 to_import = path
@@ -107,8 +107,8 @@ def importScore(path, recurse=False, verbose=False):
             to_import = path
             if '<mei' in path[:1000]: # is an <mei> element in the beginning of the piece?
                 try:
-                    mei_doc = ET.fromstring(to_import.encode('utf-8'))
-                except (ET.ParseError, ValueError) as err:
+                    mei_doc = ET.fromstring(to_import)
+                except ET.ParseError as err:
                     print('Error reading this mei file:'.format(path[:200], err, sep='\n'))
         try:
             if mei_doc is not None:
@@ -164,10 +164,10 @@ def _find_mei_title(mei_doc):
 
 def _find_mei_composer(mei_doc):
     composer_paths = [
-        'mei:meiHead/mei:workList/mei:work/mei:composer/mei:persName',  # MEI 5.1
-        'mei:meiHead/mei:workList/mei:work/mei:composer',               # MEI 5.1 fallback
-        'mei:meiHead/mei:fileDesc/mei:titleStmt/mei:respStmt/mei:persName[@role="composer"]',  # MEI 4.0
-        'mei:meiHead/mei:fileDesc/mei:titleStmt//mei:persName[@role="composer"]',
+        'mei:meiHead/mei:workList/mei:work/mei:composer/mei:persName',
+        'mei:meiHead/mei:workList/mei:work/mei:composer',
+        'mei:meiHead/mei:titleStmt//mei:persName[@role="composer"]',
+        'mei:meiHead/mei:titleStmt/mei:composer',
         'mei:meiHead/mei:sourceDesc//mei:composer/mei:persName',
         'mei:meiHead/mei:sourceDesc//mei:composer',
     ]
@@ -185,11 +185,11 @@ class ImportedPiece:
         if mei_doc is not None:
             title = _find_mei_title(mei_doc) or title
             composer = _find_mei_composer(mei_doc) or composer
-        # Fall back to music21 metadata for anything XPath didn't find
-        if title == path and self.score.metadata.title is not None:
-            title = self.score.metadata.title
-        if composer == 'Not found' and self.score.metadata.composer is not None:
-            composer = self.score.metadata.composer
+        else:
+            if self.score.metadata.title is not None:
+                title = self.score.metadata.title
+            if self.score.metadata.composer is not None:
+                composer = self.score.metadata.composer
         self.metadata = {'title': title, 'composer': composer, 'date': date}
         if not self.metadata['date']:
             if hasattr(self.score.metadata, 'date') and self.score.metadata.date is not None and self.score.metadata.date != 'None':

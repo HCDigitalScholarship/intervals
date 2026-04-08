@@ -143,37 +143,6 @@ def _getCadenceTable():
     return pathDict['CadenceTable']
 
 
-def _find_mei_metadata_text(doc, paths):
-    for path in paths:
-        element = doc.find(path, namespaces={"mei": MEINSURI})
-        if element is not None and element.text:
-            text = re.sub(r'\n', '', element.text).strip()
-            if text:
-                return text
-    return None
-
-
-def _find_mei_title(mei_doc):
-    title_paths = [
-        'mei:meiHead/mei:workList/mei:work/mei:title/mei:titlePart[@type="main"]',
-        'mei:meiHead/mei:workList/mei:work/mei:title/mei:titlePart',
-        'mei:meiHead/mei:fileDesc/mei:titleStmt/mei:title',
-    ]
-    return _find_mei_metadata_text(mei_doc, title_paths)
-
-
-def _find_mei_composer(mei_doc):
-    composer_paths = [
-        'mei:meiHead/mei:workList/mei:work/mei:composer/mei:persName',
-        'mei:meiHead/mei:workList/mei:work/mei:composer',
-        'mei:meiHead/mei:titleStmt//mei:persName[@role="composer"]',
-        'mei:meiHead/mei:titleStmt/mei:composer',
-        'mei:meiHead/mei:sourceDesc//mei:composer/mei:persName',
-        'mei:meiHead/mei:sourceDesc//mei:composer',
-    ]
-    return _find_mei_metadata_text(mei_doc, composer_paths)
-
-
 class ImportedPiece:
     def __init__(self, score, path, mei_doc=None, date=None):
         self.score = score
@@ -183,8 +152,14 @@ class ImportedPiece:
         self.analyses = {'note_list': None}
         title, composer = path, 'Not found'
         if mei_doc is not None:
-            title = _find_mei_title(mei_doc) or title
-            composer = _find_mei_composer(mei_doc) or composer
+            title = mei_doc.find('mei:meiHead//mei:titleStmt/mei:title', namespaces={"mei": MEINSURI})
+            if title is not None and hasattr(title, 'text'):
+                title = re.sub(r'\n', '', title.text).strip()
+            composer = mei_doc.find('mei:meiHead//mei:titleStmt//mei:persName[@role="composer"]', namespaces={"mei": MEINSURI})
+            if composer is None:  # for mei 3 files
+                composer = mei_doc.find('mei:meiHead//mei:titleStmt/mei:composer', namespaces={"mei": MEINSURI})
+            if composer is not None and hasattr(composer, 'text'):
+                composer = re.sub(r'\n', '', composer.text).strip()
         else:
             if self.score.metadata.title is not None:
                 title = self.score.metadata.title

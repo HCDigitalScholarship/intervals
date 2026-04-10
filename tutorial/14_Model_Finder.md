@@ -58,7 +58,7 @@ soggetto_cross_plot
 
 * As you read across, you will see the percentage of melodies in the row value that come from the corresponding column value.
 
-![Model_Finder_3.png](images%2FModel_Finder_3.png)
+![Model_Finder_3.png](images%2Fmodel_Finder_3.png)
 
 ### Heatmap Display of Results
 
@@ -143,7 +143,7 @@ fig = px.imshow(module_matrix, width=800, height=600)
 fig.show()
 ```
 
-![Model_Finder_5.png](images%2FModel_Finder_5.png)
+![Model_Finder_5.png](images%2Fmodel_Finder_5.png)
 
 ### Compare the Differences between the Model Finder and Module Finder outputs
 
@@ -233,7 +233,7 @@ Check the detailed view as needed for each:
 print(model_entries_det, mass_movement_entries_det)
 ```
 
-![Model_Finder_7.png](images%2FModel_Finder_7.png)
+![Model_Finder_7.png](images%2Fmodel_finder_7.png)
 
 ### Find the nGrams shared by your pieces
 

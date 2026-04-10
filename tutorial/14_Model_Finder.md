@@ -6,7 +6,7 @@ The `modelFinder` methods works with a corpus of pieces to detect shared pattern
 
 The `modelFinder` method provides a **macro-level view** of the percentages of soggetti (melodic ngrams) or contrapuntal modules shared across a corpus. The method first finds all the "entry" soggetti in each piece in your corpus, then measures the percentage of each model found in a corresponding Mass movement. The resulting 'cross_plot' is a driving distance style of results (from 0 to 1) showing the relatedness of each pair of movements.
 
-The *specific number of times* each soggetto (or module) appears is not considered, but rather the *percentage of unique entries* that each pair of pieces shares*.
+The *specific number of times* each soggetto (or module) appears is not considered, but rather the *percentage of unique entries* that each pair of pieces shares.
 
 ## Melodic Ngrams (Soggetti)  as Similarity Matrix
 
@@ -27,7 +27,7 @@ soggetto_cross_plot = corpus.modelFinder(n=6)
 soggetto_cross_plot
 ```
 
-![modelFinder_1.png](images%2FmodelFinder_1.png)
+![Model_Finder_1.png](images%2FmodelFinder_1.png)
 
 It is also possible to divide your corpus into two segments:  models and Masses, for instance (of course you could arbitrarily assign any pieces to these specific segments in order to compare one subgroup of pieces against another).  Doing so will result in a simpler table than for the previous method, comparing each model to each Mass movement (but not all pieces to each other).
 
@@ -58,7 +58,7 @@ soggetto_cross_plot
 
 * As you read across, you will see the percentage of melodies in the row value that come from the corresponding column value.
 
-![model_finder_3.png](images%2Fmodel_finder_3.png)
+![Model_Finder_3.png](images%2FModel_Finder_3.png)
 
 ### Heatmap Display of Results
 
@@ -77,11 +77,11 @@ fig.show()
 
 Results for every piece to every other piece (note diagonal bar of 'self to self'):
 
-![modelFinder_2.png](images%2FmodelFinder_2.png)
+![Model_Finder_2.png](images%2FmodelFinder_2.png)
 
 Results for "split corpus" comparing models to masses (no comparison of 'self to self'):
 
-![model_Finder_4.png](images%2Fmodel_Finder_4.png)
+![Model_Finder_4.png](images%2Fmodel_Finder_4.png)
 
 ---
 
@@ -143,7 +143,7 @@ fig = px.imshow(module_matrix, width=800, height=600)
 fig.show()
 ```
 
-![model_Finder_5.png](images%2Fmodel_Finder_5.png)
+![Model_Finder_5.png](images%2FModel_Finder_5.png)
 
 ### Compare the Differences between the Model Finder and Module Finder outputs
 
@@ -162,7 +162,7 @@ fig = px.imshow(comparison_table, width=800, height=600)
 fig.show()
 ```
 
-![model_Finder_6.png](images%2Fmodel_Finder_6.png)
+![Model_Finder_6.png](images%2Fmodel_Finder_6.png)
 
 ---
 
@@ -233,7 +233,7 @@ Check the detailed view as needed for each:
 print(model_entries_det, mass_movement_entries_det)
 ```
 
-![model_finder_7.png](images%2Fmodel_finder_7.png)
+![Model_Finder_7.png](images%2FModel_Finder_7.png)
 
 ### Find the nGrams shared by your pieces
 
@@ -262,7 +262,7 @@ mel_ngrams_duration = model.durations(df=mel, n=4, mask_df=entry_ngrams)
 viz.plot_ngrams_heatmap(entry_ngrams, mel_ngrams_duration, selected_patterns=shared_entries, voices=[], includeCount=False)
 ```
 
-![mode_Finder_9.png](images%2Fmode_Finder_9.png)
+![Model_Finder_9.png](images%2FModel_Finder_9.png)
 
 The Mass Movement Heatmap
 

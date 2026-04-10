@@ -58,7 +58,7 @@ soggetto_cross_plot
 
 * As you read across, you will see the percentage of melodies in the row value that come from the corresponding column value.
 
-![Model_Finder_3.png](images%2Fmodel_Finder_3.png)
+![Model_Finder_3.png](images%2Fmodel_finder_3.png)
 
 ### Heatmap Display of Results
 

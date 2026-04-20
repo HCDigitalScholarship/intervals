@@ -1,0 +1,54 @@
+@prefix ow:<http://www.omac.org/work#>.
+@prefix od:<http://www.omac.org/data#>.
+@prefix viaf: <http://viaf.org/viaf/>.
+@prefix dbp: <http://dbpedia.org/property/>.
+@prefix dbr: <http://dbpedia.org/resource/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+
+viaf:176303863
+    dcterms:title "Piano Quartet Op. 25"^^xsd:string;
+    ow:composed_by viaf:7573295;
+    dbp:composed "1856–1861";
+    ow:scored_for od:176303863_pf_viola, od:176303863_pf_violin, od:176303863_pf_cello, od:176303863_pf_piano.
+
+od:176303863_pf_viola
+    rdf:type ow:PerformingForceAttribute;
+    ow:performing_force_type dbr:Viola;
+    ow:number_performing_force "1".
+
+od:176303863_pf_violin
+    rdf:type ow:PerformingForceAttribute;
+    ow:performing_force_type dbr:Violin;
+    ow:number_performing_force "1".
+
+od:176303863_pf_cello
+    rdf:type ow:PerformingForceAttribute;
+    ow:performing_force_type dbr:Cello;
+    ow:number_performing_force "1".
+
+od:176303863_pf_piano
+    rdf:type ow:PerformingForceAttribute;
+    ow:performing_force_type dbr:Piano;
+    ow:number_performing_force "1".
+
+
+od:PQ_Op_25_arrangement
+    dcterms:title "Arrangement of Piano Quartet Op. 25"^^xsd:string;
+    ow:arrangement_of viaf:176303863;
+    ow:composed_by viaf:7573295;
+    ow:arranged_by viaf:12492826;
+    ow:arrangement_year "1937"^^xsd:gYear;
+    ow:scored_for od:PQ_Op_25_arrangement_pf.
+
+od:PQ_Op_25_arrangement_pf
+  rdf:type ow:PerformingForceAttribute;
+  ow:performing_force_type od:Orchestra.
+
+
+viaf:7573295
+  dbp:name "Johannes Brahms"^^xsd:string.
+
+viaf:12492826
+    dbp:name "Arnold Schoenberg"^^xsd:string.

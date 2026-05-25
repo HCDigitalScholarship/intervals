@@ -56,7 +56,7 @@ See `print(piece.cvfs.__doc__)` for other labels.
 <!-- Check print statement  -->
 Read more via the documentation: `print(piece.cadences.__doc__)` and especially `print(piece.cvfs.doc)` for the voice labels.
 
-View the **Cadential Voice Function** and **Cadence Label** tables [here](https://github.com/HCDigitalScholarship/intervals/tree/main/intervals/data/cadences/). These can easily be updated with revised or new cadence types.
+View the **Cadential Voice Function** and **Cadence Label** tables [here](https://github.com/HCDigitalScholarship/intervals/tree/main/crim_intervals/data/cadences). These can easily be updated with revised or new cadence types.
 
 ## The Cadential Voice Functions Explained
 

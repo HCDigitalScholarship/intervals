@@ -69,11 +69,11 @@ The high-level labels explained above are just that:  convenient terms that dist
 * "C": cantizans motion up a step (can also be ornamented e.g. Landini)
 * "T": tenorizans motion down a step (can be ornamented with anticipations)
 * "B": bassizans motion up a fourth or down a fifth
-* "A": altizans motion, similar to cantizans, but cadences to a fifth above a tenorizans instead of an octav*e
+* "A": altizans motion, similar to cantizans, but cadences to a fifth above a tenorizans instead of an octave
 * "L": leaping contratenor motion up an octave at the perfection
 * "P": plagal bassizans motion up a fifth or down a fourth
 * "Q": quintizans, like a tenorizans, but resolves down by fifth or up by fourth to a fourth below the goal tone of a cantizans or an octave below the goal tone of an altizans
-* "S": sestizans, occurring in some thicker 16th century textures, this is where the agent against the cantizans is already the cantizans' note of resolution (often results in a simultaneous false relation); the melodic motion is down by third at the moment of perfection*
+* "S": sestizans, occurring in some thicker 16th century textures, this is where the agent against the cantizans is already the cantizans' note of resolution (often results in a simultaneous false relation); the melodic motion is down by third at the moment of perfection
 
 **Evaded Cadential Voice Functions:**
 

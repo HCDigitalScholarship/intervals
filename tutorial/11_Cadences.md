@@ -41,9 +41,9 @@ Note: **Measure** and **Beat** columns are in the *body of the table*, not at th
   * **Leaping Contratenor**
   * **Quince** is best understood as an irregular Clausula Vera, but the Tenorizans part leaps down a fifth to end on a tone a fifth above the final in the Canitzans.  Hence the name:  "Quince".
   * **Evaded and Abandoned** indicate either irregular motion or some number of voices that drop out.  These are noted for **Clausula Vera**, **Authentic**, and **Double Leading Tone** types
-  *
-  *See `print(piece.cvfs.__doc__)` for other labels.
-  * 
+  
+See `print(piece.cvfs.__doc__)` for other labels.
+  
 * **Leading Tones** is the count of leading tones motions
 * **CVFs** are the Cadential Voice Functions, and are listed in order from top to bottom as they appear in the score. See print(importedPiece.cvfs.__doc__) for details.
 * The **Low** and **Tone** columns give the pitches of the lowest sounding pitch (in any voice) at the perfection, and the goal tone of the cantizans (or altizans if there is no cantizans) respectively.

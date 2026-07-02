@@ -16,6 +16,8 @@ import plotly.express as px
 from pyvis.network import Network
 
 import matplotlib as mplt # OY addition 6/12/24
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 class NgramColorManager:
     # Paul Tol's qualitative palette — 12 colors varying hue and saturation
@@ -103,6 +105,49 @@ class ColorManager:
 # Initialize global color manager
 color_manager = ColorManager()
 
+class PatternStyleManager:
+    """
+    Assigns each unique pattern a distinct combination of a hatch shape and
+    a grey shade, as a print/colorblind-safe alternative to ColorManager's
+    color-based distinction. Shades are light-to-medium so a black hatch
+    always reads clearly on top of them, and shape/shade are cycled with
+    coprime step sizes so consecutive patterns don't repeat the same shade.
+    """
+    HATCH_SHAPES = ['/', '\\', 'x', '-', '|', '+', '.']
+    GREY_SHADES = ['#e0e0e0', '#b8b8b8', '#8f8f8f', '#666666', '#cfcfcf', '#a3a3a3']
+
+    def __init__(self):
+        self.pattern_styles = {}
+
+    def reset(self):
+        """Reset the pattern style manager state"""
+        self.pattern_styles = {}
+
+    def get_style_for_pattern(self, pattern_str):
+        """Get or assign a hatch shape + grey shade combination for a pattern"""
+        if pattern_str not in self.pattern_styles:
+            index = len(self.pattern_styles)
+            shape = self.HATCH_SHAPES[index % len(self.HATCH_SHAPES)]
+            shade = self.GREY_SHADES[index % len(self.GREY_SHADES)]
+            self.pattern_styles[pattern_str] = {'shape': shape, 'color': shade}
+        return self.pattern_styles[pattern_str]
+
+# Initialize global pattern style manager
+pattern_style_manager = PatternStyleManager()
+
+def _hatch_marker(color, shape):
+    """
+    Build a high-contrast Plotly marker spec for a greyscale hatch segment:
+    a black hatch drawn larger and denser than Plotly's defaults so the
+    shape reads clearly even in small bars, plus a solid outline to keep
+    adjacent segments visually separated.
+    """
+    return dict(
+        color=color,
+        pattern=dict(shape=shape, size=10, solidity=0.55, fgcolor='black', fgopacity=1),
+        line=dict(color='black', width=1)
+    )
+
 def create_bar_chart(variable, count, color, data, condition, *selectors):
     """
     Create a bar chart using Altair.
@@ -122,15 +167,22 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
     )
     return observer_chart
 
-def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip):
+def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip, style='color'):
     """
-    Create a heatmap using Altair.
+    Create a heatmap. By default (style='color') this is an interactive Altair
+    chart that distinguishes segments by color. Pass style='greyscale' to get a
+    Plotly chart that instead distinguishes segments using grey shades combined
+    with hatch fills, for print or colorblind-safe use. The greyscale style does
+    not support the Altair cross-filtering selection behavior.
     """
+    if style == 'greyscale':
+        return _create_greyscale_heatmap(x, x2, y, data, heat_map_width, heat_map_height, tooltip)
+
     color_scale = alt.Scale(
         domain=data['pattern'].unique(),
         range=data['color'].unique()
     )
-    
+
     heatmap = alt.Chart(data).mark_bar().encode(
         x=x,
         x2=x2,
@@ -145,6 +197,75 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
         *selectors
     )
     return heatmap
+
+def _create_greyscale_heatmap(x_field, x2_field, y_field, data, heat_map_width, heat_map_height, tooltip):
+    """
+    Build a greyscale, hatch-patterned heatmap with Plotly. Each unique value
+    in the 'pattern' column gets a distinct grey shade + hatch shape
+    combination (from PatternStyleManager) so segments stay distinguishable
+    without relying on color.
+    """
+    y_col = y_field.shorthand if hasattr(y_field, 'shorthand') else y_field
+    voice_order = list(pd.unique(data[y_col]))
+    hover_cols = [col for col in tooltip if col in data.columns]
+
+    fig = go.Figure()
+    for pattern in pd.unique(data['pattern']):
+        subset = data[data['pattern'] == pattern]
+        pattern_style = pattern_style_manager.get_style_for_pattern(pattern)
+        fig.add_trace(go.Bar(
+            base=subset[x_field],
+            x=subset[x2_field] - subset[x_field],
+            y=subset[y_col],
+            orientation='h',
+            name=str(pattern),
+            marker=_hatch_marker(pattern_style['color'], pattern_style['shape']),
+            customdata=subset[hover_cols].values if hover_cols else None,
+            hovertemplate=(
+                "<br>".join(f"{col}: %{{customdata[{i}]}}" for i, col in enumerate(hover_cols))
+                + "<extra></extra>"
+            ) if hover_cols else None,
+        ))
+
+    fig.update_layout(
+        width=heat_map_width,
+        height=heat_map_height,
+        barmode='overlay',
+        legend_title_text='Pattern',
+        xaxis_title=f"{x_field}, {x2_field}",
+        yaxis_title=y_col,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+    )
+    fig.update_xaxes(showgrid=True, gridcolor='#e6e6e6', zeroline=False)
+    fig.update_yaxes(categoryorder='array', categoryarray=voice_order, autorange='reversed',
+                     showgrid=True, gridcolor='#e6e6e6', zeroline=False)
+    return fig
+
+def _create_greyscale_barchart(data):
+    """
+    Grey/hatch-patterned bar chart of pattern counts, styled to match
+    _create_greyscale_heatmap's pattern styling so the two stay consistent
+    when shown together.
+    """
+    counts = data['pattern'].value_counts()
+    patterns = list(counts.index)
+    styles = [pattern_style_manager.get_style_for_pattern(p) for p in patterns]
+
+    fig = go.Figure(go.Bar(
+        x=patterns,
+        y=counts.values,
+        marker=dict(
+            color=[s['color'] for s in styles],
+            pattern=dict(shape=[s['shape'] for s in styles], size=10, solidity=0.55, fgcolor='black', fgopacity=1),
+            line=dict(color='black', width=1)
+        ),
+        showlegend=False
+    ))
+    fig.update_layout(xaxis_title='pattern', yaxis_title='count', plot_bgcolor='white', paper_bgcolor='white')
+    fig.update_xaxes(showgrid=True, gridcolor='#e6e6e6', zeroline=False)
+    fig.update_yaxes(showgrid=True, gridcolor='#e6e6e6', zeroline=False)
+    return fig
 
 def _process_ngrams_df_helper(ngrams_df, main_col):
     """
@@ -202,49 +323,89 @@ def ngrams_color_helper(new_processed_ngrams_df: pd.DataFrame) -> pd.DataFrame:
     """
     return color_manager.assign_colors_to_dataframe(new_processed_ngrams_df)
 
-def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False, title=None):
+def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False, title=None, style='color'):
     """
-    Plot a heatmap for crim-intervals getNgram's processed output.
+    Plot a heatmap for crim-intervals getNgram's processed output. Pass
+    style='greyscale' for a hatch-patterned, grey-shaded Plotly chart instead
+    of the default color-coded Altair chart (see create_heatmap).
     """
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
     selector = alt.selection_point(fields=['pattern'])
     y = alt.Y("voice", sort=None)
-    
+
     # make a copy of the processed n_grams and turn them into Strings
     new_processed_ngrams_df = processed_ngrams_df.copy()
     new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
         lambda cell: ", ".join(str(item) for item in cell),
         na_action='ignore'
     )
-    
+
     # Use the color manager to assign consistent colors
     new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df)
-    
+
     heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
-                            selector, selector, tooltip=['start', 'end', 'pattern'])
-    
+                            selector, selector, tooltip=['start', 'end', 'pattern'], style=style)
+
+    if style == 'greyscale':
+        if includeCount:
+            # give the count bar chart its own fixed budget (it needs room for
+            # rotated x-axis pattern labels), and enforce a minimum for the
+            # heatmap panel itself, rather than squeezing both into a small
+            # fraction of the raw heatmap_height
+            bar_chart_height = 300
+            heatmap_panel_height = max(heatmap_height, 400)
+            total_height = bar_chart_height + heatmap_panel_height
+            patterns_bar = _create_greyscale_barchart(new_processed_ngrams_df)
+            chart = make_subplots(
+                rows=2, cols=1,
+                row_heights=[bar_chart_height / total_height, heatmap_panel_height / total_height],
+                vertical_spacing=0.15
+            )
+            for trace in patterns_bar.data:
+                chart.add_trace(trace, row=1, col=1)
+            for trace in heatmap.data:
+                chart.add_trace(trace, row=2, col=1)
+            chart.update_layout(width=heatmap_width, height=total_height, legend_title_text='Pattern',
+                              plot_bgcolor='white', paper_bgcolor='white')
+            chart.update_xaxes(showgrid=True, gridcolor='#e6e6e6', zeroline=False)
+            chart.update_yaxes(showgrid=True, gridcolor='#e6e6e6', zeroline=False)
+            chart.update_xaxes(tickangle=-45, row=1, col=1)
+            chart.update_yaxes(
+                categoryorder='array',
+                categoryarray=list(pd.unique(new_processed_ngrams_df['voice'])),
+                autorange='reversed',
+                row=2, col=1
+            )
+        else:
+            chart = heatmap
+        if title is not None:
+            chart.update_layout(title=title)
+        return chart
+
     if includeCount:
         variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
         patterns_bar = create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
         chart = alt.vconcat(patterns_bar, heatmap)
     else:
         chart = heatmap
-    
+
     # Apply title if provided
     if title is not None:
         chart = chart.properties(title=title)
-    
+
     return chart
 
-def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], 
-                       heatmap_width=800, heatmap_height=300, includeCount=False, title=None):
+def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[],
+                       heatmap_width=800, heatmap_height=300, includeCount=False, title=None, style='color'):
     """
-    Plot a heatmap for crim-intervals getNgram's output.
+    Plot a heatmap for crim-intervals getNgram's output. Pass style='greyscale'
+    for a hatch-patterned, grey-shaded Plotly chart instead of the default
+    color-coded Altair chart (see create_heatmap).
     """
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
                                           selected_pattern=selected_patterns, voices=voices)
     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width,
-                                 heatmap_height=heatmap_height, includeCount=includeCount, title=title)
+                                 heatmap_height=heatmap_height, includeCount=includeCount, title=title, style=style)
 
 def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], chart_width=800,
                         chart_height=300):

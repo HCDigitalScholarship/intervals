@@ -2314,7 +2314,7 @@ class ImportedPiece:
         res.iloc[:] = 'Close'
         return pd.DataFrame(res)
 
-    def cadences(self, keep_keys=False):
+    def cadences(self, keep_keys=False, voice_detail=False):
         """
         Analyzes the realized, evaded, and abandoned cadences in the score and returns
         a DataFrame with the results.
@@ -2363,6 +2363,13 @@ class ImportedPiece:
         symbols see cvfs documentation. Uppercase CVFs are realized, lowercase are evaded
         or abandoned. However, the presence of evaded or abandoned CVFs does not
         necessarily mean the cadence is evaded or abandoned.
+
+        * PartMap: Only visible if `voice_detail` is set to True. A dict mapping each CVF
+        letter in the "CVFs" column to the staff position(s) (1 = highest voice, per
+        `numberParts`) of the voice(s) that performed it, e.g. {'T': ['1'], 'C': ['2'],
+        'B': ['4']}. Values are lists because two voices can occasionally share a role
+        letter in one cadence. Staff positions are used rather than voice names so the
+        result stays comparable across pieces with different voice naming conventions.
 
         * Low: The pitch of the lowest sounding note at the perfection.
 
@@ -2421,6 +2428,9 @@ class ImportedPiece:
         keep_keys : bool, optional
             If True, the returned DataFrame includes the 'Pattern' and 'Key' columns.
             If False (default), these columns are dropped from the DataFrame.
+        voice_detail : bool, optional
+            If True, the returned DataFrame includes the 'PartMap' column. If False
+            (default), this column is dropped from the DataFrame.
 
         Returns
         -------
@@ -2435,10 +2445,12 @@ class ImportedPiece:
         to avoid recomputing the cadences if the method is called again with the same parameters.
         """
         if 'Cadences' in self.analyses:
-            if keep_keys:
-                return self.analyses['Cadences']
-            else:
-                return self.analyses['Cadences'].drop(['Pattern', 'Key'], axis=1)
+            labels = self.analyses['Cadences']
+            if not keep_keys:
+                labels = labels.drop(['Pattern', 'Key'], axis=1)
+            if not voice_detail:
+                labels = labels.drop(['PartMap'], axis=1)
+            return labels
 
         cvfs = self.cvfs(offsets='last')
         mel = self.melodic('c', True, True)
@@ -2457,6 +2469,17 @@ class ImportedPiece:
         keys['Key'] = keys.Pattern.replace(cadDict.index, cadDict.index, regex=True)
         labels = keys.join(cadDict, on='Key')
         labels['CVFs'] = cvfs.apply(lambda row: ''.join(row.dropna()), axis=1)
+
+        # map each CVF letter (as it appears in "CVFs") to the staff position(s) of the
+        # voice(s) that performed it, e.g. {'T': ['1'], 'C': ['2'], 'B': ['4']}
+        cvfs_numbered = self.numberParts(cvfs)
+        def _cvf_role_map(row):
+            roles = {}
+            for part, cell in row.dropna().items():
+                roles.setdefault(cell[0], []).append(part)
+            return roles
+        labels['PartMap'] = cvfs_numbered.apply(_cvf_role_map, axis=1)
+
         detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, sounding=True, progress=True, lowest=True)
         # NEW: check for Rest and remove that row in detailed and labels
         # temp reset of index for value check
@@ -2502,6 +2525,8 @@ class ImportedPiece:
         self.analyses['Cadences'] = labels
         if not keep_keys:
             labels = labels.drop(['Pattern', 'Key'], axis=1)
+        if not voice_detail:
+            labels = labels.drop(['PartMap'], axis=1)
         return labels
 
     # cadence RADAR plots:

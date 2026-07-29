@@ -26,14 +26,16 @@ from .sorting_lists import (
 )
 
 
-def corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False):
+def corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False, key_sig=False):
     """Creates table of notes and rests in a corpus. See CorpusBase.notes."""
-    return corpus.notes(combine_unisons_choice=combine_unisons_choice, combine_rests_choice=combine_rests_choice)
+    return corpus.notes(combine_unisons_choice=combine_unisons_choice, combine_rests_choice=combine_rests_choice,
+                         key_sig=key_sig)
 
 
-def corpus_note_scaled(corpus, combine_unisons_choice=True, combine_rests_choice=False):
+def corpus_note_scaled(corpus, combine_unisons_choice=True, combine_rests_choice=False, key_sig=False):
     """Count occurrences of notes and rests in a corpus. See CorpusBase.note_scaled."""
-    return corpus.note_scaled(combine_unisons_choice=combine_unisons_choice, combine_rests_choice=combine_rests_choice)
+    return corpus.note_scaled(combine_unisons_choice=combine_unisons_choice, combine_rests_choice=combine_rests_choice,
+                               key_sig=key_sig)
 
 
 def corpus_note_durs(corpus, pitch_class=True):
@@ -41,9 +43,9 @@ def corpus_note_durs(corpus, pitch_class=True):
     return corpus.note_durs(pitch_class=pitch_class)
 
 
-def corpus_note_weights(corpus, include_rests=True):
+def corpus_note_weights(corpus, include_rests=True, key_sig=False):
     """Calculate pitch class weights by duration in a corpus. See CorpusBase.note_weights."""
-    return corpus.note_weights(include_rests=include_rests)
+    return corpus.note_weights(include_rests=include_rests, key_sig=key_sig)
 
 
 def corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True):

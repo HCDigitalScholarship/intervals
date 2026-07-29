@@ -3914,7 +3914,20 @@ class CorpusBase:
         if len(self.scores) == 0:
             print("Empty corpus created. Please import at least one score.")
 
-    def notes(self, combine_unisons_choice=True, combine_rests_choice=False, include_final=False):
+    @staticmethod
+    def _prevailing_key_sig(score):
+        """
+        Return a single score's prevailing (first-encountered) key signature,
+        in music21's .sharps convention, or None if it has none.
+        """
+        ks = score.keySignatures().iloc[:, 0].dropna()
+        return ks.iloc[0] if len(ks) else None
+
+    def notes(self,
+              combine_unisons_choice=True, 
+              combine_rests_choice=False, 
+              key_sig=False, 
+              include_final=False):
         """
         Creates table of notes and rests in a corpus, one row per attack/rest
         offset and one column per numbered voice, with Composer/Title/Date
@@ -3930,6 +3943,11 @@ class CorpusBase:
             Passed to ImportedPiece.notes as `combineRests`. If True (the
             ImportedPiece default), consecutive rests in a voice are combined.
             Defaults to False here so that individual rests remain visible.
+        key_sig : bool, optional (default False)
+            If True, add the prevailing system key signature (ImportedPiece
+            .keySignatures(), music21 .sharps convention) to the row index via
+            detailIndex, and flatten it into a 'KeySig' column. Defaults to
+            False to keep the existing index/columns unchanged.
         include_final : bool, optional (default False)
             If True, add a 'Final' column giving each piece's final tone (from
             ImportedPiece.final()), repeated on every row for that piece. Useful
@@ -3944,6 +3962,11 @@ class CorpusBase:
         list_of_dfs = self.batch(func=func,
                                   kwargs={'combineUnisons': combine_unisons_choice, 'combineRests': combine_rests_choice},
                                   metadata=False)
+        if key_sig:
+            func_ks = ImportedPiece.detailIndex
+            list_of_dfs = self.batch(func=func_ks,
+                                      kwargs={'df': list_of_dfs, 'measure': False, 'beat': False, 'key_sig': True},
+                                      metadata=False)
         func1 = ImportedPiece.numberParts
         list_of_dfs = self.batch(func=func1,
                                   kwargs={'df': list_of_dfs},
@@ -3955,9 +3978,15 @@ class CorpusBase:
         nr = pd.concat(list_of_dfs)
         cols_to_move = ['Composer', 'Title', 'Date']
         nr = nr[cols_to_move + [col for col in nr.columns if col not in cols_to_move]]
+        if key_sig:
+            nr = nr.reset_index()
         return nr
 
-    def note_scaled(self, combine_unisons_choice=True, combine_rests_choice=False, include_final=False):
+    def note_scaled(self, 
+                    combine_unisons_choice=True, 
+                    combine_rests_choice=False, 
+                    key_sig=False, 
+                    include_final=False):
         """
         Count occurrences of notes and rests in a corpus, including scaled (proportional) counts.
 
@@ -3967,6 +3996,11 @@ class CorpusBase:
             Passed to ImportedPiece.notes as `combineUnisons`.
         combine_rests_choice : bool
             Passed to ImportedPiece.notes as `combineRests`.
+        key_sig : bool, optional (default False)
+            If True, add a 'KeySig' column giving each piece's prevailing key
+            signature (ImportedPiece.keySignatures(), music21 .sharps
+            convention), repeated on every row for that piece. Defaults to
+            False to keep existing output unchanged.
         include_final : bool, optional (default False)
             If True, add a 'Final' column giving each piece's final tone (from
             ImportedPiece.final()), repeated on every row for that piece.
@@ -3976,7 +4010,7 @@ class CorpusBase:
         -------
         pd.DataFrame
             One row per (pitch/rest token, piece), with 'count' and
-            'scaled_count' columns plus Composer/Title (and Final if requested).
+            'scaled_count' columns plus Composer/Title (and Final/KeySig if requested).
         """
         func = ImportedPiece.notes  # <- NB there are no parentheses here
         list_of_dfs = self.batch(func=func,
@@ -3988,6 +4022,7 @@ class CorpusBase:
                                   kwargs={'df': list_of_dfs},
                                   metadata=True)
         finals = self.batch(func=ImportedPiece.final, metadata=False) if include_final else None
+        key_sigs = [self._prevailing_key_sig(score) for score in self.scores] if key_sig else None
         final_list_dfs = []
         for idx, df in enumerate(list_of_dfs):
             # clean up
@@ -4012,13 +4047,17 @@ class CorpusBase:
             counted_notes['Title'] = df.iloc[0]['Title']
             if include_final:
                 counted_notes['Final'] = finals[idx]
+            if key_sig:
+                counted_notes['KeySig'] = key_sigs[idx]
             counted_notes = counted_notes[counted_notes.index != '']
             final_list_dfs.append(counted_notes)
 
         corpus_notes_counts = pd.concat(final_list_dfs)
         return corpus_notes_counts
 
-    def note_durs(self, pitch_class=True, aggregate=False):
+    def note_durs(self, 
+                  pitch_class=True, 
+                  aggregate=False):
         """
         Calculate durations of notes in a corpus.
         Uses helper function extract_letter to extract the letter part of the note as pitch class (optional).
@@ -4107,7 +4146,10 @@ class CorpusBase:
             corpus_note_durs = corpus_note_durs.groupby(group_cols, as_index=False, dropna=False)['Durs'].sum()
         return corpus_note_durs
 
-    def note_weights(self, include_rests=True, include_final=False):
+    def note_weights(self, 
+                     include_rests=True, 
+                     key_sig=False, 
+                     include_final=False):
         """
         Calculate pitch class weights by duration in a corpus.
         Notes are grouped by pitch class and weighted by their total duration,
@@ -4118,6 +4160,11 @@ class CorpusBase:
         include_rests : bool, optional (default True)
             Whether to include rests as a pitch class (labeled 'Rest') in the
             weighting, or drop them and scale proportions over sounding notes only.
+        key_sig : bool, optional (default False)
+            If True, add a 'key_sig' column giving each piece's prevailing key
+            signature (ImportedPiece.keySignatures(), music21 .sharps
+            convention), repeated on every row for that piece. Defaults to
+            False to keep existing output unchanged.
         include_final : bool, optional (default False)
             If True, add a 'final' column giving each piece's final tone (from
             ImportedPiece.final()), repeated on every row for that piece. Useful
@@ -4129,7 +4176,7 @@ class CorpusBase:
         pd.DataFrame
             One row per (pitch_class, piece), with 'count' (summed duration),
             'scaled' (proportion of the piece's total), 'composer', 'title'
-            (and 'final' if requested).
+            (and 'final'/'key_sig' if requested).
         """
         pc_order = pitch_class_order_with_rests if include_rests else pitch_class_order_no_rests
 
@@ -4138,6 +4185,7 @@ class CorpusBase:
         list_of_note_dfs = self.batch(func=func, metadata=True)
         list_of_dur_dfs = self.batch(func=func2, metadata=False)
         finals = self.batch(func=ImportedPiece.final, metadata=False) if include_final else None
+        key_sigs = [self._prevailing_key_sig(score) for score in self.scores] if key_sig else None
 
         weighted_note_dfs = []
         weighted_notes = pd.DataFrame()
@@ -4182,6 +4230,8 @@ class CorpusBase:
             weighted_notes['title'] = metadata[1]
             if include_final:
                 weighted_notes['final'] = finals[idx]
+            if key_sig:
+                weighted_notes['key_sig'] = key_sigs[idx]
             weighted_note_dfs.append(weighted_notes)
             weighted_notes = pd.concat(weighted_note_dfs, ignore_index=True)
             weighted_notes = weighted_notes.rename(columns={'index': 'pitch_class'})
@@ -4197,7 +4247,12 @@ class CorpusBase:
 
         return weighted_notes
 
-    def mel(self, kind_choice='d', compound_choice=True, directed_choice=True, key_sig=False, include_final=False):
+    def mel(self, 
+            kind_choice='d', 
+            compound_choice=True, 
+            directed_choice=True, 
+            key_sig=False, 
+            include_final=False):
         """
         Generate melodic intervals in a corpus.
 
@@ -4289,7 +4344,10 @@ class CorpusBase:
         har = har.reset_index()
         return har
 
-    def contrapuntal_ngrams(self, ngram_length=3, key_sig=False, include_final=False):
+    def contrapuntal_ngrams(self, 
+                            ngram_length=3, 
+                            key_sig=False, 
+                            include_final=False):
         """
         Generate contrapuntal n-grams in a corpus.
 
@@ -4654,7 +4712,9 @@ class CorpusBase:
         corpus_son_bass_ngrams = corpus_son_bass_ngrams.reset_index()
         return corpus_son_bass_ngrams
 
-    def cadences(self, key_sig=False, include_final=False):
+    def cadences(self, 
+                 key_sig=False, 
+                 include_final=False):
         """
         Return cadences for all pieces in the corpus. See ImportedPiece.cadences
         for the full column documentation.
@@ -4813,7 +4873,12 @@ class CorpusBase:
             post.append(df)
         return post
 
-    def modelFinder(self, models=None, masses=None, n=4, thematic=True, anywhere=True):
+    def modelFinder(self, 
+                    models=None, 
+                    masses=None, 
+                    n=4, 
+                    thematic=True, 
+                    anywhere=True):
         """
         Searches for pieces that may be models of one or more masses. This method returns a
         "driving distance table" showing how likely each model was a source for each mass. This
@@ -4994,7 +5059,12 @@ class CorpusBase:
 
         return res
 
-    def compareCadenceRadarPlots(self, combinedType=False, sounding=None, displayAll=True, customOrder=None, renderer=""):
+    def compareCadenceRadarPlots(self, 
+                                 combinedType=False, 
+                                 sounding=None, 
+                                 displayAll=True, 
+                                 customOrder=None, 
+                                 renderer=""):
 
         '''
         Parameters Overview:
@@ -5089,7 +5159,13 @@ class CorpusBase:
             sns.theme(rc={'figure.figsize':(15,9)})
             self.analyses['_plot_default'] = True
 
-    def compareCadenceProgressPlots(self, includeType=False, cadTone=None, cadType=None, includeLegend=True, customOrder=None, renderer=""):
+    def compareCadenceProgressPlots(self, 
+                                    includeType=False, 
+                                    cadTone=None, 
+                                    cadType=None, 
+                                    includeLegend=True, 
+                                    customOrder=None, 
+                                    renderer=""):
 
         '''
         Parameters Overview:
@@ -5210,8 +5286,17 @@ class CorpusBase:
             graph_list.append(self._patternToSeries(temp_item))
         return graph_list
 
-    def compareIntervalFamilies(self, length=4, combineUnisons=True, kind="d", end=False, variableLength=False,
-        suggestedPattern=None, useEntries=True, arriveAt=None, includeLegend=True, renderer=""):
+    def compareIntervalFamilies(self, 
+                                length=4, 
+                                combineUnisons=True, 
+                                kind="d", 
+                                end=False, 
+                                variableLength=False,
+                                suggestedPattern=None, 
+                                useEntries=True, 
+                                arriveAt=None, 
+                                includeLegend=True, 
+                                renderer=""):
 
         '''
         It is possible to select:

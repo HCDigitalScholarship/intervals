@@ -1,0 +1,6 @@
+[flake8]
+# crim_code.py is a personal/notebook working script (not part of the
+# crim_intervals package) that relies on names imported in earlier notebook
+# cells not present in this flat .py export -- exclude it from linting rather
+# than guess at its intended imports.
+exclude = crim_code.py, .venv, .git, __pycache__

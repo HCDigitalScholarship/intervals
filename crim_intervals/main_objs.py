@@ -3976,7 +3976,7 @@ class CorpusBase:
             list_of_dfs = [df.assign(Final=final) for df, final in zip(list_of_dfs, finals)]
 
         nr = pd.concat(list_of_dfs)
-        cols_to_move = ['Composer', 'Title', 'Date']
+        cols_to_move = ['Composer', 'Title', 'Date', 'KeySig', 'Final']
         nr = nr[cols_to_move + [col for col in nr.columns if col not in cols_to_move]]
         if key_sig:
             nr = nr.reset_index()
@@ -4055,9 +4055,11 @@ class CorpusBase:
         corpus_notes_counts = pd.concat(final_list_dfs)
         return corpus_notes_counts
 
-    def note_durs(self, 
-                  pitch_class=True, 
-                  aggregate=False):
+    def note_durs(self,
+                  pitch_class=True,
+                  aggregate=False,
+                  key_sig=False,
+                  include_final=True):
         """
         Calculate durations of notes in a corpus.
         Uses helper function extract_letter to extract the letter part of the note as pitch class (optional).
@@ -4071,16 +4073,31 @@ class CorpusBase:
             If False (default), returns one row per individual note attack, with
             'Durs' being that single event's duration -- unchanged from this
             method's original behavior.
-            If True, rows are grouped by (Composer, Title, Voice, Notes) and
-            'Durs' becomes the *total* summed duration of that pitch/pitch-class
-            in that voice for that piece -- i.e. one row per piece/voice/pitch,
-            useful for corpus studies like modal range/final analysis.
+            If True, rows are grouped by (Composer, Title, Voice, Notes, and
+            KeySig/Final if present) and 'Durs' becomes the *total* summed
+            duration of that pitch/pitch-class in that voice for that piece --
+            i.e. one row per piece/voice/pitch, useful for corpus studies like
+            modal range/final analysis.
+        key_sig : bool, optional (default False)
+            If True, add a 'KeySig' column giving each piece's prevailing key
+            signature (ImportedPiece.keySignatures(), music21 .sharps
+            convention), repeated on every row for that piece. Defaults to
+            False, in which case the 'KeySig' column is omitted entirely.
+        include_final : bool, optional (default True)
+            If True (the original, default behavior), add a 'Final' column
+            giving each piece's final tone (from ImportedPiece.final(),
+            reduced to pitch class via extract_letter), repeated on every row
+            for that piece. If False, the 'Final' column is omitted entirely.
 
         Returns
         -------
         pd.DataFrame
-            Columns: Composer, Title, Date, Voice, Notes, Durs, Final (each
-            piece's final tone, from ImportedPiece.final(), always included).
+            Columns: Composer, Title, Date, Voice, Notes, Durs, plus 'Final'
+            and/or 'KeySig' if the corresponding argument is True. Since these
+            two columns are optional, callers that concatenate or otherwise
+            combine results across calls with different key_sig/include_final
+            settings should account for the resulting columns possibly being
+            missing rather than assuming they are always present.
         """
         func = ImportedPiece.notes  # <- NB there are no parentheses here
         list_of_note_dfs = self.batch(func=func, metadata=True)
@@ -4093,13 +4110,21 @@ class CorpusBase:
         list_of_dur_dfs = self.batch(func=func_voices,
                                       metadata=True,
                                       kwargs={'df': list_of_dur_dfs})
-        func3 = ImportedPiece.final
-        list_of_finals = self.batch(func=func3, metadata=True)
+        if include_final:
+            func3 = ImportedPiece.final
+            list_of_finals = self.batch(func=func3, metadata=True)
+        else:
+            list_of_finals = [None] * len(self.scores)
 
-        zipped_dfs = zip(list_of_note_dfs, list_of_dur_dfs, list_of_finals)
+        if key_sig:
+            list_of_key_sigs = [self._prevailing_key_sig(score) for score in self.scores]
+        else:
+            list_of_key_sigs = [None] * len(self.scores)
+
+        zipped_dfs = zip(list_of_note_dfs, list_of_dur_dfs, list_of_finals, list_of_key_sigs)
 
         note_dur_dfs = []
-        for a, b, c in zipped_dfs:
+        for a, b, c, ks in zipped_dfs:
             id_columns = [col for col in a.columns if col not in ['1', '2', '3', '4', '5', '6', '7', '8']]
             var_cols = [col for col in a.columns if col in ['1', '2', '3', '4', '5', '6', '7', '8']]
 
@@ -4125,10 +4150,15 @@ class CorpusBase:
                 note_dur['Notes'] = note_dur['Notes'].apply(extract_letter)
             else:
                 note_dur['Notes'] = note_dur['Notes']
-            note_dur['Final'] = c
 
-            # we always extract the letter from the final
-            note_dur['Final'] = note_dur['Final'].apply(extract_letter)
+            if include_final:
+                # we always extract the letter from the final
+                note_dur['Final'] = c
+                note_dur['Final'] = note_dur['Final'].apply(extract_letter)
+
+            if key_sig:
+                note_dur['KeySig'] = ks
+
             note_dur_final = note_dur
 
             # Drop columns ending with _y
@@ -4139,7 +4169,7 @@ class CorpusBase:
 
         corpus_note_durs = pd.concat(note_dur_dfs)
         if aggregate:
-            group_cols = [col for col in ['Composer', 'Title', 'Date', 'Voice', 'Notes', 'Final']
+            group_cols = [col for col in ['Composer', 'Title', 'Date', 'Voice', 'Notes', 'KeySig', 'Final']
                           if col in corpus_note_durs.columns]
             # dropna=False: 'Date' is commonly None, and groupby drops all-NaN
             # key rows by default, which would otherwise silently empty the result.

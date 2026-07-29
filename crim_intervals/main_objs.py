@@ -11,6 +11,7 @@ from more_itertools import consecutive_groups
 import os
 import re
 import collections
+from collections import Counter
 import verovio
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -23,6 +24,18 @@ from IPython.display import display, SVG, HTML
 import json
 import urllib.parse
 from fractions import Fraction
+from .sorting_lists import (
+    pitch_class_order,
+    pitch_class_order_no_rests,
+    pitch_class_order_with_rests,
+    pitch_order,
+    recta_order,
+    sort_pitch_values,
+    standardize_note,
+    extract_letter,
+    tuple_to_list,
+    tuple_to_string,
+)
 main_objs_dir = os.path.dirname(os.path.abspath(__file__))
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
@@ -201,6 +214,22 @@ class ImportedPiece:
             parts = self.score.getElementsByClass(stream.Part)
             self.analyses['FlatParts'] = [part.flatten() for part in parts]
         return self.analyses['FlatParts']
+
+    def pitch_order(self, values, order=None, include_rests=True):
+        """Return a list of pitch values sorted by the shared ordering helpers."""
+        return sort_pitch_values(values, order=order, include_rests=include_rests)
+
+    def tuple_to_list(self, value, separator=None, cast=None):
+        """Convert tuple-like values to a list using the shared helper."""
+        return tuple_to_list(value, separator=separator, cast=cast)
+
+    def tuple_to_string(self, value, separator=', '):
+        """Convert tuple-like values to a string using the shared helper."""
+        return tuple_to_string(value, separator=separator)
+
+    def pitch_class_order(self, include_rests=True):
+        """Return the shared pitch-class ordering list."""
+        return pitch_class_order_with_rests if include_rests else pitch_class_order_no_rests
 
     def _getPartNames(self):
         """
@@ -931,7 +960,7 @@ class ImportedPiece:
         return self.analyses['BeatIndex']
 
     def detailIndex(self, df, measure=True, beat=True, offset=False, t_sig=False,
-        sounding=False, progress=False, lowest=False, highest=False, _all=False):
+        key_sig=False, sounding=False, progress=False, lowest=False, highest=False, _all=False):
         '''
         Return the passed dataframe with a multi-index of any combination of the
         measure, beat, offset, prevailing time signature, and progress towards
@@ -942,17 +971,19 @@ class ImportedPiece:
 
         * offset: row's offset (distance in quarter notes from beginning, 1.0 = one quarter note)
         * t_sig: the prevailing time signature
+        * key_sig: the prevailing system key signature, as music21's .sharps value
+          (positive = number of sharps, negative = number of flats, 0 = none)
         * sounding: how many voices are sounding (i.e. not resting) at this point
         * progress: 0-1 how far along in the piece this moment is, 0 = beginning, 1 = last attack onset
         * lowest: the lowest sounding note at this moment
         * highest: the highest sounding note at this moment
 
-        You can also pass _all=True to include all five types of index information.
+        You can also pass _all=True to include all these types of index information.
         '''
         cols = [df]
         names = []
         if _all:
-            measure, beat, offset, t_sig, sounding, progress, lowest, highest = [True] * 8
+            measure, beat, offset, t_sig, key_sig, sounding, progress, lowest, highest = [True] * 9
         if measure:
             cols.append(self.measures().iloc[:, 0])
             names.append('Measure')
@@ -965,6 +996,9 @@ class ImportedPiece:
         if t_sig:
             cols.append(self.timeSignatures().iloc[:, 0])
             names.append('TSig')
+        if key_sig:
+            cols.append(self.keySignatures().iloc[:, 0])
+            names.append('KeySig')
         if sounding:
             cols.append(self.soundingCount())
             names.append('Sounding')
@@ -990,13 +1024,13 @@ class ImportedPiece:
         ret.sort_index(inplace=True)
         return ret
 
-    def di(self, df, measure=True, beat=True, offset=False, t_sig=False, sounding=False,
-        progress=False, lowest=False, highest=False, _all=False):
+    def di(self, df, measure=True, beat=True, offset=False, t_sig=False, key_sig=False,
+        sounding=False, progress=False, lowest=False, highest=False, _all=False):
         """
         Convenience shortcut for .detailIndex. See that method's documentation for instructions.
         """
         return self.detailIndex(df=df, measure=measure, beat=beat, offset=offset, t_sig=t_sig,
-            sounding=sounding, progress=progress, lowest=lowest, highest=highest, _all=_all)
+            key_sig=key_sig, sounding=sounding, progress=progress, lowest=lowest, highest=highest, _all=_all)
 
     def _beatStrengthHelper(self, noteOrRest):
         '''
@@ -1053,6 +1087,38 @@ class ImportedPiece:
             df.columns = self._getPartNames()
             self.analyses['TimeSignature'] = df
         return self.analyses['TimeSignature']
+
+    def _getM21KeySigObjs(self):
+        '''
+        Return a dataframe of the key signature objects in the piece.
+
+        This is useful for getting the prevailing (systemic) key signature at
+        any given moment in the piece.
+        '''
+        if 'M21KeySigObjs' not in self.analyses:
+            ksigs = []
+            for part in self._getFlatParts():
+                ksigs.append(pd.Series({ks.offset: ks for ks in part.getElementsByClass(['KeySignature'])}))
+            df = pd.concat(ksigs, axis=1, sort=True)
+            self.analyses['M21KeySigObjs'] = df
+        return self.analyses['M21KeySigObjs']
+
+    def keySignatures(self):
+        """
+        Return a data frame containing the key signatures and their offsets.
+
+        This is useful for getting the prevailing system key signature (i.e.
+        the sharps/flats printed at the start of each staff) at any given
+        moment in the piece. Following music21's .sharps convention, the value
+        is a positive integer for the number of sharps, a negative integer for
+        the number of flats, and 0 for no accidentals in the key signature.
+        """
+        if 'KeySignature' not in self.analyses:
+            df = self._getM21KeySigObjs()
+            df = df.map(lambda ks: ks.sharps, na_action='ignore')
+            df.columns = self._getPartNames()
+            self.analyses['KeySignature'] = df
+        return self.analyses['KeySignature']
 
     def measures(self):
         """
@@ -1287,10 +1353,7 @@ class ImportedPiece:
             df = self.ngrams(df=df, n=n, exclude=['Rest'])
         uni = df.stack().unique()
         ser = pd.Series(uni)
-        if isinstance(uni[0], str):
-            df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
-        else:
-            df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
+        df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(tuple_to_list(cell, cast=int))))
         cols = [(df - df.loc[i]).abs().apply(sum, axis=1) for i in df.index]
         dist = pd.concat(cols, axis=1, sort=True)
         dist.columns = uni
@@ -1358,10 +1421,7 @@ class ImportedPiece:
               df = self.ngrams(df=df, n=n, exclude=['Rest'])
           uni = df.stack().unique()
           ser = pd.Series(uni)
-          if isinstance(uni[0], str):
-              df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell.split(', '))))
-          else:
-              df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(int(i) for i in cell)))
+          df = pd.DataFrame.from_records(ser.apply(lambda cell: tuple(tuple_to_list(cell, cast=int))))
           cols = [(df - df.loc[i]).abs().apply(self._flexed_sum, axis=1, args=(head_flex,)) for i in df.index]
           dist = pd.concat(cols, axis=1, sort=True)
           dist.columns = uni
@@ -1440,13 +1500,10 @@ class ImportedPiece:
         '''
         graph_list = []
         for item in pattern_list:
-            if isinstance(item, tuple):
-                temp_item = list(map(lambda x: int(x), item))
-            elif isinstance(item, str):
-                temp_item = list(map(lambda x: int(x), item.split(', ')))
-            else:
+            if not isinstance(item, (tuple, str)):
                 print("Intervals are not of type: String or Tuple")
                 return None
+            temp_item = tuple_to_list(item, cast=int)
             graph_list.append(self._patternToSeries(temp_item))
         return graph_list
 
@@ -3181,8 +3238,7 @@ class ImportedPiece:
         '''
         This private function is used to turn the offset diffs and melodic entry intervals and melodies into strings for the network
         '''
-        b = '_'.join(map(str, a))
-        return b
+        return tuple_to_string(a, separator='_')
     
     def _split_dataframe(self, df, column, threshold):
 
@@ -3769,8 +3825,7 @@ class ImportedPiece:
 
 def joiner(a):
     """This is used for visualization routines."""
-    b = '_'.join(map(str, a))
-    return b
+    return tuple_to_string(a, separator='_')
 def clean_melody_new(c):
     """This gets used for visualization routines."""
     first_soggetto = list(c[0])
@@ -3822,6 +3877,526 @@ class CorpusBase:
 
         if len(self.scores) == 0:
             print("Empty corpus created. Please import at least one score.")
+
+    def notes(self, combine_unisons_choice=True, combine_rests_choice=False):
+        """
+        Creates table of notes and rests in a corpus.
+        """
+        func = ImportedPiece.notes  # <- NB there are no parentheses here
+        list_of_dfs = self.batch(func=func,
+                                  kwargs={'combineUnisons': combine_unisons_choice, 'combineRests': combine_rests_choice},
+                                  metadata=False)
+        func1 = ImportedPiece.numberParts
+        list_of_dfs = self.batch(func=func1,
+                                  kwargs={'df': list_of_dfs},
+                                  metadata=True)
+
+        nr = pd.concat(list_of_dfs)
+        cols_to_move = ['Composer', 'Title', 'Date']
+        nr = nr[cols_to_move + [col for col in nr.columns if col not in cols_to_move]]
+        return nr
+
+    def note_scaled(self, combine_unisons_choice=True, combine_rests_choice=False):
+        """
+        Count occurrences of notes and rests in a corpus, including scaled counts.
+        """
+        func = ImportedPiece.notes  # <- NB there are no parentheses here
+        list_of_dfs = self.batch(func=func,
+                                  kwargs={'combineUnisons': combine_unisons_choice,
+                                          'combineRests': combine_rests_choice},
+                                  metadata=False)
+        func1 = ImportedPiece.numberParts
+        list_of_dfs = self.batch(func=func1,
+                                  kwargs={'df': list_of_dfs},
+                                  metadata=True)
+        final_list_dfs = []
+        for df in list_of_dfs:
+            # clean up
+            df = df.map(lambda x: '' if x == 'Rest' else x).fillna('')
+            df['1'] = df['1'].map(lambda x: x[:-1])
+            df['2'] = df['2'].map(lambda x: x[:-1])
+            df = df[df.index != '']
+
+            stacked_df = df.set_index(['Composer', 'Title', 'Date']).stack()
+            counted_notes = Counter(stacked_df)
+            first_key = next(iter(counted_notes))
+            counted_notes.pop(first_key)
+
+            total_n = sum(counted_notes.values())
+
+            counted_notes = pd.Series(counted_notes).to_frame('count').sort_index()
+            counted_notes['scaled'] = counted_notes['count'] / total_n
+            counted_notes['scaled'] = counted_notes['scaled'].round(2)
+            counted_notes.rename(columns={"count": "count", "scaled": "scaled_count"}, inplace=True)
+
+            counted_notes['Composer'] = df.iloc[0]['Composer']
+            counted_notes['Title'] = df.iloc[0]['Title']
+            counted_notes = counted_notes[counted_notes.index != '']
+            final_list_dfs.append(counted_notes)
+
+        corpus_notes_counts = pd.concat(final_list_dfs)
+        return corpus_notes_counts
+
+    def note_durs(self, pitch_class=True):
+        """
+        Calculate durations of notes in a corpus.
+        Uses helper function extract_letter to extract the letter part of the note as pitch class (optional).
+        """
+        func = ImportedPiece.notes  # <- NB there are no parentheses here
+        list_of_note_dfs = self.batch(func=func, metadata=True)
+        func_voices = ImportedPiece.numberParts
+        list_of_note_dfs = self.batch(func=func_voices,
+                                       metadata=False,
+                                       kwargs={'df': list_of_note_dfs})
+        func2 = ImportedPiece.durations  # <- NB there are no parentheses here
+        list_of_dur_dfs = self.batch(func=func2, metadata=False)
+        list_of_dur_dfs = self.batch(func=func_voices,
+                                      metadata=True,
+                                      kwargs={'df': list_of_dur_dfs})
+        func3 = ImportedPiece.final
+        list_of_finals = self.batch(func=func3, metadata=True)
+
+        zipped_dfs = zip(list_of_note_dfs, list_of_dur_dfs, list_of_finals)
+
+        note_dur_dfs = []
+        for a, b, c in zipped_dfs:
+            id_columns = [col for col in a.columns if col not in ['1', '2', '3', '4', '5', '6', '7', '8']]
+            var_cols = [col for col in a.columns if col in ['1', '2', '3', '4', '5', '6', '7', '8']]
+
+            # Now melt the DataFrame
+            melted_notes = a.melt(
+                id_vars=id_columns,
+                value_vars=var_cols,
+                var_name='Voice',
+                value_name='Notes'
+            )
+            melted_durs = b.melt(
+                id_vars=id_columns,
+                value_vars=var_cols,
+                var_name='Voice',
+                value_name='Durs'
+            )
+
+            note_dur = pd.merge(melted_notes, melted_durs, left_index=True, right_index=True, suffixes=('', '_y'))
+            note_dur = note_dur.dropna(subset=['Notes', 'Durs'])
+
+            # option to extract pitch class
+            if pitch_class == True:
+                note_dur['Notes'] = note_dur['Notes'].apply(extract_letter)
+            else:
+                note_dur['Notes'] = note_dur['Notes']
+            note_dur['Final'] = c
+
+            # we always extract the letter from the final
+            note_dur['Final'] = note_dur['Final'].apply(extract_letter)
+            note_dur_final = note_dur
+
+            # Drop columns ending with _y
+            note_dur_final = note_dur_final.drop(columns=[col for col in note_dur.columns if col.endswith('_y')])
+            note_dur_final = note_dur_final.dropna(subset=['Notes', 'Durs'])
+            note_dur_final['Durs'] = note_dur_final['Durs'].map(float)
+            note_dur_dfs.append(note_dur_final)
+
+        corpus_note_durs = pd.concat(note_dur_dfs)
+        return corpus_note_durs
+
+    def note_weights(self, include_rests=True):
+        """
+        Calculate pitch class weights by duration in a corpus.
+        Notes are grouped by pitch class and weighted by their total duration,
+        yielding a scaled proportion for each pitch class per piece.
+        """
+        pc_order = pitch_class_order_with_rests if include_rests else pitch_class_order_no_rests
+
+        func = ImportedPiece.notes
+        func2 = ImportedPiece.durations
+        list_of_note_dfs = self.batch(func=func, metadata=True)
+        list_of_dur_dfs = self.batch(func=func2, metadata=False)
+
+        weighted_note_dfs = []
+        weighted_notes = pd.DataFrame()
+
+        for a, b in zip(list_of_note_dfs, list_of_dur_dfs):
+            metadata = a.iloc[1][['Composer', 'Title']].tolist()
+            a = a.drop(columns=['Composer', 'Title', 'Date'])
+
+            melted_notes = a.melt()
+            melted_durs = b.melt()
+
+            note_dur = pd.merge(melted_notes, melted_durs, left_index=True, right_index=True)
+            note_dur = note_dur.dropna()
+
+            note_dur['value_x_clean'] = note_dur['value_x'].apply(
+                lambda v: extract_letter(v, include_rests=include_rests)
+            )
+
+            # Drop only rows where extract_letter returned None
+            # (unrecognized tokens, or rests when include_rests=False)
+            note_dur = note_dur[note_dur['value_x_clean'].notna()]
+
+            note_dur_sums = (
+                note_dur.groupby('value_x_clean')['value_y']
+                        .sum()
+                        .reset_index()
+                        .rename(columns={'value_x_clean': 'pitch_class', 'value_y': 'count'})
+            )
+
+            total_dur = note_dur_sums['count'].sum()
+            note_dur_sums['scaled'] = (note_dur_sums['count'] / total_dur).round(4)
+
+            note_dur_sums['pitch_class'] = pd.Categorical(
+                note_dur_sums['pitch_class'], categories=pc_order, ordered=True
+            )
+            weighted_notes = (note_dur_sums
+                              .sort_values('pitch_class')
+                              .dropna(subset=['pitch_class'])
+                              .copy())
+
+            weighted_notes['composer'] = metadata[0]
+            weighted_notes['title'] = metadata[1]
+            weighted_note_dfs.append(weighted_notes)
+            weighted_notes = pd.concat(weighted_note_dfs, ignore_index=True)
+            weighted_notes = weighted_notes.rename(columns={'index': 'pitch_class'})
+            weighted_notes['pitch_class'] = pd.Categorical(weighted_notes['pitch_class'], categories=pitch_class_order_with_rests, ordered=True)
+
+            # Sort the DataFrame
+            weighted_notes_sorted = weighted_notes.sort_values('pitch_class')
+            weighted_notes_sorted['pitch_class'] = weighted_notes_sorted['pitch_class'].astype(str)
+
+            # Reset the index and correct flat names
+            weighted_notes_sorted = weighted_notes_sorted.reset_index(drop=True)
+            weighted_notes_sorted['pitch_class'] = weighted_notes_sorted['pitch_class'].map(standardize_note)
+
+        return weighted_notes
+
+    def mel(self, kind_choice='d', compound_choice=True, directed_choice=True):
+        """
+        Generate melodic intervals in a corpus.
+        """
+        func = ImportedPiece.melodic  # <- NB there are no parentheses here
+        list_of_dfs = self.batch(func=func,
+                                  kwargs={'kind': kind_choice,
+                                          'compound': compound_choice,
+                                          'directed': directed_choice},
+                                  metadata=False)
+        func1 = ImportedPiece.detailIndex
+        list_of_detail_index_dfs = self.batch(func=func1,
+                                               kwargs={'df': list_of_dfs, 'progress': True},
+                                               metadata=False)
+        func2 = ImportedPiece.numberParts
+        list_of_dfs = self.batch(func=func2,
+                                  kwargs={'df': list_of_detail_index_dfs},
+                                  metadata=True)
+
+        mel = pd.concat(list_of_dfs)
+        cols_to_move = ['Composer', 'Title', 'Date']
+        mel = mel[cols_to_move + [col for col in mel.columns if col not in cols_to_move]]
+        mel = mel.reset_index()
+        return mel
+
+    def har(self, kind_choice='d', compound_choice=True, directed_choice=True):
+        """
+        Generate harmonic intervals in a corpus.
+        """
+        func = ImportedPiece.harmonic  # <- NB there are no parentheses here
+        list_of_dfs = self.batch(func=func,
+                                  kwargs={'kind': kind_choice,
+                                          'compound': compound_choice,
+                                          'directed': directed_choice},
+                                  metadata=False)
+        func1 = ImportedPiece.detailIndex
+        list_of_detail_index_dfs = self.batch(func=func1,
+                                               kwargs={'df': list_of_dfs, 'progress': True},
+                                               metadata=False)
+        func2 = ImportedPiece.numberParts
+        list_of_dfs = self.batch(func=func2,
+                                  kwargs={'df': list_of_detail_index_dfs},
+                                  metadata=True)
+
+        har = pd.concat(list_of_dfs)
+        cols_to_move = ['Composer', 'Title', 'Date']
+        har = har[cols_to_move + [col for col in har.columns if col not in cols_to_move]]
+        har = har.reset_index()
+        return har
+
+    def contrapuntal_ngrams(self, ngram_length=3):
+        """
+        Generate contrapuntal n-grams in a corpus.
+        """
+        func = ImportedPiece.ngrams  # <- NB there are no parentheses here
+        list_of_dfs = self.batch(func=func,
+                                  kwargs={'n': ngram_length},
+                                  metadata=False)
+        func1 = ImportedPiece.detailIndex
+        list_of_detail_index_dfs = self.batch(func=func1,
+                                               kwargs={'df': list_of_dfs, 'progress': True},
+                                               metadata=False)
+        func2 = ImportedPiece.numberParts
+        list_of_dfs = self.batch(func=func2,
+                                  kwargs={'df': list_of_detail_index_dfs},
+                                  metadata=True)
+
+        ngrams = pd.concat(list_of_dfs)
+        cols_to_move = ['Composer', 'Title', 'Date']
+        ngrams = ngrams[cols_to_move + [col for col in ngrams.columns if col not in cols_to_move]]
+        ngrams = ngrams.reset_index()
+        return ngrams
+
+    def melodic_ngrams(self,
+                        ngram_length=4,
+                        kind_choice='d',
+                        compound_choice=True,
+                        directed_choice=True,
+                        end_choice=False,
+                        metadata_choice=True,
+                        include_offset=False):
+        """
+        Generate melodic n-grams in a corpus.
+        """
+        func1 = ImportedPiece.melodic
+        list_of_dfs = self.batch(func=func1, kwargs={'kind': kind_choice,
+                                                      'compound': compound_choice,
+                                                      'directed': directed_choice,
+                                                      'end': end_choice}, metadata=False)
+        func2 = ImportedPiece.ngrams
+        list_of_melodic_ngrams = self.batch(func=func2, kwargs={'n': ngram_length, 'df': list_of_dfs}, metadata=False)
+        func3 = ImportedPiece.detailIndex
+        list_of_detail_index = self.batch(func=func3, kwargs={'offset': include_offset, 'df': list_of_melodic_ngrams, 'progress': True}, metadata=False)
+        func4 = ImportedPiece.numberParts
+        list_of_dfs = self.batch(func=func4,
+                                  kwargs={'df': list_of_detail_index},
+                                  metadata=metadata_choice)
+
+        corpus_mel_ngrams = pd.concat(list_of_dfs)
+        cols_to_move = ['Composer', 'Title', 'Date']
+        corpus_mel_ngrams = corpus_mel_ngrams[cols_to_move + [col for col in corpus_mel_ngrams.columns if col not in cols_to_move]]
+        corpus_mel_ngrams = corpus_mel_ngrams.reset_index()
+        return corpus_mel_ngrams
+
+    def melodic_durational_ratios_ngrams(self, ngram_length=4,
+                                          end_choice=False,
+                                          kind_choice='d',
+                                          compound_choice=True,
+                                          directed_choice=True,
+                                          metadata_choice=True,
+                                          include_offset=False):
+        """
+        Generate melodic n-grams with durational ratios in a corpus.
+        """
+        func1 = ImportedPiece.melodic
+        list_of_mel_dfs = self.batch(func=func1, kwargs={'kind': kind_choice,
+                                                          'end': end_choice,
+                                                          'compound': compound_choice,
+                                                          'directed': directed_choice,
+                                                          }, metadata=False)
+
+        func2 = ImportedPiece.numberParts
+        list_of_mel_dfs = self.batch(func=func2,
+                                      kwargs={'df': list_of_mel_dfs},
+                                      metadata=metadata_choice)
+
+        func3 = ImportedPiece.durationalRatios
+        list_of_dur_rat_dfs = self.batch(func=func3, kwargs={'end': end_choice}, metadata=False)
+        # number the parts using func2 above
+        list_of_dur_rat_dfs = self.batch(func=func2,
+                                          kwargs={'df': list_of_dur_rat_dfs},
+                                          metadata=False)
+        # round the values
+        list_of_dur_rat_dfs_rounded = []
+        for df in list_of_dur_rat_dfs:
+            df_rounded = df.apply(lambda x: x.astype('float64')).round(2)
+            list_of_dur_rat_dfs_rounded.append(df_rounded)
+
+        func4 = ImportedPiece.ngrams
+        list_of_mel_dur_ngrams = self.batch(func=func4, kwargs={'n': ngram_length,
+                                                                 'df': list_of_mel_dfs,
+                                                                 'other': list_of_dur_rat_dfs_rounded}, metadata=False)
+        list_of_mel_dur_rounded_no_tuple = []
+        for df in list_of_mel_dur_ngrams:
+            df_joined = df.applymap(lambda x: tuple_to_string(x, separator='_') if isinstance(x, tuple) else x)
+            list_of_mel_dur_rounded_no_tuple.append(df_joined)
+
+        func5 = ImportedPiece.detailIndex
+        list_of_detail_index = self.batch(func=func5, kwargs={'offset': include_offset,
+                                                               'df': list_of_mel_dur_rounded_no_tuple,
+                                                               'progress': True},
+                                                               metadata=metadata_choice)
+
+        corpus_mel_dur_rat_ngrams = pd.concat(list_of_detail_index)
+
+        cols_to_move = ['Composer', 'Title', 'Date']
+        corpus_mel_dur_rat_ngrams = corpus_mel_dur_rat_ngrams[cols_to_move + [col for col in corpus_mel_dur_rat_ngrams.columns if col not in cols_to_move]]
+        corpus_mel_dur_rat_ngrams = corpus_mel_dur_rat_ngrams.reset_index()
+        return corpus_mel_dur_rat_ngrams
+
+    def harmonic_ngrams(self,
+                         ngram_length=4,
+                         kind_choice='d',
+                         compound_choice=True,
+                         directed_choice=True,
+                         metadata_choice=True,
+                         againstLow_choice=False,
+                         include_offset=False):
+        """
+        Generate harmonic n-grams in a corpus.
+        """
+        func1 = ImportedPiece.harmonic
+        list_of_dfs = self.batch(func=func1, kwargs={'kind': kind_choice,
+                                                      'compound': compound_choice,
+                                                      'directed': directed_choice,
+                                                      'againstLow': againstLow_choice}, metadata=False)
+        func2 = ImportedPiece.ngrams
+        list_of_harmonic_ngrams = self.batch(func=func2, kwargs={'n': ngram_length, 'df': list_of_dfs}, metadata=False)
+        func3 = ImportedPiece.detailIndex
+        list_of_detail_index = self.batch(func=func3, kwargs={'offset': include_offset,
+                                                               'df': list_of_harmonic_ngrams,
+                                                               'progress': True}, metadata=False)
+        func4 = ImportedPiece.numberParts
+        list_of_dfs = self.batch(func=func4,
+                                  kwargs={'df': list_of_detail_index},
+                                  metadata=metadata_choice)
+
+        corpus_har_ngrams = pd.concat(list_of_dfs)
+        cols_to_move = ['Composer', 'Title', 'Date']
+        corpus_har_ngrams = corpus_har_ngrams[cols_to_move + [col for col in corpus_har_ngrams.columns if col not in cols_to_move]]
+        corpus_har_ngrams = corpus_har_ngrams.reset_index()
+        return corpus_har_ngrams
+
+    def sonority_ngrams(self,
+                         ngram_length=4,
+                         metadata_choice=True,
+                         include_offset=False,
+                         include_progress=True,
+                         compound=True,
+                         sort=False,
+                         minimum_beat_strength=0.0):
+        """
+        Generate sonority n-grams (plus bassline) in a corpus.
+        """
+        func0 = ImportedPiece.beatStrengths
+        list_of_beat_strength_dfs = self.batch(func0, metadata=False)
+
+        func1 = ImportedPiece.sonorities
+        list_of_sonority_dfs = self.batch(func=func1,
+                                           kwargs={'sort': sort, 'compound': compound},
+                                           metadata=False)
+        list_filtered_sonorities = []
+        for df in list_of_sonority_dfs:
+            df = df[df['Sonority'] != '']
+            list_filtered_sonorities.append(df)
+
+        paired_sonority_bs_dfs = zip(list_filtered_sonorities, list_of_beat_strength_dfs)
+
+        # filtering for beat strength
+        list_filtered_sonority_dfs = []
+        for pair in paired_sonority_bs_dfs:
+            son = pair[0]
+            bs = pair[1]
+            strong_beat_positions = bs[(bs > minimum_beat_strength).any(axis=1)].index
+            filtered_sonorities = son[son.index.isin(strong_beat_positions)]
+            list_filtered_sonority_dfs.append(filtered_sonorities)
+
+        func2 = ImportedPiece.lowLine
+        list_of_lowLine_dfs = self.batch(func=func2, metadata=False)
+        paired_lowline_bs_dfs = zip(list_of_lowLine_dfs, list_of_beat_strength_dfs)
+
+        list_of_fitered_lowLine_dfs = []
+        for pair in paired_lowline_bs_dfs:
+            low = pair[0]
+            bs = pair[1]
+            strong_beat_positions = bs[(bs > minimum_beat_strength).any(axis=1)].index
+            filtered_lowline = low[low.index.isin(strong_beat_positions)]
+            lowline_df = pd.DataFrame(filtered_lowline)
+            list_of_fitered_lowLine_dfs.append(lowline_df)
+
+        # now melodic ints based on lowline
+        func2a = ImportedPiece.melodic
+        list_low_melodic_dfs = self.batch(func=func2a,
+                                           kwargs={'end': False, 'df': list_of_fitered_lowLine_dfs},
+                                           metadata=False)
+
+        # create df with both filtered sonorities and lowline
+        paired_dfs = zip(list_filtered_sonority_dfs, list_low_melodic_dfs)
+        list_combined_dfs = []
+        for pair in paired_dfs:
+            sonorities_with_bass = pd.merge(pair[0], pair[1], left_index=True, right_index=True, how='left')
+            list_combined_dfs.append(sonorities_with_bass)
+            for df in list_combined_dfs:
+                df['Low Line'].fillna('Held', inplace=True)
+                df['Low_Sonority'] = df['Low Line'] + "_" + df['Sonority']
+
+        func3 = ImportedPiece.ngrams
+        list_of_son_bass_ngrams_dfs = self.batch(func=func3,
+                                                  kwargs={'n': ngram_length, 'df': list_combined_dfs},
+                                                  metadata=False)
+        func4 = ImportedPiece.detailIndex
+        list_of_detail_index_dfs = self.batch(func=func4,
+                                               kwargs={'offset': include_offset,
+                                                       'df': list_of_son_bass_ngrams_dfs,
+                                                       'progress': include_progress},
+                                               metadata=True)
+        func5 = ImportedPiece.numberParts
+        list_of_numberParts_dfs = self.batch(func=func5,
+                                              kwargs={'df': list_of_detail_index_dfs},
+                                              metadata=metadata_choice)
+        for df in list_of_numberParts_dfs:
+            if len(df) > 0:
+                df['Low_Sonority'] = df['Low_Sonority'].apply(lambda x: tuple_to_string(x, separator='_') if isinstance(x, tuple) else x)
+
+        corpus_son_bass_ngrams = pd.concat(list_of_numberParts_dfs)
+
+        cols_to_move = ['Composer', 'Title', 'Date']
+        corpus_son_bass_ngrams = corpus_son_bass_ngrams[cols_to_move + [col for col in corpus_son_bass_ngrams.columns if col not in cols_to_move]]
+        corpus_son_bass_ngrams = corpus_son_bass_ngrams.reset_index()
+        return corpus_son_bass_ngrams
+
+    def cadences(self):
+        """
+        Return cadences for all pieces in the corpus.
+        """
+        func = ImportedPiece.cadences
+        list_of_dfs = self.batch(func=func, kwargs={'keep_keys': True}, metadata=True)
+        corpus_cadences = pd.concat(list_of_dfs, ignore_index=False)
+
+        col_list = ['Composer', 'Title', 'Measure', 'Beat', 'Pattern', 'Key', 'CadType', 'Tone', 'CVFs',
+                    'LeadingTones', 'Sounding', 'Low', 'RelLow', 'RelTone',
+                    'Progress', 'SinceLast', 'ToNext']
+        corpus_cadences = corpus_cadences[col_list]
+        return corpus_cadences
+
+    def presentation_types(self,
+                            limit_to_entries=True,
+                            head_flex=1,
+                            body_flex=0,
+                            include_hidden_types=False,
+                            combine_unisons=True,
+                            melodic_ngram_length=4,
+                            kind='d',
+                            end=False):
+        """
+        Return presentation types for all pieces in the corpus.
+        """
+        func = ImportedPiece.presentationTypes  # <- NB there are no parentheses here
+        kwargs = {'limit_to_entries': limit_to_entries,
+                  'head_flex': head_flex,
+                  'body_flex': body_flex,
+                  'include_hidden_types': include_hidden_types,
+                  'combine_unisons': combine_unisons,
+                  'melodic_ngram_length': melodic_ngram_length,
+                  'kind': kind,
+                  'end': end}
+
+        list_of_dfs = self.batch(func, kwargs, metadata=True)
+        corpus_presentation_types = pd.concat(list_of_dfs)
+        return corpus_presentation_types
+
+    def tuple_to_list(self, value, separator=None, cast=None):
+        """Convert tuple-like values to a list using the shared helper."""
+        return tuple_to_list(value, separator=separator, cast=cast)
+
+    def tuple_to_string(self, value, separator=', '):
+        """Convert tuple-like values to a string using the shared helper."""
+        return tuple_to_string(value, separator=separator)
 
     def batch(self, func, kwargs={}, metadata=True, number_parts=True, verbose=False):
         '''
@@ -4302,13 +4877,10 @@ class CorpusBase:
         '''
         graph_list = []
         for item in pattern_list:
-            if isinstance(item, tuple):
-                temp_item = list(map(lambda x: int(x), item))
-            elif isinstance(item, str):
-                temp_item = list(map(lambda x: int(x), item.split(', ')))
-            else:
+            if not isinstance(item, (tuple, str)):
                 print("Intervals are not of type: String or Tuple")
                 return None
+            temp_item = tuple_to_list(item, cast=int)
             graph_list.append(self._patternToSeries(temp_item))
         return graph_list
 

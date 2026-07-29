@@ -2371,7 +2371,7 @@ class ImportedPiece:
         res.iloc[:] = 'Close'
         return pd.DataFrame(res)
 
-    def cadences(self, keep_keys=False, voice_detail=False):
+    def cadences(self, keep_keys=False, voice_detail=False, key_sig=False, include_final=False):
         """
         Analyzes the realized, evaded, and abandoned cadences in the score and returns
         a DataFrame with the results.
@@ -2480,29 +2480,53 @@ class ImportedPiece:
         could mean that a cadence is being missed within the "ToNext" number of
         quarter notes just after the cadence in question.
 
+        * KeySig: Only visible if `key_sig` is set to True. The prevailing system key
+        signature at the perfection (music21 .sharps convention: positive = number of
+        sharps, negative = number of flats, 0 = none). See ImportedPiece.keySignatures.
+
+        * Final: Only visible if `include_final` is set to True. The piece's final tone
+        (from ImportedPiece.final()), repeated on every row. Useful for corpus studies
+        that group or filter cadences by mode/final.
+
         Parameters
         ----------
         keep_keys : bool, optional
             If True, the returned DataFrame includes the 'Pattern' and 'Key' columns.
-            If False (default), these columns are dropped from the DataFrame.
+            Note that this 'Key' is not a musical key/key-signature -- it's the regex
+            string used internally to match cadence Patterns against cadenceLabels.csv,
+            i.e. a lookup key for cadence-type classification. If False (default),
+            these columns are dropped from the DataFrame.
         voice_detail : bool, optional
             If True, the returned DataFrame includes the 'PartMap' column. If False
             (default), this column is dropped from the DataFrame.
+        key_sig : bool, optional (default False)
+            If True, add a 'KeySig' column with the prevailing system key signature
+            (music21 .sharps convention) at each cadence's perfection. Defaults to
+            False to keep existing output unchanged.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column with the piece's final tone, repeated on
+            every row. Defaults to False to keep existing output unchanged.
 
         Returns
         -------
         pandas.DataFrame
             A DataFrame where each row represents a cadence. The columns provide details
             about the cadence, including the CVFs, melodic intervals, measure, beat,
-            time signature, sounding pitch, progress, lowest pitch, and relative pitches.
+            time signature, sounding pitch, progress, lowest pitch, and relative pitches
+            (plus key signature and/or final, if requested).
 
         Notes
         -----
         This method caches the result in the `analyses` attribute of the `Score` object
         to avoid recomputing the cadences if the method is called again with the same parameters.
         """
-        if 'Cadences' in self.analyses:
-            labels = self.analyses['Cadences']
+        # key_sig/include_final change which columns get computed, so (unlike
+        # keep_keys/voice_detail, which just drop columns post-hoc) they must be
+        # part of the cache key -- otherwise a cached call without them would be
+        # silently reused for a later call requesting them, and vice versa.
+        memo_key = ('Cadences', key_sig, include_final)
+        if memo_key in self.analyses:
+            labels = self.analyses[memo_key]
             if not keep_keys:
                 labels = labels.drop(['Pattern', 'Key'], axis=1)
             if not voice_detail:
@@ -2537,7 +2561,8 @@ class ImportedPiece:
             return roles
         labels['PartMap'] = cvfs_numbered.apply(_cvf_role_map, axis=1)
 
-        detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, sounding=True, progress=True, lowest=True)
+        detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, key_sig=key_sig,
+            sounding=True, progress=True, lowest=True)
         # NEW: check for Rest and remove that row in detailed and labels
         # temp reset of index for value check
         det_reset = detailed.reset_index()
@@ -2556,7 +2581,9 @@ class ImportedPiece:
         # put labels back to previous index
         labels = labels_filtered.set_index(labels.index.names)
 
-        labels['Low'] = detailed.index.get_level_values(5).values
+        # Named (rather than positional) level lookups, since the `key_sig` column
+        # inserts an extra index level between TSig and Sounding when requested.
+        labels['Low'] = detailed.index.get_level_values('Lowest').values
         final = note.Note(self.final())
         labels['RelLow'] = labels.Low.apply(lambda x: ImportedPiece._qualityDirectedCompound(interval.Interval(final, note.Note(x))))
         nr = self.notes()
@@ -2564,14 +2591,23 @@ class ImportedPiece:
             labels['Tone'] = cvfs.apply(self._cadential_pitch, args=(nr,), axis=1)
         else:
             labels['Tone'] = []
-        labels['RelTone'] = labels.Tone.apply(lambda x: ImportedPiece._qualityDirectedSimple(interval.Interval(final, note.Note(x))))
+        # Tone (and thus RelTone) is NaN when the Cantizans CVF is evaded/abandoned
+        # (see docstring); guard note.Note(x) against that, since some music21
+        # versions raise instead of tolerating a NaN pitch name.
+        labels['RelTone'] = labels.Tone.apply(
+            lambda x: ImportedPiece._qualityDirectedSimple(interval.Interval(final, note.Note(x))) if pd.notna(x) else np.nan
+        )
         labels.RelTone = labels.RelTone[labels.Tone.notnull()]
         labels.Tone = labels.Tone.fillna(np.nan)
-        labels['TSig'] = detailed.index.get_level_values(2).values
-        labels['Measure'] = detailed.index.get_level_values(0).values
-        labels['Beat'] = detailed.index.get_level_values(1).values
-        labels['Sounding'] = detailed.index.get_level_values(3).values
-        labels['Progress'] = detailed.index.get_level_values(4).values
+        labels['TSig'] = detailed.index.get_level_values('TSig').values
+        if key_sig:
+            labels['KeySig'] = detailed.index.get_level_values('KeySig').values
+        labels['Measure'] = detailed.index.get_level_values('Measure').values
+        labels['Beat'] = detailed.index.get_level_values('Beat').values
+        labels['Sounding'] = detailed.index.get_level_values('Sounding').values
+        labels['Progress'] = detailed.index.get_level_values('Progress').values
+        if include_final:
+            labels['Final'] = self.final()
         ndx = labels.index.to_series()
         labels['SinceLast'] = ndx - ndx.shift(1)
         if len(labels.index):
@@ -2579,7 +2615,7 @@ class ImportedPiece:
         labels['ToNext'] = labels['SinceLast'].shift(-1)
         if len(labels.index):
             labels.iat[-1, -1] = self.score.highestTime - labels.index[-1]
-        self.analyses['Cadences'] = labels
+        self.analyses[memo_key] = labels
         if not keep_keys:
             labels = labels.drop(['Pattern', 'Key'], axis=1)
         if not voice_detail:
@@ -3878,9 +3914,31 @@ class CorpusBase:
         if len(self.scores) == 0:
             print("Empty corpus created. Please import at least one score.")
 
-    def notes(self, combine_unisons_choice=True, combine_rests_choice=False):
+    def notes(self, combine_unisons_choice=True, combine_rests_choice=False, include_final=False):
         """
-        Creates table of notes and rests in a corpus.
+        Creates table of notes and rests in a corpus, one row per attack/rest
+        offset and one column per numbered voice, with Composer/Title/Date
+        columns prepended.
+
+        Parameters
+        ----------
+        combine_unisons_choice : bool
+            Passed to ImportedPiece.notes as `combineUnisons`. If True, consecutive
+            attacks on the same pitch in a voice are combined. Default False there,
+            but this wrapper defaults to True.
+        combine_rests_choice : bool
+            Passed to ImportedPiece.notes as `combineRests`. If True (the
+            ImportedPiece default), consecutive rests in a voice are combined.
+            Defaults to False here so that individual rests remain visible.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column giving each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece. Useful
+            for corpus studies that group or filter results by mode/final.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
         """
         func = ImportedPiece.notes  # <- NB there are no parentheses here
         list_of_dfs = self.batch(func=func,
@@ -3890,15 +3948,35 @@ class CorpusBase:
         list_of_dfs = self.batch(func=func1,
                                   kwargs={'df': list_of_dfs},
                                   metadata=True)
+        if include_final:
+            finals = self.batch(func=ImportedPiece.final, metadata=False)
+            list_of_dfs = [df.assign(Final=final) for df, final in zip(list_of_dfs, finals)]
 
         nr = pd.concat(list_of_dfs)
         cols_to_move = ['Composer', 'Title', 'Date']
         nr = nr[cols_to_move + [col for col in nr.columns if col not in cols_to_move]]
         return nr
 
-    def note_scaled(self, combine_unisons_choice=True, combine_rests_choice=False):
+    def note_scaled(self, combine_unisons_choice=True, combine_rests_choice=False, include_final=False):
         """
-        Count occurrences of notes and rests in a corpus, including scaled counts.
+        Count occurrences of notes and rests in a corpus, including scaled (proportional) counts.
+
+        Parameters
+        ----------
+        combine_unisons_choice : bool
+            Passed to ImportedPiece.notes as `combineUnisons`.
+        combine_rests_choice : bool
+            Passed to ImportedPiece.notes as `combineRests`.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column giving each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
+            One row per (pitch/rest token, piece), with 'count' and
+            'scaled_count' columns plus Composer/Title (and Final if requested).
         """
         func = ImportedPiece.notes  # <- NB there are no parentheses here
         list_of_dfs = self.batch(func=func,
@@ -3909,8 +3987,9 @@ class CorpusBase:
         list_of_dfs = self.batch(func=func1,
                                   kwargs={'df': list_of_dfs},
                                   metadata=True)
+        finals = self.batch(func=ImportedPiece.final, metadata=False) if include_final else None
         final_list_dfs = []
-        for df in list_of_dfs:
+        for idx, df in enumerate(list_of_dfs):
             # clean up
             df = df.map(lambda x: '' if x == 'Rest' else x).fillna('')
             df['1'] = df['1'].map(lambda x: x[:-1])
@@ -3931,16 +4010,38 @@ class CorpusBase:
 
             counted_notes['Composer'] = df.iloc[0]['Composer']
             counted_notes['Title'] = df.iloc[0]['Title']
+            if include_final:
+                counted_notes['Final'] = finals[idx]
             counted_notes = counted_notes[counted_notes.index != '']
             final_list_dfs.append(counted_notes)
 
         corpus_notes_counts = pd.concat(final_list_dfs)
         return corpus_notes_counts
 
-    def note_durs(self, pitch_class=True):
+    def note_durs(self, pitch_class=True, aggregate=False):
         """
         Calculate durations of notes in a corpus.
         Uses helper function extract_letter to extract the letter part of the note as pitch class (optional).
+
+        Parameters
+        ----------
+        pitch_class : bool, optional (default True)
+            If True, the 'Notes' column holds pitch classes (via extract_letter,
+            octave stripped) rather than full pitch-with-octave note names.
+        aggregate : bool, optional (default False)
+            If False (default), returns one row per individual note attack, with
+            'Durs' being that single event's duration -- unchanged from this
+            method's original behavior.
+            If True, rows are grouped by (Composer, Title, Voice, Notes) and
+            'Durs' becomes the *total* summed duration of that pitch/pitch-class
+            in that voice for that piece -- i.e. one row per piece/voice/pitch,
+            useful for corpus studies like modal range/final analysis.
+
+        Returns
+        -------
+        pd.DataFrame
+            Columns: Composer, Title, Date, Voice, Notes, Durs, Final (each
+            piece's final tone, from ImportedPiece.final(), always included).
         """
         func = ImportedPiece.notes  # <- NB there are no parentheses here
         list_of_note_dfs = self.batch(func=func, metadata=True)
@@ -3998,13 +4099,37 @@ class CorpusBase:
             note_dur_dfs.append(note_dur_final)
 
         corpus_note_durs = pd.concat(note_dur_dfs)
+        if aggregate:
+            group_cols = [col for col in ['Composer', 'Title', 'Date', 'Voice', 'Notes', 'Final']
+                          if col in corpus_note_durs.columns]
+            # dropna=False: 'Date' is commonly None, and groupby drops all-NaN
+            # key rows by default, which would otherwise silently empty the result.
+            corpus_note_durs = corpus_note_durs.groupby(group_cols, as_index=False, dropna=False)['Durs'].sum()
         return corpus_note_durs
 
-    def note_weights(self, include_rests=True):
+    def note_weights(self, include_rests=True, include_final=False):
         """
         Calculate pitch class weights by duration in a corpus.
         Notes are grouped by pitch class and weighted by their total duration,
         yielding a scaled proportion for each pitch class per piece.
+
+        Parameters
+        ----------
+        include_rests : bool, optional (default True)
+            Whether to include rests as a pitch class (labeled 'Rest') in the
+            weighting, or drop them and scale proportions over sounding notes only.
+        include_final : bool, optional (default False)
+            If True, add a 'final' column giving each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece. Useful
+            for corpus studies that group or filter results by mode/final.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
+            One row per (pitch_class, piece), with 'count' (summed duration),
+            'scaled' (proportion of the piece's total), 'composer', 'title'
+            (and 'final' if requested).
         """
         pc_order = pitch_class_order_with_rests if include_rests else pitch_class_order_no_rests
 
@@ -4012,11 +4137,12 @@ class CorpusBase:
         func2 = ImportedPiece.durations
         list_of_note_dfs = self.batch(func=func, metadata=True)
         list_of_dur_dfs = self.batch(func=func2, metadata=False)
+        finals = self.batch(func=ImportedPiece.final, metadata=False) if include_final else None
 
         weighted_note_dfs = []
         weighted_notes = pd.DataFrame()
 
-        for a, b in zip(list_of_note_dfs, list_of_dur_dfs):
+        for idx, (a, b) in enumerate(zip(list_of_note_dfs, list_of_dur_dfs)):
             metadata = a.iloc[1][['Composer', 'Title']].tolist()
             a = a.drop(columns=['Composer', 'Title', 'Date'])
 
@@ -4054,6 +4180,8 @@ class CorpusBase:
 
             weighted_notes['composer'] = metadata[0]
             weighted_notes['title'] = metadata[1]
+            if include_final:
+                weighted_notes['final'] = finals[idx]
             weighted_note_dfs.append(weighted_notes)
             weighted_notes = pd.concat(weighted_note_dfs, ignore_index=True)
             weighted_notes = weighted_notes.rename(columns={'index': 'pitch_class'})
@@ -4069,9 +4197,27 @@ class CorpusBase:
 
         return weighted_notes
 
-    def mel(self, kind_choice='d', compound_choice=True, directed_choice=True):
+    def mel(self, kind_choice='d', compound_choice=True, directed_choice=True, key_sig=False, include_final=False):
         """
         Generate melodic intervals in a corpus.
+
+        Parameters
+        ----------
+        kind_choice, compound_choice, directed_choice
+            Passed through to ImportedPiece.melodic as `kind`, `compound`, `directed`.
+        key_sig : bool, optional (default False)
+            If True, add the prevailing system key signature (ImportedPiece
+            .keySignatures(), music21 .sharps convention) to the row index via
+            detailIndex, alongside Measure/Beat. Defaults to False to keep the
+            existing index shape unchanged.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column giving each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
         """
         func = ImportedPiece.melodic  # <- NB there are no parentheses here
         list_of_dfs = self.batch(func=func,
@@ -4081,12 +4227,15 @@ class CorpusBase:
                                   metadata=False)
         func1 = ImportedPiece.detailIndex
         list_of_detail_index_dfs = self.batch(func=func1,
-                                               kwargs={'df': list_of_dfs, 'progress': True},
+                                               kwargs={'df': list_of_dfs, 'progress': True, 'key_sig': key_sig},
                                                metadata=False)
         func2 = ImportedPiece.numberParts
         list_of_dfs = self.batch(func=func2,
                                   kwargs={'df': list_of_detail_index_dfs},
                                   metadata=True)
+        if include_final:
+            finals = self.batch(func=ImportedPiece.final, metadata=False)
+            list_of_dfs = [df.assign(Final=final) for df, final in zip(list_of_dfs, finals)]
 
         mel = pd.concat(list_of_dfs)
         cols_to_move = ['Composer', 'Title', 'Date']
@@ -4094,9 +4243,27 @@ class CorpusBase:
         mel = mel.reset_index()
         return mel
 
-    def har(self, kind_choice='d', compound_choice=True, directed_choice=True):
+    def har(self, kind_choice='d', compound_choice=True, directed_choice=True, key_sig=False, include_final=False):
         """
         Generate harmonic intervals in a corpus.
+
+        Parameters
+        ----------
+        kind_choice, compound_choice, directed_choice
+            Passed through to ImportedPiece.harmonic as `kind`, `compound`, `directed`.
+        key_sig : bool, optional (default False)
+            If True, add the prevailing system key signature (ImportedPiece
+            .keySignatures(), music21 .sharps convention) to the row index via
+            detailIndex, alongside Measure/Beat. Defaults to False to keep the
+            existing index shape unchanged.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column giving each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
         """
         func = ImportedPiece.harmonic  # <- NB there are no parentheses here
         list_of_dfs = self.batch(func=func,
@@ -4106,12 +4273,15 @@ class CorpusBase:
                                   metadata=False)
         func1 = ImportedPiece.detailIndex
         list_of_detail_index_dfs = self.batch(func=func1,
-                                               kwargs={'df': list_of_dfs, 'progress': True},
+                                               kwargs={'df': list_of_dfs, 'progress': True, 'key_sig': key_sig},
                                                metadata=False)
         func2 = ImportedPiece.numberParts
         list_of_dfs = self.batch(func=func2,
                                   kwargs={'df': list_of_detail_index_dfs},
                                   metadata=True)
+        if include_final:
+            finals = self.batch(func=ImportedPiece.final, metadata=False)
+            list_of_dfs = [df.assign(Final=final) for df, final in zip(list_of_dfs, finals)]
 
         har = pd.concat(list_of_dfs)
         cols_to_move = ['Composer', 'Title', 'Date']
@@ -4119,9 +4289,27 @@ class CorpusBase:
         har = har.reset_index()
         return har
 
-    def contrapuntal_ngrams(self, ngram_length=3):
+    def contrapuntal_ngrams(self, ngram_length=3, key_sig=False, include_final=False):
         """
         Generate contrapuntal n-grams in a corpus.
+
+        Parameters
+        ----------
+        ngram_length : int
+            Passed through to ImportedPiece.ngrams as `n`.
+        key_sig : bool, optional (default False)
+            If True, add the prevailing system key signature (ImportedPiece
+            .keySignatures(), music21 .sharps convention) to the row index via
+            detailIndex, alongside Measure/Beat. Defaults to False to keep the
+            existing index shape unchanged.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column giving each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
         """
         func = ImportedPiece.ngrams  # <- NB there are no parentheses here
         list_of_dfs = self.batch(func=func,
@@ -4129,12 +4317,15 @@ class CorpusBase:
                                   metadata=False)
         func1 = ImportedPiece.detailIndex
         list_of_detail_index_dfs = self.batch(func=func1,
-                                               kwargs={'df': list_of_dfs, 'progress': True},
+                                               kwargs={'df': list_of_dfs, 'progress': True, 'key_sig': key_sig},
                                                metadata=False)
         func2 = ImportedPiece.numberParts
         list_of_dfs = self.batch(func=func2,
                                   kwargs={'df': list_of_detail_index_dfs},
                                   metadata=True)
+        if include_final:
+            finals = self.batch(func=ImportedPiece.final, metadata=False)
+            list_of_dfs = [df.assign(Final=final) for df, final in zip(list_of_dfs, finals)]
 
         ngrams = pd.concat(list_of_dfs)
         cols_to_move = ['Composer', 'Title', 'Date']
@@ -4149,9 +4340,33 @@ class CorpusBase:
                         directed_choice=True,
                         end_choice=False,
                         metadata_choice=True,
-                        include_offset=False):
+                        include_offset=False,
+                        key_sig=False,
+                        include_final=False):
         """
         Generate melodic n-grams in a corpus.
+
+        Parameters
+        ----------
+        ngram_length, kind_choice, compound_choice, directed_choice, end_choice
+            Passed through to ImportedPiece.melodic/ImportedPiece.ngrams.
+        metadata_choice : bool
+            Whether to attach Composer/Title/Date columns.
+        include_offset : bool
+            Whether detailIndex should also include each row's raw offset.
+        key_sig : bool, optional (default False)
+            If True, add the prevailing system key signature (ImportedPiece
+            .keySignatures(), music21 .sharps convention) to the row index via
+            detailIndex, alongside Measure/Beat. Defaults to False to keep the
+            existing index shape unchanged.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column giving each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
         """
         func1 = ImportedPiece.melodic
         list_of_dfs = self.batch(func=func1, kwargs={'kind': kind_choice,
@@ -4161,11 +4376,14 @@ class CorpusBase:
         func2 = ImportedPiece.ngrams
         list_of_melodic_ngrams = self.batch(func=func2, kwargs={'n': ngram_length, 'df': list_of_dfs}, metadata=False)
         func3 = ImportedPiece.detailIndex
-        list_of_detail_index = self.batch(func=func3, kwargs={'offset': include_offset, 'df': list_of_melodic_ngrams, 'progress': True}, metadata=False)
+        list_of_detail_index = self.batch(func=func3, kwargs={'offset': include_offset, 'df': list_of_melodic_ngrams, 'progress': True, 'key_sig': key_sig}, metadata=False)
         func4 = ImportedPiece.numberParts
         list_of_dfs = self.batch(func=func4,
                                   kwargs={'df': list_of_detail_index},
                                   metadata=metadata_choice)
+        if include_final:
+            finals = self.batch(func=ImportedPiece.final, metadata=False)
+            list_of_dfs = [df.assign(Final=final) for df, final in zip(list_of_dfs, finals)]
 
         corpus_mel_ngrams = pd.concat(list_of_dfs)
         cols_to_move = ['Composer', 'Title', 'Date']
@@ -4179,9 +4397,33 @@ class CorpusBase:
                                           compound_choice=True,
                                           directed_choice=True,
                                           metadata_choice=True,
-                                          include_offset=False):
+                                          include_offset=False,
+                                          key_sig=False,
+                                          include_final=False):
         """
         Generate melodic n-grams with durational ratios in a corpus.
+
+        Parameters
+        ----------
+        ngram_length, end_choice, kind_choice, compound_choice, directed_choice
+            Passed through to ImportedPiece.melodic/ImportedPiece.durationalRatios/ImportedPiece.ngrams.
+        metadata_choice : bool
+            Whether to attach Composer/Title/Date columns.
+        include_offset : bool
+            Whether detailIndex should also include each row's raw offset.
+        key_sig : bool, optional (default False)
+            If True, add the prevailing system key signature (ImportedPiece
+            .keySignatures(), music21 .sharps convention) to the row index via
+            detailIndex, alongside Measure/Beat. Defaults to False to keep the
+            existing index shape unchanged.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column giving each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
         """
         func1 = ImportedPiece.melodic
         list_of_mel_dfs = self.batch(func=func1, kwargs={'kind': kind_choice,
@@ -4213,14 +4455,18 @@ class CorpusBase:
                                                                  'other': list_of_dur_rat_dfs_rounded}, metadata=False)
         list_of_mel_dur_rounded_no_tuple = []
         for df in list_of_mel_dur_ngrams:
-            df_joined = df.applymap(lambda x: tuple_to_string(x, separator='_') if isinstance(x, tuple) else x)
+            df_joined = df.map(lambda x: tuple_to_string(x, separator='_') if isinstance(x, tuple) else x)
             list_of_mel_dur_rounded_no_tuple.append(df_joined)
 
         func5 = ImportedPiece.detailIndex
         list_of_detail_index = self.batch(func=func5, kwargs={'offset': include_offset,
                                                                'df': list_of_mel_dur_rounded_no_tuple,
-                                                               'progress': True},
+                                                               'progress': True,
+                                                               'key_sig': key_sig},
                                                                metadata=metadata_choice)
+        if include_final:
+            finals = self.batch(func=ImportedPiece.final, metadata=False)
+            list_of_detail_index = [df.assign(Final=final) for df, final in zip(list_of_detail_index, finals)]
 
         corpus_mel_dur_rat_ngrams = pd.concat(list_of_detail_index)
 
@@ -4236,9 +4482,33 @@ class CorpusBase:
                          directed_choice=True,
                          metadata_choice=True,
                          againstLow_choice=False,
-                         include_offset=False):
+                         include_offset=False,
+                         key_sig=False,
+                         include_final=False):
         """
         Generate harmonic n-grams in a corpus.
+
+        Parameters
+        ----------
+        ngram_length, kind_choice, compound_choice, directed_choice, againstLow_choice
+            Passed through to ImportedPiece.harmonic/ImportedPiece.ngrams.
+        metadata_choice : bool
+            Whether to attach Composer/Title/Date columns.
+        include_offset : bool
+            Whether detailIndex should also include each row's raw offset.
+        key_sig : bool, optional (default False)
+            If True, add the prevailing system key signature (ImportedPiece
+            .keySignatures(), music21 .sharps convention) to the row index via
+            detailIndex, alongside Measure/Beat. Defaults to False to keep the
+            existing index shape unchanged.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column giving each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
         """
         func1 = ImportedPiece.harmonic
         list_of_dfs = self.batch(func=func1, kwargs={'kind': kind_choice,
@@ -4250,11 +4520,15 @@ class CorpusBase:
         func3 = ImportedPiece.detailIndex
         list_of_detail_index = self.batch(func=func3, kwargs={'offset': include_offset,
                                                                'df': list_of_harmonic_ngrams,
-                                                               'progress': True}, metadata=False)
+                                                               'progress': True,
+                                                               'key_sig': key_sig}, metadata=False)
         func4 = ImportedPiece.numberParts
         list_of_dfs = self.batch(func=func4,
                                   kwargs={'df': list_of_detail_index},
                                   metadata=metadata_choice)
+        if include_final:
+            finals = self.batch(func=ImportedPiece.final, metadata=False)
+            list_of_dfs = [df.assign(Final=final) for df, final in zip(list_of_dfs, finals)]
 
         corpus_har_ngrams = pd.concat(list_of_dfs)
         cols_to_move = ['Composer', 'Title', 'Date']
@@ -4269,9 +4543,35 @@ class CorpusBase:
                          include_progress=True,
                          compound=True,
                          sort=False,
-                         minimum_beat_strength=0.0):
+                         minimum_beat_strength=0.0,
+                         key_sig=False,
+                         include_final=False):
         """
         Generate sonority n-grams (plus bassline) in a corpus.
+
+        Parameters
+        ----------
+        ngram_length, compound, sort, minimum_beat_strength
+            Passed through to ImportedPiece.sonorities/ImportedPiece.ngrams.
+        metadata_choice : bool
+            Whether to attach Composer/Title/Date columns.
+        include_offset : bool
+            Whether detailIndex should also include each row's raw offset.
+        include_progress : bool
+            Whether detailIndex should include the 0-1 progress-through-piece column.
+        key_sig : bool, optional (default False)
+            If True, add the prevailing system key signature (ImportedPiece
+            .keySignatures(), music21 .sharps convention) to the row index via
+            detailIndex, alongside Measure/Beat. Defaults to False to keep the
+            existing index shape unchanged.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column giving each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
         """
         func0 = ImportedPiece.beatStrengths
         list_of_beat_strength_dfs = self.batch(func0, metadata=False)
@@ -4333,7 +4633,8 @@ class CorpusBase:
         list_of_detail_index_dfs = self.batch(func=func4,
                                                kwargs={'offset': include_offset,
                                                        'df': list_of_son_bass_ngrams_dfs,
-                                                       'progress': include_progress},
+                                                       'progress': include_progress,
+                                                       'key_sig': key_sig},
                                                metadata=True)
         func5 = ImportedPiece.numberParts
         list_of_numberParts_dfs = self.batch(func=func5,
@@ -4342,6 +4643,9 @@ class CorpusBase:
         for df in list_of_numberParts_dfs:
             if len(df) > 0:
                 df['Low_Sonority'] = df['Low_Sonority'].apply(lambda x: tuple_to_string(x, separator='_') if isinstance(x, tuple) else x)
+        if include_final:
+            finals = self.batch(func=ImportedPiece.final, metadata=False)
+            list_of_numberParts_dfs = [df.assign(Final=final) for df, final in zip(list_of_numberParts_dfs, finals)]
 
         corpus_son_bass_ngrams = pd.concat(list_of_numberParts_dfs)
 
@@ -4350,17 +4654,39 @@ class CorpusBase:
         corpus_son_bass_ngrams = corpus_son_bass_ngrams.reset_index()
         return corpus_son_bass_ngrams
 
-    def cadences(self):
+    def cadences(self, key_sig=False, include_final=False):
         """
-        Return cadences for all pieces in the corpus.
+        Return cadences for all pieces in the corpus. See ImportedPiece.cadences
+        for the full column documentation.
+
+        Parameters
+        ----------
+        key_sig : bool, optional (default False)
+            If True, add a 'KeySig' column with the prevailing system key
+            signature (music21 .sharps convention) at each cadence's
+            perfection. Defaults to False to keep existing output unchanged.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column with each piece's final tone (from
+            ImportedPiece.final()), repeated on every row for that piece.
+            Defaults to False to keep existing output unchanged.
+
+        Returns
+        -------
+        pd.DataFrame
         """
         func = ImportedPiece.cadences
-        list_of_dfs = self.batch(func=func, kwargs={'keep_keys': True}, metadata=True)
+        list_of_dfs = self.batch(func=func,
+                                  kwargs={'keep_keys': True, 'key_sig': key_sig, 'include_final': include_final},
+                                  metadata=True)
         corpus_cadences = pd.concat(list_of_dfs, ignore_index=False)
 
         col_list = ['Composer', 'Title', 'Measure', 'Beat', 'Pattern', 'Key', 'CadType', 'Tone', 'CVFs',
                     'LeadingTones', 'Sounding', 'Low', 'RelLow', 'RelTone',
                     'Progress', 'SinceLast', 'ToNext']
+        if key_sig:
+            col_list.append('KeySig')
+        if include_final:
+            col_list.append('Final')
         corpus_cadences = corpus_cadences[col_list]
         return corpus_cadences
 

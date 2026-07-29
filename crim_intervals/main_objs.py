@@ -3976,7 +3976,7 @@ class CorpusBase:
             list_of_dfs = [df.assign(Final=final) for df, final in zip(list_of_dfs, finals)]
 
         nr = pd.concat(list_of_dfs)
-        cols_to_move = ['Composer', 'Title', 'Date', 'KeySig', 'Final']
+        cols_to_move = ['Composer', 'Title', 'Date']
         nr = nr[cols_to_move + [col for col in nr.columns if col not in cols_to_move]]
         if key_sig:
             nr = nr.reset_index()

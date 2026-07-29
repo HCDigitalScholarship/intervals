@@ -3978,8 +3978,8 @@ class CorpusBase:
         nr = pd.concat(list_of_dfs)
         cols_to_move = ['Composer', 'Title', 'Date', 'KeySig', 'Final']
         nr = nr[cols_to_move + [col for col in nr.columns if col not in cols_to_move]]
-        if key_sig:
-            nr = nr.reset_index()
+        # if key_sig:
+        #     nr = nr.reset_index()
         return nr
 
     def note_scaled(self, 

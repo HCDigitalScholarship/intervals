@@ -30,6 +30,11 @@ nav:
   - Home: index.md
   - API Reference:
       - main_objs.py: api/main_objs.md
+      - main.py: api/main.md
+      - sorting_lists.py: api/sorting_lists.md
+      - networks.py: api/networks.md
+      - visualizations.py: api/visualizations.md
+      - corpus_tools.py (deprecated): api/corpus_tools.md
 
 plugins:
   - search

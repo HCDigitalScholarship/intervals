@@ -364,8 +364,10 @@ class ImportedPiece:
         something other than single notes and rests, such as the durations of
         intervals. E.g.:
 
+        ```python
         har = importedPiece.harmonic()
         harDur = importedPiece.durations(df=har)
+        ```
 
         The `n` parameter should be an integer greater than zero, or -1. When
         n is a positive integer, it groups together a sliding window of n
@@ -376,15 +378,19 @@ class ImportedPiece:
         n-sized window. For example, set n=3 if you wanted to get the durations
         of all 3-event-long pair-wise harmonic events:
 
+        ```python
         har = importedPiece.harmonic()
         dur_3 = importedPiece.durations(df=har, n=3)
+        ```
 
         Setting n to -1 sums the durations of all adjacent non-rest events,
         excluding NaNs. You could use this to find the durations of all melodies
         in a piece. Note that the results of .notes() will be used for the
         `df` parameter if none is provided:
 
+        ```python
         dur = importedPiece.durations(n=-1)
+        ```
 
         You can also pass a `mask_df`, which will serve as a filter, only
         keeping values at the same indecies (i.e. index and columns) as mask_df.
@@ -394,11 +400,13 @@ class ImportedPiece:
         dataframe you passed to .ngrams() as the `n` and `df` parameters,
         then pass your dataframe of ngrams as the `mask_df`. For example:
 
+        ```python
         har = importedPiece.harmonic()
         mel = importedPiece.melodic()
         _n = 5
         ngrams = importedPiece.ngrams(df=har, other=mel, n=_n)
         ngramDurations = importedPiece.durations(df=har, n=_n, mask_df=ngrams)
+        ```
         '''
         if 'Duration' in self.analyses and df is None and n == 1 and mask_df is None:
             return self.analyses['Duration']
@@ -719,11 +727,13 @@ class ImportedPiece:
         Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
         like melodic ngrams. The `mode` parameter is detected automatically if it isn't passed.
 
-        ***Example***
+        Examples
+        --------
+        ```python
         mel = piece.melodic()
         ng = piece.ngrams(df=mel, n=4, offsets='both')
         ema = piece.emaAddresses(df=ng)
-        ***
+        ```
         '''
         if isinstance(df, pd.DataFrame):
             ret = df.copy()
@@ -1314,39 +1324,64 @@ class ImportedPiece:
         passed. An alternative that would make sense would be to use chromatic
         melodic intervals instead.
 
-        Usage:
+        Parameters
+        ----------
+        df : pandas.DataFrame, optional
+            A dataframe of strings of integer ngrams. If not passed, melodic
+            ngrams of this type will be calculated at the value of `n`.
+        n : int, optional (default 3)
+            The ngram length to use when `df` is not passed. Ignored if `df`
+            is passed.
 
-        # Call like this:
+        Returns
+        -------
+        pandas.DataFrame
+            A square distance matrix indexed and columned by the unique ngram
+            values found in `df`.
+
+        Examples
+        --------
+        Call like this:
+
+        ```python
         importedPiece.distance()
+        ```
 
         If you don't pass a value for df, you can specify a different value
         for n to change from the default of 3:
 
+        ```python
         importedPiece.distance(n=5)
-
+        ```
 
         If you already have the melodic ngrams calculated for a different
         aspect of your query, you can pass that as df to save a little
         runtime on a large query. Note that if you pass something for df,
         the n parameter will be ignored:
 
+        ```python
         mel = importedPiece.melodic('z', True, True)
         ngrams = importedPiece.ngrams(df=mel, n=4, exclude=['Rest'])
         importedPiece.distance(df=ngrams)
+        ```
 
         To search the table for the distances from a given pattern, just get
-        the column of that name. This is example looks for distances
-        involving a melodic pattern that goes up a step, down a third, up a
-        step, down a third:
+        the column of that name. This example looks for distances involving a
+        melodic pattern that goes up a step, down a third, up a step, down a
+        third:
 
+        ```python
         dist = importedPiece.distance(n=4)
         target = '1, -2, 1, -2'
         col = dist[target]
+        ```
 
         If you then want to filter that column, say to distances less than or
         equal to 2, do this:
 
+        ```python
         col[col <= 2]
+        ```
         '''
         if df is None:
             df = self.melodic('z', True, True)
@@ -1377,8 +1412,8 @@ class ImportedPiece:
           melodic intervals instead.
 
           This function differs from "distance" in that it treats the first item in
-          each ngram differently from the others.  That is, the first item can "flex"
-          differently from the remainder.  Thus users can choose a overal body_flex
+          each ngram differently from the others. That is, the first item can "flex"
+          differently from the remainder. Thus users can choose an overall body_flex
           of "0" while still allowing flexing only at the head of the ngram.
 
           The default flex is up to "1" unit of difference, but passing the "head_flex"
@@ -1387,34 +1422,67 @@ class ImportedPiece:
           This function is meant mainly for melodic ngrams, but it can also be used
           for durational ngrams.
 
-          Usage:
+          Parameters
+          ----------
+          head_flex : int
+              The threshold of difference allowed for the first item in each
+              ngram.
+          df : pandas.DataFrame, optional
+              A dataframe of strings of integer ngrams. If not passed, melodic
+              ngrams of this type will be calculated at the value of `n`.
+          n : int, optional (default 3)
+              The ngram length to use when `df` is not passed. Ignored if `df`
+              is passed.
 
-          # Call like this:
+          Returns
+          -------
+          pandas.DataFrame
+              A square distance matrix indexed and columned by the unique ngram
+              values found in `df`, using the flexed head comparison.
+
+          Examples
+          --------
+          Call like this:
+
+          ```python
           importedPiece.flexed_distance()
+          ```
 
-          # If you don't pass a value for df, you can specify a different value
-          # for n to change from the default of 3:
+          If you don't pass a value for df, you can specify a different value
+          for n to change from the default of 3:
+
+          ```python
           importedPiece.flexed_distance(n=5)
+          ```
 
-          # If you already have the melodic ngrams calculated for a different
-          # aspect of your query, you can pass that as df to save a little
-          # runtime on a large query. Note that if you pass something for df,
-          # the n parameter will be ignored:
+          If you already have the melodic ngrams calculated for a different
+          aspect of your query, you can pass that as df to save a little
+          runtime on a large query. Note that if you pass something for df,
+          the n parameter will be ignored:
+
+          ```python
           mel = importedPiece.melodic('z', True, True)
           ngrams = importedPiece.ngrams(df=mel, n=4, exclude=['Rest'])
           importedPiece.flexed_distance(df=ngrams)
+          ```
 
-          # To search the table for the distances from a given pattern, just get
-          # the column of that name. This is example looks for distances
-          # involving a melodic pattern that goes up a step, down a third, up a
-          # step, down a third:
+          To search the table for the distances from a given pattern, just get
+          the column of that name. This example looks for distances involving a
+          melodic pattern that goes up a step, down a third, up a step, down a
+          third:
+
+          ```python
           dist = importedPiece.flexed_distance(n=4)
           target = '1, -2, 1, -2'
           col = dist[target]
+          ```
 
-          # If you then want to filter that column, say to flexed distances less than or
-          # equal to 2, do this:
+          If you then want to filter that column, say to flexed distances less
+          than or equal to 2, do this:
+
+          ```python
           col[col <= 2]
+          ```
           '''
           if df is None:
               df = self.melodic('z', True, True)
@@ -1442,33 +1510,45 @@ class ImportedPiece:
         Instead, pass the desired regular durational interval as an integer or
         float as the `unit` parameter.
 
-        :param str kind: use "q" (default) for diatonic intervals with quality,
-            "d" for diatonic intervals without quality, "z" for zero-indexed
-            diatonic intervals without quality (i.e. unison = 0, second = 1,
-            etc.), or "c" for chromatic intervals. Only the first character is
-            used, and it's case insensitive.
-        :param bool directed: defaults to True which shows that the voice that
-            is lower on the staff is a higher pitch than the voice that is
-            higher on the staff. This is desginated with a "-" prefix.
-        :param bool compound: whether to use compound (True, default) or simple
-            (False) intervals. In the case of simple diatonic intervals, it
-            simplifies to within the octave, so octaves don't get simplified to
-            unisons. But for semitonal intervals, an interval of an octave
-            (12 semitones) would does get simplified to a unison (0).
-        :param int/float unit: regular durational interval at which to measure
-            melodic intervals. See the documentation of the `regularize` method
-            for more about this.
-        :param bool end: True (default) associates each melodic interval with
-            the offset of the second note in the interval. Pass False to
-            change this to the first note in each interval.
-        :param pandas DataFrame df: None (default) is the standard behavior.
-            Pass a df of note and rest strings to calculate the melodic interals
-            in any dataframe. For example, if you want to find the melodic
-            intervals between notes, but don't want to count repetitions of the
-            same note as an interval, first run .notes(combineUnisons=True)
-            then pass that result as the df parameter for .melodic. Results
-            are not cached in this case.
-        :returns: `pandas.DataFrame` of melodic intervals in each part
+        Parameters
+        ----------
+        kind : str, optional (default 'q')
+            Use "q" (default) for diatonic intervals with quality, "d" for
+            diatonic intervals without quality, "z" for zero-indexed diatonic
+            intervals without quality (i.e. unison = 0, second = 1, etc.), or
+            "c" for chromatic intervals. Only the first character is used,
+            and it's case insensitive.
+        directed : bool, optional (default True)
+            Defaults to True which shows that the voice that is lower on the
+            staff is a higher pitch than the voice that is higher on the
+            staff. This is designated with a "-" prefix.
+        compound : bool, optional (default True)
+            Whether to use compound (True, default) or simple (False)
+            intervals. In the case of simple diatonic intervals, it
+            simplifies to within the octave, so octaves don't get simplified
+            to unisons. But for semitonal intervals, an interval of an octave
+            (12 semitones) does get simplified to a unison (0).
+        unit : int or float, optional (default 0)
+            Regular durational interval at which to measure melodic
+            intervals. See the documentation of the `regularize` method for
+            more about this.
+        end : bool, optional (default True)
+            True (default) associates each melodic interval with the offset
+            of the second note in the interval. Pass False to change this to
+            the first note in each interval.
+        df : pandas.DataFrame, optional
+            None (default) is the standard behavior. Pass a df of note and
+            rest strings to calculate the melodic intervals in any dataframe.
+            For example, if you want to find the melodic intervals between
+            notes, but don't want to count repetitions of the same note as an
+            interval, first run .notes(combineUnisons=True) then pass that
+            result as the df parameter for .melodic. Results are not cached
+            in this case.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Melodic intervals in each part.
         '''
         kind = kind[0].lower()
         kind = {'s': 'c'}.get(kind, kind)
@@ -1514,6 +1594,7 @@ class ImportedPiece:
         '''
         It is possible to select:
 
+        ```python
         length=4
         combineUnisons=True
         kind="d"
@@ -1521,20 +1602,27 @@ class ImportedPiece:
         variableLength=False
         suggestedPattern=None
         useEntries=True
+        ```
 
+        Examples
+        --------
         Graphing the Interval Families with `length=4` and `useEntries=True` by default:
 
-        Typical use:
+        ```python
         graphIntervalFamilies()
+        ```
 
         Another useful option is `variableLength=True`, therefore including **all unique patterns up to the specified length**:
 
+        ```python
         graphIntervalFamilies(length=4, variableLength=True)
+        ```
 
         We can narrow down patterns of interested by specifying `suggestedPattern=Tuple(Str*)`, for example looking for **all patterns that start with `-2, -2`**:
 
+        ```python
         graphIntervalFamilies(length=4, variableLength=True, suggestedPattern=("4", "2"))
-
+        ```
         '''
         # runs sns plot layout
         self._plot_default()
@@ -1690,27 +1778,39 @@ class ImportedPiece:
         and the two voices separated with an underscore, e.g. "Bassus_Tenor". If againstLow
         is True, intervals will be measured against the lowest sounding note.
 
-        :param str kind: use "q" (default) for diatonic intervals with quality,
-            "d" for diatonic intervals without quality, "z" for zero-indexed
-            diatonic intervals without quality (i.e. unison = 0, second = 1,
-            etc.), or "c" for chromatic intervals. Only the first character is
-            used, and it's case insensitive.
-        :param bool directed: defaults to True which shows that the voice that
-            is lower on the staff is a higher pitch than the voice that is
-            higher on the staff. This is desginated with a "-" prefix.
-        :param bool compound: whether to use compound (True, default) or simple
-            (False) intervals. In the case of simple diatonic intervals, it
-            simplifies to within the octave, so octaves don't get simplified to
-            unisons. But for semitonal intervals, an interval of an octave
-            (12 semitones) would does get simplified to a unison (0 semitones).
-        :param bool againstLow: if False (default) harmonic intervals between
-            all pairs of voices will be returned. If True harmonic intervals of
-            each voice against the lowest sounding note at each moment is returned.
-        :param pandas DataFrame df: None (default) is the standard behavior. Pass a
-            df of note and rest strings or music21 objects to calculate the harmonic
-            interals in any dataframe.
-        :returns: `pandas.DataFrame` of harmonic intervals in each pair in the
-            format specified by the `kind`, `directed`, and `compound` parameters.
+        Parameters
+        ----------
+        kind : str, optional (default 'q')
+            Use "q" (default) for diatonic intervals with quality, "d" for
+            diatonic intervals without quality, "z" for zero-indexed diatonic
+            intervals without quality (i.e. unison = 0, second = 1, etc.), or
+            "c" for chromatic intervals. Only the first character is used,
+            and it's case insensitive.
+        directed : bool, optional (default True)
+            Defaults to True which shows that the voice that is lower on the
+            staff is a higher pitch than the voice that is higher on the
+            staff. This is designated with a "-" prefix.
+        compound : bool, optional (default True)
+            Whether to use compound (True, default) or simple (False)
+            intervals. In the case of simple diatonic intervals, it
+            simplifies to within the octave, so octaves don't get simplified
+            to unisons. But for semitonal intervals, an interval of an octave
+            (12 semitones) does get simplified to a unison (0 semitones).
+        againstLow : bool, optional (default False)
+            If False (default) harmonic intervals between all pairs of
+            voices will be returned. If True harmonic intervals of each
+            voice against the lowest sounding note at each moment is
+            returned.
+        df : pandas.DataFrame, optional
+            None (default) is the standard behavior. Pass a df of note and
+            rest strings or music21 objects to calculate the harmonic
+            intervals in any dataframe.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Harmonic intervals in each pair in the format specified by the
+            `kind`, `directed`, and `compound` parameters.
         '''
         kind = kind[0].lower()
         kind = {'s': 'c'}.get(kind, kind)
@@ -1839,15 +1939,24 @@ class ImportedPiece:
         """
         Generate a list of series that align the notes from one ngrams according
         to the first or the last note's offset.
-            :param pandas.Series col: A column that originally contains
-                notes and rests.
-            :param int n: The size of the ngram.
-            :param str offsets: We could input 'first' if we want to group
-                the ngrams by their first note's offset, 'last' if we
-                want to group the ngram by the last note's offset, or 'both' if we
-                want to multi-index on both of these simultaneously.
-            :return pandas.DataFrame: a DataFrame of ngrams sorted by the
-                first or last note's offset, or by both with a multi-index.
+
+        Parameters
+        ----------
+        col : pandas.Series
+            A column that originally contains notes and rests.
+        _n : int
+            The size of the ngram.
+        offsets : str
+            We could input 'first' if we want to group the ngrams by their
+            first note's offset, 'last' if we want to group the ngram by the
+            last note's offset, or 'both' if we want to multi-index on both
+            of these simultaneously.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame of ngrams sorted by the first or last note's offset,
+            or by both with a multi-index.
         """
         if offsets == 'both':
             first = pd.concat([col.shift(-i) for i in range(_n)], axis=1, sort=True)
@@ -1957,8 +2066,10 @@ class ImportedPiece:
         are grouped at the offset of the first event in the window. For example,
         to get 4-grams of melodic intervals:
 
+        ```python
         ip = ImportedPiece('path_to_piece')
         ngrams = ip.ngrams(df=ip.melodic(), n=4)
+        ```
 
         For the "module" mode (interval successions) you must either pass dataframes
         to both `df` and `other`, or leave both as None (default). In
@@ -1969,8 +2080,10 @@ class ImportedPiece:
         harmonic methods (see those methods for an explanation of those
         settings). This makes it easy to make contrapuntal-module ngrams, e.g.:
 
+        ```python
         ip = ImportedPiece('path_to_piece')
         ngrams = ip.ngrams()
+        ```
 
         There is a special case for "open-ended" module ngrams. Set n=1 and the
         module ngrams will show the vertical interval between two voices,
@@ -1990,8 +2103,10 @@ class ImportedPiece:
         parameter. Here's an example that will generate contrapuntal-module
         ngrams at regular minim (half-note) intervals.
 
+        ```python
         ip = ImportedPiece('path_to_piece')
         ngrams = ip.ngrams(unit=2)
+        ```
 
         Otherwise, you can give specific `df` and/or `other` DataFrames in which
         case the `interval_settings` parameter will be ignored. Also, you can
@@ -2096,8 +2211,11 @@ class ImportedPiece:
         given amount. This is like Invertible Counterpoint, but the parts have
         not actually crossed.
 
-        Usage:
+        Examples
+        --------
+        ```python
         piece.ic('7_1:-2, 6_-2:2, 8')
+        ```
 
         Notice that the intervals used must be diatonic and without quality.
 
@@ -2635,10 +2753,11 @@ class ImportedPiece:
         - customOrder: the custom order parameter. Takes in a List of Strings
         - renderer: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc
 
-        Typical use:
-
+        Examples
+        --------
+        ```python
         cadenceRadarPlot(combinedType=False, displayAll=True, renderer="iframe")
-
+        ```
         '''
     # defining the Default display order
         order_array = ["D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F", "C", "G"]
@@ -2710,10 +2829,11 @@ class ImportedPiece:
         - customOrder: specify a custom order to be used for the plot (a dictionary: e.g. {"A":0, "B":1 ...}
         - includeLegend: flag to display legend; Default set to True
 
-        Typical use:
-
+        Examples
+        --------
+        ```python
         cadenceProgressPlot(includeType=True)
-
+        ```
         '''
         # runs sns plot layout
         self._plot_default()
@@ -2848,9 +2968,12 @@ class ImportedPiece:
 
         'full_hr' (which is True default).  When full_hr=True the method will find any passage where _all active voices_ share the same durational ngram and syllables; if full_hr=False the method will find any passage where even _two voices_ share the same durational ngram and the same syllables.
 
-        Typical use:
-
-        piece.homorhythm() or piece.homorhythm(ngram_length=4, full_hr=True)
+        Examples
+        --------
+        ```python
+        piece.homorhythm()
+        piece.homorhythm(ngram_length=4, full_hr=True)
+        ```
 
         Also see verovioHomorhythm() for a function that prints results.
 
@@ -2958,12 +3081,16 @@ class ImportedPiece:
         """
         Return a dataframe of True, False, or NaN values which can be used as
         a mask (filter). When applied to another dataframe, only the True cells
-        in the mask will be kept. Usage:
+        in the mask will be kept.
 
+        Examples
+        --------
+        ```python
         piece = importScore('path_to_piece')
         mask = piece.entryMask()
         df = piece.notes()
         df[mask].dropna(how='all')
+        ```
 
         If fermatas is set to True (default), anything coming immediately after
         a fermata will also be counted as an entry.
@@ -3357,9 +3484,12 @@ class ImportedPiece:
         - for faster (and simpler) listing of points of imitation without hidden forms, use `include_hidden_types == False` (= default)
 
 
-        Sample usage:
+        Examples
+        --------
+        ```python
         piece = importScore('url')
         piece.presentationTypes(head_flex=1)
+        ```
 
         Note that the output of this function can be used with verovioPtypes to show
         each cadence in staff notation.
@@ -3526,22 +3656,24 @@ class ImportedPiece:
         cadence, beat of the bar in which the final tone is heard, and evaded
         status.
 
-        Usage:
-
+        Examples
+        --------
         You will need to run cadences = piece.cadences() in order to build the
-        initial set of results.
+        initial set of results, then pass these results to the Verovio print function:
 
-        Then pass these results to the Verovio print function:
+        ```python
+        cadences = piece.cadences()
+        piece.verovioCadences(cadences)
+        ```
 
-        verovioCadences(cadences)
-
-        It is also possible to pass a filtered list of cadences to this function 
+        It is also possible to pass a filtered list of cadences to this function
         by specifying a df into verovioCadences() as shown below:
 
+        ```python
         cadences = piece.cadences()
         cadences_filtered = cadences[cadences['Tone'] == 'G']
         piece.verovioCadences(cadences_filtered)
-
+        ```
         """
         if self.path.startswith('Music_Files/'):
             text_file = open(self.path, "r")
@@ -3602,8 +3734,9 @@ class ImportedPiece:
 
         For last measure you can also use '-1', thus for all measures:
 
-        verovioPrintExample(1, -1)
-
+        ```python
+        piece.verovioPrintExample(1, -1)
+        ```
         """
         if self.path.startswith('Music_Files/'):
             text_file = open(self.path, "r")
@@ -3659,12 +3792,14 @@ class ImportedPiece:
         presentation type, voices in order of entry, number of entries, the soggetti
         , melodic entry intervals, time entry intervals.
 
-        Usage:
-
+        Examples
+        --------
         You must first run p_types to build the initial list of results and define
         these as a new variable name "p_types":
 
+        ```python
         p_types = piece.presentationTypes()
+        ```
 
         Note that there are many options in the presentationTypes methods to
         determine the length of soggetti, degree of head or body flex, status
@@ -3673,9 +3808,9 @@ class ImportedPiece:
 
         After any additional filtering, pass the results of that work to verovioPtypes:
 
+        ```python
         piece.verovioPtypes(p_types)
-
-
+        ```
         """
         if self.path.startswith('Music_Files/'):
             text_file = open(self.path, "r")
@@ -3749,37 +3884,53 @@ class ImportedPiece:
     # July 2022 Addition for printing hr types with Verovio
     def verovioHomorhythm(self, df=None, ngram_length=4, full_hr=True):
         '''
-        Prints HR passages for a given piece with Verovio, based on imported piece and 
+        Prints HR passages for a given piece with Verovio, based on imported piece and
         other parameters.
 
-        Users can supply either of two arguments:
+        Parameters
+        ----------
+        df : pandas.DataFrame, optional
+            None (default) runs `piece.homorhythm()` internally using
+            `ngram_length` and `full_hr`. Alternatively, pass the (optionally
+            filtered) result of `piece.homorhythm()` to render just those
+            passages.
+        ngram_length : int, optional (default 4)
+            Determines the number of durations and syllables that must be in
+            common among the voices in order to be marked as HR.
+        full_hr : bool, optional (default True)
+            When True the method will find any passage where _all active
+            voices_ share the same durational ngram and syllables; if False
+            the method will find any passage where even _two voices_ share
+            the same durational ngram and the same syllables.
 
-        'ngram_length' (which is 4 by default, and determines the number of durations and syllables that must be in common among the voices in order to be marked as HR);
-
-        'full_hr' (which is True default).  When full_hr=True the method will find any passage where _all active voices_ share the same durational ngram and syllables; if full_hr=False the method will find any passage where even _two voices_ share the same durational ngram and the same syllables.
-
-        Typical use:
-
+        Examples
+        --------
+        ```python
         piece.verovioHomorhythm()
+        ```
 
-        OR with custom parameters
+        Or with custom parameters:
 
+        ```python
         piece.verovioHomorhythm(ngram_length=5, full_hr=False)
+        ```
 
-        It is also to run piece.homorhythm(), then filter the results in some way and pass those results to the print function:
+        It is also possible to run `piece.homorhythm()`, then filter the
+        results in some way and pass those results to the print function:
 
-        #run hr function and convert hr['syllable_set'] to string
+        ```python
+        # run hr function and convert hr['syllable_set'] to string
         hr = piece.homorhythm(ngram_length=6, full_hr=True).fillna('')
         hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
 
-        #supply names of voices.  They must match the voice names in `piece.notes.columns()` 
+        # supply names of voices. They must match the voice names in `piece.notes.columns()`
         chosen_voices = ["Tenor", "Bassus"]
-        #filter the results for hr passages involving chosen voices:
+        # filter the results for hr passages involving chosen voices:
         hr_with_chosen_voices = hr[hr.apply(lambda x: hr['hr_voices'].str.contains('|'.join(chosen_voices)))].dropna()
-        
-        #render just the hr_with_chosen_voices using `piece.verovioHomorhythm()`:
-        piece.verovioHomorhythm(hr_with_chosen_voices)
 
+        # render just the hr_with_chosen_voices using `piece.verovioHomorhythm()`:
+        piece.verovioHomorhythm(hr_with_chosen_voices)
+        ```
         '''
         if self.path.startswith('Music_Files/'):
             text_file = open(self.path, "r")
@@ -4823,24 +4974,73 @@ class CorpusBase:
         parameter. These parameters will be the same for each ImportedPiece
         object as it gets the `func` applied to its score.
 
-        # Example of basic analysis with no added parameters:
+        When passing a parameter that is a dataframe, a different dataframe
+        is needed for each piece in the corpus. This applies to the parameters
+        called "df", "mask_df", and "other". In these cases you should pass a
+        list of dataframes in batch's kwargs for that parameter. This makes it
+        easy to chain uses of the .batch method.
+
+        By default, .batch will replace columns that consist of part names (like .melodic() results)
+        or combinations of part names (like .harmonic() results) with numbers starting with "1" for
+        the highest part on the staff, "2" for the second highest, etc. This is useful when combining
+        results from pieces with parts that have different names. You can override this and keep the
+        original part names in the columns by setting the `number_parts` parameter to False.
+
+        Parameters
+        ----------
+        func : callable
+            An unbound method from the ImportedPiece class, e.g.
+            `ImportedPiece.notes` (note: no parentheses).
+        kwargs : dict, optional
+            Keyword arguments to pass to `func` for each piece. Only include
+            the parameters you need to override. Dataframe-valued parameters
+            ("df", "mask_df", "other") should be passed as a list of
+            dataframes, one per piece in the corpus.
+        metadata : bool, optional (default True)
+            Whether to add Composer/Title/Date columns to each result.
+        number_parts : bool, optional (default True)
+            Whether to replace part-name columns with numbers ("1" for the
+            highest part on the staff, "2" for the second highest, etc.) so
+            that results from pieces with differently named parts can be
+            combined. Pass False to keep the original part names.
+        verbose : bool, optional (default False)
+            If True, prints the function being called and the piece being
+            analyzed as the batch runs. Useful for pinpointing a piece that
+            triggers a bug.
+
+        Returns
+        -------
+        list
+            One result per piece in the corpus, in the order of `self.scores`.
+
+        Examples
+        --------
+        Basic analysis with no added parameters:
+
+        ```python
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
         func = ImportedPiece.notes  # <- NB there are no parentheses here
         list_of_dfs = corpus.batch(func)
+        ```
 
-        # Example passing some parameters to `func` calls. Note that you only add
-        # the parameters to kwargs that you need to pass. This example returns a
-        # list of dataframes of the melodic intervals of each piece in the corpus,
-        # and in this case will be chromatic and undirected intervals because of
-        # parameters passed in kwargs.
+        Passing some parameters to `func` calls. Note that you only add the
+        parameters to kwargs that you need to pass. This example returns a
+        list of dataframes of the melodic intervals of each piece in the
+        corpus, and in this case will be chromatic and undirected intervals
+        because of parameters passed in kwargs.
+
+        ```python
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
         func = ImportedPiece.melodic  # <- NB there are no parentheses here
         kwargs = {'kind': 'c', 'directed': False}
         list_of_dfs = corpus.batch(func, kwargs)
+        ```
 
-        # Example using batch to count the cadence types from multiple pieces:
+        Using batch to count the cadence types from multiple pieces:
+
+        ```python
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
         list_of_dfs = corpus.batch(ImportedPiece.cadences, metadata=False)
@@ -4849,17 +5049,13 @@ class CorpusBase:
         cadTypeCounts = combined_df['CadType'].value_counts()
         # Get the number of cadences per Beat level:
         cadTypeCounts = combined_df['Beat'].value_counts()
+        ```
 
-        When passing on a parameter that is a dataframe, a different dataframe
-        is needed for each piece in the corpus. This applies to the parameters
-        called "df", "mask_df", and "other". In these cases you should pass a
-        list of dataframes in batch's kwargs for that parameter. This makes it
-        easy to chain uses of the .batch method.
+        Using .batch to first get the melodic intervals of each piece in a
+        corpus, and then pass that list of dataframes on to get melodic
+        ngrams for each piece:
 
-        # Example using .batch to first get the melodic intervals of each piece
-        # in a corpus, and then pass that list of dataframes on to get melodic
-        # ngrams for each piece:
-
+        ```python
         corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                              'https://crimproject.org/mei/CRIM_Model_0009.mei'])
         func1 = ImportedPiece.melodic
@@ -4867,20 +5063,14 @@ class CorpusBase:
         list_of_dfs = corpus.batch(func=func1, kwargs={'end': False}, metadata=False)
         func2 = ImportedPiece.ngrams
         list_of_melodic_ngrams = corpus.batch(func=func2, kwargs={'n': 4, 'df': list_of_dfs})
+        ```
 
-        By default, .batch will replace columns that consist of part names (like .melodic() results)
-        or combinations of part names (like .harmonic() results) with numbers starting with "1" for
-        the highest part on the staff, "2" for the second highest, etc. This is useful when combining
-        results from pieces with parts that have different names. You can override this and keep the
-        original part names in the columns by setting the `number_parts` parameter to False.
-        For example:
+        Overriding `number_parts`:
 
+        ```python
         list_of_dfs_with_numbers_for_part_names = corpus.batch(ImportedPiece.melodic)
         list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, number_parts=False)
-
-        You can also set verbose=True if you want to print out the function that you're calling
-        and the piece you're analyzing during the analysis. This can be useful to pinpoint a
-        piece that is triggering a bug.
+        ```
         '''
         post = []
         dfs = ('df', 'mask_df', 'other')
@@ -4922,19 +5112,21 @@ class CorpusBase:
         If you do, the CorpusBase object you pass will be used as that group of pieces in the
         analysis. If either or both of these parameters is omitted, the calling CorpusBase
         object's scores will be used. For clarity, the "calling" CorpusBase object is what goes
-        to the left of the period in:
-        calling_corpus.modelFinder(...
+        to the left of the period in: `calling_corpus.modelFinder(...)`
         Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
         parameters are omitted, this means that if you omit both, i.e.
 
+        ```python
         calling_corpus.modelFinder()
+        ```
 
         ... this will compare every score the corpus to every other score in the corpus. You
         should do this if you want to be able to consider every piece a potential model and
         a potential derivative mass.
 
-        Typical Use:
-
+        Examples
+        --------
+        ```python
         model_list = ['https://crimproject.org/mei/CRIM_Model_0010.mei',
               'https://crimproject.org/mei/CRIM_Model_0011.mei',
              'https://crimproject.org/mei/CRIM_Model_0014.mei']
@@ -4946,9 +5138,7 @@ class CorpusBase:
         mass_corp = CorpusBase(mass_list)
         cross_plot = mod_corp.modelFinder(masses=mass_corp, models=mod_corp)
         cross_plot
-
-
-
+        ```
         """
         if models is None:
             models = self
@@ -5006,7 +5196,7 @@ class CorpusBase:
 
     def moduleFinder(self, models=None, masses=None, n=4, ic=False):
         """
-        Like the modelFindfer, this compares a corpus of pieces, returning
+        Like the modelFinder, this compares a corpus of pieces, returning
         a table of percentages of shared ngrams.
 
         In this case the ngrams are contrapuntal modules.
@@ -5015,18 +5205,21 @@ class CorpusBase:
         If you do, the CorpusBase object you pass will be used as that group of pieces in the
         analysis. If either or both of these parameters is omitted, the calling CorpusBase
         object's scores will be used. For clarity, the "calling" CorpusBase object is what
-        goes to the left of the period in: calling_corpus.modelFinder(...
+        goes to the left of the period in: `calling_corpus.moduleFinder(...)`
         Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
         parameters are omitted, this means that if you omit both, i.e.
 
-        calling_corpus.modelFinder()
+        ```python
+        calling_corpus.moduleFinder()
+        ```
 
         ... this will compare every score the corpus to every other score in the corpus. You
         should do this if you want to be able to consider every piece a potential model and a
         potential derivative mass.
 
-        Typical Use:
-
+        Examples
+        --------
+        ```python
         model_list = ['https://crimproject.org/mei/CRIM_Model_0010.mei',
               'https://crimproject.org/mei/CRIM_Model_0011.mei',
              'https://crimproject.org/mei/CRIM_Model_0014.mei']
@@ -5038,6 +5231,7 @@ class CorpusBase:
         mass_corp = CorpusBase(mass_list)
         cross_plot = mod_corp.moduleFinder(masses=mass_corp, models=mod_corp)
         cross_plot
+        ```
         """
         if models is None:
             models = self
@@ -5105,10 +5299,11 @@ class CorpusBase:
         - customOrder: the custom order parameter. Takes in a List of Strings
         - renderer: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc
 
-        Typical use:
-
+        Examples
+        --------
+        ```python
         compareCadenceRadarPlots(combinedType=False, displayAll=True, renderer="iframe")
-
+        ```
         '''
 
         # specifying the Default order:
@@ -5206,10 +5401,11 @@ class CorpusBase:
         - customOrder: specify a custom order to be used for the plot (a dictionary: e.g. {"A":0, "B":1 ...}
         - includeLegend: flag to display legend; Default set to True
 
-        Typical use:
-
+        Examples
+        --------
+        ```python
         compareCadenceProgressPlots(includeType=True)
-
+        ```
         '''
 
         # runs sns plot layout
@@ -5331,6 +5527,7 @@ class CorpusBase:
         '''
         It is possible to select:
 
+        ```python
         length=4
         combineUnisons=True
         kind="d"
@@ -5338,20 +5535,27 @@ class CorpusBase:
         variableLength=False
         suggestedPattern=None
         useEntries=True
+        ```
 
+        Examples
+        --------
         Comparing the Interval Families with `length=4` and `useEntries=True` by default:
 
-        Typical use:
+        ```python
         compareIntervalFamilies(length=4)
+        ```
 
         Another useful option is `variableLength=True`, therefore including **all unique patterns up to the specified length**:
 
+        ```python
         compareIntervalFamilies(length=4, variableLength=True)
+        ```
 
         We can narrow down patterns of interested by specifying `suggestedPattern=Tuple(Str*)`, for example looking for **all patterns that start with `-2, -2`**:
 
+        ```python
         compareIntervalFamilies(length=4, variableLength=True, suggestedPattern=("4", "2"))
-
+        ```
         '''
 
         # runs sns plot layout

@@ -1,14 +1,17 @@
 # CRIM Intervals
 
-This is a proof-of-concept API reference site generated from the docstrings
-in `crim_intervals`, built with [MkDocs](https://www.mkdocs.org/) +
-[Material](https://squidfunk.github.io/mkdocs-material/) +
-[mkdocstrings](https://mkdocstrings.github.io/).
+This is the **live** API reference for `crim_intervals`, built with
+[MkDocs](https://www.mkdocs.org/) + [Material](https://squidfunk.github.io/mkdocs-material/)
++ [mkdocstrings](https://mkdocstrings.github.io/). Every page is generated
+directly from the docstrings in the current code, so it always reflects
+what's actually in the repository rather than a separately maintained
+description. See the API Reference section for the full class and function
+listing.
 
-For task-oriented walkthroughs, see the existing tutorials in the `tutorial/`
-folder of this repository. This site is meant to complement those tutorials
-with a browsable, always-up-to-date reference for the classes and functions
-in the codebase.
+## Tutorials
 
-Currently scoped to `main_objs.py` as a pilot — see
-[ImportedPiece](api/main_objs.md) in the API Reference.
+This reference site documents *what* each class and function does. For
+task-oriented, worked examples of *how* to use `crim_intervals` in practice,
+see the CRIM Tutorials in this repository's
+[`tutorial/`](https://github.com/HCDigitalScholarship/intervals/tree/main/tutorial)
+folder.

@@ -20,6 +20,13 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 class NgramColorManager:
+    """
+    Generates visually distinct color palettes for ngram/pattern charts.
+
+    Uses a curated 12-color qualitative palette (Paul Tol's) for up to 12
+    colors, then extends with golden-ratio HSV sampling for any additional
+    colors needed.
+    """
     # Paul Tol's qualitative palette — 12 colors varying hue and saturation
     # for maximum human distinguishability. See https://personal.sron.nl/~pault/
     CURATED_12 = [
@@ -56,6 +63,14 @@ class NgramColorManager:
         return colors
 
 class ColorManager:
+    """
+    Assigns and caches a consistent color per pattern across a session.
+
+    The first time a pattern string is seen it is assigned a color (via
+    `NgramColorManager`'s palette generator); subsequent lookups for the
+    same pattern return the same color, so a pattern keeps its color across
+    multiple charts.
+    """
     def __init__(self):
         self.pattern_colors = {}
         # Use the advanced color generator from NgramColorManager

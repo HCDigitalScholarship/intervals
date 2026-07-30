@@ -91,7 +91,38 @@ def tuple_to_string(value, separator=', '):
 
 
 def sort_pitch_values(values, order=None, include_rests=True):
-    """Return a list of pitch values sorted according to a supplied order."""
+    """
+    Return a list of pitch values sorted according to a supplied order.
+
+    Parameters
+    ----------
+    values : list, tuple, set, pandas.Series, or scalar
+        The pitch values to sort.
+    order : list, optional
+        The reference ordering to sort `values` against. Defaults to
+        `pitch_order` if not passed. Available options defined in this
+        module:
+
+        - `pitch_order` (default): full chromatic gamut across octaves 2-6,
+          e.g. 'C2', 'C#2', 'D-2', ... 'C6'.
+        - `recta_order`: the same range restricted to musica recta pitches,
+          omitting a handful of chromatic alterations found in `pitch_order`
+          (e.g. 'C2', 'G-2', 'A#2').
+        - `pitch_class_order`: pitch classes without octave, plus 'Rest',
+          e.g. 'C', 'C#', 'D-', ... 'B#', 'Rest'.
+        - `pitch_class_order_no_rests`: `pitch_class_order` with 'Rest'
+          removed.
+        - `pitch_class_order_with_rests`: alias for `pitch_class_order`,
+          kept for symmetry with `pitch_class_order_no_rests`.
+    include_rests : bool, optional (default True)
+        Whether rest tokens ('Rest', 'r', '-', etc.) sort in place (True) or
+        are pushed after all pitched values (False).
+
+    Returns
+    -------
+    list
+        `values` sorted according to `order`, with NaNs dropped.
+    """
     if values is None:
         return []
     if isinstance(values, pd.Series):

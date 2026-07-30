@@ -58,16 +58,16 @@ def _directed_name_from_note_strings(note1, note2):
 
 # An extension of the music21 note class with more information easily accessible
 def importScore(path, recurse=False, verbose=False):
-    '''
-    Import piece or group of pieces and return an ImportedPiece or CorpusBase object respectively.
+    """
+    Import piece or group of pieces and return an `ImportedPiece` or `CorpusBase` object respectively.
     Return None if there is an error. This function accepts piece urls, and local paths. A list of
     the accepted file formats can be found in the accepted_filetypes tuple. This function also
     accepts directories and will import all the score files within a passed directory. Set
-    recurse=True (default False) to import all score files from the passed directory *and* those
-    of all subdirectories. Set verbose=True (default False) to print out confirmation of import
+    `recurse=True (default False) to import all score files from the passed directory *and* those
+    of all subdirectories. Set `verbose=True` (default False) to print out confirmation of import
     success for each piece. If any errors are encountered, these issues will be printed out
     regardless of verbose setting.
-    '''
+    """
     if os.path.isdir(path):
         files = os.listdir(path)
         files = [os.path.join(path, file) for file in files]
@@ -142,7 +142,7 @@ def importScore(path, recurse=False, verbose=False):
 def Crimport(path, recurse=False, verbose=False):
     '''
     Better naming convention for importing single files or directories of files. This is
-    an alias for importScore. See that method's doc string for instructions.'''
+    an alias for `importScore`. See that method's doc string for instructions.'''
     return importScore(path, recurse, verbose)
 
 def _getCVFTable():
@@ -280,7 +280,7 @@ class ImportedPiece:
         Return the passed df with the part names in the columns replaced with numbers
         where 1 is the highest staff. Works with single parts and multi-part column names.
         The df's column names are changed in place, so make a copy before calling this method
-        if you don't want your original df to get changed.'''
+        if you want to keep the original.'''
         _dict = self._getPartNumberDict()
         cols = ['_'.join(_dict.get(part, part) for part in col.split('_')) for col in df.columns]
         res = df.copy()
@@ -311,19 +311,26 @@ class ImportedPiece:
         control at what regular distance observations will be made. Durations
         are measured according to the music21 convention where:
 
-        eighth note = .5
-        quarter note = 1
-        half note = 2
-        etc.
+        * eighth note = .5
+        * quarter note = 1
+        * half note = 2
+        * whole note = 4
 
         For example, if you pass a dataframe of the notes and rests of a piece,
-        and set `unit` to 4, a new whatever is "sounding" (whether a note or a
+        and set `unit` to 4, a new df that records whatever is "sounding" (whether a note or a
         rest) at every regular whole note will be kept, and any intervening
-        notes or rests will be removed. A breve would get renotated as two
+        notes or rests will be removed. A breve would be renotated as two
         whole notes.
 
+        Typical use:
+
+        ```python
+        nr = importedPiece.notes()
+        nr_reg = importedPiece.regularize(nr, unit=4)
+        ```
+
         Regularization also works with non-integer values. So if you wanted to
-        regularize at the swung eigth note, for example, you could set:
+        regularize at the swung eighth note, for example, you could set:
 
         `unit=1/3`
         '''
@@ -357,10 +364,16 @@ class ImportedPiece:
     def durations(self, df=None, n=1, mask_df=None):
         '''
         If no arguments are passed, return a `pandas.DataFrame` of floats giving
-        the duration of notes and rests in each part where 1 = quarternote,
-        1.5 = a dotted quarter, 4 = a whole note, etc. If a df is passed, then
-        return a df of the same shape giving the duration of each of the cells
-        of this df. This is useful if you want to know what the durations of
+        the duration of notes and rests in each part:
+
+         * 1 = quarternote,
+         * 1.5 = a dotted quarter,
+         * 4 = a whole note, etc.
+       
+        If a df is passed, then return a df of the same shape giving the duration 
+        of each of the cells of this df.
+        
+        This is useful if you want to know what the durations of
         something other than single notes and rests, such as the durations of
         intervals. E.g.:
 
@@ -375,7 +388,7 @@ class ImportedPiece:
 
         If you pass a df, it will sum
         the durations 'Rest' and non-Rest cell, provided they are in the same
-        n-sized window. For example, set n=3 if you wanted to get the durations
+        n-sized window. For example, set `n=3` if you wanted to get the durations
         of all 3-event-long pair-wise harmonic events:
 
         ```python
@@ -385,19 +398,19 @@ class ImportedPiece:
 
         Setting n to -1 sums the durations of all adjacent non-rest events,
         excluding NaNs. You could use this to find the durations of all melodies
-        in a piece. Note that the results of .notes() will be used for the
+        in a piece. Note that the results of `piece.notes() will be used for the
         `df` parameter if none is provided:
 
         ```python
         dur = importedPiece.durations(n=-1)
         ```
 
-        You can also pass a `mask_df`, which will serve as a filter, only
-        keeping values at the same indecies (i.e. index and columns) as mask_df.
+        You can also pass a `mask_df`, which will serve as a Boolean filter, only
+        keeping values at the same indices (i.e. index and columns) as `mask_df.
         This is needed to get the durations of ngrams.
 
         To get the durations of ngrams, pass the same value of n and the same
-        dataframe you passed to .ngrams() as the `n` and `df` parameters,
+        dataframe you passed to `piece.ngrams()` as the `n` and `df` parameters,
         then pass your dataframe of ngrams as the `mask_df`. For example:
 
         ```python
@@ -429,8 +442,8 @@ class ImportedPiece:
     def lyrics(self, strip=True):
         '''
         Return a dataframe of the lyrics associated with each note in the piece.
-        If `strip` is True (default), then the lyrics will be stripped of leading
-        and trailing whitespace and dashes. If `strip` is False, then the lyrics will
+        If `strip` is `True` (default), then the lyrics will be stripped of leading
+        and trailing whitespace and dashes. If `strip` is `False`, then the lyrics will
         be returned as they are in the score. Notes without lyrics are shown as NaN.
         '''
         key = ('Lyrics', strip)
@@ -463,10 +476,10 @@ class ImportedPiece:
         Return a table of the notes and rests in the piece. Rests are
         designated with the string "Rest". Notes are shown such that middle C
         is "C4".
-        If `combineRests` is True (default), non-first consecutive rests will be
+        If `combineRests` is `True` (default), non-first consecutive rests will be
         removed, effectively combining consecutive rests in each voice.
         `combineUnisons` works the same way for consecutive attacks on the same
-        pitch in a given voice, however, `combineUnisons` defaults to False.
+        pitch in a given voice, however, `combineUnisons` defaults to `False`.
         '''
         if 'Notes' not in self.analyses:
             df = self._getM21ObjsNoTies().map(self._noteRestHelper, na_action='ignore')
@@ -489,7 +502,7 @@ class ImportedPiece:
 
     def fermatas(self):
         '''
-        Get all the fermatas in a piece. A fermata is designated by a True value.
+        Get all the fermatas in a piece. A fermata is designated by a `True` value.
         '''
         if 'Fermatas' not in self.analyses:
             df = self._m21Expressions().map(
@@ -577,7 +590,10 @@ class ImportedPiece:
 
     def combineEmaAddresses(self, emas):
         '''
-        Given a list of EMA addresses, `emas`, return a single ema address that combines them into one.
+        EMA stands for Enhancing Music Addressability specification, a system we use with the OMAS API
+        to cite and render any combination of musical events at a given set of Beats, Measures and Staves.
+        Given a list of EMA addresses, `emas`, return a single ema address that combines them into one.  
+        Learn more about EMA and OMAS at https://music-encoding.org/projects/ema.html.
         '''
         if isinstance(emas, str):
             return emas
@@ -724,15 +740,17 @@ class ImportedPiece:
     # test
     def emaAddresses(self, df=None, mode='', combine_unisons=None):
         '''
-        Return a df that's the same shape as the passed df. Currently only works for 1D ngrams,
+        Return a df that is the same shape as the passed df. Currently only works for 1D ngrams,
         like melodic ngrams. The `mode` parameter is detected automatically if it isn't passed.
 
-        Examples
+        The `mode` parameter can be set to 'melodic', 'cadences', 'cvfs', or 'homorhythm' to specify the type of EMA addresses to return. If `mode` is not specified, it will be inferred based on the structure of the input dataframe.
+
+        Example usage:
         --------
         ```python
         mel = piece.melodic()
         ng = piece.ngrams(df=mel, n=4, offsets='both')
-        ema = piece.emaAddresses(df=ng)
+        ema = piece.emaAddresses(df=ng, mode='melodic')
         ```
         '''
         if isinstance(df, pd.DataFrame):
@@ -815,6 +833,10 @@ class ImportedPiece:
         will try to construct one based on the piece's metadata. The resulting
         dataframe will have the same data results, but instead of plain text
         they will be links to highlighted examples of each result.
+
+        Learn more about the EMA React Application at https://github.com/RichardFreedman/ema_react_app.
+
+        The `mode` parameter can be set to 'melodic', 'cadences', 'p_types', or 'homorhythm' to specify the type of EMA addresses to return. If `mode` is not specified, it will be inferred based on the structure of the input dataframe.
         '''
         if piece_url == '':
             if self.path.startswith('https://'):
@@ -937,6 +959,8 @@ class ImportedPiece:
         all other metric positions in a measure are given smaller numbers
         approaching zero as their metric weight decreases. Results from this
         method should not be sent to the regularize method.
+
+        The weights are determined by music21's `beatStrength` method, which is based on the prevailing time signature at each moment in the piece.    
         '''
         if 'Beats' not in self.analyses:
             nr = self.notes()
@@ -958,11 +982,13 @@ class ImportedPiece:
         Return a series of the first valid value in each row of .beats().
 
         This is useful for getting the beat position of a given timepoint (i.e.
-        index value) in the piece. Results from this method should not be sent to
-        the regularize method. You would use this method to lookup the beat
+        index value) in the piece. You would use this method to lookup the beat
         position of a given offset (timepoint) in a piece. Provided there is a
-        note or rest in any voice at that offset, the beatIndex results will
+        note or rest in any voice at that offset, the `beatIndex` results will
         have a value at that index.
+
+        Results from this method should not be sent to
+        the `regularize` method. 
         '''
         if 'BeatIndex' not in self.analyses:
             ser = self.beats().dropna(how='all').apply(lambda row: row.dropna().iat[0], axis=1)
@@ -976,8 +1002,8 @@ class ImportedPiece:
         measure, beat, offset, prevailing time signature, and progress towards
         the end of the piece (0-1) in the index labels. At least one must be
         chosen, and the default is to have measure and beat information, but no
-        other information. Here are all the boolean parameters that default to False,
-        but that you can set to true if you also want to see them:
+        other information. Here are all the Boolean parameters that default to `False`,
+        but that you can set to `True` if you also want to see them:
 
         * offset: row's offset (distance in quarter notes from beginning, 1.0 = one quarter note)
         * t_sig: the prevailing time signature
@@ -988,7 +1014,7 @@ class ImportedPiece:
         * lowest: the lowest sounding note at this moment
         * highest: the highest sounding note at this moment
 
-        You can also pass _all=True to include all these types of index information.
+        You can also pass `_all=True` to include all these types of index information.
         '''
         cols = [df]
         names = []
@@ -1060,7 +1086,8 @@ class ImportedPiece:
         the piece. This follows the music21 conventions where the downbeat is
         equal to 1, and all other metric positions in a measure are given
         smaller numbers approaching zero as their metric weight decreases.
-        Results from this method should not be sent to the regularize method.
+        
+        Results from this method should not be sent to the `regularize` method.
         '''
         if 'BeatStrength' not in self.analyses:
             df = self._getM21ObjsNoTies().map(self._beatStrengthHelper)
@@ -1088,7 +1115,7 @@ class ImportedPiece:
 
         This is useful for getting the prevailing time signature at any given
         moment in the piece. The time signature is expressed as a string taken
-        from music21's .ratioString attribute. For example, 4/4 time is
+        from music21's `.ratioString` attribute. For example, 4/4 time is
         expressed as "4/4", 3/4 time is expressed as "3/4", etc.
         """
         if 'TimeSignature' not in self.analyses:
@@ -1119,7 +1146,7 @@ class ImportedPiece:
 
         This is useful for getting the prevailing system key signature (i.e.
         the sharps/flats printed at the start of each staff) at any given
-        moment in the piece. Following music21's .sharps convention, the value
+        moment in the piece. Following music21's `.sharps` convention, the value
         is a positive integer for the number of sharps, a negative integer for
         the number of flats, and 0 for no accidentals in the key signature.
         """
@@ -1170,7 +1197,7 @@ class ImportedPiece:
 
         This information is included the .cadences method so you can filter cadence
         results based on how many voices are sounding at the time of the cadence.
-        It is also available in the .detailIndex method to add this information to
+        It is also available in the `.detailIndex` method to add this information to
         almost any dataframe CRIM-Intervals provides.
         """
         if not 'SoundingCount' in self.analyses:
@@ -1213,8 +1240,8 @@ class ImportedPiece:
         '''
         Convert a series of music21 notes or rests to melodic intervals.
 
-        If end is True, the intervals will be from the end of the note to the start
-        of the next note. If end is False, the intervals will be from the start of
+        If end is `True`, the intervals will be from the end of the note to the start
+        of the next note. If end is `False`, the intervals will be from the start of
         the note to the start of the next note.
         '''
         ser.dropna(inplace=True)
@@ -1297,9 +1324,9 @@ class ImportedPiece:
         Return durational ratios of each item in each column compared to the
         previous item in the same column. If a df is passed, it should be of
         float or integer values. If no df is passed, the default results from
-        .durations will be used as input (durations of notes and rests).
+        `.durations` will be used as input (durations of notes and rests).
 
-        The `end` parameter works the same as for .melodic(). It associates the
+        The `end` parameter works the same as for `.melodic()`. It associates the
         durational ratios with the start of the first event rather than with the
         start of the second event.
         '''
@@ -1503,12 +1530,18 @@ class ImportedPiece:
         interval.
 
         * To associate intervals with the offset of the first notes,
-        pass end=False.
+        pass `end=False`.
 
         * If you want melodic intervals measured at a regular
-        duration, do not pipe this method's result to the `regularize` method.
+        duration, do NOT pipe this method's result to the `regularize` method.
         Instead, pass the desired regular durational interval as an integer or
         float as the `unit` parameter.
+
+        For example, to get melodic intervals measured at every quarter note:
+
+        ```python
+        mel_at_quarter = importedPiece.melodic(unit=1.0)
+        ```
 
         Parameters
         ----------
@@ -1680,8 +1713,8 @@ class ImportedPiece:
             """
             Return m21 interval objects for every pair of intervals in the piece.
 
-            This does all pairs between voices if againstLow is False (default) or
-            each voice against the lowest sounding note if againstLow is True.
+            This does all pairs between voices if `againstLow` is `False` (default) or
+            each voice against the lowest sounding note if `againstLow` is `True`.
             """
             key = ('M21HarmonicIntervals', againstLow)
             
@@ -1774,9 +1807,11 @@ class ImportedPiece:
         '''
         Return harmonic intervals for all voice pairs.
 
-        The voice pairs are named with the voice that's lower on the staff given first,
-        and the two voices separated with an underscore, e.g. "Bassus_Tenor". If againstLow
-        is True, intervals will be measured against the lowest sounding note.
+        The voice pairs are named 'from the bottom up':  
+        the first voice in the pair is lower in the score than the second voice in the pair.
+        The two voices separated with an underscore, e.g. "Bassus_Tenor". If `againstLow`
+        is `True`, intervals will be measured against the lowest sounding note in the entire score 
+        (and not simply relative to the lower voice of the given pair).
 
         Parameters
         ----------
@@ -1903,8 +1938,9 @@ class ImportedPiece:
 
         There is a sonority observed every time any part in the piece has an attack. The
         `kind`, `directed`, and `compound` parameters are passed unchanged to .harmonic and
-        will control the type of intervals used. In all cases Rests are ignored. `sort` will
-        sort the values before returning them, and remove duplicates as well as any unisons
+        will control the type of intervals used. In all cases Rests are ignored. 
+        
+        `sort` will sort the values before returning them, and remove duplicates as well as any unisons
         against the lowest line.
         """
         har = self.harmonic(kind=kind, directed=directed, compound=compound, againstLow=True).ffill()
@@ -2007,9 +2043,13 @@ class ImportedPiece:
 
         Group sequences of observations in a sliding window "n" events long
         (default n=3). Whether `df` and/or `other` parameters are passed determines
-        how the ngrams are assembled. When a `df` is passed but no `other` is passed,
+        how the ngrams are assembled. 
+        
+        When a `df` is passed but no `other` is passed,
         the columns of the `df` are the data source. When both `df` and `other`
-        parameters are passed, contrapuntal-module ngrams are generated. Similarly,
+        parameters are passed, contrapuntal-module ngrams are generated. 
+        
+        Similarly,
         if neither `df` nor `other` dataframes are provided, they will be supplied
         according to the interval_settings parameter. These contrapuntal-module
         ngrams are useful to assign specific labels to all 2-voice combinations `n`
@@ -2076,7 +2116,7 @@ class ImportedPiece:
         this case, if the `df` or `other` parameters are left as None, they will
         be replaced with the current piece's harmonic and melodic intervals
         respectively. These intervals will be formed according to the
-        interval_settings argument, which gets passed to the melodic and
+        `interval_settings` argument, which gets passed to the melodic and
         harmonic methods (see those methods for an explanation of those
         settings). This makes it easy to make contrapuntal-module ngrams, e.g.:
 
@@ -2085,7 +2125,7 @@ class ImportedPiece:
         ngrams = ip.ngrams()
         ```
 
-        There is a special case for "open-ended" module ngrams. Set n=1 and the
+        There is a special case for "open-ended" module ngrams. Set `n=1` and the
         module ngrams will show the vertical interval between two voices,
         followed by the connecting melodic interal in the lower voice, but not
         the next harmonic interval. Open-ended module ngrams can be useful if
@@ -2117,7 +2157,7 @@ class ImportedPiece:
         unison gets labeled in your `other` DataFrame (e.g. "P1" or "1").
 
         The `show_both` parameter controls whether the melodic motion of both
-        voices in contrapuntal modules are shown. If True, the melodic motions of
+        voices in contrapuntal modules are shown. If `True`, the melodic motions of
         the two voices appear with a colon between them in the format lower:upper
         e.g. "3_-2:1, 4_1:-2, 3_-5:2, 8". This is needed for the detection of
         cadential voice function evasion by dropout and also to be able to detect
@@ -2196,13 +2236,14 @@ class ImportedPiece:
 
     def ic(self, module, generic=False, df=None):
         '''
-        *** Invertible Counterpoint and Double Counterpoint Finder ***
+        Invertible Counterpoint and Double Counterpoint Finder. 
+
         This method takes a string of a module and finds all the instances of
         that module at any level of inversion. The module is an interval
-        succession in the format of what you get from the .ngrams() method.
+        succession in the format of what you get from the `.ngrams()`method.
         Specifically, you would need to show melodic motion of both voices,
-        which you can do by running the .ngrams() method with these
-        parameters: exclude=[], show_both=True, held=1, interval_settings('d', True, True)
+        which you can do by running the `.ngrams()`method with these
+        parameters: `exclude=[], show_both=True, held=1, interval_settings('d', True, True)`
 
         In this method, Invertible Counterpoint is where we have a repetition of
         the given module but where the upper and lower melodies have been exchanged.
@@ -2336,7 +2377,7 @@ class ImportedPiece:
         '''
         Return a dataframe of cadential voice functions in the piece. If
         `keep_keys` is set to True, the ngrams that triggered each CVF pair
-        will be shown in additional columns in the table. If offsets='last'
+        will be shown in additional columns in the table. If `offsets='last'`
         (default) the last offset of the cvfs will be shown. If offsets is
         set to anything else the table will be returned with a multi-index
         for First and Last offsets for the module patterns.
@@ -2344,37 +2385,37 @@ class ImportedPiece:
         Each CVF is represented with a single-character label as follows:
 
         Realized Cadential Voice Functions:
-        "C": cantizans motion up a step (can also be ornamented e.g. Landini)
-        "T": tenorizans motion down a step (can be ornamented with anticipations)
-        "B": bassizans motion up a fourth or down a fifth
-        "A": altizans motion, similar to cantizans, but cadences to a fifth
+        * "C": cantizans motion up a step (can also be ornamented e.g. Landini)
+        * "T": tenorizans motion down a step (can be ornamented with anticipations)
+        * "B": bassizans motion up a fourth or down a fifth
+        * "A": altizans motion, similar to cantizans, but cadences to a fifth
             above a tenorizans instead of an octave
-        "L": leaping contratenor motion up an octave at the perfection
-        "P": plagal bassizans motion up a fifth or down a fourth
-        "Q": quintizans, like a tenorizans, but resolves down by fifth or up by
+        * "L": leaping contratenor motion up an octave at the perfection
+        * "P": plagal bassizans motion up a fifth or down a fourth
+        * "Q": quintizans, like a tenorizans, but resolves down by fifth or up by
             fourth to a fourth below the goal tone of a cantizans or an octave
             below the goal tone of an altizans
-        "S": sestizans, occurring in some thicker 16th century textures, this is
+        * "S": sestizans, occurring in some thicker 16th century textures, this is
             where the agent against the cantizans is already the cantizans' note
             of resolution (often results in a simultaneous false relation); the
             melodic motion is down by third at the moment of perfection
 
         Evaded Cadential Voice Functions:
-        "c": evaded cantizans when it moves to an unexpected note at the perfection
-        "t": evaded tenorizans when it goes up by step at the perfection
-        "b": evaded bassizans when it goes up by step at the perfection
-        "u": evaded bassizans when it goes down by third at the perfection
+        * "c": evaded cantizans when it moves to an unexpected note at the perfection
+        * "t": evaded tenorizans when it goes up by step at the perfection
+        * "b": evaded bassizans when it goes up by step at the perfection
+        * "u": evaded bassizans when it goes down by third at the perfection
         (there are no evaded labels for the altizans, plagal bassizans leaping
         contratenor CVFs)
-        "s": evaded sestizans when it resolves down by second
+        * "s": evaded sestizans when it resolves down by second
 
         Abandoned Cadential Voice Functions:
-        "x": evaded bassizans motion where the voice drops out at the perfection
-        "y": evaded cantizans motion where the voice drops out at the perfection
-        "z": evaded tenorizans motion where the voice drops out at the perfection
+        * "x": evaded bassizans motion where the voice drops out at the perfection
+        * "y": evaded cantizans motion where the voice drops out at the perfection
+        * "z": evaded tenorizans motion where the voice drops out at the perfection
 
         The way these CVFs combine determines which cadence labels are assigned
-        in the .cadences() method.
+        in the `.cadences()` method.
         '''
         if len(self._getPartNames()) < 2:
             return pd.DataFrame()
@@ -2475,7 +2516,7 @@ class ImportedPiece:
         Return "closes" according to Morley, which are normally called cadences. This
         method uses a harmonically based definition of a cadence. A close is observed
         if the harmony goes from a root position triad to another root position triad
-        a fifth lower at the same time as a morelyCadence event is observed."""
+        a fifth lower at the same time as a `morleyCadence` event is observed."""
         mcads = self.morleyCadences()
         mcad = pd.Series(True, index=mcads.index, name='MCad')
         sons = self.sonorities()
@@ -2499,12 +2540,12 @@ class ImportedPiece:
         information about the cadences to facilitate filtering and further analysis.
         The information in each column is as follows (in order of their appearance):
 
-        * Pattern: Only visible if `keep_keys` is set to True. This column shows the
+        * Pattern: Only visible if `keep_keys` is set to `True`. This column shows the
         combination of cadential voice functions and chromatic intervals (of the
         Cantizans, Tenorizans, and Altizans cvfs) that triggered this cadence
         observation.
 
-        * Key: Only visible if `keep_keys` is set to True. This column shows the
+        * Key: Only visible if `keep_keys` is set to `True`. This column shows the
         regex string used to match the Patterns found with those in the cadenceLabels.csv
         file.
 
@@ -2747,11 +2788,11 @@ class ImportedPiece:
         '''
         Parameters Overview:
 
-        - combinedType: if set to True, the Cadences would be classified based on both their Type and Tone. If set to False, only Tone will be used. False by default
-        - sounding: specify how many voices are sounding (optional). Takes an integer input. Set to None by default
-        - displayAll: if set to True, the chart will display all pitches in the Default (Fifth) or Custom order
-        - customOrder: the custom order parameter. Takes in a List of Strings
-        - renderer: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc
+        * combinedType: if set to True, the Cadences would be classified based on both their Type and Tone. If set to False, only Tone will be used. False by default
+        * sounding: specify how many voices are sounding (optional). Takes an integer input. Set to None by default
+        * displayAll: if set to True, the chart will display all pitches in the Default (Fifth) or Custom order
+        * customOrder: the custom order parameter. Takes in a List of Strings
+        * renderer: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc
 
         Examples
         --------
@@ -2823,11 +2864,11 @@ class ImportedPiece:
         '''
         Parameters Overview:
 
-        - includeType: if set to True, the Cadence markers would be set based on both their Type. If set to False, a universal (round) marker will be used
-        cadTone: specify the Tone of cadences to explore. Takes an String input. Set to None by default
-        - cadType: specify the Type of cadences to explore. Takes an String input. Set to None by default
-        - customOrder: specify a custom order to be used for the plot (a dictionary: e.g. {"A":0, "B":1 ...}
-        - includeLegend: flag to display legend; Default set to True
+        * includeType: if set to True, the Cadence markers would be set based on both their Type. If set to False, a universal (round) marker will be used
+        * cadTone: specify the Tone of cadences to explore. Takes an String input. Set to None by default
+        * cadType: specify the Type of cadences to explore. Takes an String input. Set to None by default
+        * customOrder: specify a custom order to be used for the plot (a dictionary: e.g. {"A":0, "B":1 ...}
+        * includeLegend: flag to display legend; Default set to True
 
         Examples
         --------
@@ -2932,8 +2973,8 @@ class ImportedPiece:
 
     def supplementum(self):
         '''
-        Return the portion of the piece that corresponds to the supplementum. This is defined as
-        the part after the last cadence.'''
+        Return the portion of the piece that corresponds to the supplementum, or what is often called a Plagal Coda. 
+        This is defined as part after the last [Authentic] cadence in the piece.'''
         if 'Supplementum' not in self.analyses:
             cads = self.cadences()
             if cads['Progress'].iat[-1] == 1:
@@ -2966,7 +3007,7 @@ class ImportedPiece:
 
         'ngram_length' (which is 4 by default, and determines the number of durations and syllables that must be in common among the voices in order to be marked as HR);
 
-        'full_hr' (which is True default).  When full_hr=True the method will find any passage where _all active voices_ share the same durational ngram and syllables; if full_hr=False the method will find any passage where even _two voices_ share the same durational ngram and the same syllables.
+        'full_hr' (which is True default).  When `full_hr=True` the method will find any passage where _all active voices_ share the same durational ngram and syllables; if `full_hr=False` the method will find any passage where even _two voices_ share the same durational ngram and the same syllables.
 
         Examples
         --------
@@ -3079,7 +3120,7 @@ class ImportedPiece:
 
     def entryMask(self, fermatas=True):
         """
-        Return a dataframe of True, False, or NaN values which can be used as
+        Return a dataframe of `True`, `False`, or NaN values which can be used as
         a mask (filter). When applied to another dataframe, only the True cells
         in the mask will be kept.
 
@@ -3109,7 +3150,8 @@ class ImportedPiece:
         calculated after combining unisons and using diatonic intervals without
         interval quality, and with end=False since this is needed specifically
         for this use case.
-        When melodic intervals are calculated with end=False the offset of each
+
+        When melodic intervals are calculated with `end=False` the offset of each
         melodic entry is the starting offset of the first note in the melody. If you
         want melodies 4 notes long, for example, note that this would be n=3,
         because four consecutive notes are constitute 3 melodic intervals.
@@ -3117,13 +3159,14 @@ class ImportedPiece:
         or passed df argument will be replaced with n-long ngrams of those events.
         Note that this does not currently work for dataframes where the columns
         are combinations of voices, e.g. harmonic intervals.
-        If `thematic` is set to True, this method returns all instances of entries
+
+        If `thematic` is set to `True`, this method returns all instances of entries
         that happen at least twice anywhere in the piece. This means
         that a melody must happen at least once coming from a rest, and at least
         one more time, though the additional time doesn't have to be after a rest.
-        If `anywhere` is set to True, the final results returned include all
+        If `anywhere` is set to `True`, the final results returned include all
         instances of entry melodies, whether they come from rests or not.
-        If `fermatas` is set to True (default), any melody starting immediately
+        If `fermatas` is set to `True` (default), any melody starting immediately
         after a fermata will also be counted as an entry.
         """
         if df is None:
@@ -3195,7 +3238,9 @@ class ImportedPiece:
         Note that it relies on the ng_dur dataframe that appears in the
         presentation type classifier itself:
 
+        ```python
         ng_durs = self.durations(df=entries)
+        ```
 
         These in turn are saved as a string to check for overlaps among entries.
         """
@@ -3232,10 +3277,10 @@ class ImportedPiece:
         This function predicts the Presentation Types. It relies of the differences between
         the first offsets of successive melodic entries.
 
-        If the offset differences are identical:  PEN
-        If the odd-numbered offset differences are identical:  ID, since these represent
+        * If the offset differences are identical:  PEN
+        * If the odd-numbered offset differences are identical:  ID, since these represent
         situations in which the entries 1-2 have the same offset difference as entries 3-4
-        If the offset differences are all different:  FUGA
+        * If the offset differences are all different:  FUGA
         """
         alt_list = offset_diffs[::2]
 
@@ -3452,17 +3497,17 @@ class ImportedPiece:
         """
         This function uses several other functions to classify the entries in a given piece.
         The output is a list, in order of offset, of each presentation type, including information about
-        - measures/beats (of each entry)
-        - starting offset (of each entry)
-        - soggetti involved (depending on 'flex' settings, there could be more tha one)
-        - melodic intervals of entry (the melodic distance between the first tones of successive entries)
-        - time intervals of entry (the duration in offets from one entry to the next)
-        - presense of flexed entries (either head or body of soggetto, depending on the settings)
-        - presense of parallel entries (the parallel entry is reported separately, and is not included in the
+        * measures/beats (of each entry)
+        * starting offset (of each entry)
+        * soggetti involved (depending on 'flex' settings, there could be more tha one)
+        * melodic intervals of entry (the melodic distance between the first tones of successive entries)
+        * time intervals of entry (the duration in offets from one entry to the next)
+        * presense of flexed entries (either head or body of soggetto, depending on the settings)
+        * presense of parallel entries (the parallel entry is reported separately, and is not included in the
         metadata about Time or Melodic intervals of imitation; the preferred intervals are
         ["P1", "P4", "P-4", "P5", "P-5", "P8", "P-8", "P12", "P-12"] and can be adjusted via the code
         for _temp_dict_of_details
-        - how many of the entries fail to overlap with another one
+        * how many of the entries fail to overlap with another one
 
         It is also possible to find PEns and IDs that are 'hidden' within
         longer Fugas. Note that this method finds both PEns and IDs that can be
@@ -3471,17 +3516,17 @@ class ImportedPiece:
 
         Arguments include:
 
-        - set ngram length with 'melodic_ngram_length' (=4 by default)
-        limit_to_entries (True by default) finds only soggetti that start after a rest or after a section break.
-        - setting this to "False" will produce a 'moving window' of all sub-strings (and Presentation Types) created by the
+        * set ngram length with 'melodic_ngram_length' (=4 by default)
+        * limit_to_entries (True by default) finds only soggetti that start after a rest or after a section break.
+        * setting this to "False" will produce a 'moving window' of all sub-strings (and Presentation Types) created by the
         soggetto, starting on notes 1, 2, 3, 4, etc.
-        - set 'combineUnisons' as True or False (False by default)set the length of the soggetti with `melodic_ngram_length`
-        - set the maximum difference between the first interval in similar soggetto with 'head_flex' (=1 by default)
-        - set the maximum difference between similar soggetti with `body_flex` (=0 by default)
-        - for chromatic vs diatonic, compound, and directed data in soggetti, see `interval_settings`
-        - to include all the hidden PENs and IDS (those found within longer Fugas),
+        * set 'combineUnisons' as True or False (False by default)set the length of the soggetti with `melodic_ngram_length`
+        * set the maximum difference between the first interval in similar soggetto with 'head_flex' (=1 by default)
+        * set the maximum difference between similar soggetti with `body_flex` (=0 by default)
+        * for chromatic vs diatonic, compound, and directed data in soggetti, see `interval_settings`
+        * to include all the hidden PENs and IDS (those found within longer Fugas),
         use `include_hidden_types == True` (set to False by default)
-        - for faster (and simpler) listing of points of imitation without hidden forms, use `include_hidden_types == False` (= default)
+        * for faster (and simpler) listing of points of imitation without hidden forms, use `include_hidden_types == False` (= default)
 
 
         Examples
@@ -3647,7 +3692,7 @@ class ImportedPiece:
     def verovioCadences(self, df=None):
         """
         This function is used to display the results of the Cadence
-        classifier in the Notebook with Verovio.  Each excerpt is
+        classifier in the Notebook with Verovio (learn more at:  https://www.verovio.org/index.xhtml).  Each excerpt is
         two measures long:  the measure of the final tone of the cadence
         and the previous measure.
 
@@ -3667,7 +3712,7 @@ class ImportedPiece:
         ```
 
         It is also possible to pass a filtered list of cadences to this function
-        by specifying a df into verovioCadences() as shown below:
+        by specifying a df into `verovioCadences`()` as shown below:
 
         ```python
         cadences = piece.cadences()
@@ -3730,7 +3775,7 @@ class ImportedPiece:
     def verovioPrintExample(self, start, stop):
 
         """
-        Pass a range of measures (as integers) to print the given range.
+        Pass a range of measures (as integers) to print the given range (learn more at:  https://www.verovio.org/index.xhtml).
 
         For last measure you can also use '-1', thus for all measures:
 
@@ -3783,7 +3828,7 @@ class ImportedPiece:
     def verovioPtypes(self, p_types=None):
         """
         This function is used to display the results of the presentationTypes function
-        in the Notebook with Verovio.  Each excerpt begins with
+        in the Notebook with Verovio (learn more at:  https://www.verovio.org/index.xhtml).  Each excerpt begins with
         the first measure of the given presentation type and continues through four
         measures after the last entry.
 
@@ -3884,7 +3929,7 @@ class ImportedPiece:
     # July 2022 Addition for printing hr types with Verovio
     def verovioHomorhythm(self, df=None, ngram_length=4, full_hr=True):
         '''
-        Prints HR passages for a given piece with Verovio, based on imported piece and
+        Prints HR passages for a given piece with Verovio (learn more at:  https://www.verovio.org/index.xhtml), based on imported piece and
         other parameters.
 
         Parameters
@@ -4023,7 +4068,7 @@ def clean_melody_new(c):
 class CorpusBase:
     # Need to consider whether users can input certain scores (which means needing urls selected too), or just to do all in the corpus automatically
     """
-    A class for importing multiple scores at once
+    A class for importing multiple scores at once.
 
     Attributes
     ----------
@@ -4786,7 +4831,13 @@ class CorpusBase:
                          key_sig=False,
                          include_final=False):
         """
-        Generate sonority n-grams (plus bassline) in a corpus.
+        Generate sonority n-grams (plus bassline) in a corpus.  
+        These are complex n-grams that combine the sonority (chord) formed by all tones sounding at each moment 
+        the melodic interval formed by the low line (bass) of each sonority.
+        
+        We can also filter out any sonorities that occur on weak beats (below `minimum_beat_strength`).
+        
+        These sonority ngrams are very useful for finding block repetitions within and among pieces, regardless of the specific voices in which they are heard. 
 
         Parameters
         ----------
@@ -4897,7 +4948,7 @@ class CorpusBase:
                  key_sig=False, 
                  include_final=False):
         """
-        Return cadences for all pieces in the corpus. See ImportedPiece.cadences
+        Return cadences for all pieces in the corpus. See `ImportedPiece.cadences`
         for the full column documentation.
 
         Parameters
@@ -4967,7 +5018,13 @@ class CorpusBase:
 
     def batch(self, func, kwargs={}, metadata=True, number_parts=True, verbose=False):
         '''
-        Run the `func` on each of the scores in this CorpusBase object and
+        The batch method is a convenience function for running the same analysis 
+        on all pieces in a `CorpusBase` object. It takes an unbound method from the 
+        `ImportedPiece` class and applies it to each score in the corpus, returning a list of dfs with the results for each piece.  
+        The list of dfs can be passed to a succession of methods (so that each piece in the corpus is processed separately).  
+        In a final step the list of dfs can be concatenated to a single set of corpus results.
+        
+        Run the `func` on each of the scores in this `CorpusBase` object and
         return a list of the results. `func` should be a method from the
         ImportedPiece class. If you need to pass arguments to that function,
         pass them as a dictionary of keyword arguments with the kwargs
@@ -4978,10 +5035,10 @@ class CorpusBase:
         is needed for each piece in the corpus. This applies to the parameters
         called "df", "mask_df", and "other". In these cases you should pass a
         list of dataframes in batch's kwargs for that parameter. This makes it
-        easy to chain uses of the .batch method.
+        easy to chain uses of the `.`batch` method.
 
-        By default, .batch will replace columns that consist of part names (like .melodic() results)
-        or combinations of part names (like .harmonic() results) with numbers starting with "1" for
+        By default, .batch will replace columns that consist of part names (like `.melodic()` results)
+        or combinations of part names (like `.harmonic()` results) with numbers starting with "1" for
         the highest part on the staff, "2" for the second highest, etc. This is useful when combining
         results from pieces with parts that have different names. You can override this and keep the
         original part names in the columns by setting the `number_parts` parameter to False.
@@ -5104,16 +5161,19 @@ class CorpusBase:
         "driving distance table" showing how likely each model was a source for each mass. This
         is represented by a score 0-1 where 0 means that this relationship was highly unlikely
         and 1 means that the the two are highly likely to be related in this way (or that a
-        piece was compared to itself). Specifically, the value is the percentage of the mass's
+        piece was compared to itself). 
+        
+        Specifically, the value is the percentage of the mass's
         thematic (i.e. recurring) melodies can be found as thematic melodies from the model. The
         specific number of times they appear in the model is not considered, provided that it is
         at least two.
-        You can optionally pass a CorpusBase object as the `models` and/or `masses` parameters.
-        If you do, the CorpusBase object you pass will be used as that group of pieces in the
+
+        You can optionally pass a `CorpusBase` object as the `models` and/or `masses` parameters.
+        If you do, the `CorpusBase object you pass will be used as that group of pieces in the
         analysis. If either or both of these parameters is omitted, the calling CorpusBase
-        object's scores will be used. For clarity, the "calling" CorpusBase object is what goes
+        object's scores will be used. For clarity, the "calling" `CorpusBase` object is what goes
         to the left of the period in: `calling_corpus.modelFinder(...)`
-        Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
+        Since the calling `CorpusBase` object's scores are used if the `models` and/or `masses`
         parameters are omitted, this means that if you omit both, i.e.
 
         ```python
@@ -5171,10 +5231,10 @@ class CorpusBase:
 
     def derivativeAnalyzer(self, df=None, n=10):
         '''
-        Find the top n masses with the highest derivation scores for each model in a table of .modelFinder results.
+        Find the top n masses with the highest derivation scores for each model in a table of `.modelFinder results.
         The scores from the different movements in each mass are averaged together to get a single score for each
-        model-mass pair. The `df` parameter should be the results from the modelFinder method. If it is left as the
-        default value of None, it will be replaced with the results of the modelFinder on this corpus with the
+        model-mass pair. The `df` parameter should be the results from the `modelFinder` method. If it is left as the
+        default value of None, it will be replaced with the results of the `modelFinder on this corpus with the
         default settings.'''
         if df is None:
             _df = self.modelFinder()
@@ -5196,17 +5256,17 @@ class CorpusBase:
 
     def moduleFinder(self, models=None, masses=None, n=4, ic=False):
         """
-        Like the modelFinder, this compares a corpus of pieces, returning
+        Like the `modelFinder, this compares a corpus of pieces, returning
         a table of percentages of shared ngrams.
 
         In this case the ngrams are contrapuntal modules.
 
-        You can optionally pass a CorpusBase object as the `models` and/or `masses` parameters.
-        If you do, the CorpusBase object you pass will be used as that group of pieces in the
-        analysis. If either or both of these parameters is omitted, the calling CorpusBase
-        object's scores will be used. For clarity, the "calling" CorpusBase object is what
+        You can optionally pass a `CorpusBase` object as the `models` and/or `masses` parameters.
+        If you do, the `CorpusBase` object you pass will be used as that group of pieces in the
+        analysis. If either or both of these parameters is omitted, the calling `CorpusBase`
+        object's scores will be used. For clarity, the "calling" `CorpusBase` object is what
         goes to the left of the period in: `calling_corpus.moduleFinder(...)`
-        Since the calling CorpusBase object's scores are used if the `models` and/or `masses`
+        Since the calling ``CorpusBase` object's scores are used if the `models` and/or `masses`
         parameters are omitted, this means that if you omit both, i.e.
 
         ```python
@@ -5293,11 +5353,11 @@ class CorpusBase:
         '''
         Parameters Overview:
 
-        - combinedType: if set to True, the Cadences would be classified based on both their Type and Tone. If set to False, only Tone will be used. False by default
-        - sounding: specify how many voices are sounding (optional). Takes an integer input. Set to None by default
-        - displayAll: if set to True, the chart will display all pitches in the Default (Fifth) or Custom order
-        - customOrder: the custom order parameter. Takes in a List of Strings
-        - renderer: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc
+        * combinedType: if set to True, the Cadences would be classified based on both their Type and Tone. If set to False, only Tone will be used. False by default
+        * sounding: specify how many voices are sounding (optional). Takes an integer input. Set to None by default
+        * displayAll: if set to True, the chart will display all pitches in the Default (Fifth) or Custom order
+        * customOrder: the custom order parameter. Takes in a List of Strings
+        * renderer: specify what renderer to be used for the plot (options include but are not limited to "svg", "iframe", "png", "notebook" etc
 
         Examples
         --------
@@ -5395,11 +5455,11 @@ class CorpusBase:
         '''
         Parameters Overview:
 
-        - includeType: if set to True, the Cadence markers would be set based on both their Type. If set to False, a universal (round) marker will be used
-        cadTone: specify the Tone of cadences to explore. Takes an String input. Set to None by default
-        - cadType: specify the Type of cadences to explore. Takes an String input. Set to None by default
-        - customOrder: specify a custom order to be used for the plot (a dictionary: e.g. {"A":0, "B":1 ...}
-        - includeLegend: flag to display legend; Default set to True
+        * includeType: if set to True, the Cadence markers would be set based on both their Type. If set to False, a universal (round) marker will be used
+        * cadTone: specify the Tone of cadences to explore. Takes an String input. Set to None by default
+        * cadType: specify the Type of cadences to explore. Takes an String input. Set to None by default
+        * customOrder: specify a custom order to be used for the plot (a dictionary: e.g. {"A":0, "B":1 ...}
+        * includeLegend: flag to display legend; Default set to True
 
         Examples
         --------

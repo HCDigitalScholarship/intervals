@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://hcdigitalscholarship.github.io/intervals/</loc>
+         <lastmod>2026-07-30</lastmod>
+    </url>
+    <url>
+         <loc>https://hcdigitalscholarship.github.io/intervals/api/corpus_tools/</loc>
+         <lastmod>2026-07-30</lastmod>
+    </url>
+    <url>
+         <loc>https://hcdigitalscholarship.github.io/intervals/api/main/</loc>
+         <lastmod>2026-07-30</lastmod>
+    </url>
+    <url>
+         <loc>https://hcdigitalscholarship.github.io/intervals/api/main_objs/</loc>
+         <lastmod>2026-07-30</lastmod>
+    </url>
+    <url>
+         <loc>https://hcdigitalscholarship.github.io/intervals/api/networks/</loc>
+         <lastmod>2026-07-30</lastmod>
+    </url>
+    <url>
+         <loc>https://hcdigitalscholarship.github.io/intervals/api/sorting_lists/</loc>
+         <lastmod>2026-07-30</lastmod>
+    </url>
+    <url>
+         <loc>https://hcdigitalscholarship.github.io/intervals/api/visualizations/</loc>
+         <lastmod>2026-07-30</lastmod>
+    </url>
+</urlset>

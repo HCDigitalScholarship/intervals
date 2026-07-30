@@ -2385,6 +2385,7 @@ class ImportedPiece:
         Each CVF is represented with a single-character label as follows:
 
         Realized Cadential Voice Functions:
+
         * "C": cantizans motion up a step (can also be ornamented e.g. Landini)
         * "T": tenorizans motion down a step (can be ornamented with anticipations)
         * "B": bassizans motion up a fourth or down a fifth
@@ -2401,6 +2402,7 @@ class ImportedPiece:
             melodic motion is down by third at the moment of perfection
 
         Evaded Cadential Voice Functions:
+
         * "c": evaded cantizans when it moves to an unexpected note at the perfection
         * "t": evaded tenorizans when it goes up by step at the perfection
         * "b": evaded bassizans when it goes up by step at the perfection
@@ -2410,6 +2412,7 @@ class ImportedPiece:
         * "s": evaded sestizans when it resolves down by second
 
         Abandoned Cadential Voice Functions:
+        
         * "x": evaded bassizans motion where the voice drops out at the perfection
         * "y": evaded cantizans motion where the voice drops out at the perfection
         * "z": evaded tenorizans motion where the voice drops out at the perfection

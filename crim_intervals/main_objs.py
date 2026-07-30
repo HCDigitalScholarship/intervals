@@ -3500,6 +3500,7 @@ class ImportedPiece:
         """
         This function uses several other functions to classify the entries in a given piece.
         The output is a list, in order of offset, of each presentation type, including information about
+        
         * measures/beats (of each entry)
         * starting offset (of each entry)
         * soggetti involved (depending on 'flex' settings, there could be more tha one)

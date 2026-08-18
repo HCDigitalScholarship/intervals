@@ -4969,13 +4969,11 @@ class CorpusBase:
         Returns
         -------
         pd.DataFrame
+            If none of the pieces in the corpus have any cadences, an empty
+            DataFrame (with the expected columns) is returned. Pieces with no
+            cadences are reported by title via a printed message rather than
+            raising an error.
         """
-        func = ImportedPiece.cadences
-        list_of_dfs = self.batch(func=func,
-                                  kwargs={'keep_keys': True, 'key_sig': key_sig, 'include_final': include_final},
-                                  metadata=True)
-        corpus_cadences = pd.concat(list_of_dfs, ignore_index=False)
-
         col_list = ['Composer', 'Title', 'Measure', 'Beat', 'Pattern', 'Key', 'CadType', 'Tone', 'CVFs',
                     'LeadingTones', 'Sounding', 'Low', 'RelLow', 'RelTone',
                     'Progress', 'SinceLast', 'ToNext']
@@ -4983,6 +4981,25 @@ class CorpusBase:
             col_list.append('KeySig')
         if include_final:
             col_list.append('Final')
+
+        func = ImportedPiece.cadences
+        list_of_dfs = self.batch(func=func,
+                                  kwargs={'keep_keys': True, 'key_sig': key_sig, 'include_final': include_final},
+                                  metadata=True)
+
+        # Some pieces may have no cadences at all (an empty df from
+        # ImportedPiece.cadences). Report these by title instead of letting
+        # them silently vanish from the corpus results.
+        missing_pieces = [score.metadata['title'] for df, score in zip(list_of_dfs, self.scores) if len(df) == 0]
+        if missing_pieces:
+            print('No cadences found in {} piece(s): {}'.format(len(missing_pieces), ', '.join(missing_pieces)))
+        list_of_dfs = [df for df in list_of_dfs if len(df) > 0]
+
+        if not list_of_dfs:
+            print('No cadences found in the corpus')
+            return pd.DataFrame(columns=col_list)
+
+        corpus_cadences = pd.concat(list_of_dfs, ignore_index=False)
         corpus_cadences = corpus_cadences[col_list]
         return corpus_cadences
 

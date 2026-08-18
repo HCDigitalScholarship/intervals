@@ -2433,6 +2433,10 @@ class ImportedPiece:
                   held='1', exclude=[], show_both=True).stack() for n in cadences.N.unique()}
         hits = [ser[ser.str.contains('|'.join(cadences[cadences.N == n].index), regex=True)]
                 for n, ser in ngrams.items() if not ser.empty]
+        if not hits:
+            # no cadential n-gram patterns of any length were even possible
+            # for this piece (e.g. too short), so there's nothing to concat
+            return pd.DataFrame()
         hits = pd.concat(hits)
         hits.sort_index(level=1, inplace=True)
         hits = hits[~hits.index.duplicated('last')]
@@ -2443,7 +2447,11 @@ class ImportedPiece:
         df['Pattern'] = df.Ngram.replace(cadences.index, cadences.index, regex=True)
         df = df.join(cadences, on='Pattern')
         voices = [pair.split('_') for pair in df.index.get_level_values(2)]
-        df[['LowerVoice', 'UpperVoice']] = voices
+        # When there are no cadential-pattern hits at all, `voices` is `[]`,
+        # whose shape (0,) doesn't broadcast into the 2 target columns the
+        # way a list of 2-element lists does; building a DataFrame first
+        # keeps both the empty and non-empty cases working the same way.
+        df[['LowerVoice', 'UpperVoice']] = pd.DataFrame(voices, index=df.index, columns=['LowerVoice', 'UpperVoice'])
         df.index = df.index.droplevel(2)
         cvfs = pd.DataFrame(columns=self._getPartNames(), index=pd.MultiIndex.from_arrays([[], []], names=df.index.names))
         df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))

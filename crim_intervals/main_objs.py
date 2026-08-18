@@ -2454,7 +2454,14 @@ class ImportedPiece:
         df[['LowerVoice', 'UpperVoice']] = pd.DataFrame(voices, index=df.index, columns=['LowerVoice', 'UpperVoice'])
         df.index = df.index.droplevel(2)
         cvfs = pd.DataFrame(columns=self._getPartNames(), index=pd.MultiIndex.from_arrays([[], []], names=df.index.names))
-        df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
+        if len(df):
+            # `DataFrame.apply(axis=1)` on a 0-row df still calls the function
+            # once with a dummy all-NaN row to infer the result dtype. Since
+            # `_cvf_helper` mutates `cvfs` in place via `row.LowerVoice`/
+            # `row.UpperVoice` (both NaN on the dummy row), that phantom call
+            # would otherwise inject two spurious NaN-named columns into
+            # `cvfs`, which later breaks `numberParts` (columns must be str).
+            df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
         cvfs = cvfs.apply(self._cvf_disambiguate_h, axis=1).dropna(how='all')
         cvfs = cvfs.astype('object', copy=False)
         mel = self.melodic('c', True, True)

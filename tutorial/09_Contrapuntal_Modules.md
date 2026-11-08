@@ -1,6 +1,7 @@
 # Finding Contrapuntal Modules (and Other Complex nGrams)
 
 ## What is a Contrapuntal Module?
+
 A **contrapuntal module** (as formulated by our colleagues Julie Cumming and Peter Schubert) is a special kind **nGram** that describes the movement of any two voices:  
 
 - a succession of **harmonic intervals** between the two voices (normally reprensented by the odd-numbered positions in the nGram), and
@@ -14,15 +15,32 @@ Consider the following example from Josquin's *Ave Maria*:
 
 The **red squares represent the harmonic intervals**; the **blue ovals represent the melodic motion in the lower part**.  Together they form a 3-gram, since there are three harmonic 'states'. The `n` parameter (explained below) allows us to find contrapuntal ngrams of any length. But '3' is the default.
 
-## The `ngram()` Function in Detail
+## Contrapuntal nGrams by Default with the `ngram()` Function
 
-Default usage:  
+By default, the `ngrams` method will return contrapuntal nGrams.  
+
+All parameters and their defaults:
+
+```python
+ngrams(df=None, 
+       n=3, 
+       how='columnwise', 
+       other=None, 
+       held='Held',
+       exclude=['Rest'], 
+       interval_settings=('d', True, True), 
+       unit=0,
+       offsets='first', 
+       show_both=False)
+```
+
+Simple usage with those defaults:  
 
 ```python
 piece.ngrams()
 ```
 
-You will probably want to fill the `na values`:
+You will probably want to fill the `na values` for readability, so you might use:
 
 ```python
 piece.ngrams().fillna(')
@@ -30,104 +48,80 @@ piece.ngrams().fillna(')
 
 ![Alt text](images/modules_2.png)
 
-It is also worth noting that by default the `ngrams` method uses `compound` intervals (melodic and harmonic alike). This is why the ngrams for the Cantus-Altus pair are different from the Tenor-Bassus pair (the Altus begins a 12th below the Cantus when it first enters; the Bassus is only a 5th below the Tenor). If you would like to use `simple` intervals instead (and thus find identical modules regardless of these octave differences) then see below.
+## Contrapuntal nGram Parameters
 
-## `ngrams()` Main Parameters
+By default the `ngrams` method uses `compound` intervals (melodic and harmonic alike). This is why in the chart shown above the ngrams for the Cantus-Altus pair are different from the Tenor-Bassus pair (the Altus begins a 12th below the Cantus when it first enters; the Bassus is only a 5th below the Tenor). If you would like to use `simple` intervals instead (and thus find identical modules regardless of these octave differences) then see below, where explain how to build up custom ngrams from the `melodic` and `harmonic` methods.  But for now, here are the parameters that can be used with the `ngrams` method:
 ​
 * **Length of nGrams**.  Remember that this will be number of the odd-numbered positions.  An `n=3` will in fact show 5 intervals (three harmonic surrounding two melodic).  Thus: `piece.ngrams(n=5)`. The default value is 3.
-* **interval type** (such as diatonic, chromatic, etc, or in CRIM Intervals: d, c, z, or q): `piece.ngrams(interval_settings='c')`.  The default value is 'd'.
-* The **'endpoint' of the offset reference** (whether the offset represents the start or end of the ngram).  Thus `piece.ngrams(offsets=
-first)` or `piece.ngrams(offsets=last)`. 
+* `interval_settings`, which accepts a *tuple* that contains custom settings for the intervals reported in the contrapuntal modules via the `kind`, `directed`, and `compound` parameters provided that *no data is passed* into the `df` or `other` parameters; default is `kind = 'd'`, `directed = True`, and `compound = True`.  For example to use chromatic, directed, and simple intervals you would run `piece.ngrams(interval_settings=('C', True, False))`
+* The **'endpoint' of the offset reference** (whether the offset represents the start or end of the ngram).  Thus `piece.ngrams(offsets=first)` or `piece.ngrams(offsets=last)`. 
 
-Thus a typical request:
+Thus a typical request might look like this::
 
 ```python
-piece.ngrams(interval_settings='c', offsets='first', n=5).fillna('')
+piece.ngrams(n=5, interval_settings='c', offsets='first').fillna('')
 ```
 
-## Showing Both Voices.  Excluding Certain Values
+## Extra Parameters:  Exclude Rests and Show Both Voices
+
 * **exclude** is normally used to keep Rests out of the results.  `piece.ngrams(exclude=['Rests'])` (note that the string 'Rests' must be in a list `[]`) will make sure that the results are only nGrams consisting of melodic and harmonic intervals.  If you want *include* rests, then `piece.ngrams(exclude=[])`.  Note that in fact we could *exclude* any strings included in the list, thus: `piece.ngrams(show_both=True, exclude=['8', '5'])` will eliminate any nGram that contains either of those strings.
+
 * The **show_both** parameter, determines the results show only the melodic intervals of the lowest part (which is default), or both voices: `piece.ngrams(show_both=True)`.  This latter setting can be helpful in finding cadences.  But note:  you *must use an empty list with **exclude** in order for this to work properly.  Thus:  `piece.ngrams(show_both=True, exclude=[])`
 
 The results will in turn look a bit dense, but in fact how we can see the melodic motion of both voices:
 
 ![Alt text](images/modules_3.png)
 
-## The `df` and `other` Parameters
+## Combining Unisons
 
-By default, the `ngrams` method uses the default behaviors of the `melodic` and `harmonic` methods, then combines these as noted above.  But it is also possible to combine *any* pair of dataframes created on a piece.  And this is what you will need to do if you want to use features like:
-
-* combineUnisons
-* simple rather than compound
-* Or build custom 'combined' ngrams from something like melodic intervals and durations, or lyrics and durations.
-
-For example, here is how we this might look for *diatonic* intervals, although we can already do this with ngram parameters as noted above.  But since `melodic` anb `harmonic` return *compound* intervals by default, this will in turn force the ngrams to be *simple* instead.
+By default, the `ngrams` method uses the default behaviors of the `melodic` and `harmonic` methods, then combines these as noted above. But if you would like to `combine unisons`, then you will need to build your own ngrams from the `melodic` and `harmonic` methods, then combine them by passing these to the `df` and `other` parameters in the `ngrams()` method.  Here is how:
 
 ```python
-mel = piece.melodic(kind="d", compound=False)
-har = piece.harmonic(kind="d", compound=False)
-ngrams = piece.ngrams(df=har, other=mel, n=3).fillna('')
-ngrams
-```
-
-![Alt text](images/modules_4.png)
-
-Or combining unisons 
-
-```python
+# notes with combined unisons:
 nr_no_unisons = piece.notes(combineUnisons=True)
-mel = piece.melodic(df=nr_no_unisons, kind="d", compound=False)
-har = piece.harmonic(kind="d", compound=False)
+
+# now those results as melodic intervals, here diatonic 
+mel = piece.melodic(df=nr_no_unisons, kind="d")
+
+# harmonic intervals, here diatonic 
+har = piece.harmonic(kind="d")
+
+# combined as ngrams
 ngrams = piece.ngrams(df=har, other=mel).fillna('')
 ngrams.head()
 ```
 
 ## Corpus Methods with Contrapuntal nGrams
 
+Corpus tools includes a convenient method for finding Contrapuntal Ngrams in any Set of Files
 Define the corpus:
 
-```python
-corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei',
-                    'https://crimproject.org/mei/CRIM_Mass_0005_1.mei'])
-```
+`corpus_contrapuntal_ngrams(corpus, ngram_length=3)`
 
-Then:
-
-* Get the ngrams for all of them. In this case: modules of length "3", with diatonic simple intervals
-* Then combine them into one frame
-* NB: use ImportedPiece, not piece!
-* NB: for func do NOT include the closing parentheses!
+Here is how to use it:
 
 ```python
-func = ImportedPiece.ngrams
-list_of_modules = corpus.batch(func=func, kwargs={'n': 3, 'interval_settings': ('d', False, True)}, metadata=True)
-title_of_output = pd.concat(list_of_melodic_ngrams)
-```
+# define the corpus
+file_list = ['https://crimproject.org/mei/CRIM_Model_0008.mei',
+                    'https://crimproject.org/mei/CRIM_Mass_0005_1.mei']
+corpus = CorpusBase(file_list)
 
-Note that the output lists voice pairs by staff position. In a four-voice piece, the lowest part would be 4, then 3, etc. 4_3 represents the two lowest voices of the piece, and so on.
-
-
-
-```python
-func = ImportedPiece.ngrams
-list_of_modules = corpus.batch(func=func, kwargs={'n': 4, 'interval_settings': ('d', True, False), 'offsets': 'last'}, metadata=True)
-func2 = ImportedPiece.detailIndex
-list_of_details = corpus.batch(func=func2, kwargs={'offset': True, 'df': list_of_modules})
-
-module_corpus = pd.concat(list_of_details).fillna('-').dropna(how="all")
-
-c = module_corpus['Composer']
-t = module_corpus["Title"]
-module_corpus.pop("Composer")
-module_corpus.pop("Title")
-module_corpus.insert(0, "Composer", c)
-module_corpus.insert(1, "Title", t)
-module_corpus
+# run the contrapuntal ngram method on the corpus, passing in the length of the ngrams you want
+corpus_contrapuntal_ngrams(corpus, ngram_length=3)
 ```
 
 ![Alt text](images/modules_8.png)
 
-## Filtering and Counting
+Note that there are several other **corpus ngram** methods available; each provides special types of patterns:
+
+* melodic ngrams
+* melodic ngrams with durational ratios
+* harmonic ngrams
+* sonority ngrams
+
+See more about these in the [08_Ngrams_Heat_Maps Tutorial](/tutorial/08_Ngrams_Heat_Maps.md).
+
+## Filtering and Counting nGrams
 
 ```python
 piece.ngrams(exclude=['Rest']).stack().value_counts().to_frame()
@@ -138,9 +132,13 @@ piece.ngrams(exclude=['Rest']).stack().value_counts().to_frame()
 
 ## Searching with Interact in a Notebook
 
-Note that this will only work in a Jupyter Notebook
+Note that this will only work in Jupyter Lab!  It will probably NOT work in VS Code!
 
 ```python
+# be sure that ipywidgets is installed!
+from ipywidgets import interact
+import re  
+
 @interact
 def get_modules(search_pattern="", kind=["d", "q", "c", "z"], compound=[True, False], length=[3, 4, 5, 6], endpoint=["last", "first"]):
     
@@ -150,8 +148,10 @@ def get_modules(search_pattern="", kind=["d", "q", "c", "z"], compound=[True, Fa
     filtered_ngrams = ngrams[ngrams.apply(lambda x: x.astype(str).str.contains(search_pattern).any(), axis=1)]#.copy()
     beats_measures_mod = piece.detailIndex(filtered_ngrams, offset=True)
 
-    return beats_measures_mod.fillna("-").applymap(str).style.applymap(lambda x: "background: #ccebc5" if re.search(search_pattern, x) else "")
+    return beats_measures_mod.fillna("-").map(str).style.map(lambda x: "background: #ccebc5" if re.search(search_pattern, x) else "")
 ```
+
+
 ![Alt text](images/modules_5.png)
 
 -----  

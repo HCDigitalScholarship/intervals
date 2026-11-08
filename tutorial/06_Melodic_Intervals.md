@@ -513,9 +513,12 @@ mel_counts = (mel_long.groupby(['Interval', 'Voice'])
 
 # chart
 chart_title = "Distribution of Melodic Intervals in Corpus"
-fig = px.bar(mel_counts, x='Interval', y='Count', color='Voice',
-             title=chart_title,
-             category_orders={'Interval': interval_order, 'Voice': voice_cols})
+fig = px.bar(mel_counts, 
+              x='Interval', 
+              y='Count', 
+              color='Voice',
+              title=chart_title,
+              category_orders={'Interval': interval_order, 'Voice': voice_cols})
 fig.update_layout(xaxis_title="Interval",
                   yaxis_title="Count",
                   legend_title='Voices',

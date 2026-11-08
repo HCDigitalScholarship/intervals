@@ -13,9 +13,7 @@ Read more about [Python with w3school reference guide](https://www.w3schools.com
 It's important to understand **data types**:
 
 *   **integer**:  any whole number, such as 1, 2, 10
-
 *   **float**:  decimal numbers, such as 2.25, 6.875
-
 *   **string**:   any alpha-numeric character, surrounded by quotation marks (double or single)
 *   **Boolean**:  True or False (in fact these are reserved words in Python and should not be used beyond Boolean functions)
 
@@ -27,7 +25,6 @@ These can also be combined as various kind of **collections**:
 *   **lists**:  an ordered sequence presented in brackets and separated by commas, such as **["Blues", "Gospel", "Country"]** or **[1.0, 4.0, 6.0]**.  Lists can contain duplicates
 *   **set**:  an unordered sequence; it cannot contain duplicates
 *   **tuples**: a special kind of list that cannot be altered, presented as **("Jazz", "Classical", "Folk")** or **(1.25, 4.76, 8.03)**
-
 *   **dictionaries**:  a series of **key : value** pairs contained within braces, such as **{"artist" : "McCartney, Paul", "title" : "Yesterday"}**
 
 Read more about [Python data types at the w3schools resource](https://www.w3schools.com/python/python_datatypes.asp)

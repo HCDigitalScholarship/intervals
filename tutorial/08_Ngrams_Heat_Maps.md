@@ -1,19 +1,34 @@
-# Finding ngrams and Entries with CRIM Intervals 
+# Finding nGrams and Entries with CRIM Intervals 
 
-An **n-gram** (hereafter simply 'ngram') is a commonly used linguistic term for a continuous string of characters or events. A series of any musical expressions in pieces of music, specifically of some length *N*, can similarly be refered to as an **ngram**. With the `ngrams()` function we are able to represent various different types of ngrams depending on the data input type:
+An **n-gram** (hereafter simply 'nGram') is a commonly used linguistic term for a continuous string of characters or events. A series of any musical expressions in pieces of music, specifically of some length *N*, can similarly be refered to as an **nGram**. With the `ngrams()` function we are able to represent various different types of nnGrams depending on the data input type:
 
-* An ngram of notes, harmonic intervals, durations, or lyrics will involve *N* notes, or in the case of harmonic (vertical) intervals, *N* pairs of notes  
+* An nGram of notes, harmonic intervals, durations, or lyrics will involve *N* notes, or in the case of harmonic (vertical) intervals, *N* pairs of notes  
+
 * An ngram of melodic intervals will involve (*N* + 1) notes, since it involves *N* **lateral intervals between** notes
 
-## The `ngrams()` Function in Brief
+## The `ngrams()` Function 
 
-By gathering all ngram of a given length, we can make a DataFrame of every instance in which a series of *N* consecutive events is found. These can in turn be used to find patterns within a piece (such as recurring melodies), or across a corpus of compositions.
+```python
+ngrams(df=None, 
+       n=3, 
+       how='columnwise', 
+       other=None, 
+       held='Held',
+       exclude=['Rest'], 
+       interval_settings=('d', True, True), 
+       unit=0,
+       offsets='first', 
+       show_both=False)
+```
 
-By default, the `piece.ngrams()` function returns ngrams of *contrapuntal modules*. These are in fact combinations of harmonic and melodic ngrams heard in pairs of voices, as explained below. They are priviledged in CRIM Intervals because of their value in working with the complexities of the `piece.cadences()` function.
 
-It is nevertheless relatively easy to find other kinds of ngrams for a single musical feature (such as all all the melodic ngrams, or harmonic ones, or even lyric and durational ngrams. 
+By gathering all nGrams of a given length, we can make a DataFrame of every instance in which a series of *N* consecutive events is found. These can in turn be used to find patterns within a piece (such as recurring melodies), or across a corpus of compositions.
 
-Note that the `entries()` function (explained below) can be used in conjunction with `ngrams()` to find important events in a piece.
+By default, the `piece.ngrams()` function returns nGrams of *contrapuntal modules*. These are in fact combinations of harmonic and melodic nGrams heard in pairs of voices, as explained below. They are priviledged in CRIM Intervals because of their value in working with the complexities of the `piece.cadences()` function.  The default thus uses values of `None` for the `df` and `other` parameters.  This is by design, since the complete function uses `harmonic()` and `melodic()` for these.
+
+It is nevertheless relatively easy to find other kinds of nGrams for a single musical feature (such as all all the melodic ngrams, or harmonic ones, or even lyric and durational ngrams. 
+
+Note that the `entries()` function (explained below) can be used in conjunction with `ngrams()` to find important events in a piece, filtering the results to nGrams that are heard only after rests or at the start of some subsection.
 
 ## The Parameters:
 
@@ -22,7 +37,7 @@ Various parameters afford the means to adjust results; some are used only with t
 ### Parameters Used for All Kinds of Ngrams
 
 * `n`, which controls the length of the ngram being found; default creates ngram of length 3 (involving *3* notes for a `notes()`, `harmonic()`, `durations()`, or `lyrics()` DataFrame, but *4* notes for a `melodic()` DataFrame)  
-* `df`, which allows a custom DataFrame to be passed into the `ngrams()`, and is the only way to create ngrams other than the default 'contrapuntal module' type
+* `df`, which allows a custom DataFrame to be passed into the `ngrams()`, and is the only way to create nGrams other than the default 'contrapuntal module' type
 * `other`, which allows a *second* custom DataFrame to be passed into the `ngrams()` function to consider multiple types of events in a piece simultaneously, thus producing 'combination ngrams' of things like lyrics and durations
 * `unit`, which will regularize the frequency of ngram polling rather than finding every occurence 
 * `exclude`, which omits any ngram containing a given string from the output; default excludes 'Rest' 
@@ -31,16 +46,16 @@ Various parameters afford the means to adjust results; some are used only with t
 ### Parameters Used for Contrapuntal Ngrams Only
 
 * `held`, which controls how unisons appear in the lower voice of a contrapuntal module; default is 'Held' 
-* `interval_settings`, which allows custom settings for the intervals reported in the contrapuntal modules `kind`, `directed`, and `compound` parameters provided that *no data is passed* into the `df` or `other` parameters; default is `kind = 'd'`, `directed = True`, and `compound = True`.  This parameter is **not** used when passing in a df for melodic or harmonic ngrams alone.
+* `interval_settings`, which allows a *tuple* of custom settings for the intervals reported in the contrapuntal modules `kind`, `directed`, and `compound` parameters provided that *no data is passed* into the `df` or `other` parameters; default is `kind = 'd'`, `directed = True`, and `compound = True`.  This parameter is **not** used when passing in a df for melodic or harmonic ngrams alone.
 * `show_both`, which allows the melodic motion of both voices in a contrapuntal model to be shown; default only displays the melodic motion of the lower voice.
 
-## Contrapuntal Ngrams in Detail
+## Contrapuntal nGrams in Detail
 
 ### Default Contrapuntal Module Ngrams
 
 By default, the `ngrams()` function will always find **contrapuntal modules**. These consist of alternating sequences of the harmonic and melodic intervals formed by every pair of voices in a piece. Also by default in the case of these contrapuntal modules, only the melodic motion of the lower voice in the pair is shown (see `show_both` below for how to show the melodic motion of the upper voice, too). 
 
-The result is thus sequence of N items expresses as a string. If n = 3, for instance (`piece.ngrams(n = 3).fillna('')`, an ngram of '12_4, 10_Held, 8' between two voices means that three harmonic intervals (12, 10, 8) were formed while the lower voice first went up a fourth, then 'held' (via a tie). The melodic motion of the upper part could be inferred from these five pieces of information.  The following example will serve to illustrate:
+The result is thus sequence of N items expresses as a string. If n = 3, for instance `piece.ngrams(n = 3).fillna('')`, an ngram of '12_4, 10_Held, 8' between two voices means that three harmonic intervals (12, 10, 8) were formed while the lower voice first went up a fourth, then 'held' (via a tie). The melodic motion of the upper part could be inferred from these five pieces of information.  The following example will serve to illustrate:
 
 ![Alt text](images/ng_1.png)
 
@@ -63,7 +78,7 @@ ngrams = piece.ngrams(df = har, other = mel)
 ngrams
 ```
 
-See more about combining different dataframes into ngrams below.
+See more about combining different dataframes into nGrams below.
 
 ### Other Features of Contrapuntal Module Ngrams  
 
@@ -132,9 +147,9 @@ dur_ngrams
 ![Alt text](images/ng_9.png)
 
 -->
-### Setting ngram Length: the `n` Parameter  
+### Setting nGram Length: the `n` Parameter  
 
-When gathering ngrams, we can either search for ngrams of a specific length (default = 3). It can be set via the `n  parameter:
+When gathering nGrams, we can either search for nGrams of a specific length (default = 3). It can be set via the `n  parameter:
 
 ```python
 mel = piece.melodic()
@@ -142,7 +157,7 @@ ngrams = piece.ngrams(df = mel, n = 5)
 ngrams 
 ```
 
-Remember that modifications to the particular type of feature in question needs to be made when applying that function.  The type of melodic interval, for instance, is set, here in `melodic()`.  The length of the ngrams is set in `ngrams()`:
+Remember that modifications to the particular type of feature in question needs to be made when applying that function.  The type of melodic interval, for instance, is set, here in `melodic()`.  The length of the nGrams is set in `ngrams()`:
 
 ```python
 mel = piece.melodic(kind = "c", compound = False)
@@ -152,15 +167,15 @@ ngrams
 
 #### Also note that: 
 
-* The ngram method will produce a 'moving window' of events of length `n`. To limit the results to important 'entries' (ngrams that come after rests, fermatas, double barlines, see the `piece.entries()` below.
-* In the case of melodic ngrams, the presence of any `Rest` means that the ngram will 'break' at that point (since there is no melodic interval between a note and a rest). The treatment of rests for other kinds of ngrams is determined by the `exclude` parameter, as explained below.
-* To find *melodic ngrams of the maximum length* until a rest is found, set `n = -1`. 
+* The nGram method will produce a 'moving window' of events of length `n`. To limit the results to important 'entries'.  nGrams that come after rests, fermatas, double barlines, see the `piece.entries()` below.
+* In the case of melodic nGrams, the presence of any `Rest` means that the nGram will 'break' at that point (since there is no melodic interval between a note and a rest). The treatment of rests for other kinds of nGrams is determined by the `exclude` parameter, as explained below.
+* To find *melodic nGram of the maximum length* until a rest is found, set `n = -1`. 
 
 ### Combination ngrams:  using `df` and `other` Parameters Together  
 
-The default 'contrapuntal module' ngram is in fact a combination of two different dataframes:  one for the harmonic intervals and the other for the melodic ones. But it is possible to create other combinations by passing *both `df` and `other` to `ngrams()`, provided that the `df` and `other` parameters have the same shape (overall number of rows and columns). 
+The default 'contrapuntal module' nGram is in fact a combination of two different dataframes:  one for the harmonic intervals and the other for the melodic ones. But it is possible to create other combinations by passing *both `df` and `other` to `ngrams()`, provided that the `df` and `other` parameters have the same shape (overall number of rows and columns). 
 
-For example, the following line of code will produce **ngrams of length 5** containing the information associated with **both the melodic intervals and the durational ratios** at each subsequent offset in a piece:**  
+For example, the following line of code will produce **nGrams of length 5** containing the information associated with **both the melodic intervals and the durational ratios** at each subsequent offset in a piece:**  
 
 ```python
 n = 5
@@ -193,17 +208,17 @@ ng
 
 ### nGrams at Using Regularized Durations: The `unit` Parameter  
 
-By default, applying the `ngrams()` function to a piece will produce ngrams the **actual note values** found in the piece. It is nevertheless possible to determine the ngrams according to some fixed number of offsets using the `unit` parameter, which will force the function to only output ngrams found at a given regular interval. This can be helpful for applications such as only finding ngrams which begin on the first beat of a measure, or other similar situations where regularity is helpful. 
+By default, applying the `ngrams()` function to a piece will produce nGrams the **actual note values** found in the piece. It is nevertheless possible to determine the nGrams according to some fixed number of offsets using the `unit` parameter, which will force the function to only output nGrams found at a given regular interval. This can be helpful for applications such as only finding ngrams which begin on the first beat of a measure, or other similar situations where regularity is helpful. 
 
 It would probably make little sense to use '1.0' or some other tiny unit, since this would result in a vast number of unisons or static harmonic passages as longer notes are sampled multiple times.  But setting `unit = 2.0` would correspond to the half-note (minim), a common basic pace of melodic and harmonic motion in Renaissance counterpoint.  Larger units might also be revealing of large = scale sequences.
 
-The 'unit' parameter only works with contrapuntal ngrams:
+The 'unit' parameter only works with contrapuntal nGrams:
 
 ```python
 piece.ngrams(unit = 4)
 ``` 
 
-If regularized melodic ngrams (or some other type) are needed, it will be necessary to use the `regularize()` function:
+If regularized melodic nGrams (or some other type) are needed, it will be necessary to use the `regularize()` function:
 
 ```python
 nr = piece.notes()
@@ -222,7 +237,7 @@ Compare results with and without regularization (unit = 2):
 
 An ngram can be placed within the DataFrame at one of two offsets. By default, the `offsets` parameter is set equal to `"first"`.  In this case the ngram will be associated with the offset of the first element in it (such as the first interval or first lyric syllable). Alternatively, setting the parameter to `"last"` will place it at the offset of its last element.  
 
-Melodic ngrams at offset at start of first note (note settings for both mel and ngrams!):
+Melodic nGrams at offset at start of first note (note settings for both mel and ngrams!):
 
 ```python
 mel = piece.melodic(kind = "c", end = False)
@@ -230,7 +245,7 @@ mel_ngrams_lastOffset = piece.ngrams(df = mel, n = 5, offsets = "first").fillna(
 mel_ngrams_lastOffset
 ```
 
-Melodic ngrams at offset at end of last note (note settings for both mel and ngrams!):
+Melodic nGrams at offset at end of last note (note settings for both mel and ngrams!):
 
 ```python
 mel = piece.melodic(kind = "c", end = True)
@@ -241,9 +256,9 @@ mel_ngrams_lastOffset
 ![Alt text](images/ng_12.png)
 
 
-## All ngrams or Entries Only? The `entries()` Function  
+## All nGrams or Entries Only? The `entries()` Function  
 
-By default, the `ngrams()` function will find every single series of intervals of its given length, creating a moving window that will find not only the ngrams representing the beginnings of melody lines, but also those same ngrams starting from the second interval, and from the third, and so on. We can include only the ngrams of melodic intervals which begin after a rest, section break, or fermata with the `entries()` function.  
+By default, the `ngrams()` function will find every single series of intervals of its given length, creating a moving window that will find not only the nGrams representing the beginnings of melody lines, but also those same ngrams starting from the second interval, and from the third, and so on. We can include only the ngrams of melodic intervals which begin after a rest, section break, or fermata with the `entries()` function.  
 
 Note that:
 
@@ -330,13 +345,13 @@ mel_ngrams_no_tuples = mel_ngrams.map(convertTuple)
 mel_ngrams_no_tuples
 ```
 
-It is **not** necessary to treat the contrapuntal ngrams in this way, as the default function already converts the results to strings.  
+It is **not** necessary to treat the contrapuntal nGrams in this way, as the default function already converts the results to strings.  
 
-## NGrams with Durations and Durational Ratios
+## nGrams with Durations and Durational Ratios
 
-Creating ngrams with `durations` or `durationaRatios` will take some special care, since the original values produced by these methods are floats.  We need to transform these into strings. You might also need to dropna values.
+Creating nGrams with `durations` or `durationaRatios` will take some special care, since the original values produced by these methods are floats.  We need to transform these into strings. You might also need to dropna values.
 
-In addition, we should recall that the resulting ngrams will be expressed as tuples (as noted above), which can prove difficult to work with for purposes of other work.  Meanwhile if we begin be filling the na values with empty strings or some neutral value, we will in the process create ngrams contain these 'blank' values, and so misrepresent the durational (or durationalRatio) ngrams in your piece.
+In addition, we should recall that the resulting nGrams will be expressed as tuples (as noted above), which can prove difficult to work with for purposes of other work.  Meanwhile if we begin be filling the na values with empty strings or some neutral value, we will in the process create ngrams contain these 'blank' values, and so misrepresent the durational (or durationalRatio) ngrams in your piece.
 
 So here are some functions that will help avoid these problems:
 
@@ -360,7 +375,7 @@ def clean_string(input_string):
         return input_string
 ```
 
-Now use them to create the durational ngrams:
+Now use them to create the durational nGrams:
 
 ```python
 # durations
@@ -380,12 +395,25 @@ ng
 
 ![alt text](images/dur_ngs.png)
 
-You could so the same for `durationRatios`
+You could so the same for `durationalRatios`:
 
+```python
+dur_rats = piece.durationalRatios(df=None, end=True)
+#  convert the floats to strings
+dur_rats = dur_rats.applymap(str)
+
+# ngrams
+ng = piece.ngrams(df=dur_rats, n=3)
+
+# convert tuples and remove ngrams shorter than required length
+ng = ng.applymap(convertTuple)
+ng = ng.applymap(clean_string)
+ng
+```
 
 ## Removing "NaN" values  
 
-Similarly to other functions previously discussed in this documentation, ngram DataFrams can be cleaned up using the `dropna()` and `fillna()` functions to drop all rows filled with only "NaN" values, and replace the remaining "NaN" values with blank spaces so that the table may be read more easily:  
+Similarly to other functions previously discussed in this documentation, nGrams DataFrams can be cleaned up using the `dropna()` and `fillna()` functions to drop all rows filled with only "NaN" values, and replace the remaining "NaN" values with blank spaces so that the table may be read more easily:  
 
 ```python
 cleaned_entries = entries.dropna(how = "all").fillna(' ')
@@ -394,11 +422,11 @@ cleaned_entries
 
 ## Organizing by Measures and beats  
 
-To display DataFrames relative to measures, and beats within measures, rather than offsets across the entire piece, we can use the `detailIndex()` function, which is [documented here](09_DetailIndex.md).  
+To display DataFrames relative to measures, and beats within measures, rather than offsets across the entire piece, we can use the `detailIndex()` function, which is documented at [05_Detail_Index](/tutorial//05_Detail_Index.md)
 
 ## Counting ngrams  
 
-After using the `ngrams()` function to identify all of the ngrams in a piece, they can be counted and sorted by their frequency in the piece overall using some [general pandas functions](15_Pandas_Basics.md):  
+After using the `ngrams()` function to identify all of the nGrams in a piece, they can be counted and sorted by their frequency in the piece overall using some [general pandas functions](15_Pandas_Basics.md):  
 
 ```python
 mel = piece.melodic(kind = "c", compound = False)
@@ -406,10 +434,9 @@ melNgrams = mel.ngrams(n = 4)
 melNgrams.stack().value_counts().to_frame()
 ```
 
-
 ## Visualizing nGrams (and Comparing nGrams across a Corpus)
 
-The CRIM Intervals visualization library makes it possible to display ngrams as a dynamic chart, with each nGram displayed from the start (left) to end (right) of the piece, voice-by-voice.  Identical nGrams receive the same color.
+The CRIM Intervals visualization library makes it possible to display nGrams as a dynamic chart, with each nGram displayed from the start (left) to end (right) of the piece, voice-by-voice.  Identical nGrams receive the same color.
 
 ### Heat Map of Ngrams in One Piece
 
@@ -432,8 +459,6 @@ Here is a map for just one piece:
 
 ```python
 # import piece
-url = 'https://crimproject.org/mei/CRIM_Model_0019.mei' 
-model = importScore(url)
 url = 'https://crimproject.org/mei/CRIM_Model_0019.mei' 
 model = importScore(url)
 

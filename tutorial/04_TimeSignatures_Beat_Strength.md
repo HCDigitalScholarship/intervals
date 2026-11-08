@@ -1,5 +1,6 @@
 # Time Signatures, Measure Numbers, Barlines and Beat Strengths
 
+
 Several of these functions called as parameters `detailIndex()`. See more at [09_DetailIndex](09_DetailIndex.md). But they can be useful on their own, too.
 
 ## View Time Signatures with `timeSignatures()`
@@ -27,7 +28,7 @@ This method returns a dataframe with offsets as the index, and the measure numbe
 piece.measures()
 ```
 
-It is not particularly useful on its own, but it might be helpful for situations in which it is important to return all the offsets that correspond to a given measure number. For example, here is a way to find all of the notes that sound at the start of each measure in a piece:
+It is not particularly useful on its own, but it might be helpful for situations in which it is important to return all the offsets that correspond to a given measure number. For example, here is a way to *find all of the notes that sound at the start of each measure in a piece*:
 
 ```python
 #df of measures (that is, where each measure starts)
@@ -71,7 +72,7 @@ piece.detailIndex(barlines)
 
 ## View Beat Strengths with `beatStrengths()`
 
-music21 has a built-in method that assigns a relative strength for each beat in a bar, depending on the prevailing time signature. The downbeat is equal to 1.0, and all other metric positions in a measure are given smaller numbers approaching zero as their metric weight decreases. To see the results in the context of measures and beats (in order to make sense of the ratings), pass the results of `beatStrengths()` to `detailIndex()`
+music21 has a built-in method that assigns a *relative strength for each beat in a bar*, depending on the prevailing time signature. The downbeat is equal to 1.0, and all other metric positions in a measure are given smaller numbers approaching zero as their metric weight decreases. To see the results in the context of measures and beats (in order to make sense of the ratings), pass the results of `beatStrengths()` to `detailIndex()`
 
 ```python
 bs = piece.beatStrengths()
@@ -83,21 +84,27 @@ piece.detailIndex(bs)
 The resulting dataframe could also be used to filter other results, for instance, by finding all offsets (and voices) where a certain `beatStrength` condition is met. For instance, here is a way to filter for 'strong beats', the 'strong notes', the 'strong melodic intervals', and at last the 'ngrams based on strong intervals'.  In brief, **structural tones**:
 
 ```python
-#get the notes
 nr = piece.notes()
+
 #stack the voices on top of each other to make a series
 nr_stacked = nr.stack()
+
 #find the beat strengths
 bs = piece.beatStrengths()
-#stack and filter the beat strengths according to some threshold
-strong_beats = bs.stack() > .75
+
+# #stack and filter the beat strengths according to some threshold or value
+strong_beats = bs.stack() == 1.0
+
 #filter the stacked notes and unstack
 strong_notes = nr_stacked[strong_beats].unstack()
-#find the melodic intervals among those 'strong' notes
-mel_strong = piece.melodic(df = strong_notes, kind = 'd')
+
+# find the melodic intervals among those 'strong' notes
+mel_strong_notes = piece.melodic(df = strong_notes, kind = 'd')
 #and at last find the ngrams for those strong notes
-strong_ngrams = piece.ngrams(df = mel_strong, n = 4, exclude = ['Rest']).fillna('')
-strong_ngrams
+
+strong_note_ngrams = piece.ngrams(df = mel_strong_notes, n = 2, exclude = ['Rest']).fillna('')
+# strong_ngrams
+strong_note_ngrams
 ```
 
 ![Alt text](images/beat_strength_ng.png)

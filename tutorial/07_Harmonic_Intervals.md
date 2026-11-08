@@ -1,14 +1,26 @@
-# Finding the Harmonic Intervals in Pieces  
+# Harmonic Intervals and Sonorities  
 
-We have just seen how the `melodic()` function allows us to examine the points in the score where the pitch changes in a single voice, resulting in a melodic intervals. We are also able to examine harmonic intervals, which is the difference in pitch between two voices who sound a note simultaneously. This can be accomplished with the `harmonic()` function.  
+We have just seen how the `melodic()` function allows us to examine the points in the score where the pitch changes in a single voice, resulting in a melodic intervals. We are also able to examine harmonic intervals, which is the difference in pitch between two voices who sound a note simultaneously. 
+
+Here we show two different approaches:
+
+* The `harmonic()`, which reports intervals between all possible **pairs** of voices
+* The `sonority()` function, which reports all the intervals above the lowest sounding part at once.  
+
 
 ## The `harmonic()` Function  
 
-Harmony is one of the most important elements of music, and of musical similarity. By searching for patterns where pieces utilize certain harmonic intervals, we are able to find points of similarity within and between different pieces. In its simplest form, `harmonic()` simply produces a DataFrame of each harmonic interval present in a piece, between all possible voice pairs:  
+```python
+harmonic(kind='q', directed=True, compound=True, againstLow=False, df=None)
+```
+
+In its simplest form, `harmonic()` simply produces a DataFrame of each harmonic interval present in a piece, between all possible voice pairs:  
 
 ```python
-piece.harmonic() 
-``` 
+path = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
+piece = importScore(path)
+harmonic_intervals = piece.harmonic()
+```
 
 ![Alt text](images/har_1.png)
 
@@ -20,17 +32,17 @@ The function can, however, be modified by each of its parameters:
 
 ## `harmonic()` Parameters  
 
-### Differentiating Between Diatonic, Chromatic, and Other Intervals: The `kind` Parameter  
+### Differentiating Between Diatonic, Chromatic, and Other Intervals with the `kind` Parameter  
 
 The `harmonic()` function contains a parameter `kind`, which has a default value of "q". These inputs are case sensitive:  
 
-**Diatonic with qualities**. These qualities are outputs such as "P8" for a perfect octave (e.g. C4 -> C5), "M3" for a major third interval (e.g. C5 -> E5), and "m3" for minor third interval (e.g. C5 -> E-5):  
+**Diatonic with Quality**. These qualities are outputs such as "P8" for a perfect octave (e.g. C4 -> C5), "M3" for a major third interval (e.g. C5 -> E5), and "m3" for minor third interval (e.g. C5 -> E-5):  
 
 ```python
 piece.harmonic(kind = 'q')
 ```
 
-**Diatonic without qualities**. Provides outputs such as "8" for an octave, and "3" for a third interval:  
+**Diatonic without Quality**. Provides outputs such as "8" for an octave, and "3" for a third interval:  
 
 ```python
 piece.harmonic(kind = "d")
@@ -82,9 +94,15 @@ Using `piece.harmonic(compound = False)`, in contrast, analyzes all intervals as
 
 ![Alt text](images/har_3.png)
 
-### Harmonic Intervals Between All Voice Pairs, or Only Comparing to the Lowest Voice? The `againstLow` Parameter  
+Note that with `compound = False` an octave itself is not reduced to a unison*. You could map the octave to a unison by using the `replace()` function, for instance:  
 
-By default, `harmonic()` generates a DataFrame of the harmonic intervals between **ALL** voice pairs present at a given offset. This is the case when the `againstLow` parameter is set to its default, `False`. Alternatively, however, we may wish to explore each voice's harmonic relationship only to the lowest voice present at each offset, and not need other harmonic pairs creating clutter in our DataFrame output. When changed to `True`, harmonic intervals will only be shown between the lowest voice and each other voice at a given offset:  
+```python
+piece.harmonic(kind = 'd', compound = False).replace('8', '1')
+```
+
+### The `againstLow` Parameter  
+
+By default, `harmonic()` generates a DataFrame of the harmonic intervals between **all pairs** of voice parts present at a given offset. But it is also possible to report the interval *between each voice and the lowest voice present at each offset*. When changed to `True`, harmonic intervals will only be shown between the lowest voice and each other voice at a given offset:  
 
 ```python
 piece.harmonic(againstLow = True)
@@ -94,23 +112,17 @@ piece.harmonic(againstLow = True)
 
 This means that if a piece contained a Bass, Tenor, Alto, and Soprano voice, all four voices were sounding, and `againstLow` was set to **True**, `harmonic()` will generate the interval between the Bass and the Tenor, the Bass and the Alto, and the Bass and the Soprano. It will **NOT** generate any harmonic interval between the Tenor and Alto, Tenor and Soprano, or Alto and Soprano. The same logic would also apply even if the Bass was not present, where only the harmonic intervals appearing would be between the Tenor and Alto voices, and between the Tenor and Soprano voices.  
 
-### The `sonorities` Function:  Reporting All Harmonic Intervals in One Column
+### The `sonorities` Function:  Reporting All Harmonic Intervals as a Single Column
 
 There is also a separate `sonorities` function, which in turn uses the results from harmonic to produce a single column representing all of the vertical intervals heard at each 'onset' of any note throughout the piece.  The result is something like a figured bass representation of the harmonies at each moment.
 
 In its simplest form, we call this on piece as follows:
 
 ```python
-piece.sonorities()
+piece.sonorities(kind='d', directed=True, compound='simple', sort=True)
 ```
 
-There are also several parameters.  The first three are simply those used with `harmonic`, as described above.  There are their defaults:
-
-kind='d'
-directed=True
-compound='simple'
-
-One additional parameter, `sort`, determines the *order* of the intervals.  If `sort=True` (which is the default), then the intervals will be sorted from largest to smallest.  Duplicates and unisons will be removed.  
+There are also several parameters. The first three are simply those used with `harmonic`, as described above.  One additional parameter, `sort`, determines the *order* of the intervals.  If `sort=True` (which is the default), then the intervals will be sorted from largest to smallest.  Duplicates and unisons will be removed.  
 
 
 ```python
@@ -127,16 +139,19 @@ piece.sonorities(sort=False)
 
 ![Alt text](images/sonorities_f.png)
 
-It would also be possible to pass these to the ngram method to see higher level patterns:
+### Ngrams of Sonorities
+
+We could also use the `ngrams()` function to find the **sequences of sonorities** in a piece, or across a corpus.  Here is an example of how to do this for a single piece:
+
 
 ```python
 son = piece.sonorities(sort=False)
-piece.ngrams(df = son)
+piece.ngrams(df = son, n=3)
 ```
 
-
-
 ![Alt text](images/sonoritie_ngrams.png)
+
+
 
 ### Dealing with Consecutive Pitch Repetition/Rests: The `combineUnisons` and `combineRests` Parameters:  
 
@@ -154,7 +169,6 @@ nr_separate_rests = piece.notes(combineRests = False)
 piece.harmonic(df = nr_separate_rests)
 ```  
 
-## 
 
 ## `fillna()` and `dropna()` Functions  
 
@@ -169,7 +183,6 @@ We are also able to apply the `dropna()` function, which (by default) removes al
 ```python
 piece.harmonic().dropna()
 ```
-
 
 This would be equivalent to specifiying the function as follows:  
 
@@ -198,8 +211,7 @@ For more information about the `detailIndex` function, consult [the function's d
 
 ## Harmonic Intervals in a Corpus
 
-
-The `corpus.batch` method will help you produce a combined picture of harmonic intervals across any corpus.
+Our Corpus Tools includes a method for working with harmonic intervals in a set of pieces.  Here we show how to do this.  See more in the [Corpus Tools](/tutorial/21_Corpus_Tools.md) section of this guide.
 
 <br>
 
@@ -211,42 +223,26 @@ The `corpus.batch` method will help you produce a combined picture of harmonic i
 
 <Summary>Code to Run</Summary>
 
+
 ```python
-def corpus_har(corpus, combine_unisons_choice, combine_rests_choice, kind_choice, directed, compound):
-    func = ImportedPiece.notes  # <- NB there are no parentheses here
-    list_of_dfs = corpus.batch(func = func, 
-                                kwargs = {'combineUnisons': combine_unisons_choice, 'combineRests': combine_rests_choice}, 
-                                metadata=False)
-    func1 = ImportedPiece.numberParts
-    list_of_dfs = corpus.batch(func = func1,
-                               kwargs = {'df' : list_of_dfs},
-                               metadata=False)
-    
-    func2 = ImportedPiece.harmonic
-    list_of_dfs = corpus.batch(func = func2,
-                               kwargs = {'df' : list_of_dfs, 'kind' : kind_choice, 'directed' : directed, 'compound' : compound},
-                               metadata = False)
-    func3 = ImportedPiece.detailIndex
-    list_of_dfs = corpus.batch(func = func3, 
-                            kwargs = {'df': list_of_dfs}, 
-                            metadata = True)
-    har = pd.concat(list_of_dfs)
-    cols_to_move = ['Composer', 'Title', 'Date']
-    har = har[cols_to_move + [col for col in har.columns if col not in cols_to_move]]
-    return har
+# make the corpus
+remote_file_list  = ['https://crimproject.org/mei/CRIM_Model_0001.mei',
+       'https://crimproject.org/mei/CRIM_Mass_0002_1.mei']
+corpus = CorpusBase(remote_file_list)
 
-# define the settings
-combine_unisons_choice = False
-combine_rests_choice = False
-kind_choice = 'd'
-directed = True
-compound = True
+# set parameters for melodic interval extraction
+kind_choice = 'd'        # 'd' for diatonic, 'q' for quality
+compound_choice = True   # True for compound intervals, False for simple intervals
+directed_choice = True   # True for directed intervals, False for undirected intervals
 
 
-# run the function
-har = corpus_har(corpus, combine_unisons_choice, combine_rests_choice, kind_choice, directed, compound).fillna('')
-har
+# now run the corpus function
+corpus_har_ints = corpus_har(corpus, kind_choice=kind_choice,
+                                 compound_choice=compound_choice,
+                                 directed_choice=directed_choice)
+corpus_har_ints                   
 ```
+
 
 </Details>
 
@@ -256,9 +252,11 @@ As we explain the [Visualizations_Summary](/18_Visualizations_Summary.md), the *
 
 ### For a Single Piece
 
-First with the voices as separate charts:
+#### Voice Pairs as Separate "facets":
 
-![alt text](images/har_chart_voices.png)
+
+![alt text](images/har_chart_facets.png)
+
 
 <br>
 
@@ -267,46 +265,78 @@ First with the voices as separate charts:
 <Summary>Code to Use</Summary>
 
 ```python
+import re
+
+# import the piece
 url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
 piece = importScore(url)
 
 # give the chart a meaningful title based on your piece:
-md = piece.metadata  
+md = piece.metadata
 chart_title = "Distribution of Harmonic Intervals in " + md['composer'] + ", " + md['title']
 
-# custom interval order
-int_order = ["-P8", "-M7", "-m7", "-M6", "-m6", "-P5", "-P4", "-M3", 
-                          "-m3", "-M2", "-m2", "P1", "m2", "M2", "m3", "M3",
-                          "P4", "P5", "m6", "M6", "m7", "M7", "P8"]
+# set parameters for harmonic interval extraction
+kind_choice = 'q'        # 'd' for diatonic, 'q' for quality
+compound_choice = True   # True for compound intervals, False for simple intervals
+directed_choice = True   # True for directed intervals, False for undirected intervals
+exclude_rests = True     # True to exclude rests, False to include rests
+
 # get the harmonic intervals
-har = piece.harmonic().fillna("-")  
-har = har.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
-har.rename(columns={'index': 'interval', 'voice' : 'voices'}, inplace=True)  
-har['interval'] = pd.Categorical(har["interval"], categories=int_order)  
-har = har.sort_values(by="interval").dropna().copy()  
-voices = mel.columns.to_list()[1:]  # Exclude 'interval' column
-# Create a custom color palette
+har = piece.harmonic(kind=kind_choice, compound=compound_choice, directed=directed_choice)
+har = piece.numberParts(har)  # add part numbers to the column names
+voice_pairs = har.columns.to_list()
+
+# melt: the offset (index) stays fixed, every voice-pair column becomes rows
+har_long = (har.rename_axis('Offset')
+               .reset_index()
+               .melt(id_vars='Offset',
+                     value_vars=voice_pairs,
+                     var_name='Voice_Pair',
+                     value_name='Interval'))
+
+# drop empty cells (and rests, if requested)
+har_long = har_long.dropna(subset=['Interval'])
+har_long['Interval'] = har_long['Interval'].astype(str)
+if exclude_rests:
+    har_long = har_long[har_long['Interval'] != 'Rest']
+
+# order intervals: largest negative (voice crossing) ... unison ... largest positive
+# works for both diatonic ('-2', '8') and quality ('-m3', 'P5', 'M10') labels
+def interval_sort_key(label):
+    m = re.match(r'(-?)([A-Za-z]*)(\d+)', label)
+    if not m:                       # 'Rest' or anything unexpected goes at the end
+        return (float('inf'), 0)
+    sign, quality, size = m.groups()
+    q_rank = {'d': 0, 'm': 1, 'P': 2, 'M': 3, 'A': 4}.get(quality[:1], 2)
+    size = int(size)
+    return (-size, -q_rank) if sign else (size, q_rank)
+
+interval_order = sorted(har_long['Interval'].unique(), key=interval_sort_key)
+
+# count intervals per voice pair
+har_counts = (har_long.groupby(['Interval', 'Voice_Pair'])
+                      .size()
+                      .reset_index(name='Count'))
+
+
+# colors: one per voice pair
 custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
-color_dict = {voice: custom_palette[i % len(custom_palette)] for i, voice in enumerate(voices)}
-# Melt the DataFrame to long format suitable for px.bar
-melted_har = har.melt(id_vars='interval', var_name='voices', value_name='count')
-# Plot using Plotly Express
-fig = px.bar(melted_har, 
-             x='interval', 
-             y='count', 
-             color='voices', 
-             facet_col='voices', 
-             category_orders={'interval': int_order}, 
-             color_discrete_map=dict(zip(voices, custom_palette)),
-             facet_col_wrap=4,  # Wrap facets after every 4 columns; adjust according to your results
-             height=1000,  # Overall figure height
-             facet_row_spacing=0.08,  # Spacing between rows; adjust according to height chosen
+color_dict = {vp: custom_palette[i % len(custom_palette)] for i, vp in enumerate(voice_pairs)}
+
+# each pair as a 'facet' with its own small chart
+fig_facet = px.bar(har_counts,
+             x='Interval',
+             y='Count',
+             color='Voice_Pair',
+             facet_col='Voice_Pair',
+             facet_col_wrap=3,    
+             category_orders={'Interval': interval_order, 'Voice_Pair': voice_pairs},
+             color_discrete_map=color_dict,
+             height=600,
+             width=1000,
              title=chart_title)
-for i in range(len(set(melted_har['voices']))):
-    fig.update_xaxes(showticklabels=True)
+fig_facet.show()
 
-
-fig.show()
 ```
 
 </Details>
@@ -314,7 +344,10 @@ fig.show()
 <br>
 
 
-And then combined:
+#### Voice Pairs Stacked in a Single Chart:
+
+Here we stack the pairs single stacked bar chart, with each voice pair as a separate color:
+
 
 ![alt text](images/har_chart_combined.png)
 
@@ -370,12 +403,12 @@ fig.show()
 
 
 
-### For a Corpus
+### Harmonic Intervals in a Corpus
 
 Here is a chart for an entire corpus:
 
 
-![alt text](images/har_corpus_chart.png)
+![alt text](images/har_corpus_ints_chart.png)
 
 <br>
 
@@ -384,93 +417,68 @@ Here is a chart for an entire corpus:
 <Summary>Code to Use</Summary>
 
 ```python
-# har corpus function for batch processing
-def corpus_har(corpus, combine_unisons_choice, combine_rests_choice, kind_choice, directed, compound):
-    func = ImportedPiece.notes  # <- NB there are no parentheses here
-    list_of_dfs = corpus.batch(func = func, 
-                                kwargs = {'combineUnisons': combine_unisons_choice, 'combineRests': combine_rests_choice}, 
-                                metadata=False)
-    func1 = ImportedPiece.numberParts
-    list_of_dfs = corpus.batch(func = func1,
-                               kwargs = {'df' : list_of_dfs},
-                               metadata=False)
-    
-    func2 = ImportedPiece.harmonic
-    list_of_dfs = corpus.batch(func = func2,
-                               kwargs = {'df' : list_of_dfs, 'kind' : kind_choice, 'directed' : directed, 'compound' : compound},
-                               metadata = False)
-    func3 = ImportedPiece.detailIndex
-    list_of_dfs = corpus.batch(func = func3, 
-                            kwargs = {'df': list_of_dfs}, 
-                            metadata = True)
-    har = pd.concat(list_of_dfs)
-    cols_to_move = ['Composer', 'Title', 'Date']
-    har = har[cols_to_move + [col for col in har.columns if col not in cols_to_move]]
-    return har
+remote_file_list  = ['https://crimproject.org/mei/CRIM_Model_0001.mei',
+       'https://crimproject.org/mei/CRIM_Mass_0002_1.mei']
+corpus = CorpusBase(remote_file_list)
 
-# settings
-combine_unisons_choice = False
-combine_rests_choice = False
-kind_choice = 'd'
-directed = True
-compound = True
+# set parameters for melodic interval extraction
+kind_choice = 'd'        # 'd' for diatonic, 'q' for quality
+compound_choice = True   # True for compound intervals, False for simple intervals
+directed_choice = True   # True for directed intervals, False for undirected intervals
+exclude_rests = True     # True to exclude rests, False to include rests
 
-# orderings
+# the corpus function
+corpus_har_ints = corpus_har(corpus, kind_choice=kind_choice,
+                                 compound_choice=compound_choice,
+                                 directed_choice=directed_choice)
 
-interval_order_quality = ["-P8", "-M7", "-m7", "-M6", "-m6", "-P5", "-P4", "-M3", 
-                          "-m3", "-M2", "-m2", "P1", "m2", "M2", "m3", "M3",
-                          "P4", "P5", "m6", "M6", "m7", "M7", "P8"]
+# melt: metadata/position columns stay fixed, every voice column becomes rows
+id_cols = ['Composer', 'Title', 'Date', 'Measure', 'Beat', 'Progress']
+voice_pair_cols = [c for c in corpus_har_ints.columns if c not in id_cols]
 
-# load corpus
+har_long = corpus_har_ints.melt(id_vars=id_cols,
+                                    value_vars=voice_pair_cols,
+                                    var_name='Voice',
+                                    value_name='Interval')
 
+# drop empty cells (and rests, if requested)
+har_long = har_long.dropna(subset=['Interval'])
+if exclude_rests:
+    har_long = har_long[har_long['Interval'] != 'Rest']
+har_long['Interval'] = har_long['Interval'].astype(str)
 
-file_list = ['https://crimproject.org/mei/CRIM_Model_0001.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei']
+# order intervals: largest descending ... unison ... largest ascending
+# works for both diatonic ('-2', '3') and quality ('-m3', 'P5', 'M9') labels
+import re
+def interval_sort_key(label):
+    if label == 'Rest':
+        return (float('inf'), 0)
+    descending = label.startswith('-')
+    quality, size = re.match(r'([A-Za-z]*)(\d+)', label.lstrip('-')).groups()
+    q_rank = {'d': 0, 'm': 1, 'P': 2, 'M': 3, 'A': 4}.get(quality[:1], 2)
+    size = int(size)
+    return (-size, -q_rank) if descending else (size, q_rank)
 
-corpus = CorpusBase(file_list)
+interval_order = sorted(har_long['Interval'].unique(), key=interval_sort_key)
 
-# run function and create plot
+# count intervals per voice
+har_counts = (har_long.groupby(['Interval', 'Voice'])
+                      .size()
+                      .reset_index(name='Count'))
 
-
-har = corpus_har(corpus, combine_unisons_choice, combine_rests_choice, kind_choice, directed, compound)
-filtered_har = har
-har_no_mdata = filtered_har.drop(['Composer', 'Title', "Date"], axis=1)
-har_no_mdata = har_no_mdata.map(str)
-har_counts = pd.DataFrame(har_no_mdata.apply(pd.Series.value_counts).fillna(0))
-
-# drop row of nas:
-har_counts = har_counts.drop('nan', axis=0)
-
-if exclude_rests == True:
-    har_counts = har_counts.drop('Rest', axis=0)
-# apply the categorical list and sort.  
-if kind_choice == 'q':
-    # har_counts = har_counts.drop(index='')
-    har_counts.index = pd.CategoricalIndex(har_counts.index, categories=interval_order_quality, ordered=True)
-    har_counts.sort_index(inplace=True)
-else:
-    har_counts.index = pd.to_numeric(har_counts.index, errors='coerce')
-
-    # Filter out rows with NaN index if necessary
-    # df = df.dropna(subset=[df.index.name])
-    negative_df = har_counts[har_counts.index < 0].sort_index(ascending=True)
-    non_negative_df = har_counts[har_counts.index >= 0].sort_index(ascending=True)
-    
-    # Step 2: Concatenate the two DataFrames
-    har_counts = pd.concat([negative_df, non_negative_df])
-    # har_counts = har_counts.drop(index='')
-    har_counts.index.rename('interval', inplace=True)
-voices = har_counts.columns.to_list() 
-
-
+# chart
 chart_title = "Distribution of Harmonic Intervals in Corpus"
-
-fig = px.bar(har_counts, x=har_counts.index, y=list(har_counts.columns),
-                    title=chart_title)
-fig.update_layout(xaxis_title="Interval", 
-                    yaxis_title="Count",
-                    legend_title='Voices',
-                       height=700,
-                       width=1000)
+fig = px.bar(har_counts, 
+             x='Interval', 
+             y='Count', 
+             color='Voice',
+             title=chart_title,
+             category_orders={'Interval': interval_order, 'Voice Pair': voice_cols})
+fig.update_layout(xaxis_title="Interval",
+                  yaxis_title="Count",
+                  legend_title='Voice Pairs',
+                  height=700,
+                  width=1000)
 fig.show()
 ```
 

@@ -1,25 +1,34 @@
 # Detail Index  
 
-<!-- Add brief description and parameters at a glance -->
+
 
 ## Showing Measures and Beats:  `detailIndex()`
 
+
 By default, CRIM Intervals dataframes display results according to the `offset` of each event, which appear as the **Index** for the given dataframe. Each increment of 1.0 corresponds to a single quarter note duration. Remember that the first offset will be 0.0, in accordance with Python series format.
 
-But it is easy to include information about measures and beats (as well as offsets)in any combination. This can be done with the help of the `detailIndex()` function (which can also be abbreviated as `di()`. 
+But it is easy to include information about measures and beats (as well as offsets)in any combination. This can be done with the help of the `detailIndex()` function (which can also be abbreviated as `di()`). 
+
+The method has many parameters--these are explained in detail below.:
+
+```python
+
+detailIndex(self, df, measure=True, beat=True, offset=False, t_sig=False,
+        key_sig=False, sounding=False, progress=False, lowest=False, highest=False, _all=False)
+```
 
 To use `detailIndex`, simply pass the dataframe from any function (which will have a list of offsets as the Index) to `detailIndex()`.  For instance:
 
 ```python
 nr = piece.notes()
-piece.detailIndex(nr)
+nr_detail = piece.detailIndex(nr)
 ```
 
 *or:*
 
 ```python
 mel = piece.melodic()
-piece.detailIndex(mel)
+mel_detail = piece.detailIndex(mel)
 ```
 
 
@@ -31,7 +40,7 @@ Indeed, this method works with any dataframe (provided that it relates to a sing
 
 ## Advanced Parameters for `detailIndex`
 
-This function also has a number of parameters that can be adjusted according to need: 
+As noted above function also has a number of parameters that can be adjusted according to need: 
 
 ```python
 piece.detailIndex(df, measure = True, beat = True, offset = False, t_sig = False, sounding = False, progress = False, lowest = False, highest = False, _all = False)

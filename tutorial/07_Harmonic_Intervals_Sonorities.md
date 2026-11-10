@@ -248,7 +248,7 @@ directed_choice = True   # True for directed intervals, False for undirected int
 
 
 # now run the corpus function
-corpus_har_ints = corpus_har(corpus, kind_choice=kind_choice,
+corpus_har_ints = corpus_tools.corpus_har(corpus, kind_choice=kind_choice,
                                  compound_choice=compound_choice,
                                  directed_choice=directed_choice)
 corpus_har_ints                   
@@ -439,7 +439,7 @@ directed_choice = True   # True for directed intervals, False for undirected int
 exclude_rests = True     # True to exclude rests, False to include rests
 
 # the corpus function
-corpus_har_ints = corpus_har(corpus, kind_choice=kind_choice,
+corpus_har_ints = corpus_tools.corpus_har(corpus, kind_choice=kind_choice,
                                  compound_choice=compound_choice,
                                  directed_choice=directed_choice)
 

@@ -251,7 +251,7 @@ corpus = CorpusBase(local_file_list)
 
 
 ```python
-corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)
+corpus_tools.corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)
 ```
 <br>
 
@@ -485,7 +485,7 @@ directed_choice = True   # True for directed intervals, False for undirected int
 exclude_rests = True     # True to exclude rests, False to include rests
 
 # the corpus function
-corpus_melodic_ints = corpus_mel(corpus, kind_choice=kind_choice,
+corpus_melodic_ints = corpus_tools.corpus_mel(corpus, kind_choice=kind_choice,
                                  compound_choice=compound_choice,
                                  directed_choice=directed_choice)
 

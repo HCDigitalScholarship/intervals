@@ -271,7 +271,7 @@ file_list = ['https://crimproject.org/mei/CRIM_Model_0001.mei', 'https://crimpro
 corpus = CorpusBase(file_list)
 
 # pass that corpus to the given method, along with optional arguments
-corpus_notes_df = corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False, key_sig=False)
+corpus_notes_df = corpus_tools.corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False, key_sig=False)
 
 # dropping metdata for purposes of the chart
 corpus_notes_df_no_mdata = corpus_notes_df.drop(['Composer', 'Title', "Date"], axis=1)

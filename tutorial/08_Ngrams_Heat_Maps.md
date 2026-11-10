@@ -9,8 +9,9 @@
 6. [Tuple Trouble, and How to Fix It](#tuple-trouble-and-how-to-fix-it)
 7. [nGrams with Durations and Durational Ratios](#ngrams-with-durations-and-durational-ratios)
 8. [Counting ngrams](#counting-ngrams)
-9. [Visualizing nGrams (and Comparing nGrams across a Corpus)](#visualizing-ngrams-and-comparing-ngrams-across-a-corpus)
-10. [Sections in this guide](#sections-in-this-guide)
+9. [Corpus Ngrams](#finding-corpus-ngrams)
+10. [Visualizing nGrams (and Comparing nGrams across a Corpus)](#visualizing-ngrams-and-comparing-ngrams-across-a-corpus)
+11. [Sections in this guide](#sections-in-this-guide)
 
 ## The `ngrams()` Function in Brief
 
@@ -420,8 +421,8 @@ dur_rats = dur_rats.applymap(str)
 ng = piece.ngrams(df=dur_rats, n=3)
 
 # convert tuples and remove ngrams shorter than required length
-ng = ng.applymap(convertTuple)
-ng = ng.applymap(clean_string)
+ng = ng.map(convertTuple)
+ng = ng.map(clean_string)
 ng
 ```
 
@@ -447,6 +448,11 @@ mel = piece.melodic(kind = "c", compound = False)
 melNgrams = mel.ngrams(n = 4)
 melNgrams.stack().value_counts().to_frame()
 ```
+
+## Finding Corpus Ngrams
+
+See the [Corpus Tutorial](tutorials/21_Corpus_Tools.md) for various `corpus_tools` methods involving melodic, harmonic, contrapuntal and sonority ngrams in several pieces at once!
+
 
 ## Visualizing nGrams (and Comparing nGrams across a Corpus)
 

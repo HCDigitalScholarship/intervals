@@ -107,7 +107,7 @@ ngrams.head()
 Corpus tools includes a convenient method for finding Contrapuntal Ngrams in any Set of Files
 Define the corpus:
 
-`corpus_contrapuntal_ngrams(corpus, ngram_length=3)`
+`corpus_tools.corpus_contrapuntal_ngrams(corpus, ngram_length=3)`
 
 Here is how to use it:
 
@@ -118,7 +118,7 @@ file_list = ['https://crimproject.org/mei/CRIM_Model_0008.mei',
 corpus = CorpusBase(file_list)
 
 # run the contrapuntal ngram method on the corpus, passing in the length of the ngrams you want
-corpus_contrapuntal_ngrams(corpus, ngram_length=3)
+corpus_tools.corpus_contrapuntal_ngrams(corpus, ngram_length=3)
 ```
 
 ![Alt text](images/modules_8.png)

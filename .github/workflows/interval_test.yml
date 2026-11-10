@@ -90,7 +90,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install mkdocs==1.6.1 mkdocs-material==9.7.7 mkdocstrings==1.0.6 mkdocstrings-python==2.0.5
+          pip install mkdocs==1.6.1 mkdocs-material==9.7.7 mkdocstrings==1.0.6 mkdocstrings-python==2.0.5 "pymdown-extensions<12"
 
       - name: Deploy docs to GitHub Pages
         run: |

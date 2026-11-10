@@ -1,5 +1,16 @@
 # Finding the Melodic Intervals in Pieces  
 
+## Table of Contents
+1. [The melodic() Function in Brief](#the-melodic-function-in-brief)
+2. [The `melodic()` Parameters in Detail](#the-melodic-parameters-in-detail)
+3. [`fillna()` and `dropna()` Functions](#fillna-and-dropna-functions)
+4. [More About Measures, Beats, and Offsets: The `detailIndex()` Function](#more-about-measures-beats-and-offsets-the-detailindex-function)
+5. [Melodic Intervals in a Corpus](#melodic-intervals-in-a-corpus)
+6. [Charts with Melodic Intervals](#charts-with-melodic-intervals)
+7. [Sections in this guide](#sections-in-this-guide)
+
+## The melodic() Function in Brief
+
 In its simplest form, `piece.melodic()` returns a DataFrame of  intervals within each voice part in the piece. There is more to the story, however, since the `melodic()` function has a number of parameters that users can adjust to report intervallic distances in different ways.  Here is the complete list of parameters, with their default values:
 
 ```python
@@ -92,6 +103,7 @@ Using `piece.melodic(compound = False)`, in contrast, analyzes all intervals as 
 
 ```python
 piece.melodic(kind = 'd', compound = False).replace('8', '1')
+```
 
 ### Sampling Melodies at Regular Time Intervals: The `unit` Parameter  
 
@@ -535,23 +547,24 @@ fig.show()
 ## Sections in this guide
 
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
-  * [03_Durations](/tutorial//03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
-  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
-  * [11_Cadences](/tutorial//11_Cadences.md)
-  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial//15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial//16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial//17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial//18_Visualizations_Summary.md)
-  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
-  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
-  * [99_Local_Installation](/tutorial//99_Local_Installation.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

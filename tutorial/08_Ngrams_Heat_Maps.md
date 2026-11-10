@@ -1,12 +1,26 @@
 # Finding nGrams and Entries with CRIM Intervals 
 
+## Table of Contents
+1. [The `ngrams()` Function in Brief](#the-ngrams-function-in-brief)
+2. [The Parameters](#the-parameters)
+3. [Contrapuntal nGrams in Detail](#contrapuntal-ngrams-in-detail)
+4. [Melodic, Harmonic, Lyric, and Durational Ngrams](#melodic-harmonic-lyric-and-durational-ngrams)
+5. [All nGrams or Entries Only? The `entries()` Function](#all-ngrams-or-entries-only-the-entries-function)
+6. [Tuple Trouble, and How to Fix It](#tuple-trouble-and-how-to-fix-it)
+7. [nGrams with Durations and Durational Ratios](#ngrams-with-durations-and-durational-ratios)
+8. [Counting ngrams](#counting-ngrams)
+9. [Visualizing nGrams (and Comparing nGrams across a Corpus)](#visualizing-ngrams-and-comparing-ngrams-across-a-corpus)
+10. [Sections in this guide](#sections-in-this-guide)
+
+## The `ngrams()` Function in Brief
+
 An **n-gram** (hereafter simply 'nGram') is a commonly used linguistic term for a continuous string of characters or events. A series of any musical expressions in pieces of music, specifically of some length *N*, can similarly be refered to as an **nGram**. With the `ngrams()` function we are able to represent various different types of nnGrams depending on the data input type:
 
 * An nGram of notes, harmonic intervals, durations, or lyrics will involve *N* notes, or in the case of harmonic (vertical) intervals, *N* pairs of notes  
 
 * An ngram of melodic intervals will involve (*N* + 1) notes, since it involves *N* **lateral intervals between** notes
 
-## The `ngrams()` Function 
+
 
 ```python
 ngrams(df=None, 
@@ -91,7 +105,7 @@ See more about combining different dataframes into nGrams below.
 
 ![Alt text](images/ng_4.png)
 
-### Melodic, Harmonic, Lyric, and Durational Ngrams:  Using the `df` Parameter
+## Melodic, Harmonic, Lyric, and Durational Ngrams
 
 Note:  Ngrams produced in the following ways will be dataframes of 'tuples'.  See more about how to work with these under 'Tuple Trouble' below.
 
@@ -411,7 +425,7 @@ ng = ng.applymap(clean_string)
 ng
 ```
 
-## Removing "NaN" values  
+### Removing "NaN" values  
 
 Similarly to other functions previously discussed in this documentation, nGrams DataFrams can be cleaned up using the `dropna()` and `fillna()` functions to drop all rows filled with only "NaN" values, and replace the remaining "NaN" values with blank spaces so that the table may be read more easily:  
 
@@ -420,7 +434,7 @@ cleaned_entries = entries.dropna(how = "all").fillna(' ')
 cleaned_entries
 ```
 
-## Organizing by Measures and beats  
+### Organizing by Measures and beats  
 
 To display DataFrames relative to measures, and beats within measures, rather than offsets across the entire piece, we can use the `detailIndex()` function, which is documented at [05_Detail_Index](/tutorial//05_Detail_Index.md)
 
@@ -574,23 +588,24 @@ for movement in mass_movements:
 ## Sections in this guide
 
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
-  * [03_Durations](/tutorial//03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
-  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
-  * [11_Cadences](/tutorial//11_Cadences.md)
-  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial//15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial//16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial//17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial//18_Visualizations_Summary.md)
-  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
-  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
-  * [99_Local_Installation](/tutorial//99_Local_Installation.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

@@ -1,11 +1,36 @@
-pip install crim_intervals# Classifying Presentation Types:  Fuga, ID, and PEN
+# Classifying Presentation Types:  Fuga, ID, and PEN
 
-One of the key features of CRIM Intervals is its ability to predict complex contrapuntal patterns.  One 
+## Table of Contents
+1. [The Presentation Types Function in Brief](#the-presentation-types-function-in-brief)
+2. [Key Features of Outputs](#key-features-of-outputs)
+3. [Presentation Type Parameters](#presentation-type-parameters)
+4. [Render Presentation Types as Score with Verovio](#render-presentation-types-as-score-with-verovio)
+5. [How to Filter Results](#how-to-filter-results)
+6. [More Filters: Different Data Types Require Different Methods](#more-filters--different-data-types-require-different-methods)
+7. [Grouping Results to See the Big Picture](#grouping-results-to-see-the-big-picture)
+8. [Presentation Types with a Corpus](#presentation-types-with-a-corpus)
+9. [Sections in this guide](#sections-in-this-guide)
 
-This function uses several other functions to classify the entries in a given piece.
+One of the key features of CRIM Intervals is its ability to predict complex contrapuntal patterns.  The `presentationTypes()` function makes this surpringly easy to do!  The labels in the outputs follow the basic sceheme of Fugas, Imitative Duos and Periodic Entries proposed by Peter Schubert. 
+
+For the moment it is not possible to reliably classify non-Imitative Duos with CRIM, nor can we reliably find Imitative Duos with Invertible Counterpoint!
+
+## The Presentation Types Function in Brief
 
 
-## Key Features
+```python
+piece.presentationTypes(limit_to_entries = True,
+                        head_flex=1,
+                        body_flex = 0,
+                        include_hidden_types = False,
+                        combine_unisons = True,
+                        melodic_ngram_length = 4,
+                        kind=4,
+                        end=False)
+```
+
+
+## Key Features of Outputs
 
 The output is a list, in order of offset, of each presentation type, including information about:
 
@@ -24,9 +49,8 @@ The output is a list, in order of offset, of each presentation type, including i
 * **Parallel entries** in any passage. If two voices enter at the *same offset* (normally in parallel thirds or tenths), the function will attempt to identify the voice that follows (or preceeds) other, non-parallel voices at the interval P1, P4, P5, P8, or P12 (which are more typical). If neither of the parallel voices aligns with other parts in this way, the tool takes the upper-most voice as the real entry. The parallel voice is removed from the pattern data, but the name of the voice is stored in another column (Parallel Voice).
 * **Total number of Non-Overlapping Entries** (in which the time interval between entries is in fact greater than the length of the entries themselves) and reports pip install crim_intervalsthe count in a separate column.  Such 'medium' gaps, after all, are important to the extent that the successive entries do no produce any harmonic intervals with each other.
 
-Settings:  Handling of **Unisons**, **Flexes**, and **Hidden Patterns**
 
-
+## Presentation Type Parameters
 
 * **Length of Ngram** will depend on the character and genre of your piece.  By default:  `melodic_ngram_length = 4`.
 * **Combine unisons** in the melodies under comparison, or not (default is `combine_unisons = False`). This can be especially helpful when comparing different compositions based on the same model, since combining unisons can reveal commonalities that might otherwise be disguised by repetitions required for text declamation.
@@ -179,11 +203,10 @@ p_types.groupby(['Presentation_Type', 'Number_Entries', 'Soggetti_Joined']).size
 
 ## Presentation Types with a Corpus
 
-It is also possible to work with a corpus using the Presentation Type tool.  First build your corpus:
+Using the Presentation Type tool with a corpus simple:
 
 ```python
-corpus_list = []
-
+# build the corpus
 prefix = 'https://crimproject.org/mei/'
 
 piece_list = ['CRIM_Model_0019', 'CRIM_Mass_0019_1']
@@ -192,32 +215,17 @@ for piece in piece_list:
     url = prefix + piece + suffix
     corpus_list.append(url)
 corpus_list
-```
 
-And then run the corpus using the Presentation Type method:
+# load it
 
-```python
-# indicate the function
-func = ImportedPiece.presentationTypes  # <- NB there are no parentheses here
+corpus = CorpusBase(corpus_list)
 
-#provide the kwargs
-kwargs = {'limit_to_entries': True, 'head_flex' : 1,
-                                    'body_flex' : 0,
-                                    'include_hidden_types' : False,
-                                    'combine_unisons' : True,
-                                    'melodic_ngram_length' :  4,
-                                    'kind': 'd',
-                                    'end': False}
-
-#build a list of dataframes, one for each piece in the corpus
-list_of_dfs = corpus.batch(func, kwargs)
-
-#concatenate the list to a single dataframe
-output = pd.concat(list_of_dfs)
+# run the function
+corpus_tools.corpus_presentation_types(corpus, limit_to_entries=True, head_flex=1, body_flex=0, include_hidden_types=False, combine_unisons=True, melodic_ngram_length=4, kind='d', end=False)
 ```
 
 
-See [01_Introduction](01_Introduction.md) for more detail on ways to **track errors during import of a corpus** or how to **replace staff names with staff numbers**.
+See [01_Introduction_and_Corpus](01_Introduction_and_Corpus.md) for more detail on ways to **track errors during import of a corpus** or how to **replace staff names with staff numbers**.
 
 
 ---
@@ -225,23 +233,24 @@ See [01_Introduction](01_Introduction.md) for more detail on ways to **track err
 ## Sections in this guide
 
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
-  * [03_Durations](/tutorial//03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
-  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
-  * [11_Cadences](/tutorial//11_Cadences.md)
-  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial//15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial//16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial//17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial//18_Visualizations_Summary.md)
-  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
-  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
-  * [99_Local_Installation](/tutorial//99_Local_Installation.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

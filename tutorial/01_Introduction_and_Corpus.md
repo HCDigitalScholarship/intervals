@@ -2,9 +2,36 @@
 
 Based on Python, Pandas, and Mike Cuthbert's [music21](http://web.mit.edu/music21/), CRIM Intervals is a pattern finding engine for musical scores, with an emphasis on the kinds of melodic and harmonic patterns found in Renaissance polyphony. It has been developed as a primary data analysis tool for CRIM, but can be applied and adapted to a wide range of styles. Results are reported in Pandas dataframes (and thus exportable in a variety of standard formats for further analysis), and also via several visualizations methods.
 
+Learn more about music21 methods used in CRIM Intervals via [this tutorial](/tutorial/19_Music21_Basics_MEI.md)
+
+Read the [API documentation for CRIM Intervals on Github](https://hcdigitalscholarship.github.io/intervals/)
+
+## Table of Contents
+1. [File Types Compatible with CRIM Intervals](#file-types-compatible-with-crim-intervals)
+2. [Install CRIM Intervals and its Dependencies](#install-crim-intervals-and-its-dependencies)
+3. [Import Libraries](#import-libraries)
+4. [Importing a Piece: `importScore()`](#importing-a-piece--importscore)
+5. [Check Metadata for Imported Piece](#check-metadata-for-imported-piece)
+6. [Importing Multiple Pieces at Once: `CorpusBase()`](#importing-multiple-pieces-at-once-corpusbase)
+7. [Corpus Tools Make Short Work of Many Needs](#corpus-tools-make-short-work-of-many-needs)
+8. [Build Your Own Corpus Functions](#build-your-own-corpus-functions)
+9. [Using CRIM Intervals Functions](#using-crim-intervals-functions)
+10. [Batch Methods for a Corpus of Pieces](#batch-methods-for-a-corpus-of-pieces)
+11. [Chaining Together Batch Methods](#chaining-together-batch-methods)
+12. [Piece Metadata and Batch Methods: The `metadata` Parameter](#piece-metadata-and-batch-methods--the-metadata-parameter)
+13. [Tracking Batch Processing Errors: The `verbose` Parameter](#tracking-batch-processing-errors--the-verbose-parameter)
+14. [Voice Part Names vs Staff Position in Batch Processing: The `number_parts` Parameter](#voice-part-names-vs-staff-position-in-batch-processing--the-number_parts-parameter)
+15. [Exporting CRIM Intervals Results](#exporting-crim-intervals-results)
+16. [Export to CSV](#export-to-csv)
+17. [Export to Excel](#export-to-excel)
+18. [Help and Documentation](#help-and-documentation)
+19. [Sections in this guide](#sections-in-this-guide)
+
 ## File Types Compatible with CRIM Intervals
 
-Since CRIM Intervals is based on music21, all the file types read by music21 will work with CRIM Intervals.  Be sure to include the appropriate file extension as part of each file name:  '.mei', '.mid', '.midi', '.abc', '.xml', '.musicxml'. Note that the `lyrics` function is untested with midi and abc files.
+Since CRIM Intervals is based on music21, all the file types read by music21 will work with CRIM Intervals.  Be sure to include the appropriate file extension as part of each file name:  '.mei', '.mid', '.midi', '.abc', '.xml', '.musicxml'. 
+
+Note that the `lyrics` function is untested with midi and abc files.
 
 ## Install CRIM Intervals and its Dependencies
 
@@ -18,6 +45,7 @@ import crim_intervals
 from crim_intervals import * 
 from crim_intervals import main_objs
 import crim_intervals.visualizations as viz
+import crim_intervals.corpus_tools as corpus_tools
 # import other libraries used in the notebooks
 import pandas as pd
 from IPython.display import display
@@ -69,7 +97,7 @@ Note that the **local file path must also be preceded by a `/` [forward slash]**
 piece = importScore('/path/to/mei_folder/file.mei')
 ```
 
-### Check Metadata for Imported Piece
+## Check Metadata for Imported Piece
 
 To confirm successful import, view the metadata: `print(piece.metadata)`. Alternatively, add the parameter `verbose = True` to the `importScore()` function. CRIM Intervals will automatically provide information to the user as it runs about whether or not it was able to successfully import the given piece.  For example: 
 
@@ -127,7 +155,18 @@ file_list = ['https://crimproject.org/mei/CRIM_Model_0001.mei', 'https://crimpro
 corpus = CorpusBase(file_list)
 ```
 
-Note that there is a special format required when a given CRIM Intervals function (such as melodic(), or harmonic() is applied to a **corpus** object. See below, and also the **batch method** documentation for each individual function.
+
+## Corpus Tools Make Short Work of Many Needs
+
+
+CRIM Intervals includes an extensive range of built-in methods for working with notes, durations, melodic and harmonic intervals, ngrams (of various kinds), cadences, presentation types, and so on.  See the [dedicated tutorial[(tutorial/Corpus_Tools.md)] for details of how to use these!
+
+
+## Build Your Own Corpus Functions
+
+It is also possible to apply all the CRIM Intervals methods to corpus objects, but the process takes some care!
+
+There is a special format required when a given CRIM Intervals function such as melodic(), or harmonic() is applied to a **corpus** object. See below, and also the **batch method** documentation for each individual function.
 
 ## Using CRIM Intervals Functions
 
@@ -185,7 +224,7 @@ output = pd.concat(list_of_dfs)
 For some **specific custom functions** to help you work with a corpus, see the [Melodic](/06_Melodic_Intervals.md), [Harmonic](/07_Harmonic_Intervals.md), and [Contrapuntal_Modules](/08_Contrapuntal_Modules.md) tutorials.
 
   
-### Chaining Together Batch Methods
+## Chaining Together Batch Methods
 
 CRIM Intervals functions often need to be chained together, as explained in the individual sections for each function. The results of the first function (which is a list of dataframes) is passed to the second fucntion via the `df` parameter as a `kwarg`
 
@@ -203,7 +242,7 @@ func2 = ImportedPiece.ngrams
 list_of_melodic_ngrams = corpus.batch(func = func2, kwargs = {'n': 4, 'df': list_of_dfs})
 ```
 
-### Piece Metadata and Batch Methods:  The `metadata` Parameter
+## Piece Metadata and Batch Methods:  The `metadata` Parameter
 
 The `batch` method will normally include `metadata` for each piece. But if the aim is to chain several functions together in a series of batch processes, it is probably best to request the metadata only for the final step:
 
@@ -223,7 +262,7 @@ func2 = ImportedPiece.ngrams
 list_of_melodic_ngrams = corpus.batch(func = func2, kwargs = {'n': 4, 'df': list_of_dfs})
 ```
 
-### Tracking Batch Processing Errors:  The `verbose` Parameter
+## Tracking Batch Processing Errors:  The `verbose` Parameter
 
 As in the case of single piece imports, when used as part of a `batch` function, the `verbose = True` provides confirmation that each piece has been successfully imported. This can be useful to pinpoint a piece that is triggering a bug.
 
@@ -233,7 +272,7 @@ func = ImportedPiece.notes
 list_of_dfs = corpus.batch(func, verbose = True)
 ```
 
-### Voice Part Names vs Staff Position in Batch Processing:  The `number_parts` Parameter
+## Voice Part Names vs Staff Position in Batch Processing:  The `number_parts` Parameter
 
 By default, .batch will replace columns that consist of part names (like `.melodic()` results) or combinations of part names (like `.harmonic()` results) with **staff position numbers**, starting with "1" for the highest part on the staff, "2" for the second highest, etc. This is useful when combining results from pieces with parts that have different names. For example:
 
@@ -252,7 +291,7 @@ list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, numbe
 
 CRIM Intervals is a Python library.  But it also makes extensive use of PANDAS (Python for Data Analysis).  The most common output for the CRIM Intervals functions is thus a **DataFrame**.  These can be viewed in output window of VS-Code (or similar IDE where CRIM Intervals is running), or can be seen in Juypyter Notebooks.  There are nevertheless two useful ways to download results for later use:
 
-### Export to CSV:  
+## Export to CSV:  
 
 If you are running the Jupyter Hub version of this code, then there should be a folder provided called 'saved_csv'. This is where we will be exporting files, from which you can then download them to your computer.
 
@@ -275,7 +314,7 @@ You could then save this model's melodic interval data to a CSV file with the fi
 mel.to_csv('saved_csv/CRIM_Model_0008.csv')
 ```
 
-### Export to Excel:  
+## Export to Excel:  
 
 Alternatively, a DataFrame can be saved as an Excel file with the following command lines in order, once again replacing 'file_name.xlsx' with your desired file name, replacing 'Sheet1' with your desired sheet name **(in quotes)**, and replacing 'frame_name' in the second line with the name of your DataFrame **(without quotes)**, which was 'mel' in the last example: 
 
@@ -309,23 +348,24 @@ This line would print out the documentation (`.__doc__`) associated with the fun
 ## Sections in this guide
 
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
-  * [03_Durations](/tutorial//03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
-  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
-  * [11_Cadences](/tutorial//11_Cadences.md)
-  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial//15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial//16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial//17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial//18_Visualizations_Summary.md)
-  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
-  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
-  * [99_Local_Installation](/tutorial//99_Local_Installation.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

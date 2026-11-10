@@ -1,8 +1,24 @@
 # Visualizations with CRIM Intervals
 
+## Table of Contents
+1. [Plotly Charts](#plotly-charts)
+2. [CRIM Plots with Altair](#crim-plots-with-altair)
+3. [Plotly Charts in Detail](#plotly-charts-in-detail)
+4. [Plotly Bar Charts](#plotly-bar-charts)
+5. [Bar Graphs of Notes in Each Voice](#bar-graphs-of-notes-in-each-voice)
+6. [Barcharts of Notes in Each Voice Stacked in One Chart](#barcharts-of-notes-in-each-voice-stacked-in-one-chart)
+7. [Barcharts of Notes in a Corpus](#barcharts-of-notes-in-a-corpus)
+8. [Bar Charts with Melodic and Harmonic Intervals](#bar-charts-with-melodic-and-harmonic-intervals)
+9. [NGram Heat Maps](#ngram-heat-maps)
+10. [Melody Families](#melody-families)
+11. [Cadence Radar Plots](#cadence-radar-plots)
+12. [Cadence Progress Plots](#cadence-progress-plots)
+13. [Networks](#networks)
+14. [Sections in this guide](#sections-in-this-guide)
+
 There are three different resources for creating various kinds of charts, plots, and networks with CRIM Intervals.  Unless otherwise noted, all the necessary libraries are already imported when you `import crim_intervals` and `from crim_intervals import *`.  We show the import statements below just to remind you!
 
-### Plotly Charts
+## Plotly Charts
 
 Our main resource is the [Plotly Express](https://plotly.com/python/plotly-express/) library, which allows for interactive visualizations and more complex/powerful graphs with less code. . The Plotly Express documentation details the very wide range of bar charts, histograms, scatter plots, heat maps, polar (radar) figures you can create, and various ways of adding captions, legends, colors, etc.
 
@@ -11,7 +27,7 @@ The charts and plots produced with **Plotly** (and described below) include:
 * **Bar Graphs and Histograms** (to show distribution or ranges of notes and melodic intervals, for example)
 * **Cadence Radar Plots** (circular grids that show the distribution of cadences in one or more pieces)
 
-### CRIM Plots with Altair
+## CRIM Plots with Altair
 
 The following methods have been developed especially for **CRIM Intervals**, and use the [Altair](https://altair-viz.github.io/) library.  Read more about the functions [here](https://github.com/HCDigitalScholarship/intervals/blob/main/crim_intervals/visualizations.py).  Since **Altair** is already imported as part of the **import crim_intervals.visualizations as viz** statement, you will not need to import that library separated for these methods:
 
@@ -64,7 +80,7 @@ fig.show(legend=True)
 Bar charts are used to display categorical data. They consist of vertical or horizontal bars that represent different categories and their corresponding values. Bar charts are excellent for comparing data across different categories.  Learn more at [Plotly Express](https://plotly.com/python/bar-charts/)
 
 
-### Bar Graphs of Notes in Each Voice
+## Bar Graphs of Notes in Each Voice
 
 Here we the counts of each pitch (including octave) in each voice of a given piece.  Note that we can declare a custom 'order' for the pitches, so it's possible to present these as you like.  Here we have sorted them from lowest to highest.  You could also display only a subset of pitches.
 
@@ -122,7 +138,7 @@ fig.show()
 
 
 
-### Barcharts of Notes in Each Voice Stacked in One Chart
+## Barcharts of Notes in Each Voice Stacked in One Chart
 
 
 ![alt text](images/nr_chart_combined.png)
@@ -167,7 +183,7 @@ fig.show()
 </Details>
 
 
-### Barcharts of Notes in a Corpus
+## Barcharts of Notes in a Corpus
 
 with the `corpus.batch` methods, it is also possible to do same kind of thing for a collection of pieces.
 
@@ -237,7 +253,7 @@ fig.show()
 <br>
 
 
-### Bar Charts with Melodic and Harmonic Intervals
+## Bar Charts with Melodic and Harmonic Intervals
 
 See the tutorials for [Melodic](/06_Melodic_Intervals.md) and [Harmonic](/07_Harmonic_Intervals.md) for ways to create charts like this for one or more pieces using those methods.
 
@@ -474,23 +490,24 @@ Learn more in the [Networks Tutorial](/15_Network_Graphs.md).
 ## Sections in this guide
 
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
-  * [03_Durations](/tutorial//03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
-  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
-  * [11_Cadences](/tutorial//11_Cadences.md)
-  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial//15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial//16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial//17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial//18_Visualizations_Summary.md)
-  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
-  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
-  * [99_Local_Installation](/tutorial//99_Local_Installation.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

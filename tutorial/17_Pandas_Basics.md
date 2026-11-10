@@ -1,5 +1,12 @@
 # Pandas  
 
+## Table of Contents
+1. [Counting and Sorting Intervals: General Pandas Operations](#counting-and-sorting-intervals-general-pandas-operations)
+2. [Working with Rows](#working-with-rows)
+3. [Working With Columns](#working-with-columns)
+4. [Counting and Sorting](#counting-and-sorting)
+5. [Sections in this guide](#sections-in-this-guide)
+
 Pandas is a Python library which allows for the creation and manipulation of DataFrames, which are two dimensional objects designed to store data. Below are a few of the many ways in which pandas DataFrames can be modified, filtered, or transformed. 
 
 ## Counting and Sorting Intervals: General Pandas Operations  
@@ -9,7 +16,7 @@ The outputs of the `notes()`, `melodic()`, and `harmonic()` functions are all in
 `mel = piece.melodic()` 
 
 
-### Working with Rows
+## Working with Rows
 
 Dataframes can be **long**, since they will have a row for every event in the composition (beats and subbeats alike).  By default Pandas displays dataframes in an abbreviated view consisting of the first five and last five rows. The last row will be included, so it is easy to see just how long the results are!
 
@@ -36,7 +43,7 @@ nr = piece.notes()
 nr.iloc[10:20]
 ```
 
-#### Examples from CRIM Intervals:  Filter df of Notes according to Measure or Beat Strength
+### Examples from CRIM Intervals:  Filter df of Notes according to Measure or Beat Strength
 
 The `piece.measures()` function returns a df that shows were each new measure begins.  The index of this df is saved as a list, which in turn is tested against the index of the df for notes to produce a Boolean series: `nr.index.isin(measure_starts)`.  This Boolean is then passed to nr.loc to yield the final dataframe:  `nr2 = nr.loc[nr.index.isin(measure_starts)]`.
 
@@ -55,7 +62,7 @@ notes_at_start_of_measures = nr.loc[nr.index.isin(measure_starts)]
 notes_at_start_of_measures
 ```
 
-### Working With Columns  
+## Working With Columns  
 
 
 #### Show Column Names
@@ -105,7 +112,7 @@ Note that the information about the columns to select appears to the right of th
 
 Pandas provides several other ways to rename, select or reorganize columns. See the cheat sheet above.
 
-### Counting and Sorting
+## Counting and Sorting
 
 #### Counting Notes
 A count of the *rows* of the dataframe will be in effect a count of the number of offsets.  Pass the entire function to the Python `len` method, for instance:
@@ -229,23 +236,24 @@ mel.reset_index()
 ## Sections in this guide
 
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
-  * [03_Durations](/tutorial//03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
-  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
-  * [11_Cadences](/tutorial//11_Cadences.md)
-  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial//15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial//16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial//17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial//18_Visualizations_Summary.md)
-  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
-  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
-  * [99_Local_Installation](/tutorial//99_Local_Installation.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

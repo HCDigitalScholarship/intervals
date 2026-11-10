@@ -1,19 +1,34 @@
 # Running CRIM Intervals Locally
 
+## Table of Contents
+1. [Run it Locally on your Own Computer in a Virtual Environment](#run-it-locally-on-your-own-computer-in-a-virtual-environment)
+2. [1. Get Anaconda Navigator to Manage Virtual Environments](#1-get-anaconda-navigator-to-manage-virtual-environments)
+3. [2. Create a New Virtual Environment](#2-create-a-new-virtual-environment)
+4. [3. Create a Project Folder on your Computer](#3-create-a-project-folder-on-your-computer)
+5. [4. Return to Anaconda Navigator and your Virtual Env](#4-return-to-anaconda-navigator-and-your-virtual-env)
+6. [5. Install CRIM Intervals](#5-install-crim-intervals)
+7. [6. Install iPywidgets](#6-install-ipywidgets)
+8. [7. Install and Launch Jupyter Lab via Anaconda Navigator](#7--install-and-launch-jupyter-lab-via-anaconda-navigator)
+9. [8. Create Folder for your Notebooks and Run Them](#8--create-folder-for-your-notebooks-and-run-them)
+10. [9. Build a Notebook with the CRIM Intervals Tutorials](#9--build-a-notebook-with-the-crim-intervals-tutorials)
+11. [10. Shut Down and Restart](#10--shut-down-and-restart)
+12. [11. Help with Jupyter Lab](#11--help-with-jupyter-lab)
+13. [Sections in this guide](#sections-in-this-guide)
+
 [Learn about CRIM Intervals]( https://github.com/HCDigitalScholarship/intervals/blob/main/README.md)
 
 ## Run it Locally on your Own Computer in a Virtual Environment
 
 This version runs well, and is extremely fast!
 
-### 1. Get Anaconda Navigator to Manage Virtual Environments 
+## 1. Get Anaconda Navigator to Manage Virtual Environments 
 
 "Virtual Environments" are in effect small computing worlds on your computer.  They allow you to run special sets of tools in a way that keeps them isolated from all other programs.  Different programs require different 'dependencies', and different versions of these dependencies.  So keeping them separate is a good idea.
 
 If you are new to virtual environments, one good solution is to manage environments is with **Anaconda Navigator**.  [Download it for your machine for free](https://www.anaconda.com/download).  [Learn more about Anaconda Navigator](https://learning.anaconda.cloud/).  
 
 
-### 2. Create a New Virtual Environment
+## 2. Create a New Virtual Environment
 
 Here are the steps:
 
@@ -25,7 +40,7 @@ Here are the steps:
 
 ![alt text](images/env1.png)
 
-### 3. Create a Project Folder on your Computer
+## 3. Create a Project Folder on your Computer
 
 Now you will need to create a dedicated folder on your computer where you will keep your notebooks
 
@@ -33,7 +48,7 @@ Now you will need to create a dedicated folder on your computer where you will k
 
 - Make sure you know where to find this folder, since you will need to work with files and notebooks there.
 
-### 4. Return to Anaconda Navigator and your Virtual Env
+## 4. Return to Anaconda Navigator and your Virtual Env
 
 - Make sure that the new environment you created is the active one (see image).
 
@@ -50,7 +65,7 @@ Now you will need to create a dedicated folder on your computer where you will k
 
 ![alt text](images/env3.png)
 
-### 5. Install CRIM Intervals
+## 5. Install CRIM Intervals
 
 - Now you will install the CRIM Intervals code as a Python 'package'.  Type:
 
@@ -80,7 +95,7 @@ pip install crim_intervals
 ```
 ![alt text](images/envs4.png)
 
-### 6. Install iPywidgets
+## 6. Install iPywidgets
 
 There is one other library you will need to install in order to use *@interact* filters with dataframes:
 
@@ -89,7 +104,7 @@ pip install ipywidgets
 ```
 
 
-### 7.  Install and Launch Jupyter Lab via Anaconda Navigator
+## 7.  Install and Launch Jupyter Lab via Anaconda Navigator
 
 - Go back to Anaconda Navigator
 - While your environment is active, go to the Home menu at left
@@ -106,7 +121,7 @@ pip install ipywidgets
 ![alt text](images/env12.png)
 
 
-### 8.  Create Folder for your Notebooks and Run Them
+## 8.  Create Folder for your Notebooks and Run Them
 
 - Jupyter Lab will 'look' into the Documents on your computer.
 - Create a new My_CRIM_Notebooks folder somewhere convenient.  You can name it anything you like.
@@ -118,12 +133,12 @@ pip install ipywidgets
 - Now use the "+" icon at the top left to create a new notebook.  
 - Or open an existing Notebook . . . 
 
-### 9.  Build a Notebook with the CRIM Intervals Tutorials
+## 9.  Build a Notebook with the CRIM Intervals Tutorials
 
 - Return to the [CRIM Intervals Tutorials Pages](https://github.com/HCDigitalScholarship/intervals/tree/main/tutorial) to learn how to build up your Notebook!
 
 
-### 10.  Shut Down and Restart
+## 10.  Shut Down and Restart
 
 - When you are finished you can simply close your browser window, and quit Anaconda Navigator and the Terminal application
 
@@ -135,7 +150,7 @@ pip install ipywidgets
 4.  Launch Jupyter Lab
 5.  Navigate to the folder where you keep your notebooks.
 
-### 11.  Help with Jupyter Lab
+## 11.  Help with Jupyter Lab
 
 Learn more via the [Jupyter Lab documentation](https://jupyterlab.readthedocs.io/en/latest/)
 
@@ -143,23 +158,24 @@ Learn more via the [Jupyter Lab documentation](https://jupyterlab.readthedocs.io
 ## Sections in this guide
 
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
-  * [03_Durations](/tutorial//03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
-  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
-  * [11_Cadences](/tutorial//11_Cadences.md)
-  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial//15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial//16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial//17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial//18_Visualizations_Summary.md)
-  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
-  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
-  * [99_Local_Installation](/tutorial//99_Local_Installation.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

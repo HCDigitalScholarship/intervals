@@ -2,7 +2,9 @@
 
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Functions](#functions)
+2. [Importing Corpus Tools for use with CRIM Intervals](#importing-corpus-tools-for-use-with-crim-intervals)
+3. [Using the Corpus Tools Functions](#using-the-corpus-tools-functions)
+4. [Functions](#functions)
    - [corpus_notes](#corpus_notes)
    - [corpus_note_scaled](#corpus_note_scaled)
    - [corpus_note_durs](#corpus_note_durs)
@@ -16,6 +18,7 @@
    - [corpus_sonority_ngrams](#corpus_sonority_ngrams)
    - [corpus_cadences](#corpus_cadences)
    - [corpus_presentation_types](#corpus_presentation_types)
+5. [Sections in this guide](#sections-in-this-guide)
 
 ## Introduction
 
@@ -39,7 +42,7 @@ corpus_tools.corpus_mel(corpus)
 This will generate melodic intervals from the provided corpus object. You can adjust the parameters as needed to fit your analysis requirements.  For example, you can specify the kind of intervals, whether to allow compound intervals, and whether to allow directed intervals.
 
 ```python
-corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)
+corpus_tools.corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)
 ```	
 
 
@@ -47,7 +50,7 @@ corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)
 
 ###  corpus_notes
 
-Typical use: `corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False)`
+Typical use: `corpus_tools.corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False)`
 
 Creates a table of notes and rests in a corpus.
 
@@ -61,7 +64,7 @@ Returns:
 
 ### corpus_note_scaled
 
-Typical use: `corpus_note_scaled(corpus, combine_unisons_choice=True, combine_rests_choice=False)`
+Typical use: `corpus_tools.corpus_note_scaled(corpus, combine_unisons_choice=True, combine_rests_choice=False)`
 
 Counts occurrences of notes and rests in a corpus, including scaled counts.
 
@@ -75,7 +78,7 @@ Returns:
 
 ### corpus_note_durs
 
-Typical use: `corpus_note_durs(corpus, pitch_class=True)`
+Typical use: `corpus_tools.corpus_note_durs(corpus, pitch_class=True)`
 
 Calculates durations of notes in a corpus.
 
@@ -88,7 +91,7 @@ Returns:
 
 ### corpus_note_weights
 
-Typical use: `corpus_note_weights(corpus, include_rests=True)`
+Typical use: `corpus_tools.corpus_note_weights(corpus, include_rests=True)`
 
 Calculates pitch class weights by duration in a corpus. Notes are grouped by pitch class and weighted by their total duration, yielding a scaled proportion for each pitch class per piece. Pitch classes are ordered chromatically and flat names are standardized (e.g. `D-` becomes `Db`).
 
@@ -101,7 +104,7 @@ Returns:
 
 ### corpus_mel
 
-Typical use: `corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)`
+Typical use: `corpus_tools.corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)`
 
 Generate melodic intervals in a corpus.
 
@@ -116,7 +119,7 @@ Returns:
 
 ### corpus_har
 
-Typical use: `corpus_har(corpus, kind_choice='d', compound_choice=True, directed_choice=True)`
+Typical use: `corpus_tools.corpus_har(corpus, kind_choice='d', compound_choice=True, directed_choice=True)`
 
 Generate harmonic intervals in a corpus.
 
@@ -131,7 +134,7 @@ Returns:
 
 ### corpus_contrapuntal_ngrams
 
-Typical use: `corpus_contrapuntal_ngrams(corpus, ngram_length)`
+Typical use: `corpus_tools.corpus_contrapuntal_ngrams(corpus, ngram_length)`
 
 Generate n-grams in a corpus.
 
@@ -144,7 +147,7 @@ Returns:
 
 ### corpus_melodic_ngrams
 
-Typical use:  `corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice='d', end_choice=False, metadata_choice=True, include_offset=False)`
+Typical use:  `corpus_tools.corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice='d', end_choice=False, metadata_choice=True, include_offset=False)`
 
 Generate n-grams in a corpus.
 
@@ -161,7 +164,7 @@ Returns:
 
 ### corpus_melodic_durational_ratios_ngrams
 
-Typical use:  `corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4, end_choice=False, kind_choice='d', metadata_choice=True, include_offset=False)`
+Typical use:  `corpus_tools.corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4, end_choice=False, kind_choice='d', metadata_choice=True, include_offset=False)`
 
 Generate n-grams in a corpus with durational ratios.
 
@@ -178,7 +181,7 @@ Returns:
 
 ### corpus_harmonic_ngrams
 
-Typical use:  `corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice='d', metadata_choice=True, include_offset=False)`
+Typical use:  `corpus_tools.corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice='d', metadata_choice=True, include_offset=False)`
 
 Generate n-grams in a corpus.
 
@@ -194,7 +197,7 @@ Returns:
 
 ### corpus_sonority_ngrams
 
-Typical use: `corpus_sonority_ngrams(corpus, ngram_length=4, metadata_choice=True, include_offset=False, include_progress=True, compound=True, sort=False, minimum_beat_strength=0.0)`
+Typical use: `corpus_tools.corpus_sonority_ngrams(corpus, ngram_length=4, metadata_choice=True, include_offset=False, include_progress=True, compound=True, sort=False, minimum_beat_strength=0.0)`
 
 Generate sonority n-grams in a corpus.
 
@@ -213,7 +216,7 @@ Returns:
 
 ### corpus_cadences
 
-Typical use:  `corpus_cadences(corpus)`
+Typical use:  `corpus_tools.corpus_cadences(corpus)`
 
 Generate cadences in a corpus.
 
@@ -241,3 +244,28 @@ Parameters:
 
 Returns:
 - `pd.DataFrame`: DataFrame containing presentation types
+
+## Sections in this guide
+
+  * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

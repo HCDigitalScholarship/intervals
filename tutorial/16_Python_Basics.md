@@ -1,5 +1,20 @@
 # Python Basics
 
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Data Types](#data-types)
+3. [Collections](#collections)
+4. [Checking Data Types](#checking-data-types)
+5. [Numbers, Strings, Floats, and Booleans](#numbers-strings-floats-and-booleans)
+6. [Collections: Lists, Dictionaries, Sets, and Tuples](#collections--lists-dictionaries-sets-and-tuples)
+7. [Working with Lists](#working-with-lists)
+8. [Working with Dictionaries](#working-with-dictionaries)
+9. ["If" Statements](#if-statements)
+10. ["For" Loops](#for-loops)
+11. [For Loops with Nested Dictionaries](#for-loops-with-nested-dictionaries)
+12. [Functions](#functions)
+13. [Sections in this guide](#sections-in-this-guide)
+
 ## Introduction
 In Python, like other programming languages, we declare **variables**, then use **functions** transform them in various ways.  There are functions (and libraries) that help us work with numbers, text, statistics, graphs, etc.
 
@@ -13,9 +28,7 @@ Read more about [Python with w3school reference guide](https://www.w3schools.com
 It's important to understand **data types**:
 
 *   **integer**:  any whole number, such as 1, 2, 10
-
 *   **float**:  decimal numbers, such as 2.25, 6.875
-
 *   **string**:   any alpha-numeric character, surrounded by quotation marks (double or single)
 *   **Boolean**:  True or False (in fact these are reserved words in Python and should not be used beyond Boolean functions)
 
@@ -27,7 +40,6 @@ These can also be combined as various kind of **collections**:
 *   **lists**:  an ordered sequence presented in brackets and separated by commas, such as **["Blues", "Gospel", "Country"]** or **[1.0, 4.0, 6.0]**.  Lists can contain duplicates
 *   **set**:  an unordered sequence; it cannot contain duplicates
 *   **tuples**: a special kind of list that cannot be altered, presented as **("Jazz", "Classical", "Folk")** or **(1.25, 4.76, 8.03)**
-
 *   **dictionaries**:  a series of **key : value** pairs contained within braces, such as **{"artist" : "McCartney, Paul", "title" : "Yesterday"}**
 
 Read more about [Python data types at the w3schools resource](https://www.w3schools.com/python/python_datatypes.asp)
@@ -385,23 +397,24 @@ for sample_name in sample_name_list:
 ## Sections in this guide
 
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
-  * [03_Durations](/tutorial//03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
-  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
-  * [11_Cadences](/tutorial//11_Cadences.md)
-  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial//15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial//16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial//17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial//18_Visualizations_Summary.md)
-  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
-  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
-  * [99_Local_Installation](/tutorial//99_Local_Installation.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

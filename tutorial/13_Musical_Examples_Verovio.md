@@ -1,6 +1,21 @@
 # Engraving Musical Examples with Verovio
 
+## Table of Contents
+1. [`piece.verovioPrintExample()`](#pieceverovioprintexample)
+2. [`piece.verovioCadences()`](#pieceveroviocadences)
+3. [`piece.verovioHomorhythm()`](#pieceveroviohomorhythm)
+4. [`piece.verovioPtypes()`](#pieceverovioptypes)
+5. [Print with Analytic Highlights: `linkExample()`](#print-with-analytic-highlights--linkexample)
+6. [Sections in this guide](#sections-in-this-guide)
+
 Thanks to Laurent Pugin's powerful suite of [Verovio](https://www.verovio.org/index.xhtml) engraving library, it is also possible to render musical examples from MEI and MusicXML files.  
+
+Here we present TWO approaches to creating musical examples in your notebook:
+
+* with various **`verovioPrint . . .()`** works with ONE piece at a time (for specific measure ranges, cadences, presntation types and homorhythym outputs); these produce LONG sequences of all the results
+* with various **`linkExample()`** can work with ONE piece or a corpus, producing table(s) with embedded links that you can view selectively, or even download as linked sheets.
+
+**NB:**  For BOTH methods you must load your MEI files from a URL (and not locally)
 
 ###  *A Note about Saving and Printing Examples*
 
@@ -10,17 +25,23 @@ As in the case of charts and figures, you might want to save or print your work 
 ![alt text](images/export_html.png)
 
 
-# How to Use the Verovio Print Functions
+# How to Use the *verovioPrint . . .* Functions
 
 CRIM Intervals works with Verovio in various ways:
 
-## 1. Print Example
+## `piece.verovioPrintExample()`
 
 Pass a range of measures (as integers) to print the given range.
+
+Note that the given MEI file MUST be loaded via some URL:
+
 
 Measures 10-15, for instance:
 
 ```python
+# must load file via URL
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
 piece.verovioPrintExample(10, 15)
 ```
 
@@ -33,6 +54,8 @@ Depending on how your MEI file has been encoded it is possible you will see Vero
 
 ```python
 %%capture --no-display
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
 piece.verovioPrintExample(10, 15)
 ```
 
@@ -44,6 +67,8 @@ For last measure you can also use '-1'; thus for all measures you would use the 
 
 
 ```python
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
 piece.verovioPrintExample(1, -1)
 ```
 
@@ -51,7 +76,7 @@ If your example is long, it will be broken into several pages.  You will need to
 
 
 
-## 2.  Print Cadences
+## `piece.verovioCadences()`
 
 This function is used to display the results of the Cadence
 classifier in the Notebook with Verovio.  Each excerpt is
@@ -65,16 +90,14 @@ status.
 
 How to use it:
 
-You will first need to find the cadences:
+You will first need to find the cadences, then pass them to Verovio:
+
 
 ```python
-cadences = piece.cadences()
-```
-
-Then pass these results to the Verovio print function:
-
-```python
-piece.verovioCadences(cadences)
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
+cads = piece.cadences()
+piece.verovioCadences(cads)
 ```
 
 Notice that the output can be *very long* in this case, since all of the cadences in your dataframe of results will be printed, one after the other.
@@ -89,12 +112,14 @@ It is also possible to pass a *filtered* list of cadences to this function
 by specifying a df into verovioCadences() as shown below:
 
 ```python
-cadences = piece.cadences()
-cadences_filtered = cadences[cadences['Tone'] == 'G']
-piece.verovioCadences(cadences_filtered)
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
+cads = piece.cadences()
+cads_filtered = cads[cads['Tone'] == 'G']
+piece.verovioCadences(cads_filtered)
 ```
 
-## 3.  Print Homorhythm
+## `piece.verovioHomorhythm()`
 
 Prints HR passages for a given piece with Verovio, based on imported piece and 
 other parameters.
@@ -108,6 +133,8 @@ Users can supply either of two arguments:
 Typical use:
 
 ```python
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
 piece.verovioHomorhythm()
 ```
 
@@ -116,12 +143,16 @@ piece.verovioHomorhythm()
 OR with custom parameters:
 
 ```python
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
 piece.verovioHomorhythm(ngram_length=5, full_hr=False)
 ```
 
 It is also to run `piece.homorhythm()`, then filter the results in some way and pass those results to the print function:
 
 ```python
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
 # first, run hr function and convert hr['syllable_set'] to string
 hr = piece.homorhythm(ngram_length=6, full_hr=True).fillna('')
 hr["hr_voices"] = hr["hr_voices"].apply(lambda x: ', '.join(map(str, x))).copy()
@@ -137,7 +168,7 @@ piece.verovioHomorhythm(hr_with_chosen_voices)
 ```
 
 
-## 4.  Print Presentation Types
+## `piece.verovioPtypes()`
 
 This function is used to display the results of the *presentationTypes* function
 in the Notebook with Verovio.  Each excerpt begins with
@@ -155,6 +186,8 @@ You must first run presentationTypes to build the initial list of results and de
 these as a new variable name, such as "p_types":
 
 ```python
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
 p_types = piece.presentationTypes()
 ```
 
@@ -169,16 +202,25 @@ After any additional filtering, pass the results of that work to *verovioPtypes*
 piece.verovioPtypes(p_types)
 ```
 
+Here is the complete code:
+
+```python
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
+p_types = piece.presentationTypes()
+piece.verovioPtypes(p_types)
+```
+
 ![alt text](images/linkex8.png)
 
-## 5.  Print with Analytic Highlights
+## Print with Analytic Highlights:  `linkExample()`
 
 Finally it is now also possible to print examples with analytic highlights corresponding to the notes identified by various CRIM Intervals methods.  This is accomplished with the `piece.linkExample()` function, which takes in a dataframe of results produced with any of the following:
 
-- ngrams (these could be melodic, harmonic, lyrics, durations, or modular ngrams)
-- cadences 
-- homorhythm
-- presentation types
+- **ngrams** (these could be melodic, harmonic, lyrics, durations, or modular ngrams)
+- **cadences**
+- **homorhythm**
+- **presentation types**
 
 The `linkExample` works by calculating the 'address' of each pattern, in this case formulated according to the Raffaele Viglianti's [Enhancing Music Addressability](https://music-encoding.org/projects/ema.html) API, which reduces any complex of selected notes to a string representing measures/staves/beats that can be used to return a valid segment of any MEI score corresponding to the passage in question.
 
@@ -195,7 +237,18 @@ cd=piece.cadences()
 piece.linkExamples(df=cd, piece_url=url)
 ```
 
-### How to use linkExample
+The table looks like this:
+
+![alt text](images/link_cad_1.png)
+
+
+And a single rendered example (with highlights) looks like this:
+
+
+![alt text](images/link_cad_2.png)
+
+
+### How to use `linkExample()`
 
 In practice we combined these tools with Juypyter Notebook:
 
@@ -208,9 +261,7 @@ In practice we combined these tools with Juypyter Notebook:
 Given a dataframe of EMA addresses, return a dataframe of clickable links to the EMA React app. The `piece_url` parameter is the URL of the piece on the EMA React app. If you don't pass a `piece_url`, the method will try to construct one based on the piece's metadata. The resulting dataframe will have the same data results, but instead of plain text they will be links to highlighted examples of each result.
 
 
-How to use it:
-
-### 5a. linkExample with Cadences
+### `linkExample()` with Cadences
 
 ```python
 url = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
@@ -240,7 +291,7 @@ piece.linkExamples(df=cd, piece_url=url)
 
 The method can also be used with other CRIM Intervals functions.
 
-### 5b. linkExample with Melodic n-grams:
+### `linkExample()` with Melodic nGrams:
 
 Note that you must use `offsets='both'` with the ngram function!
 
@@ -263,7 +314,7 @@ And view an individual example:
 ![alt text](<images/linkedex 11.png>)
 
 
-### 5c. linkExample with Presentation Types
+### `linkExample()` with Presentation Types
 
 Remember that the `presentationTypes` function has many parameters to set:
 
@@ -306,7 +357,7 @@ A single result:
 
 ![alt text](images/linkedex14.png)
 
-### 5d. linkExample with Homorhythm
+### `linkExample()` with Homorhythm
 
 ```python
 prefix = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_4.0/'
@@ -327,23 +378,24 @@ Click any link to view the annotated result:
 ## Sections in this guide
 
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
-  * [03_Durations](/tutorial//03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
-  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
-  * [11_Cadences](/tutorial//11_Cadences.md)
-  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial//15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial//16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial//17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial//18_Visualizations_Summary.md)
-  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
-  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
-  * [99_Local_Installation](/tutorial//99_Local_Installation.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

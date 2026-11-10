@@ -2433,6 +2433,10 @@ class ImportedPiece:
                   held='1', exclude=[], show_both=True).stack() for n in cadences.N.unique()}
         hits = [ser[ser.str.contains('|'.join(cadences[cadences.N == n].index), regex=True)]
                 for n, ser in ngrams.items() if not ser.empty]
+        if not hits:
+            # no cadential n-gram patterns of any length were even possible
+            # for this piece (e.g. too short), so there's nothing to concat
+            return pd.DataFrame()
         hits = pd.concat(hits)
         hits.sort_index(level=1, inplace=True)
         hits = hits[~hits.index.duplicated('last')]
@@ -2443,10 +2447,21 @@ class ImportedPiece:
         df['Pattern'] = df.Ngram.replace(cadences.index, cadences.index, regex=True)
         df = df.join(cadences, on='Pattern')
         voices = [pair.split('_') for pair in df.index.get_level_values(2)]
-        df[['LowerVoice', 'UpperVoice']] = voices
+        # When there are no cadential-pattern hits at all, `voices` is `[]`,
+        # whose shape (0,) doesn't broadcast into the 2 target columns the
+        # way a list of 2-element lists does; building a DataFrame first
+        # keeps both the empty and non-empty cases working the same way.
+        df[['LowerVoice', 'UpperVoice']] = pd.DataFrame(voices, index=df.index, columns=['LowerVoice', 'UpperVoice'])
         df.index = df.index.droplevel(2)
         cvfs = pd.DataFrame(columns=self._getPartNames(), index=pd.MultiIndex.from_arrays([[], []], names=df.index.names))
-        df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
+        if len(df):
+            # `DataFrame.apply(axis=1)` on a 0-row df still calls the function
+            # once with a dummy all-NaN row to infer the result dtype. Since
+            # `_cvf_helper` mutates `cvfs` in place via `row.LowerVoice`/
+            # `row.UpperVoice` (both NaN on the dummy row), that phantom call
+            # would otherwise inject two spurious NaN-named columns into
+            # `cvfs`, which later breaks `numberParts` (columns must be str).
+            df.apply(func=self._cvf_helper, axis=1, args=(cvfs,))
         cvfs = cvfs.apply(self._cvf_disambiguate_h, axis=1).dropna(how='all')
         cvfs = cvfs.astype('object', copy=False)
         mel = self.melodic('c', True, True)
@@ -4969,13 +4984,11 @@ class CorpusBase:
         Returns
         -------
         pd.DataFrame
+            If none of the pieces in the corpus have any cadences, an empty
+            DataFrame (with the expected columns) is returned. Pieces with no
+            cadences are reported by title via a printed message rather than
+            raising an error.
         """
-        func = ImportedPiece.cadences
-        list_of_dfs = self.batch(func=func,
-                                  kwargs={'keep_keys': True, 'key_sig': key_sig, 'include_final': include_final},
-                                  metadata=True)
-        corpus_cadences = pd.concat(list_of_dfs, ignore_index=False)
-
         col_list = ['Composer', 'Title', 'Measure', 'Beat', 'Pattern', 'Key', 'CadType', 'Tone', 'CVFs',
                     'LeadingTones', 'Sounding', 'Low', 'RelLow', 'RelTone',
                     'Progress', 'SinceLast', 'ToNext']
@@ -4983,6 +4996,25 @@ class CorpusBase:
             col_list.append('KeySig')
         if include_final:
             col_list.append('Final')
+
+        func = ImportedPiece.cadences
+        list_of_dfs = self.batch(func=func,
+                                  kwargs={'keep_keys': True, 'key_sig': key_sig, 'include_final': include_final},
+                                  metadata=True)
+
+        # Some pieces may have no cadences at all (an empty df from
+        # ImportedPiece.cadences). Report these by title instead of letting
+        # them silently vanish from the corpus results.
+        missing_pieces = [score.metadata['title'] for df, score in zip(list_of_dfs, self.scores) if len(df) == 0]
+        if missing_pieces:
+            print('No cadences found in {} piece(s): {}'.format(len(missing_pieces), ', '.join(missing_pieces)))
+        list_of_dfs = [df for df in list_of_dfs if len(df) > 0]
+
+        if not list_of_dfs:
+            print('No cadences found in the corpus')
+            return pd.DataFrame(columns=col_list)
+
+        corpus_cadences = pd.concat(list_of_dfs, ignore_index=False)
         corpus_cadences = corpus_cadences[col_list]
         return corpus_cadences
 

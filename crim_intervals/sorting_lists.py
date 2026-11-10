@@ -2,23 +2,32 @@
 
 import pandas as pd
 
+# pitch order for sorting, including all chromatic alterations and octaves 2-6, but no double shartps or flats
 pitch_order = ['Rest','C2', 'D2', 'E-2', 'E2', 'F2', 'F#2', 'G-2', 'G2', 'G#2', 'A-2', 'A2', 'A#2','B-2', 'B2',
     'C3', 'C#3', 'D-3','D3', 'D#3', 'E-3','E3', 'F3', 'F#3', 'G-3',  'G3', 'G#3', 'A-3', 'A3', 'A#3', 'B-3','B3', 'B#3',
     'C4', 'C#4', 'D-4','D4', 'D#4','E-4', 'E4', 'F4', 'F#4', 'G-4',  'G4', 'G#4', 'A-4','A4', 'A#4', 'B-4', 'B4',
     'C5', 'C#5','D-5','D5', 'D#5', 'E-5','E5','F5', 'F#5', 'G-5', 'G5', 'G#5', 'A-5', 'A5', 'A#5', 'B-5', 'B5',
     'C6']
 
+# musica recta pitch order for sorting, including only the pitches used in musica recta
 recta_order = ['Rest','D2', 'E-2', 'E2', 'F2', 'F#2', 'G2', 'G#2', 'A2', 'B-2', 'B2',
     'C3', 'C#3','D3', 'D#3', 'E-3','E3', 'F3', 'F#3',  'G3', 'G#3', 'A-3', 'A3', 'B-3','B3',
     'C4', 'C#4', 'D-4','D4', 'D#4','E-4', 'E4', 'F4', 'F#4', 'G-4',  'G4', 'G#4', 'A-4','A4',  'B-4', 'B4',
     'C5', 'C#5','D-5','D5', 'D#5', 'E-5','E5','F5', 'F#5', 'G-5', 'G5', 'G#5', 'A-5', 'A5',  'B-5', 'B5',
     'C6']
 
-
+# only pitch classes, no octaves, no double sharps or flats, plus 'Rest'
 pitch_class_order = ['C', 'C#', 'D-', 'D', 'D#', 'E-', 'E', 'F-', 'E#', 'F', 'F#', 'G-', 'F##', 'G', 'G#',
     'A-', 'A', 'A#', 'B-', 'B', 'B#', 'Rest']
+
 pitch_class_order_no_rests = [item for item in pitch_class_order if item != 'Rest']
+
 pitch_class_order_with_rests = pitch_class_order.copy()
+
+# custom interval order
+interval_order_quality = ["-P8", "-M7", "-m7", "-M6", "-m6", "-P5", "-P4", "-M3", 
+                          "-m3", "-M2", "-m2", "P1", "m2", "M2", "m3", "M3",
+                          "P4", "P5", "m6", "M6", "m7", "M7", "P8"]
 
 # REST tokens as seen in CRIM Intervals output
 REST_TOKENS = {'r', 'rest', 'Rest', '-', ''}

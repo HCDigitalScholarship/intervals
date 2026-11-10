@@ -1,25 +1,35 @@
 # Detail Index  
 
-<!-- Add brief description and parameters at a glance -->
+## Table of Contents
+1. [Showing Measures and Beats: `detailIndex()` in Brief](#showing-measures-and-beats--detailindex-in-brief)
+2. [Advanced Parameters for `detailIndex`](#advanced-parameters-for-detailindex)
+3. [Sections in this guide](#sections-in-this-guide)
 
-## Showing Measures and Beats:  `detailIndex()`
+## Showing Measures and Beats:  `detailIndex()` in Brief
 
 By default, CRIM Intervals dataframes display results according to the `offset` of each event, which appear as the **Index** for the given dataframe. Each increment of 1.0 corresponds to a single quarter note duration. Remember that the first offset will be 0.0, in accordance with Python series format.
 
-But it is easy to include information about measures and beats (as well as offsets)in any combination. This can be done with the help of the `detailIndex()` function (which can also be abbreviated as `di()`. 
+But it is easy to include information about measures and beats (as well as offsets)in any combination. This can be done with the help of the `detailIndex()` function (which can also be abbreviated as `di()`). 
+
+The method has many parameters--these are explained in detail below.:
+
+```python
+detailIndex(self, df, measure=True, beat=True, offset=False, t_sig=False,
+        key_sig=False, sounding=False, progress=False, lowest=False, highest=False, _all=False)
+```
 
 To use `detailIndex`, simply pass the dataframe from any function (which will have a list of offsets as the Index) to `detailIndex()`.  For instance:
 
 ```python
 nr = piece.notes()
-piece.detailIndex(nr)
+nr_detail = piece.detailIndex(nr)
 ```
 
 *or:*
 
 ```python
 mel = piece.melodic()
-piece.detailIndex(mel)
+mel_detail = piece.detailIndex(mel)
 ```
 
 
@@ -31,7 +41,7 @@ Indeed, this method works with any dataframe (provided that it relates to a sing
 
 ## Advanced Parameters for `detailIndex`
 
-This function also has a number of parameters that can be adjusted according to need: 
+As noted above function also has a number of parameters that can be adjusted according to need: 
 
 ```python
 piece.detailIndex(df, measure = True, beat = True, offset = False, t_sig = False, sounding = False, progress = False, lowest = False, highest = False, _all = False)
@@ -81,23 +91,24 @@ As the name suggests, this sets all parameters as `True`.
 ## Sections in this guide
 
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](/tutorial//02_Notes_Rests.md)
-  * [03_Durations](/tutorial//03_Durations.md) 
-  * [04_TimeSignatures_Beat_Strength](/tutorial//04_TimeSignatures_Beat_Strength.md)
-  * [05_Detail_Index](/tutorial//05_Detail_Index.md)
-  * [06_Melodic_Intervals](/tutorial//06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals](/tutorial//07_Harmonic_Intervals.md)
-  * [08_Contrapuntal_Modules](/tutorial//08_Contrapuntal_Modules.md)
-  * [09_Ngrams_Heat_Maps](/tutorial//09_Ngrams_Heat_Maps.md)
-  * [10_Lyrics_Homorhythm](/tutorial//10_Lyrics_Homorhythm.md)
-  * [11_Cadences](/tutorial//11_Cadences.md)
-  * [12_Presentation_Types](/tutorial//12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial//13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial//14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial//15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial//16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial//17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial//18_Visualizations_Summary.md)
-  * [19_Music21_Basics](/tutorial//18_Music21_Basics.md)
-  * [20_Melodic_Interval_Families](/tutorial//20_Melodic_Interval_Families.md)
-  * [99_Local_Installation](/tutorial//99_Local_Installation.md)
+  * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
+  * [03_Durations](/tutorial/03_Durations.md)
+  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [05_Detail_Index](/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
+  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
+  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
+  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
+  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
+  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
+  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
+  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
+  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
+  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [99_Local_Installation](/tutorial/99_Local_Installation.md)

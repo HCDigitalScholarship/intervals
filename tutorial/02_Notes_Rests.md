@@ -213,16 +213,20 @@ The CRIM Intervals Corpus Tools (defined in `corpus_tools.py`) also has convenie
 
 ```python
 # Creates table of notes and rests in a corpus.
-corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False, key_sig=False)
+corpus.notes(combine_unisons_choice=True, combine_rests_choice=False, key_sig=False, include_final=False)
+
 
 # Counts occurrences of notes and rests in a corpus, and reports them as percentages of the whole
-corpus_note_scaled(corpus, combine_unisons_choice=True, combine_rests_choice=False, key_sig=False)
+corpus.note_scaled(combine_unisons_choice=True, combine_rests_choice=False, key_sig=False, include_final=False)
+
 
 # Calculates durations of notes in a corpus (see Durations.md for more detail)
-corpus_note_durs(corpus, pitch_class=True)
+corpus.note_durs(pitch_class=True, aggregate=False, key_sig=False, include_final=True)
+
 
 # Calculates pitch class weights by duration in a corpus
-corpus_note_weights(corpus, include_rests=True, key_sig=False)
+corpus.note_weights(include_rests=True, key_sig=False, include_final=False)
+
 ```
 
 Here is now to use them:
@@ -244,7 +248,7 @@ Now pass that corpus to the chosen function:
 
 ```python
 # get weighted notes
-corpus_notes_df = corpus_notes(corpus)
+corpus_notes_df = corpus.notes(combine_unisons_choice=True,combine_rests_choice=False, key_sig=False, include_final=False)
 corpus_notes_df
 ```
 
@@ -271,7 +275,7 @@ file_list = ['https://crimproject.org/mei/CRIM_Model_0001.mei', 'https://crimpro
 corpus = CorpusBase(file_list)
 
 # pass that corpus to the given method, along with optional arguments
-corpus_notes_df = corpus_tools.corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False, key_sig=False)
+corpus_notes_df = corpus.notes(combine_unisons_choice=True, combine_rests_choice=False, key_sig=False, include_final=False)
 
 # dropping metdata for purposes of the chart
 corpus_notes_df_no_mdata = corpus_notes_df.drop(['Composer', 'Title', "Date"], axis=1)

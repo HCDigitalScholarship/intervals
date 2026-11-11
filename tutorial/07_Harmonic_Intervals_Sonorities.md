@@ -248,9 +248,8 @@ directed_choice = True   # True for directed intervals, False for undirected int
 
 
 # now run the corpus function
-corpus_har_ints = corpus_tools.corpus_har(corpus, kind_choice=kind_choice,
-                                 compound_choice=compound_choice,
-                                 directed_choice=directed_choice)
+corpus_har_ints = corpus.har(kind_choice='d', compound_choice=True, directed_choice=True, key_sig=False, include_final=False)
+
 corpus_har_ints                   
 ```
 
@@ -439,9 +438,8 @@ directed_choice = True   # True for directed intervals, False for undirected int
 exclude_rests = True     # True to exclude rests, False to include rests
 
 # the corpus function
-corpus_har_ints = corpus_tools.corpus_har(corpus, kind_choice=kind_choice,
-                                 compound_choice=compound_choice,
-                                 directed_choice=directed_choice)
+corpus_har_ints = corpus.har(kind_choice='d', compound_choice=True, directed_choice=True, key_sig=False, include_final=False)
+
 
 # melt: metadata/position columns stay fixed, every voice column becomes rows
 id_cols = ['Composer', 'Title', 'Date', 'Measure', 'Beat', 'Progress']

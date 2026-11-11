@@ -151,7 +151,8 @@ The basic methods of building and working with a corpus are explained in the[Cor
 corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                         'https://crimproject.org/mei/CRIM_Model_0009.mei'])
 # pass the corpus to the method
-corpus_tools.corpus_cadences(corpus)
+corpus_cads = corpus.cadences(key_sig=False, include_final=False)
+
 ```
 
 ![cad_12.png](images%2Fcad_12.png)

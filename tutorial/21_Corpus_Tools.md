@@ -2,248 +2,304 @@
 
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Importing Corpus Tools for use with CRIM Intervals](#importing-corpus-tools-for-use-with-crim-intervals)
-3. [Using the Corpus Tools Functions](#using-the-corpus-tools-functions)
-4. [Functions](#functions)
-   - [corpus_notes](#corpus_notes)
-   - [corpus_note_scaled](#corpus_note_scaled)
-   - [corpus_note_durs](#corpus_note_durs)
-   - [corpus_note_weights](#corpus_note_weights)
-   - [corpus_mel](#corpus_mel)
-   - [corpus_har](#corpus_har)
-   - [corpus_contrapuntal_ngrams](#corpus_contrapuntal_ngrams)
-   - [corpus_melodic_ngrams](#corpus_melodic_ngrams)
-   - [corpus_melodic_durational_ratios_ngrams](#corpus_melodic_durational_ratios_ngrams)
-   - [corpus_harmonic_ngrams](#corpus_harmonic_ngrams)
-   - [corpus_sonority_ngrams](#corpus_sonority_ngrams)
-   - [corpus_cadences](#corpus_cadences)
-   - [corpus_presentation_types](#corpus_presentation_types)
-5. [Sections in this guide](#sections-in-this-guide)
+2. [Creating a Corpus with CRIM Intervals](#creating-a-corpus-with-crim-intervals)
+3. [Using the Corpus Methods](#using-the-corpus-methods)
+4. [Methods](#methods)
+   - [notes](#notes)
+   - [note_scaled](#note_scaled)
+   - [note_durs](#note_durs)
+   - [note_weights](#note_weights)
+   - [mel](#mel)
+   - [har](#har)
+   - [contrapuntal_ngrams](#contrapuntal_ngrams)
+   - [melodic_ngrams](#melodic_ngrams)
+   - [melodic_durational_ratios_ngrams](#melodic_durational_ratios_ngrams)
+   - [harmonic_ngrams](#harmonic_ngrams)
+   - [sonority_ngrams](#sonority_ngrams)
+   - [cadences](#cadences)
+   - [presentation_types](#presentation_types)
+5. [Legacy `corpus_tools` Functions](#legacy-corpus_tools-functions)
+6. [Sections in this guide](#sections-in-this-guide)
 
 ## Introduction
 
-This module provides tools for analyzing musical corpora. It offers functionality for extracting notes, calculating durations, generating intervals, and creating n-grams from musical data.
+These tools analyze a whole corpus of pieces at once. They extract notes, calculate durations, generate intervals, and create n-grams across every piece in the corpus, and they return a single DataFrame with `Composer`, `Title`, and `Date` columns so that you can compare pieces.
 
-## Importing Corpus Tools for use with CRIM Intervals
+Each tool is a **method of the `CorpusBase` object**. You call it directly on your corpus (for example `corpus.notes()`).
 
-Be sure to import the corpus tools before using them in your analysis. The following code snippet shows how to import the necessary functions:
+Learn about all the corpus methods in the [Documentation for CRIM Intervals](https://hcdigitalscholarship.github.io/intervals/api/main_objs/#crim_intervals.main_objs.CorpusBase).
+
+## Creating a Corpus with CRIM Intervals
+
+First import CRIM Intervals as usual (see [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)):
 
 ```python
-import crim_intervals.corpus_tools as corpus_tools
+import crim_intervals
+from crim_intervals import *
+import pandas as pd
 ```
-## Using the Corpus Tools Functions
 
-Since these tools are part of a specific package, you can use them directly after importing. Here’s an example of how to use the `corpus_melodic` function:
+Then build a corpus from a list of URLs or local file paths. Local file paths must begin with `/`:
 
 ```python
-corpus_tools.corpus_mel(corpus)
+file_list = ['https://crimproject.org/mei/CRIM_Model_0008.mei',
+             'https://crimproject.org/mei/CRIM_Mass_0005_1.mei']
+corpus = CorpusBase(file_list)
 ```
 
-This will generate melodic intervals from the provided corpus object. You can adjust the parameters as needed to fit your analysis requirements.  For example, you can specify the kind of intervals, whether to allow compound intervals, and whether to allow directed intervals.
+## Using the Corpus Methods
+
+Call each method on the corpus object and save the result as a DataFrame:
 
 ```python
-corpus_tools.corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)
-```	
+corpus_notes = corpus.notes()
+corpus_mel_ngrams = corpus.melodic_ngrams(ngram_length=5, kind_choice='c')
+corpus_cads = corpus.cadences(include_final=True)
+```
 
+Many of the methods also take two optional parameters that help with modal and tonal studies:
 
-## Functions
+- `key_sig` (bool, default `False`): adds the prevailing key signature of each piece. It uses the music21 `.sharps` convention, so `0` means no signature and `-1` means one flat.
+- `include_final` (bool, default `False`; `True` for `note_durs`): adds a column with the final tone of each piece.
 
-###  corpus_notes
+## Methods
 
-Typical use: `corpus_tools.corpus_notes(corpus, combine_unisons_choice=True, combine_rests_choice=False)`
+### notes
 
-Creates a table of notes and rests in a corpus.
+Typical use: `corpus.notes(combine_unisons_choice=True, combine_rests_choice=False, key_sig=False, include_final=False)`
+
+Creates a table of notes and rests in a corpus. The table has one row per attack or rest offset and one column per numbered voice.
 
 Parameters:
-- `corpus` (object): Corpus object
-- `combine_unisons_choice` (bool): Choice for combining unisons
-- `combine_rests_choice` (bool): Choice for combining rests
+- `combine_unisons_choice` (bool): Whether to combine consecutive attacks on the same pitch (default: True)
+- `combine_rests_choice` (bool): Whether to combine consecutive rests (default: False)
+- `key_sig` (bool): Whether to add a `KeySig` column (default: False)
+- `include_final` (bool): Whether to add a `Final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing processed notes
+- `pd.DataFrame`: DataFrame containing notes and rests for every piece
 
-### corpus_note_scaled
+### note_scaled
 
-Typical use: `corpus_tools.corpus_note_scaled(corpus, combine_unisons_choice=True, combine_rests_choice=False)`
+Typical use: `corpus.note_scaled(combine_unisons_choice=True, combine_rests_choice=False, key_sig=False, include_final=False)`
 
-Counts occurrences of notes and rests in a corpus, including scaled counts.
+Counts the notes and rests in a corpus and gives each count as a proportion of the piece's total (the scaled count).
 
 Parameters:
-- `corpus` (object): Corpus object
-- `combine_unisons_choice` (bool): Choice for combining unisons
-- `combine_rests_choice` (bool): Choice for combining rests
+- `combine_unisons_choice` (bool): Whether to combine consecutive attacks on the same pitch (default: True)
+- `combine_rests_choice` (bool): Whether to combine consecutive rests (default: False)
+- `key_sig` (bool): Whether to add a `KeySig` column (default: False)
+- `include_final` (bool): Whether to add a `Final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing note counts
+- `pd.DataFrame`: One row per note per piece, with `count`, `scaled_count`, `Composer`, and `Title` columns
 
-### corpus_note_durs
+### note_durs
 
-Typical use: `corpus_tools.corpus_note_durs(corpus, pitch_class=True)`
+Typical use: `corpus.note_durs(pitch_class=True, aggregate=False, key_sig=False, include_final=True)`
 
-Calculates durations of notes in a corpus.
+Calculates the durations of notes in a corpus.
 
 Parameters:
-- `corpus` (object): Corpus object
-- `pitch_class` (bool): Whether to use pitch class instead of full note names (default: True)
+- `pitch_class` (bool): Whether to use pitch classes (octave removed) instead of full note names (default: True)
+- `aggregate` (bool): If False, returns one row per note. If True, returns the total duration of each pitch for each voice in each piece (default: False)
+- `key_sig` (bool): Whether to add a `KeySig` column (default: False)
+- `include_final` (bool): Whether to add a `Final` column, given as a pitch class (default: True)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing note durations
+- `pd.DataFrame`: Columns `Composer`, `Title`, `Date`, `Voice`, `Notes`, `Durs`, plus `Final` and/or `KeySig` if you ask for them
 
-### corpus_note_weights
+### note_weights
 
-Typical use: `corpus_tools.corpus_note_weights(corpus, include_rests=True)`
+Typical use: `corpus.note_weights(include_rests=True, key_sig=False, include_final=False)`
 
-Calculates pitch class weights by duration in a corpus. Notes are grouped by pitch class and weighted by their total duration, yielding a scaled proportion for each pitch class per piece. Pitch classes are ordered chromatically and flat names are standardized (e.g. `D-` becomes `Db`).
+Calculates pitch-class weights by duration in a corpus. Notes are grouped by pitch class and weighted by their total duration, which gives a scaled proportion for each pitch class in each piece. Pitch classes are ordered chromatically, and flat names are standardized (for example, `D-` becomes `Db`).
 
 Parameters:
-- `corpus` (object): Corpus object
-- `include_rests` (bool): Whether to include rests in the pitch class counts (default: True)
+- `include_rests` (bool): Whether to include rests in the pitch-class counts (default: True)
+- `key_sig` (bool): Whether to add a `key_sig` column (default: False)
+- `include_final` (bool): Whether to add a `final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame with columns `pitch_class`, `count` (total duration), `scaled` (proportion of total duration), `composer`, and `title` for each piece in the corpus
+- `pd.DataFrame`: Columns `pitch_class`, `count` (total duration), `scaled` (proportion of total duration), `composer`, and `title` (plus `final` and/or `key_sig` if you ask for them)
 
-### corpus_mel
+### mel
 
-Typical use: `corpus_tools.corpus_mel(corpus, kind_choice='d', compound_choice=True, directed_choice=True)`
+Typical use: `corpus.mel(kind_choice='d', compound_choice=True, directed_choice=True, key_sig=False, include_final=False)`
 
-Generate melodic intervals in a corpus.
+Generates melodic intervals in a corpus.
 
 Parameters:
-- `corpus` (object): Corpus object
-- `kind_choice` (str): Kind of intervals to generate
-- `compound_choice` (bool): Whether to allow compound intervals
-- `directed_choice` (bool): Whether to allow directed intervals
+- `kind_choice` (str): Kind of intervals to generate, for example `'d'` for diatonic (default: `'d'`)
+- `compound_choice` (bool): Whether to allow compound intervals (default: True)
+- `directed_choice` (bool): Whether to show the direction of each interval (default: True)
+- `key_sig` (bool): Whether to add the key signature to the index (default: False)
+- `include_final` (bool): Whether to add a `Final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing generated melodic intervals
+- `pd.DataFrame`: DataFrame containing melodic intervals
 
-### corpus_har
+### har
 
-Typical use: `corpus_tools.corpus_har(corpus, kind_choice='d', compound_choice=True, directed_choice=True)`
+Typical use: `corpus.har(kind_choice='d', compound_choice=True, directed_choice=True, key_sig=False, include_final=False)`
 
-Generate harmonic intervals in a corpus.
+Generates harmonic intervals in a corpus.
 
 Parameters:
-- `corpus` (object): Corpus object
-- `kind_choice` (str): Kind of intervals to generate
-- `compound_choice` (bool): Whether to allow compound intervals
-- `directed_choice` (bool): Whether to allow directed intervals
+- `kind_choice` (str): Kind of intervals to generate (default: `'d'`)
+- `compound_choice` (bool): Whether to allow compound intervals (default: True)
+- `directed_choice` (bool): Whether to show the direction of each interval (default: True)
+- `key_sig` (bool): Whether to add the key signature to the index (default: False)
+- `include_final` (bool): Whether to add a `Final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing generated harmonic intervals
+- `pd.DataFrame`: DataFrame containing harmonic intervals
 
-### corpus_contrapuntal_ngrams
+### contrapuntal_ngrams
 
-Typical use: `corpus_tools.corpus_contrapuntal_ngrams(corpus, ngram_length)`
+Typical use: `corpus.contrapuntal_ngrams(ngram_length=3, key_sig=False, include_final=False)`
 
-Generate n-grams in a corpus.
+Generates contrapuntal n-grams in a corpus.
 
 Parameters:
-- `corpus` (object): Corpus object
-- `ngram_length` (int): Length of n-grams to generate
+- `ngram_length` (int): Length of n-grams to generate (default: 3)
+- `key_sig` (bool): Whether to add the key signature to the index (default: False)
+- `include_final` (bool): Whether to add a `Final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing generated n-grams
+- `pd.DataFrame`: DataFrame containing contrapuntal n-grams
 
-### corpus_melodic_ngrams
+### melodic_ngrams
 
-Typical use:  `corpus_tools.corpus_melodic_ngrams(corpus, ngram_length=4, kind_choice='d', end_choice=False, metadata_choice=True, include_offset=False)`
+Typical use: `corpus.melodic_ngrams(ngram_length=4, kind_choice='d', compound_choice=True, directed_choice=True, end_choice=False, metadata_choice=True, include_offset=False, key_sig=False, include_final=False)`
 
-Generate n-grams in a corpus.
+Generates melodic n-grams in a corpus.
 
 Parameters:
-- `corpus` (object): Corpus object
 - `ngram_length` (int): Length of n-grams to generate (default: 4)
-- `kind_choice` (str): 'd' for diatonic (default)
-- `end_choice` (bool): False to give position as of the first note of the interval
-- `metadata_choice` (bool): Whether to include composer, title, and data
-- `include_offset` (bool): Whether to include offset along with measure and beat
+- `kind_choice` (str): Kind of intervals, for example `'d'` for diatonic (default: `'d'`)
+- `compound_choice` (bool): Whether to allow compound intervals (default: True)
+- `directed_choice` (bool): Whether to show the direction of each interval (default: True)
+- `end_choice` (bool): If False, each n-gram's position is the first note of its first interval (default: False)
+- `metadata_choice` (bool): Whether to include `Composer`, `Title`, and `Date` (default: True)
+- `include_offset` (bool): Whether to include the offset as well as the measure and beat (default: False)
+- `key_sig` (bool): Whether to add the key signature to the index (default: False)
+- `include_final` (bool): Whether to add a `Final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing generated n-grams
+- `pd.DataFrame`: DataFrame containing melodic n-grams
 
-### corpus_melodic_durational_ratios_ngrams
+### melodic_durational_ratios_ngrams
 
-Typical use:  `corpus_tools.corpus_melodic_durational_ratios_ngrams(corpus, ngram_length=4, end_choice=False, kind_choice='d', metadata_choice=True, include_offset=False)`
+Typical use: `corpus.melodic_durational_ratios_ngrams(ngram_length=4, end_choice=False, kind_choice='d', compound_choice=True, directed_choice=True, metadata_choice=True, include_offset=False, key_sig=False, include_final=False)`
 
-Generate n-grams in a corpus with durational ratios.
+Generates melodic n-grams that combine each interval with its durational ratio.
 
 Parameters:
-- `corpus` (object): Corpus object
 - `ngram_length` (int): Length of n-grams to generate (default: 4)
-- `end_choice` (bool): False to give position as of the first note of the interval
-- `kind_choice` (str): 'd' for diatonic (default)
-- `metadata_choice` (bool): Whether to include composer, title, and data
-- `include_offset` (bool): Whether to include offset along with measure and beat
+- `end_choice` (bool): If False, each n-gram's position is the first note of its first interval (default: False)
+- `kind_choice` (str): Kind of intervals (default: `'d'`)
+- `compound_choice` (bool): Whether to allow compound intervals (default: True)
+- `directed_choice` (bool): Whether to show the direction of each interval (default: True)
+- `metadata_choice` (bool): Whether to include `Composer`, `Title`, and `Date` (default: True)
+- `include_offset` (bool): Whether to include the offset as well as the measure and beat (default: False)
+- `key_sig` (bool): Whether to add the key signature to the index (default: False)
+- `include_final` (bool): Whether to add a `Final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing generated n-grams
+- `pd.DataFrame`: DataFrame containing melodic and durational-ratio n-grams
 
-### corpus_harmonic_ngrams
+### harmonic_ngrams
 
-Typical use:  `corpus_tools.corpus_harmonic_ngrams(corpus, ngram_length=4, kind_choice='d', metadata_choice=True, include_offset=False)`
+Typical use: `corpus.harmonic_ngrams(ngram_length=4, kind_choice='d', compound_choice=True, directed_choice=True, metadata_choice=True, againstLow_choice=False, include_offset=False, key_sig=False, include_final=False)`
 
-Generate n-grams in a corpus.
+Generates harmonic n-grams in a corpus.
 
 Parameters:
-- `corpus` (object): Corpus object
 - `ngram_length` (int): Length of n-grams to generate (default: 4)
-- `kind_choice` (str): 'd' for diatonic (default)
-- `metadata_choice` (bool): Whether to include composer, title, and data
-- `include_offset` (bool): Whether to include offset along with measure and beat
+- `kind_choice` (str): Kind of intervals (default: `'d'`)
+- `compound_choice` (bool): Whether to allow compound intervals (default: True)
+- `directed_choice` (bool): Whether to show the direction of each interval (default: True)
+- `metadata_choice` (bool): Whether to include `Composer`, `Title`, and `Date` (default: True)
+- `againstLow_choice` (bool): Whether to measure intervals against the lowest sounding voice (default: False)
+- `include_offset` (bool): Whether to include the offset as well as the measure and beat (default: False)
+- `key_sig` (bool): Whether to add the key signature to the index (default: False)
+- `include_final` (bool): Whether to add a `Final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing generated n-grams
+- `pd.DataFrame`: DataFrame containing harmonic n-grams
 
-### corpus_sonority_ngrams
+### sonority_ngrams
 
-Typical use: `corpus_tools.corpus_sonority_ngrams(corpus, ngram_length=4, metadata_choice=True, include_offset=False, include_progress=True, compound=True, sort=False, minimum_beat_strength=0.0)`
+Typical use: `corpus.sonority_ngrams(ngram_length=4, metadata_choice=True, include_offset=False, include_progress=True, compound=True, sort=False, minimum_beat_strength=0.0, key_sig=False, include_final=False)`
 
-Generate sonority n-grams in a corpus.
+Generates sonority n-grams in a corpus. Each item pairs the sonority (all tones sounding at a moment) with the melodic interval of the lowest voice. You can leave out sonorities on weak beats with `minimum_beat_strength`. These n-grams are useful for finding repeated blocks of sonorities within and among pieces, whatever voices they are heard in.
 
 Parameters:
-- `corpus` (object): Corpus object
 - `ngram_length` (int): Length of n-grams to generate (default: 4)
-- `metadata_choice` (bool): Whether to include composer, title, and data
-- `include_offset` (bool): Whether to include offset along with measure and beat
-- `include_progress` (bool): Whether to include progress column
-- `compound` (bool): Whether to allow compound intervals
-- `sort` (bool): If true, sorts intervals from largest to smallest; no unison
-- `minimum_beat_strength` (float): Minimum value for beat strength to report
+- `metadata_choice` (bool): Whether to include `Composer`, `Title`, and `Date` (default: True)
+- `include_offset` (bool): Whether to include the offset as well as the measure and beat (default: False)
+- `include_progress` (bool): Whether to include the `Progress` column, which runs from 0 to 1 through the piece (default: True)
+- `compound` (bool): Whether to allow compound intervals (default: True)
+- `sort` (bool): If True, sorts intervals from largest to smallest, without unisons (default: False)
+- `minimum_beat_strength` (float): Leaves out sonorities whose beat strength is not above this value (default: 0.0)
+- `key_sig` (bool): Whether to add the key signature to the index (default: False)
+- `include_final` (bool): Whether to add a `Final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing generated n-grams
+- `pd.DataFrame`: DataFrame containing sonority n-grams
 
-### corpus_cadences
+### cadences
 
-Typical use:  `corpus_tools.corpus_cadences(corpus)`
+Typical use: `corpus.cadences(key_sig=False, include_final=False)`
 
-Generate cadences in a corpus.
+Finds the cadences in every piece in the corpus. See `ImportedPiece.cadences` and [11_Cadences](/tutorial/11_Cadences.md) for an explanation of each column. If a piece has no cadences, the method prints its title and does not raise an error.
 
 Parameters:
-- `corpus` (object): Corpus object
+- `key_sig` (bool): Whether to add a `KeySig` column with the key signature at each cadence (default: False)
+- `include_final` (bool): Whether to add a `Final` column (default: False)
 
 Returns:
-- `pd.DataFrame`: DataFrame containing cadence information
+- `pd.DataFrame`: DataFrame of cadences (empty, with the expected columns, if there are no cadences in the corpus)
 
-### corpus_presentation_types
+### presentation_types
 
-Typical use:  `corpus_presentation_types(corpus, limit_to_entries=True, head_flex=1, body_flex=0, include_hidden_types=False, combine_unisons=True, melodic_ngram_length=4, kind='d', end=False)`
-Generate presentation types in a corpus.
+Typical use: `corpus.presentation_types(limit_to_entries=True, head_flex=1, body_flex=0, include_hidden_types=False, combine_unisons=True, melodic_ngram_length=4, kind='d', end=False)`
+
+Finds the presentation types in every piece in the corpus. See [12_Presentation_Types](/tutorial/12_Presentation_Types.md).
 
 Parameters:
-- `corpus` (object): Corpus object
-- `limit_to_entries` (bool): Whether to limit entries
-- `head_flex` (int): Flexibility for head
-- `body_flex` (int): Flexibility for body
-- `include_hidden_types` (bool): Whether to include hidden types
-- `combine_unisons` (bool): Whether to combine unisons
-- `melodic_ngram_length` (int): Length of melodic n-grams
-- `kind` (str): Kind of intervals
-- `end` (bool): Whether to give position as of the first note of the interval
+- `limit_to_entries` (bool): Whether to limit the search to entries (soggetti that follow a rest, a long note, or a section break) (default: True)
+- `head_flex` (int): How much the head of the soggetto may vary (default: 1)
+- `body_flex` (int): How much the body of the soggetto may vary (default: 0)
+- `include_hidden_types` (bool): Whether to include hidden types (default: False)
+- `combine_unisons` (bool): Whether to combine unisons (default: True)
+- `melodic_ngram_length` (int): Length of the melodic n-grams (default: 4)
+- `kind` (str): Kind of intervals (default: `'d'`)
+- `end` (bool): If False, each n-gram's position is the first note of its first interval (default: False)
 
 Returns:
 - `pd.DataFrame`: DataFrame containing presentation types
+
+## Legacy `corpus_tools` Functions
+
+Older notebooks may call these tools as functions from the `corpus_tools` module, for example `corpus_tools.corpus_notes(corpus)`. These functions still work, because each one just calls the matching `CorpusBase` method, but some of them do not support every parameter, such as `include_final`. For new work, call the methods directly on the corpus:
+
+| Old function | `CorpusBase` method |
+|---|---|
+| `corpus_tools.corpus_notes(corpus, ...)` | `corpus.notes(...)` |
+| `corpus_tools.corpus_note_scaled(corpus, ...)` | `corpus.note_scaled(...)` |
+| `corpus_tools.corpus_note_durs(corpus, ...)` | `corpus.note_durs(...)` |
+| `corpus_tools.corpus_note_weights(corpus, ...)` | `corpus.note_weights(...)` |
+| `corpus_tools.corpus_mel(corpus, ...)` | `corpus.mel(...)` |
+| `corpus_tools.corpus_har(corpus, ...)` | `corpus.har(...)` |
+| `corpus_tools.corpus_contrapuntal_ngrams(corpus, ...)` | `corpus.contrapuntal_ngrams(...)` |
+| `corpus_tools.corpus_melodic_ngrams(corpus, ...)` | `corpus.melodic_ngrams(...)` |
+| `corpus_tools.corpus_melodic_durational_ratios_ngrams(corpus, ...)` | `corpus.melodic_durational_ratios_ngrams(...)` |
+| `corpus_tools.corpus_harmonic_ngrams(corpus, ...)` | `corpus.harmonic_ngrams(...)` |
+| `corpus_tools.corpus_sonority_ngrams(corpus, ...)` | `corpus.sonority_ngrams(...)` |
+| `corpus_tools.corpus_cadences(corpus)` | `corpus.cadences(...)` |
+| `corpus_tools.corpus_presentation_types(corpus, ...)` | `corpus.presentation_types(...)` |
 
 ## Sections in this guide
 

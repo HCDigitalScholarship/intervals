@@ -352,7 +352,8 @@ class ImportedPiece:
 
     def _maxnDurationHelper(self, _col):
         col = _col.dropna()
-        starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', None)))]
+        prev = col.shift(1)
+        starts = col[(col != 'Rest') & ((prev == 'Rest') | prev.isna())]
         ends = col[(col == 'Rest') & (col.shift(1) != 'Rest')]
         starts.dropna(inplace=True)
         ends.dropna(inplace=True)
@@ -2010,8 +2011,9 @@ class ImportedPiece:
         col.dropna(inplace=True)
         if n == -1:
             # get the starting and ending elements of ngrams
-            starts = col[(col != 'Rest') & (col.shift(1).isin(('Rest', np.nan)))]
-            ends = col[(col != 'Rest') & (col.shift(-1).isin(('Rest', np.nan)))]
+            prev, nxt = col.shift(1), col.shift(-1)
+            starts = col[(col != 'Rest') & ((prev == 'Rest') | prev.isna())]
+            ends   = col[(col != 'Rest') & ((nxt == 'Rest') | nxt.isna())]
             si = tuple(col.index.get_loc(i) for i in starts.index)
             ei = tuple(col.index.get_loc(i) + 1 for i in ends.index)
             if offsets == 'last':
@@ -2200,8 +2202,9 @@ class ImportedPiece:
             combo['_'] = '_'
             if n == -1:
                 har = df[pair].dropna()
-                starts = har[(har != 'Rest') & (har.shift(1).isin(('Rest', np.nan)))]
-                ends = har[(har != 'Rest') & (har.shift(-1).isin(('Rest', np.nan)))]
+                prev, nxt = har.shift(1), har.shift(-1)
+                starts = har[(har != 'Rest') & ((prev == 'Rest') | prev.isna())]
+                ends   = har[(har != 'Rest') & ((nxt == 'Rest') | nxt.isna())]
                 starts.dropna(inplace=True)
                 ends.dropna(inplace=True)
                 si = tuple(har.index.get_loc(i) for i in starts.index)

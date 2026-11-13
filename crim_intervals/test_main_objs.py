@@ -335,3 +335,38 @@ def test_intervals_settings():
 
         # melodic
         # TODO hardcoded melodic test
+
+
+def test_ngram_helper_rest_to_rest_boundaries():
+    # n=-1 ngrams run from one rest to the next. Phrases that touch the start or
+    # end of the column (where shift() yields a missing value) must still count.
+    col = pd.Series(['Rest', '4', '5', 'Rest', 'Rest', '3', '2'],
+                    index=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.5])
+    first = ImportedPiece._ngramHelper(col.copy(), -1, [], 'first')
+    last = ImportedPiece._ngramHelper(col.copy(), -1, [], 'last')
+    both = ImportedPiece._ngramHelper(col.copy(), -1, [], 'both')
+    assert first.to_dict() == {1.0: '4, 5', 5.0: '3, 2'}
+    assert last.to_dict() == {2.0: '4, 5', 6.5: '3, 2'}
+    assert both.to_dict() == {(1.0, 2.0): '4, 5', (5.0, 6.5): '3, 2'}
+
+
+def test_rest_to_rest_ngrams_and_durations():
+    # Regression test: harmonic n=-1 ngrams used to raise IndexError because the
+    # final phrase end in each voice pair was missed.
+    model = get_crim_model('CRIM_Model_0008.mei')
+
+    mel = model.melodic()
+    mel_ngrams = model.ngrams(df=mel, n=-1)
+    assert mel_ngrams.notna().any().any()
+
+    mod_ngrams = model.ngrams(n=-1, how='modules')
+    assert mod_ngrams.notna().any().any()
+
+    durs = model.durations(n=-1)
+    assert durs.notna().any().any()
+    assert (durs.stack() > 0).all()
+
+    # every melodic ngram gets a positive duration
+    mel_durs = model.durations(df=mel, n=-1, mask_df=mel_ngrams)
+    assert (mel_ngrams.notna() == mel_durs.reindex_like(mel_ngrams).notna()).all().all()
+    assert (mel_durs.stack() > 0).all()

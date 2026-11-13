@@ -40,8 +40,8 @@ main_objs_dir = os.path.dirname(os.path.abspath(__file__))
 
 MEINSURI = 'http://www.music-encoding.org/ns/mei'
 MEINS = '{%s}' % MEINSURI
-suppliedPattern = re.compile("<supplied.*?(<accid.*?\/>).*?<\/supplied>", flags=re.DOTALL)
-datePattern = re.compile('date isodate="(1\d*)')
+suppliedPattern = re.compile(r"<supplied.*?(<accid.*?\/>).*?<\/supplied>", flags=re.DOTALL)
+datePattern = re.compile(r'date isodate="(1\d*)')
 
 accepted_filetypes = ('mei', 'mid', 'midi', 'abc', 'xml', 'musicxml')
 pathDict = {}

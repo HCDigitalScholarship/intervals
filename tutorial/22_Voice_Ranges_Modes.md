@@ -147,6 +147,9 @@ voice_range_chart(ranges, piece_order=['Veni speciosam',
 
 With a list, any titles you leave out are added at the end, and any titles that don't match the data (for example because of a typo) are reported in a printed message. To leave pieces out of the chart, filter the DataFrame before passing it in.
 
+
+![alt text](images/voiceRanges.png)
+
 ## How the Ranges Are Found
 
 For each voice, `modeRanges()`:

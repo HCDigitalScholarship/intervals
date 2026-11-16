@@ -497,6 +497,8 @@ fig.show()
 fig.write_html('voice_ranges.html')   # optional: save the interactive chart
 ```
 
+![alt text](images/voiceRanges.png)
+
 By default, models are listed first, then Mass movements in liturgical order. For pieces not related as model and Mass, use `piece_order='range'` (by range), `'alpha'` (by title), `'given'` (the order of the DataFrame you pass), or a list of titles in the order you want.
 
 See [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md) to learn more.

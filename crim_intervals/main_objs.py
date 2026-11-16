@@ -4966,15 +4966,27 @@ class CorpusBase:
         corpus_son_bass_ngrams = corpus_son_bass_ngrams.reset_index()
         return corpus_son_bass_ngrams
 
-    def cadences(self, 
-                 key_sig=False, 
+    def cadences(self,
+                 keep_keys=False,
+                 voice_detail=False,
+                 key_sig=False,
                  include_final=False):
         """
-        Return cadences for all pieces in the corpus. See `ImportedPiece.cadences`
-        for the full column documentation.
+        Return cadences for all pieces in the corpus. Accepts the same parameters
+        as `ImportedPiece.cadences`; see that method for the full column
+        documentation.
 
         Parameters
         ----------
+        keep_keys : bool, optional (default False)
+            If True, include the 'Pattern' and 'Key' columns (the CVF/interval
+            pattern and the cadenceLabels.csv regex that matched it). Note that
+            this 'Key' is a lookup key for cadence-type classification, not a
+            musical key.
+        voice_detail : bool, optional (default False)
+            If True, include the 'PartMap' column mapping each CVF letter to the
+            staff position(s) that performed it, e.g. {'C': ['1'], 'T': ['3']}.
+            Staff positions (not voice names) keep this comparable across pieces.
         key_sig : bool, optional (default False)
             If True, add a 'KeySig' column with the prevailing system key
             signature (music21 .sharps convention) at each cadence's
@@ -4992,18 +5004,25 @@ class CorpusBase:
             cadences are reported by title via a printed message rather than
             raising an error.
         """
-        col_list = ['Composer', 'Title', 'Measure', 'Beat', 'Pattern', 'Key', 'CadType', 'Tone', 'CVFs',
-                    'LeadingTones', 'Sounding', 'Low', 'RelLow', 'RelTone',
-                    'Progress', 'SinceLast', 'ToNext']
+        col_list = ['Composer', 'Title', 'Measure', 'Beat']
+        if keep_keys:
+            col_list += ['Pattern', 'Key']
+        col_list += ['CadType', 'Tone', 'CVFs']
+        if voice_detail:
+            col_list.append('PartMap')
+        col_list += ['LeadingTones', 'Sounding', 'Low', 'RelLow', 'RelTone',
+                     'Progress', 'SinceLast', 'ToNext']
         if key_sig:
             col_list.append('KeySig')
         if include_final:
             col_list.append('Final')
 
         func = ImportedPiece.cadences
-        list_of_dfs = self.batch(func=func,
-                                  kwargs={'keep_keys': True, 'key_sig': key_sig, 'include_final': include_final},
-                                  metadata=True)
+        kwargs = {'keep_keys': keep_keys,
+                  'voice_detail': voice_detail,
+                  'key_sig': key_sig,
+                  'include_final': include_final}
+        list_of_dfs = self.batch(func=func, kwargs=kwargs, metadata=True)
 
         # Some pieces may have no cadences at all (an empty df from
         # ImportedPiece.cadences). Report these by title instead of letting

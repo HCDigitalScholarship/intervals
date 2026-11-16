@@ -143,17 +143,30 @@ With `voice_detail = True` the df includes a dictionary that gives the cadential
 
 ## Cadences in a Corpus
 
-The basic methods of building and working with a corpus are explained in the[Corpus_Tools](tutorial/21_Corpus_Tools.md) tutorial.
+The basic methods of building and working with a corpus are explained in the [Corpus_Tools](21_Corpus_Tools.md) tutorial.
 
+`corpus.cadences()` runs `piece.cadences()` on every piece in the corpus and combines the results into a single table, with **Composer** and **Title** columns added so you can tell the pieces apart. It takes the same four optional parameters as `piece.cadences()`, with the same defaults (all `False`):
+
+```python
+corpus.cadences(keep_keys=False, voice_detail=False, key_sig=False, include_final=False)
+```
 
 ```python
 #build corpus
 corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0014_3.mei',
                         'https://crimproject.org/mei/CRIM_Model_0009.mei'])
 # pass the corpus to the method
-corpus_cads = corpus.cadences(key_sig=False, include_final=False)
+corpus_cads = corpus.cadences()
 
+# or add optional columns, exactly as with piece.cadences()
+corpus_cads = corpus.cadences(keep_keys=True, voice_detail=True, key_sig=True, include_final=True)
 ```
+
+A few points are especially useful with a corpus:
+
+* **include_final** makes it easy to group or filter cadences by the final (and so by mode) across pieces, for example `corpus_cads.groupby(['Final', 'Tone']).size()`.
+* **voice_detail** reports voices by staff position (1 = highest), so the **PartMap** column can be compared across pieces even when their voices are named differently.
+* Pieces with no cadences are named in a printed message and left out of the results.
 
 ![cad_12.png](images%2Fcad_12.png)
 

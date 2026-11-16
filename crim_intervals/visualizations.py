@@ -18,6 +18,8 @@ from pyvis.network import Network
 import matplotlib as mplt # OY addition 6/12/24
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from music21 import pitch as m21_pitch
+from .sorting_lists import _MASS_MOVEMENTS, _RANGE_REFERENCE_BY_FINAL
 
 class NgramColorManager:
     """
@@ -971,4 +973,149 @@ def cadence_progress(cadences, chart_title="Radar Plot of Cadence Tones"):
         )
     )
     
+    return fig
+
+
+def voice_range_chart(mode_ranges, final=None, piece_order='mass', sort_voice='2', title=None):
+    """
+    Plot voice ranges (from `piece.modeRanges()` or `corpus.mode_ranges()`)
+    as horizontal bars, one row per piece and voice, with dotted reference
+    lines at the modally significant pitches for the final.
+
+    Parameters
+    ----------
+    mode_ranges : pandas.DataFrame
+        Output of ImportedPiece.modeRanges or CorpusBase.mode_ranges.
+    final : str, optional
+        Plot only pieces with this final. If omitted and the data contain a
+        single final, that final's reference lines are drawn; if they contain
+        several, no reference lines are drawn.
+    piece_order : str or list, optional (default 'mass')
+        How to order the pieces (top to bottom). Voices within each piece
+        are always shown from highest staff (V1) down.
+
+        * 'mass': models (titles without a Mass movement name) first, then
+          Mass movements in liturgical order (Kyrie, Gloria, Credo, Sanctus,
+          Agnus Dei); within each group, by `sort_voice`'s lowest note.
+        * 'range': by `sort_voice`'s lowest note only, with no model/Mass
+          grouping. Useful for pieces not related as model and Mass.
+        * 'alpha': alphabetically by title.
+        * 'given': the order in which titles first appear in `mode_ranges`,
+          so you can sort the DataFrame yourself (e.g. by date or composer).
+        * a list of titles: exactly that order. Titles not in the list are
+          added at the end, in 'given' order, with a printed note.
+    sort_voice : str, optional (default '2')
+        The voice whose lowest note orders pieces for 'mass' and 'range'.
+        Pieces without this voice fall back to their overall lowest note.
+    title : str, optional
+        Chart title. A default naming the final is used if omitted.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+        Call `.show()` to display it, or `.write_html(path)` to save it.
+
+    Examples
+    --------
+    ```python
+    ranges = corpus.mode_ranges(top_n=7)
+    fig = voice_range_chart(ranges, final='G')
+    fig.show()
+
+    # unrelated pieces, ordered by date (sort the DataFrame first)
+    ranges = ranges.merge(dates_df, on='Title').sort_values('Date')
+    voice_range_chart(ranges, piece_order='given').show()
+
+    # a custom order
+    voice_range_chart(ranges, piece_order=['Veni speciosam', 'Je suis déshéritée'])
+    ```
+    """
+    df = mode_ranges.copy()
+    if 'Title' not in df.columns:
+        df['Title'] = ''
+    df['Title'] = df['Title'].astype(str)
+    df['Voice'] = df['Voice'].astype(str)
+    if final is not None:
+        df = df[df['Final'] == final]
+    if df.empty:
+        raise ValueError('No voice ranges to plot (check the `final` filter).')
+
+    def ps(n):
+        return m21_pitch.Pitch(n).ps
+
+    df['Low_ps'] = df['LowestNote'].map(ps)
+    df['Span'] = df['HighestNote'].map(ps) - df['Low_ps']
+
+    def title_rank(t):
+        # titles without a Mass movement name (e.g. models) sort first
+        return next((i + 1 for i, m in enumerate(_MASS_MOVEMENTS) if m in t), 0)
+
+    def anchor_low(t):
+        rows = df[df['Title'] == t]
+        anchor = rows[rows['Voice'] == str(sort_voice)]
+        return (anchor if len(anchor) else rows)['Low_ps'].min()
+
+    given = list(dict.fromkeys(df['Title']))      # first-appearance order
+    if isinstance(piece_order, (list, tuple)):
+        custom = [str(t) for t in piece_order]
+        unknown = [t for t in custom if t not in given]
+        if unknown:
+            print('piece_order titles not in the data (ignored): {}'.format(', '.join(unknown)))
+        rest = [t for t in given if t not in custom]
+        if rest:
+            print('Titles not in piece_order, added at the end: {}'.format(', '.join(rest)))
+        titles = [t for t in custom if t in given] + rest
+    elif piece_order == 'mass':
+        titles = sorted(given, key=lambda t: (title_rank(t), anchor_low(t)))
+    elif piece_order == 'range':
+        titles = sorted(given, key=anchor_low)
+    elif piece_order == 'alpha':
+        titles = sorted(given)
+    elif piece_order == 'given':
+        titles = given
+    else:
+        raise ValueError("piece_order must be 'mass', 'range', 'alpha', 'given', or a list of titles.")
+
+    def voice_key(v):
+        return (0, int(v), v) if v.isdigit() else (1, 0, v)
+
+    df['Title_Voice'] = (df['Title'] + '  [V' + df['Voice'] + ']').str.strip()
+    labels = []
+    for t in titles:
+        for v in sorted(df.loc[df['Title'] == t, 'Voice'].unique(), key=voice_key):
+            labels.append(f'{t}  [V{v}]'.strip())
+
+    voices = sorted(df['Voice'].unique(), key=voice_key)
+    palette = px.colors.qualitative.Plotly
+    fig = px.bar(df, x='Span', y='Title_Voice', base='Low_ps', orientation='h',
+                 color='Voice', opacity=0.6,
+                 color_discrete_map={v: palette[i % len(palette)] for i, v in enumerate(voices)},
+                 category_orders={'Title_Voice': labels, 'Voice': voices},
+                 hover_data={'Title': True, 'Voice': True, 'Range': True,
+                             'Span': False, 'Low_ps': False, 'Title_Voice': False},
+                 labels={'Title_Voice': 'Piece / Voice'})
+
+    finals = df['Final'].dropna().unique() if 'Final' in df.columns else []
+    the_final = finals[0] if len(finals) == 1 else None
+    for point in _RANGE_REFERENCE_BY_FINAL.get(the_final, []):
+        fig.add_vline(x=ps(point), line_dash='dot', line_color='gray', line_width=1,
+                      annotation_text=point, annotation_position='top')
+
+    lo = int(df['Low_ps'].min()) - 2
+    hi = int((df['Low_ps'] + df['Span']).max()) + 2
+    ticks = [p for p in range(lo, hi + 1) if m21_pitch.Pitch(ps=p).accidental is None]
+    if title is None:
+        title = (f'Voice Ranges in Pieces with Final {the_final}' if the_final
+                 else 'Voice Ranges (several finals; filter by final for reference lines)')
+    fig.update_layout(
+        title=title,
+        xaxis=dict(title='Note Range', tickmode='array', tickvals=ticks,
+                   ticktext=[m21_pitch.Pitch(ps=p).nameWithOctave for p in ticks],
+                   tickangle=45),
+        # set the order explicitly: px reverses category_orders for horizontal
+        # bars, so combining it with autorange='reversed' alone would flip it
+        yaxis=dict(title='', autorange='reversed',
+                   categoryorder='array', categoryarray=labels),
+        height=max(400, 28 * len(labels) + 180), width=1000,
+        bargap=0.3, margin=dict(l=250, r=100, t=100, b=50))
     return fig

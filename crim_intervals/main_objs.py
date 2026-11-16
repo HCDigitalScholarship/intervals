@@ -546,6 +546,75 @@ class ImportedPiece:
             self.analyses['Final'] = final
         return self.analyses['Final']
 
+    def modeRanges(self, top_n=7, number_parts=True, include_final=True):
+        """
+        Return the range of each voice as used to distinguish modal types:
+        the lowest and highest of the `top_n` pitches that take up the most
+        time in that voice.
+
+        Taking the extremes of the most prominent pitches (rather than the
+        absolute lowest and highest notes) keeps brief excursions from
+        distorting the range. Pitches are ordered by sounding pitch (music21
+        pitch space), so e.g. B-3 is below B3.
+
+        Parameters
+        ----------
+        top_n : int, optional (default 7)
+            How many of each voice's most prominent pitches (by share of the
+            voice's total duration) to consider. Rests count toward the total
+            duration but are never chosen as range notes.
+        number_parts : bool, optional (default True)
+            If True, voices are numbered by staff position ('1' = highest),
+            so results can be compared across pieces. If False, part names
+            are used.
+        include_final : bool, optional (default True)
+            If True, add a 'Final' column with the piece's final as a pitch
+            class (see ImportedPiece.final).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per voice: Voice, Final (optional), LowestNote,
+            HighestNote, Range (e.g. 'D3 to D4'). Pass this (or the output of
+            CorpusBase.mode_ranges) to `visualizations.voice_range_chart`.
+        """
+        memo_key = ('ModeRanges', top_n, number_parts, include_final)
+        if memo_key in self.analyses:
+            return self.analyses[memo_key].copy()
+
+        notes = self.notes()
+        durs = self.durations()
+        if number_parts:
+            notes = self.numberParts(notes)
+            durs = self.numberParts(durs)
+
+        long = pd.DataFrame({'Notes': notes.stack(), 'Durs': durs.stack()}).dropna()
+        long['Voice'] = long.index.get_level_values(-1)
+        long['Durs'] = long['Durs'].astype(float)
+        # sum durations first, then divide, so no per-note rounding creeps in
+        totals = long.groupby('Voice')['Durs'].sum()           # includes rests
+        pitched = long[long['Notes'] != 'Rest']
+        per_note = pitched.groupby(['Voice', 'Notes'])['Durs'].sum().reset_index()
+        per_note['Percentage'] = per_note['Durs'] / per_note['Voice'].map(totals) * 100
+        top = (per_note.sort_values('Percentage', ascending=False, kind='stable')
+                       .groupby('Voice').head(top_n))
+        top = top.assign(ps=top['Notes'].map(lambda n: pitch.Pitch(n).ps))
+
+        rows = []
+        for voice in notes.columns:                            # score order
+            group = top[top['Voice'] == voice]
+            if group.empty:
+                continue
+            low = group.loc[group['ps'].idxmin(), 'Notes']
+            high = group.loc[group['ps'].idxmax(), 'Notes']
+            rows.append({'Voice': voice, 'LowestNote': low,
+                         'HighestNote': high, 'Range': f'{low} to {high}'})
+        result = pd.DataFrame(rows, columns=['Voice', 'LowestNote', 'HighestNote', 'Range'])
+        if include_final:
+            result.insert(1, 'Final', extract_letter(self.final()))
+        self.analyses[memo_key] = result
+        return result.copy()
+
     def highLine(self):
         '''
         Return a series that corresponds to the highest sounding note of the piece at
@@ -4394,6 +4463,42 @@ class CorpusBase:
             corpus_note_durs = corpus_note_durs.groupby(group_cols, as_index=False, dropna=False)['Durs'].sum()
         return corpus_note_durs
 
+    def mode_ranges(self, top_n=7, final=None, voices=None):
+        """
+        Return voice ranges for every piece in the corpus, as used to
+        distinguish modal types. See `ImportedPiece.modeRanges` for how the
+        ranges are found.
+
+        Parameters
+        ----------
+        top_n : int, optional (default 7)
+            How many of each voice's most prominent pitches to consider.
+        final : str or list of str, optional
+            Keep only pieces with this final (pitch class, e.g. 'G' or
+            ['D', 'G']). Default: all pieces.
+        voices : str, int, or list, optional
+            Keep only these voices by staff number (1 = highest), e.g. 2 or
+            ['1', '2']. Default: all voices.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Columns: Composer, Title, Date, Voice, Final, LowestNote,
+            HighestNote, Range. Pass this to `visualizations.voice_range_chart`
+            to plot it.
+        """
+        list_of_dfs = self.batch(ImportedPiece.modeRanges,
+                                 kwargs={'top_n': top_n}, metadata=True)
+        result = pd.concat(list_of_dfs, ignore_index=True)
+        if final is not None:
+            finals = [final] if isinstance(final, str) else list(final)
+            result = result[result['Final'].isin(finals)]
+        if voices is not None:
+            voices = [voices] if isinstance(voices, (str, int)) else voices
+            result = result[result['Voice'].isin([str(v) for v in voices])]
+        cols = ['Composer', 'Title', 'Date', 'Voice', 'Final', 'LowestNote', 'HighestNote', 'Range']
+        return result[cols].reset_index(drop=True)
+
     def note_weights(self, 
                      include_rests=True, 
                      key_sig=False, 
@@ -5004,7 +5109,7 @@ class CorpusBase:
             cadences are reported by title via a printed message rather than
             raising an error.
         """
-        col_list = ['Composer', 'Title', 'Measure', 'Beat']
+        col_list = ['Composer', 'Title', 'Date', 'Measure', 'Beat']
         if keep_keys:
             col_list += ['Pattern', 'Key']
         col_list += ['CadType', 'Tone', 'CVFs']
@@ -5193,7 +5298,7 @@ class CorpusBase:
         list_args = {key: val for key, val in kwargs.items() if key in dfs}
         if verbose:
             print('\nRunning {} analysis on {} pieces:'.format(func.__name__, len(self.scores)))
-        if number_parts and func.__name__ in ('cadences', 'presentationTypes', 'lowLine', 'highLine', 'final'):
+        if number_parts and func.__name__ in ('cadences', 'presentationTypes', 'lowLine', 'highLine', 'final', 'modeRanges'):
             number_parts = False
         for i, score in enumerate(self.scores):
             if verbose:

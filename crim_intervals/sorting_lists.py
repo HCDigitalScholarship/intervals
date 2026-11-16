@@ -29,6 +29,21 @@ interval_order_quality = ["-P8", "-M7", "-m7", "-M6", "-m6", "-P5", "-P4", "-M3"
                           "-m3", "-M2", "-m2", "P1", "m2", "M2", "m3", "M3",
                           "P4", "P5", "m6", "M6", "m7", "M7", "P8"]
 
+# Mass movements in liturgical order, for sorting titles (titles without a
+# movement name, such as models, sort first)
+_MASS_MOVEMENTS = ['Kyrie', 'Gloria', 'Credo', 'Sanctus', 'Agnus Dei']
+
+# modally significant reference pitches for each final, used as guide lines
+# in voice range charts (see visualizations.voice_range_chart)
+_RANGE_REFERENCE_BY_FINAL = {
+    'D': ['D3', 'G3', 'D4', 'G4', 'D5', 'G5'],
+    'E': ['E3', 'C3', 'E4', 'C4', 'E5', 'C5'],
+    'F': ['C3', 'F3', 'C4', 'F4', 'C5', 'F5'],
+    'G': ['D3', 'G3', 'D4', 'G4', 'D5', 'G5'],
+    'A': ['E3', 'A3', 'E4', 'A4', 'E5', 'A5'],
+    'C': ['C3', 'G3', 'C4', 'G4', 'C5', 'G5'],
+}
+
 # REST tokens as seen in CRIM Intervals output
 REST_TOKENS = {'r', 'rest', 'Rest', '-', ''}
 

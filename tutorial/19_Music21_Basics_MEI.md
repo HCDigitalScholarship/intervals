@@ -695,4 +695,5 @@ Goe yee my Can zo nets to my deer dar ling, deer dar ling, goe yee my Can zo net
   * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
   * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
   * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

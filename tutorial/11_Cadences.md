@@ -145,7 +145,7 @@ With `voice_detail = True` the df includes a dictionary that gives the cadential
 
 The basic methods of building and working with a corpus are explained in the [Corpus_Tools](21_Corpus_Tools.md) tutorial.
 
-`corpus.cadences()` runs `piece.cadences()` on every piece in the corpus and combines the results into a single table, with **Composer** and **Title** columns added so you can tell the pieces apart. It takes the same four optional parameters as `piece.cadences()`, with the same defaults (all `False`):
+`corpus.cadences()` runs `piece.cadences()` on every piece in the corpus and combines the results into a single table, with **Composer**, **Title** and **Date** columns added so you can tell the pieces apart. It takes the same four optional parameters as `piece.cadences()`, with the same defaults (all `False`):
 
 ```python
 corpus.cadences(keep_keys=False, voice_detail=False, key_sig=False, include_final=False)
@@ -375,4 +375,5 @@ order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "
   * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
   * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
   * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

@@ -78,7 +78,7 @@ CRIM Intervals also features tools that help us visualize musical events in diff
 
 CRIM Intervals methods can also be applied to a corpus of pieces. We first define a corpus: `corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0006_1.mei', 'https://crimproject.org/mei/CRIM_Mass_0006_2.mei', 'https://crimproject.org/mei/CRIM_Mass_0006_3.mei'])`, then specify a method to run against each piece in the corpus: `corpus.batch(func=ImportedPiece.cadences)`. The results are reported as a combined dataframe.
 
-A dedicated set of **Corpus Tools** provides higher-level functions that run standard analyses across an entire corpus and return combined results. These include note counts, duration-weighted pitch class profiles, melodic and harmonic intervals, n-grams, cadences, and presentation types. See [21_Corpus_Tools](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/21_Corpus_Tools.md) for full documentation.
+A dedicated set of **Corpus Tools** provides higher-level functions that run standard analyses across an entire corpus and return combined results. These include note counts, duration-weighted pitch class profiles, melodic and harmonic intervals, n-grams, cadences, presentation types, and voice ranges (for comparing modal types; see [22_Voice_Ranges_Modes](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/22_Voice_Ranges_Modes.md)). See [21_Corpus_Tools](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/21_Corpus_Tools.md) for full documentation.
 
 ### Render Scores (or Excertps) with Verovio
 
@@ -129,4 +129,5 @@ All CRIM intervals tools are available via a **Creative Commons** license (Attri
   * [18_Visualizations_Summary](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/18_Visualizations_Summary.md)
   * [19_Music21_Basics](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/19_Music21_Basics.md)
   * [21_Corpus_Tools](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/21_Corpus_Tools.md)
+  * [22_Voice_Ranges_Modes](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/22_Voice_Ranges_Modes.md)
   * [99_Local_Installation](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/99_Local_Installation.md)

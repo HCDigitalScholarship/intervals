@@ -13,8 +13,9 @@
 10. [Melody Families](#melody-families)
 11. [Cadence Radar Plots](#cadence-radar-plots)
 12. [Cadence Progress Plots](#cadence-progress-plots)
-13. [Networks](#networks)
-14. [Sections in this guide](#sections-in-this-guide)
+13. [Voice Range Charts](#voice-range-charts)
+14. [Networks](#networks)
+15. [Sections in this guide](#sections-in-this-guide)
 
 There are three different resources for creating various kinds of charts, plots, and networks with CRIM Intervals.  Unless otherwise noted, all the necessary libraries are already imported when you `import crim_intervals` and `from crim_intervals import *`.  We show the import statements below just to remind you!
 
@@ -26,6 +27,7 @@ The charts and plots produced with **Plotly** (and described below) include:
 
 * **Bar Graphs and Histograms** (to show distribution or ranges of notes and melodic intervals, for example)
 * **Cadence Radar Plots** (circular grids that show the distribution of cadences in one or more pieces)
+* **Voice Range Charts** (horizontal bars that show the range of each voice in one or more pieces, for comparing modal types)
 
 ## CRIM Plots with Altair
 
@@ -473,6 +475,31 @@ These are a way to see the 'flow' of cadences in one or more pieces:  `piece.cad
 
 
 See [11_Cadences](tutorial/11_Cadences.md) to learn more.
+
+
+## Voice Range Charts
+
+Voice range charts show the range of each voice as a horizontal bar, one row per voice, for one piece or a whole corpus. They are a quick way to compare modal types: pieces with the same final but different voice ranges (for example, authentic and plagal) stand out clearly. When all the pieces in the chart share one final, dotted reference lines mark the significant pitches for that final.
+
+Each range runs from the lowest to the highest of the voice's most prominent pitches (those that take up the most time), so a single brief excursion doesn't distort it. First find the ranges with `piece.modeRanges()` or `corpus.mode_ranges()`, then pass them to `voice_range_chart()`:
+
+```python
+# one piece
+piece = importScore('https://crimproject.org/mei/CRIM_Mass_0014_3.mei')
+voice_range_chart(piece.modeRanges()).show()
+
+# a corpus, limited to the pieces on G
+corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0001.mei',
+                     'https://crimproject.org/mei/CRIM_Mass_0014_3.mei'])
+ranges = corpus.mode_ranges()
+fig = voice_range_chart(ranges, final='G')
+fig.show()
+fig.write_html('voice_ranges.html')   # optional: save the interactive chart
+```
+
+By default, models are listed first, then Mass movements in liturgical order. For pieces not related as model and Mass, use `piece_order='range'` (by range), `'alpha'` (by title), `'given'` (the order of the DataFrame you pass), or a list of titles in the order you want.
+
+See [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md) to learn more.
 
 
 ## Networks

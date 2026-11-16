@@ -18,12 +18,13 @@
    - [sonority_ngrams](#sonority_ngrams)
    - [cadences](#cadences)
    - [presentation_types](#presentation_types)
+   - [mode_ranges](#mode_ranges)
 5. [Legacy `corpus_tools` Functions](#legacy-corpus_tools-functions)
 6. [Sections in this guide](#sections-in-this-guide)
 
 ## Introduction
 
-These tools analyze a whole corpus of pieces at once. They extract notes, calculate durations, generate intervals, and create n-grams across every piece in the corpus, and they return a single DataFrame with `Composer`, `Title`, and `Date` columns so that you can compare pieces.
+These tools analyze a whole corpus of pieces at once. They extract notes, calculate durations, generate intervals, create n-grams, find cadences and presentation types, and measure voice ranges (`mode_ranges`, for comparing modal types; see [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md)) across every piece in the corpus, and they return a single DataFrame with `Composer`, `Title`, and `Date` columns so that you can compare pieces.
 
 Each tool is a **method of the `CorpusBase` object**. You call it directly on your corpus (for example `corpus.notes()`).
 
@@ -251,11 +252,13 @@ Returns:
 
 ### cadences
 
-Typical use: `corpus.cadences(key_sig=False, include_final=False)`
+Typical use: `corpus.cadences(keep_keys=False, voice_detail=False, key_sig=False, include_final=False)`
 
-Finds the cadences in every piece in the corpus. See `ImportedPiece.cadences` and [11_Cadences](/tutorial/11_Cadences.md) for an explanation of each column. If a piece has no cadences, the method prints its title and does not raise an error.
+Finds the cadences in every piece in the corpus. It takes the same parameters as `piece.cadences()`, with the same defaults. See `ImportedPiece.cadences` and [11_Cadences](/tutorial/11_Cadences.md) for an explanation of each column. If a piece has no cadences, the method prints its title and does not raise an error.
 
 Parameters:
+- `keep_keys` (bool): Whether to add the `Pattern` and `Key` columns used to classify each cadence (default: False)
+- `voice_detail` (bool): Whether to add a `PartMap` column showing which voice (by staff number) carried each cadential voice function (default: False)
 - `key_sig` (bool): Whether to add a `KeySig` column with the key signature at each cadence (default: False)
 - `include_final` (bool): Whether to add a `Final` column (default: False)
 
@@ -280,6 +283,20 @@ Parameters:
 
 Returns:
 - `pd.DataFrame`: DataFrame containing presentation types
+
+### mode_ranges
+
+Typical use: `corpus.mode_ranges(top_n=7, final=None, voices=None)`
+
+Finds the range of each voice in every piece in the corpus, as used to distinguish modal types: the lowest and highest of each voice's `top_n` most prominent pitches (those that take up the most time). Runs `piece.modeRanges()` on each piece. Pass the result to `voice_range_chart()` to chart it. See [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md).
+
+Parameters:
+- `top_n` (int): How many of each voice's most prominent pitches to consider (default: 7)
+- `final` (str or list): Keep only pieces with this final, e.g. `'G'` or `['D', 'G']` (default: None, all pieces)
+- `voices` (int, str, or list): Keep only these voices by staff number, 1 = highest (default: None, all voices)
+
+Returns:
+- `pd.DataFrame`: Columns `Composer`, `Title`, `Date`, `Voice`, `Final`, `LowestNote`, `HighestNote`, `Range`
 
 ## Legacy `corpus_tools` Functions
 

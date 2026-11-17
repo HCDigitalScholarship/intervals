@@ -485,14 +485,14 @@ Each range runs from the lowest to the highest of the voice's most prominent pit
 
 ```python
 # one piece
-piece = importScore('https://crimproject.org/mei/CRIM_Mass_0014_3.mei')
+piece = importScore('https://crimproject.org/mei/CRIM_Mass_0005_1.mei')
 voice_range_chart(piece.modeRanges()).show()
 
 # a corpus, limited to the pieces on G
-corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0001.mei',
-                     'https://crimproject.org/mei/CRIM_Mass_0014_3.mei'])
+corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei',
+                     'https://crimproject.org/mei/CRIM_Mass_0005_3.mei'])
 ranges = corpus.mode_ranges()
-fig = voice_range_chart(ranges, final='G')
+fig = voice_range_chart(ranges, final='C')
 fig.show()
 fig.write_html('voice_ranges.html')   # optional: save the interactive chart
 ```

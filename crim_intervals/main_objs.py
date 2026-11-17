@@ -769,10 +769,10 @@ class ImportedPiece:
         # Now deal with the durations
         durations = self.durations(df=mel, n=ngram_length, mask_df=short_ngrams)
         
-        # Step 1: Mask durations with ngrams
+        #  Mask durations with ngrams
         masked_durations = durations.where(short_ngrams.notna())
 
-        # Step 2: Create the new MultiIndex directly from the original DataFrame structure
+        # Create the new MultiIndex directly from the original DataFrame structure
         first_level = []  # Original row indices
         second_level = []  # Original row index + duration value
 
@@ -793,14 +793,14 @@ class ImportedPiece:
             first_level.append(row_idx)
             second_level.append(second_idx)
 
-        # Step 3: Create MultiIndex and new DataFrame
+        # Create MultiIndex and new DataFrame
         multi_idx = pd.MultiIndex.from_arrays([first_level, second_level], names=["First", "Last"])
 
-        # Step 4: Create the final DataFrame with MultiIndex
+        # Create the final DataFrame with MultiIndex
         short_ngrams_with_full_durs = short_ngrams.copy()
         short_ngrams_with_full_durs.index = multi_idx
 
-        # # ngrams = short_ngrams_with_full_durs
+        # ngrams = short_ngrams_with_full_durs
         emas = self.emaAddresses(df=short_ngrams_with_full_durs, mode='mel')
         complete_ema = self.combineEmaAddresses(emas)
         

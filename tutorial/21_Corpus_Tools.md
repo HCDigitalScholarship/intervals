@@ -19,12 +19,13 @@
    - [cadences](#cadences)
    - [presentation_types](#presentation_types)
    - [voice_ranges](#voice_ranges)
+   - [melodic_species](#melodic_species)
 5. [Legacy `corpus_tools` Functions](#legacy-corpus_tools-functions)
 6. [Sections in this guide](#sections-in-this-guide)
 
 ## Introduction
 
-These tools analyze a whole corpus of pieces at once. They extract notes, calculate durations, generate intervals, create n-grams, find cadences and presentation types, and measure voice ranges (`voice_ranges`, for comparing modal types; see [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md)) across every piece in the corpus, and they return a single DataFrame with `Composer`, `Title`, and `Date` columns so that you can compare pieces.
+These tools analyze a whole corpus of pieces at once. They extract notes, calculate durations, generate intervals, create n-grams, find cadences and presentation types, and measure voice ranges and melodic species (`voice_ranges` and `melodic_species`, for comparing modal types; see [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)) across every piece in the corpus, and they return a single DataFrame with `Composer`, `Title`, and `Date` columns so that you can compare pieces.
 
 Each tool is a **method of the `CorpusBase` object**. You call it directly on your corpus (for example `corpus.notes()`).
 
@@ -114,12 +115,12 @@ Returns:
 
 Typical use: `corpus.note_weights(include_rests=True, key_sig=False, include_final=False)`
 
-Calculates pitch-class weights by duration in a corpus. Notes are grouped by pitch class and weighted by their total duration, which gives a scaled proportion for each pitch class in each piece. Pitch classes are ordered chromatically, and flat names are standardized (for example, `D-` becomes `Db`).
+Calculates pitch-class weights by duration in a corpus. Notes are grouped by pitch class and weighted by their total duration, which gives a scaled proportion for each pitch class in each piece. Runs `piece.note_weights()` on each piece. Pitch classes are ordered chromatically and use music21 spelling (for example, `B-` for B-flat). Pass the result to `radar_note_plot()` to chart it (see [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)).
 
 Parameters:
 - `include_rests` (bool): Whether to include rests in the pitch-class counts (default: True)
 - `key_sig` (bool): Whether to add a `key_sig` column (default: False)
-- `include_final` (bool): Whether to add a `final` column (default: False)
+- `include_final` (bool): Whether to add a `final` column, with each piece's final as a pitch class, e.g. `G` (default: False)
 
 Returns:
 - `pd.DataFrame`: Columns `pitch_class`, `count` (total duration), `scaled` (proportion of total duration), `composer`, and `title` (plus `final` and/or `key_sig` if you ask for them)
@@ -288,7 +289,7 @@ Returns:
 
 Typical use: `voice_ranges_df = corpus.voice_ranges(top_n=7, final=None, voices=None)`
 
-Finds the range of each voice in every piece in the corpus, as used to distinguish modal types: the lowest and highest of each voice's `top_n` most prominent pitches (those that take up the most time). Runs `piece.voice_ranges()` on each piece. Pass the result to `voice_range_chart()` to chart it. See [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md).
+Finds the range of each voice in every piece in the corpus, as used to distinguish modal types: the lowest and highest of each voice's `top_n` most prominent pitches (those that take up the most time). Runs `piece.voice_ranges()` on each piece. Pass the result to `voice_range_chart()` to chart it. See [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md).
 
 Parameters:
 - `top_n` (int): How many of each voice's most prominent pitches to consider (default: 7)
@@ -297,6 +298,22 @@ Parameters:
 
 Returns:
 - `pd.DataFrame`: Columns `Composer`, `Title`, `Date`, `Voice`, `Final`, `LowestNote`, `HighestNote`, `Range`
+
+### melodic_species
+
+Typical use: `species_df = corpus.melodic_species(limit_to_entries=True, final=None, voices=None)`
+
+Finds the melodic fourths and fifths in every piece in the corpus and labels the octave species each helps to articulate (for example, a leap from D up to G points to GDG). Runs `piece.melodic_species()` on each piece. Pass the result to `plot_species()` to chart it, or, with the corpus cadences, to `plot_species_cadences()`. See [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md).
+
+Parameters:
+- `limit_to_entries` (bool): Keep only leaps that begin an entry (at the start, or after a rest or fermata); if False, every leap (default: True)
+- `species_intervals` (list): The diatonic intervals to look for (default: `['5', '-5', '4', '-4']`)
+- `four_five_dict`, `octave_dict` (dict): The tables used to label each leap (defaults in `sorting_lists.py`)
+- `final` (str or list): Keep only pieces with this final, e.g. `'G'` or `['D', 'G']`; use `'B-'` for B-flat (default: None, all pieces)
+- `voices` (int, str, or list): Keep only these voices by staff number, 1 = highest (default: None, all voices)
+
+Returns:
+- `pd.DataFrame`: Columns `Composer`, `Title`, `Date`, `Measure`, `Beat`, `Progress`, `Voice`, `System`, `Final`, `Interval`, `Species`, `Octave`
 
 ## Legacy `corpus_tools` Functions
 
@@ -341,4 +358,5 @@ Older notebooks may call these tools as functions from the `corpus_tools` module
   * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
   * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
   * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
+  * [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

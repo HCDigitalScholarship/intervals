@@ -602,7 +602,7 @@ fig.write_html('voice_ranges.html')   # optional: save the interactive chart
 
 By default, models are listed first, then Mass movements in liturgical order. For pieces not related as model and Mass, use `piece_order='range'` (by range), `'alpha'` (by title), `'given'` (the order of the DataFrame you pass), or a list of titles in the order you want.
 
-See [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md) to learn more.
+See [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md) to learn more.
 
 
 ## Melodic Species Plots
@@ -680,5 +680,5 @@ Learn more in the [Networks Tutorial](/15_Network_Graphs.md).
   * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
   * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
   * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
-  * [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md)
+  * [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

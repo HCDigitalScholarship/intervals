@@ -1339,7 +1339,8 @@ def plot_species(species_df, octave_order=species_octave_order, show_voice_detai
         the data but not in the list are added at the end.
     show_voice_detail : bool, optional (default True)
         True: one dot per interval, colored by voice. False: the piece is cut
-        into `progress_bins` equal sections and each dot's size shows how many
+        into `progress_bins` equal sections (e.g. 0–20%, 20–40%, ... of the
+        piece) and each dot's size shows how many
         intervals articulate that octave in that section.
     progress_bins : int, optional (default 5)
         Number of sections when `show_voice_detail=False`.
@@ -1373,8 +1374,11 @@ def plot_species(species_df, octave_order=species_octave_order, show_voice_detai
         fig.update_xaxes(range=[-0.02, 1.02])
         legend_title = 'Voice'
     else:
-        df['Section'] = pd.cut(df['Progress'], bins=progress_bins, include_lowest=True)
-        sections = [str(c) for c in df['Section'].cat.categories]
+        # equal sections of the whole piece (0 to 1), labeled e.g. '0–20%'
+        edges = np.linspace(0, 1, progress_bins + 1)
+        sections = [f'{lo:.0%}–{hi:.0%}' for lo, hi in zip(edges[:-1], edges[1:])]
+        df['Section'] = pd.cut(df['Progress'].clip(0, 1), bins=edges, labels=sections,
+                               include_lowest=True)
         keys = (['Title'] if n_titles > 1 else []) + ['Section', 'Octave']
         counts = (df.groupby(keys, observed=True)
                     .agg(Count=('Interval', 'size'),
@@ -1382,14 +1386,14 @@ def plot_species(species_df, octave_order=species_octave_order, show_voice_detai
                          Measures=('Measure', lambda s: ', '.join(str(int(m)) if float(m).is_integer() else str(m)
                                                                    for m in sorted(s.unique()))))
                     .reset_index())
-        counts['Section'] = counts['Section'].astype(str)   # Plotly can't plot Interval objects
+        counts['Section'] = counts['Section'].astype(str)
         fig = px.scatter(counts, x='Section', y='Octave', size='Count', size_max=40,
                          hover_data=['Count', 'Intervals', 'Measures'],
                          color_discrete_sequence=contrasting_colors,
                          category_orders={'Octave': octaves, 'Section': sections, 'Title': titles},
                          **facet)
         fig.update_xaxes(categoryorder='array', categoryarray=sections, title_text=None)
-        fig.update_layout(xaxis_title='Section of piece (Progress)')   # bottom row only
+        fig.update_layout(xaxis_title='Section of piece')   # bottom row only
         legend_title = None
 
     _category_yaxis(fig, octaves, title='Octave')

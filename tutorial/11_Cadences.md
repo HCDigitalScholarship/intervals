@@ -375,5 +375,5 @@ order_dict = {"Eb":0, "Bb":1, "F":2, "C":3, "G":4, "D":5, "A":6, "E":7, "B":8, "
   * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
   * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
   * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
-  * [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md)
+  * [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

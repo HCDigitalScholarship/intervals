@@ -9,7 +9,7 @@
 
 Install with pypi package manager:  `pip install crim_intervals`
 
-To work with the latest code and tutorials on your own computer, see [99_Local_Installation](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/99_Local_Installation.md).
+To work with the latest code and tutorials on your own computer, see [99_Local_Installation](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/99_Local_Installation.md).
 
 ## About CRIM Intervals
 
@@ -78,13 +78,13 @@ CRIM Intervals also features tools that help us visualize musical events in diff
 - **voice range charts**, showing the range of each voice, for comparing modal types
 - **network diagrams**, showing related patterns or pieces
 
-See [17_Visualizations_Summary](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/17_Visualizations_Summary.md) for examples.
+See [17_Visualizations_Summary](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/17_Visualizations_Summary.md) for examples.
 
 ### One Piece, or a Corpus
 
 CRIM Intervals methods can also be applied to a corpus of pieces. We first define a corpus: `corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Mass_0006_1.mei', 'https://crimproject.org/mei/CRIM_Mass_0006_2.mei', 'https://crimproject.org/mei/CRIM_Mass_0006_3.mei'])`, then run a method on every piece in the corpus, for example `corpus.cadences()`. The results are reported as a single combined dataframe, with `Composer`, `Title`, and `Date` columns. To run any other method on each piece, use `corpus.batch(func=ImportedPiece.melodic)`, which returns a list of dataframes, one per piece.
 
-A dedicated set of **corpus methods** runs standard analyses across an entire corpus and returns combined results. These include note counts, duration-weighted pitch class profiles, melodic and harmonic intervals, n-grams, cadences, presentation types, voice ranges, and melodic species (for comparing modal types; see [13_Voice_Ranges_Melodic_Species](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/13_Voice_Ranges_Melodic_Species.md)). See [19_Corpus_Tools](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/19_Corpus_Tools.md) for full documentation.
+A dedicated set of **corpus methods** runs standard analyses across an entire corpus and returns combined results. These include note counts, duration-weighted pitch class profiles, melodic and harmonic intervals, n-grams, cadences, presentation types, voice ranges, and melodic species (for comparing modal types; see [13_Voice_Ranges_Melodic_Species](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/13_Voice_Ranges_Melodic_Species.md)). See [19_Corpus_Tools](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/19_Corpus_Tools.md) for full documentation.
 
 ### Render Scores (or Excerpts) with Verovio
 
@@ -115,26 +115,26 @@ All CRIM intervals tools are available via a **Creative Commons** license (Attri
 
 ## Sections in this guide
 
-  * [01_Introduction_and_Corpus](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/01_Introduction_and_Corpus.md)
-  * [02_Notes_Rests](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/02_Notes_Rests.md)
-  * [03_Durations](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/03_Durations.md)
-  * [04_Time_Signatures_Beat_Strength](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/04_Time_Signatures_Beat_Strength.md)
-  * [05_Detail_Index](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/05_Detail_Index.md)
-  * [06_Melodic_Intervals](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/06_Melodic_Intervals.md)
-  * [07_Harmonic_Intervals_Sonorities](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/07_Harmonic_Intervals_Sonorities.md)
-  * [08_Ngrams_Heat_Maps](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/08_Ngrams_Heat_Maps.md)
-  * [09_Contrapuntal_Modules](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/09_Contrapuntal_Modules.md)
-  * [10_Lyrics_Homorhythm](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/10_Lyrics_Homorhythm.md)
-  * [11_Cadences](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/11_Cadences.md)
-  * [12_Presentation_Types](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/12_Presentation_Types.md)
-  * [13_Voice_Ranges_Melodic_Species](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/13_Voice_Ranges_Melodic_Species.md)
-  * [14_Melodic_Interval_Families](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/14_Melodic_Interval_Families.md)
-  * [15_Musical_Examples_Verovio](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/15_Musical_Examples_Verovio.md)
-  * [16_Model_Finder](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/16_Model_Finder.md)
-  * [17_Visualizations_Summary](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/17_Visualizations_Summary.md)
-  * [18_Network_Graphs](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/18_Network_Graphs.md)
-  * [19_Corpus_Tools](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/19_Corpus_Tools.md)
-  * [20_Python_Basics](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/20_Python_Basics.md)
-  * [21_Pandas_Basics](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/21_Pandas_Basics.md)
-  * [22_Music21_MEI](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/22_Music21_MEI.md)
-  * [99_Local_Installation](https://github.com/HCDigitalScholarship/intervals/blob/rich_dev_24_dev/tutorial/99_Local_Installation.md)
+  * [01_Introduction_and_Corpus](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/01_Introduction_and_Corpus.md)
+  * [02_Notes_Rests](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/02_Notes_Rests.md)
+  * [03_Durations](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/03_Durations.md)
+  * [04_Time_Signatures_Beat_Strength](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/04_Time_Signatures_Beat_Strength.md)
+  * [05_Detail_Index](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/05_Detail_Index.md)
+  * [06_Melodic_Intervals](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/06_Melodic_Intervals.md)
+  * [07_Harmonic_Intervals_Sonorities](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/07_Harmonic_Intervals_Sonorities.md)
+  * [08_Ngrams_Heat_Maps](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/08_Ngrams_Heat_Maps.md)
+  * [09_Contrapuntal_Modules](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/09_Contrapuntal_Modules.md)
+  * [10_Lyrics_Homorhythm](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/10_Lyrics_Homorhythm.md)
+  * [11_Cadences](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/11_Cadences.md)
+  * [12_Presentation_Types](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/12_Presentation_Types.md)
+  * [13_Voice_Ranges_Melodic_Species](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/13_Voice_Ranges_Melodic_Species.md)
+  * [14_Melodic_Interval_Families](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/14_Melodic_Interval_Families.md)
+  * [15_Musical_Examples_Verovio](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/15_Musical_Examples_Verovio.md)
+  * [16_Model_Finder](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/16_Model_Finder.md)
+  * [17_Visualizations_Summary](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/17_Visualizations_Summary.md)
+  * [18_Network_Graphs](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/18_Network_Graphs.md)
+  * [19_Corpus_Tools](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/19_Corpus_Tools.md)
+  * [20_Python_Basics](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/20_Python_Basics.md)
+  * [21_Pandas_Basics](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/21_Pandas_Basics.md)
+  * [22_Music21_MEI](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/22_Music21_MEI.md)
+  * [99_Local_Installation](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/99_Local_Installation.md)

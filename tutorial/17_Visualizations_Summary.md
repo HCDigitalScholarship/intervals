@@ -46,7 +46,7 @@ The following methods have been developed especially for **CRIM Intervals**, and
 
 ### Networks with NetworkX and Pyvis
 
-* [Networks](/15_Network_Graphs.md) are a complex topic, and are covered in a separate tutorial.
+* [Networks](/tutorial/18_Network_Graphs.md) are a complex topic, and are covered in a separate tutorial.
 
 
 ## Ready-Made Chart Functions
@@ -300,7 +300,7 @@ fig.show()
 
 ## Bar Charts with Melodic and Harmonic Intervals
 
-See the tutorials for [Melodic](/06_Melodic_Intervals.md) and [Harmonic](/07_Harmonic_Intervals.md) for ways to create charts like this for one or more pieces using those methods.
+See the tutorials for [Melodic](/tutorial/06_Melodic_Intervals.md) and [Harmonic](/tutorial/07_Harmonic_Intervals_Sonorities.md) for ways to create charts like this for one or more pieces using those methods.
 
 
 ## NGram Heat Maps
@@ -448,7 +448,7 @@ The **Melodic Interval Families** method allows you to chart the "progress" of o
 
 <br>
 
-See more in the [Melodic Interval Families](/tutorial//20_Melodic_Interval_Families.md) tutorial.
+See more in the [Melodic Interval Families](/tutorial//14_Melodic_Interval_Families.md) tutorial.
 
 
 ## Cadence Radar Plots
@@ -602,7 +602,7 @@ fig.write_html('voice_ranges.html')   # optional: save the interactive chart
 
 By default, models are listed first, then Mass movements in liturgical order. For pieces not related as model and Mass, use `piece_order='range'` (by range), `'alpha'` (by title), `'given'` (the order of the DataFrame you pass), or a list of titles in the order you want.
 
-See [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md) to learn more.
+See [13_Voice_Ranges_Melodic_Species](/tutorial/13_Voice_Ranges_Melodic_Species.md) to learn more.
 
 
 ## Melodic Species Plots
@@ -651,7 +651,7 @@ for title in species['Title'].unique():
 
 In the field of data science, networks (also known as graphs) are powerful tools used to represent and study relationships between entities. A network is composed of **nodes** (also called vertices) and **edges** (also called links). Each node represents an entity, while each edge represents a relationship between two entities.
 
-Learn more in the [Networks Tutorial](/15_Network_Graphs.md).
+Learn more in the [Networks Tutorial](/tutorial/18_Network_Graphs.md).
 
 
 
@@ -662,7 +662,7 @@ Learn more in the [Networks Tutorial](/15_Network_Graphs.md).
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
   * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
   * [03_Durations](/tutorial/03_Durations.md)
-  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [04_Time_Signatures_Beat_Strength](/tutorial/04_Time_Signatures_Beat_Strength.md)
   * [05_Detail_Index](/tutorial/05_Detail_Index.md)
   * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
   * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
@@ -671,14 +671,14 @@ Learn more in the [Networks Tutorial](/15_Network_Graphs.md).
   * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
   * [11_Cadences](/tutorial/11_Cadences.md)
   * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
-  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
-  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
-  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
-  * [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)
+  * [13_Voice_Ranges_Melodic_Species](/tutorial/13_Voice_Ranges_Melodic_Species.md)
+  * [14_Melodic_Interval_Families](/tutorial/14_Melodic_Interval_Families.md)
+  * [15_Musical_Examples_Verovio](/tutorial/15_Musical_Examples_Verovio.md)
+  * [16_Model_Finder](/tutorial/16_Model_Finder.md)
+  * [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md)
+  * [18_Network_Graphs](/tutorial/18_Network_Graphs.md)
+  * [19_Corpus_Tools](/tutorial/19_Corpus_Tools.md)
+  * [20_Python_Basics](/tutorial/20_Python_Basics.md)
+  * [21_Pandas_Basics](/tutorial/21_Pandas_Basics.md)
+  * [22_Music21_MEI](/tutorial/22_Music21_MEI.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

@@ -33,7 +33,7 @@ import crim_intervals.visualizations as viz
 import pandas as pd
 ```
 
-The chart functions are also available without the `viz.` prefix after `from crim_intervals import *`; see [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md).
+The chart functions are also available without the `viz.` prefix after `from crim_intervals import *`; see [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md).
 
 ## Voice Ranges in One Piece: `piece.voice_ranges()`
 
@@ -70,7 +70,7 @@ piece.voice_ranges(number_parts=False)
 
 ## Voice Ranges in a Corpus: `corpus.voice_ranges()`
 
-`corpus.voice_ranges()` runs `piece.voice_ranges()` on every piece in the corpus and combines the results, adding a **Date** column alongside **Composer** and **Title**. (See [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md) for building a corpus.)
+`corpus.voice_ranges()` runs `piece.voice_ranges()` on every piece in the corpus and combines the results, adding a **Date** column alongside **Composer** and **Title**. (See [19_Corpus_Tools](/tutorial/19_Corpus_Tools.md) for building a corpus.)
 
 ```python
 corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0009.mei',
@@ -111,7 +111,7 @@ fig = viz.voice_range_chart(voice_ranges_df, final='G')
 fig.show()
 ```
 
-The function returns a Plotly figure, so you can display it with `.show()`, save it with `fig.write_html('voice_ranges.html')`, or change it further with the usual Plotly methods (see [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)). Hover over a bar to see its piece, voice and range.
+The function returns a Plotly figure, so you can display it with `.show()`, save it with `fig.write_html('voice_ranges.html')`, or change it further with the usual Plotly methods (see [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md)). Hover over a bar to see its piece, voice and range.
 
 It works the same way for a single piece:
 
@@ -344,7 +344,7 @@ Because the intervals are diatonic, they do not distinguish perfect from augment
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
   * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
   * [03_Durations](/tutorial/03_Durations.md)
-  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [04_Time_Signatures_Beat_Strength](/tutorial/04_Time_Signatures_Beat_Strength.md)
   * [05_Detail_Index](/tutorial/05_Detail_Index.md)
   * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
   * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
@@ -353,14 +353,14 @@ Because the intervals are diatonic, they do not distinguish perfect from augment
   * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
   * [11_Cadences](/tutorial/11_Cadences.md)
   * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
-  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
-  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
-  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
-  * [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)
+  * [13_Voice_Ranges_Melodic_Species](/tutorial/13_Voice_Ranges_Melodic_Species.md)
+  * [14_Melodic_Interval_Families](/tutorial/14_Melodic_Interval_Families.md)
+  * [15_Musical_Examples_Verovio](/tutorial/15_Musical_Examples_Verovio.md)
+  * [16_Model_Finder](/tutorial/16_Model_Finder.md)
+  * [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md)
+  * [18_Network_Graphs](/tutorial/18_Network_Graphs.md)
+  * [19_Corpus_Tools](/tutorial/19_Corpus_Tools.md)
+  * [20_Python_Basics](/tutorial/20_Python_Basics.md)
+  * [21_Pandas_Basics](/tutorial/21_Pandas_Basics.md)
+  * [22_Music21_MEI](/tutorial/22_Music21_MEI.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

@@ -2,7 +2,7 @@
 
 Based on Python, Pandas, and Mike Cuthbert's [music21](http://web.mit.edu/music21/), CRIM Intervals is a pattern finding engine for musical scores, with an emphasis on the kinds of melodic and harmonic patterns found in Renaissance polyphony. It has been developed as a primary data analysis tool for CRIM, but can be applied and adapted to a wide range of styles. Results are reported in Pandas dataframes (and thus exportable in a variety of standard formats for further analysis), and also via several visualizations methods.
 
-Learn more about music21 methods used in CRIM Intervals via [this tutorial](/tutorial/19_Music21_Basics_MEI.md)
+Learn more about music21 methods used in CRIM Intervals via [this tutorial](/tutorial/22_Music21_MEI.md)
 
 Read the [API documentation for CRIM Intervals on Github](https://hcdigitalscholarship.github.io/intervals/)
 
@@ -221,7 +221,7 @@ list_of_dfs = corpus.batch(func, kwargs)
 output = pd.concat(list_of_dfs)
 ```
 
-For some **specific custom functions** to help you work with a corpus, see the [Melodic](/06_Melodic_Intervals.md), [Harmonic](/07_Harmonic_Intervals.md), and [Contrapuntal_Modules](/08_Contrapuntal_Modules.md) tutorials.
+For some **specific custom functions** to help you work with a corpus, see the [Melodic](/tutorial/06_Melodic_Intervals.md), [Harmonic](/tutorial/07_Harmonic_Intervals_Sonorities.md), and [Contrapuntal_Modules](/tutorial/09_Contrapuntal_Modules.md) tutorials.
 
   
 ## Chaining Together Batch Methods
@@ -350,7 +350,7 @@ This line would print out the documentation (`.__doc__`) associated with the fun
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
   * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
   * [03_Durations](/tutorial/03_Durations.md)
-  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [04_Time_Signatures_Beat_Strength](/tutorial/04_Time_Signatures_Beat_Strength.md)
   * [05_Detail_Index](/tutorial/05_Detail_Index.md)
   * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
   * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
@@ -359,14 +359,14 @@ This line would print out the documentation (`.__doc__`) associated with the fun
   * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
   * [11_Cadences](/tutorial/11_Cadences.md)
   * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
-  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
-  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
-  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
-  * [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)
+  * [13_Voice_Ranges_Melodic_Species](/tutorial/13_Voice_Ranges_Melodic_Species.md)
+  * [14_Melodic_Interval_Families](/tutorial/14_Melodic_Interval_Families.md)
+  * [15_Musical_Examples_Verovio](/tutorial/15_Musical_Examples_Verovio.md)
+  * [16_Model_Finder](/tutorial/16_Model_Finder.md)
+  * [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md)
+  * [18_Network_Graphs](/tutorial/18_Network_Graphs.md)
+  * [19_Corpus_Tools](/tutorial/19_Corpus_Tools.md)
+  * [20_Python_Basics](/tutorial/20_Python_Basics.md)
+  * [21_Pandas_Basics](/tutorial/21_Pandas_Basics.md)
+  * [22_Music21_MEI](/tutorial/22_Music21_MEI.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

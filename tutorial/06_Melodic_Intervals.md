@@ -124,7 +124,7 @@ Setting `unit` to a small value might be helpful in comparing the degree of move
 ​
 Setting `unit` to larger number could be used to ignore ornamental tones (2.0, for instance, corresponds to the half-note [minim], a common basic unit of motion in Renaissance melodies).
 ​
-Note that `beatStrength` provides another way of sampling melodic motion to highlight accented tones. For more information about beat strength, see the section of this guide dedicated to [time signatures and beat strength](08_TimeSignatures_BeatStrength.md).  
+Note that `beatStrength` provides another way of sampling melodic motion to highlight accented tones. For more information about beat strength, see the section of this guide dedicated to [time signatures and beat strength](/tutorial/04_Time_Signatures_Beat_Strength.md).  
 
 ### Where Does the Interval Actually Occur? The `end` Parameter  
 
@@ -229,7 +229,7 @@ mel = piece.melodic()
 mel_di = piece.detailIndex(mel)
 ```
 
-For more information about the `detailIndex` function, consult [the documentation](09_DetailIndex.md).  
+For more information about the `detailIndex` function, consult [the documentation](/tutorial/05_Detail_Index.md).  
 
 ## Melodic Intervals in a Corpus
 
@@ -263,7 +263,7 @@ corpus_mel = corpus.mel(kind_choice='d', compound_choice=True, directed_choice=T
 
 ## Charts with Melodic Intervals
 
-As we explain the [Visualizations_Summary](/18_Visualizations_Summary.md), the **Plotly** library provides some powerful tools for displaying tabular data in various charts and plots.
+As we explain the [Visualizations_Summary](/tutorial/17_Visualizations_Summary.md), the **Plotly** library provides some powerful tools for displaying tabular data in various charts and plots.
 
 ### For a Single Piece
 
@@ -549,7 +549,7 @@ fig.show()
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
   * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
   * [03_Durations](/tutorial/03_Durations.md)
-  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [04_Time_Signatures_Beat_Strength](/tutorial/04_Time_Signatures_Beat_Strength.md)
   * [05_Detail_Index](/tutorial/05_Detail_Index.md)
   * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
   * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
@@ -558,14 +558,14 @@ fig.show()
   * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
   * [11_Cadences](/tutorial/11_Cadences.md)
   * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
-  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
-  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
-  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
-  * [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)
+  * [13_Voice_Ranges_Melodic_Species](/tutorial/13_Voice_Ranges_Melodic_Species.md)
+  * [14_Melodic_Interval_Families](/tutorial/14_Melodic_Interval_Families.md)
+  * [15_Musical_Examples_Verovio](/tutorial/15_Musical_Examples_Verovio.md)
+  * [16_Model_Finder](/tutorial/16_Model_Finder.md)
+  * [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md)
+  * [18_Network_Graphs](/tutorial/18_Network_Graphs.md)
+  * [19_Corpus_Tools](/tutorial/19_Corpus_Tools.md)
+  * [20_Python_Basics](/tutorial/20_Python_Basics.md)
+  * [21_Pandas_Basics](/tutorial/21_Pandas_Basics.md)
+  * [22_Music21_MEI](/tutorial/22_Music21_MEI.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

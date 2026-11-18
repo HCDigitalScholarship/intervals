@@ -441,7 +441,7 @@ To display DataFrames relative to measures, and beats within measures, rather th
 
 ## Counting ngrams  
 
-After using the `ngrams()` function to identify all of the nGrams in a piece, they can be counted and sorted by their frequency in the piece overall using some [general pandas functions](15_Pandas_Basics.md):  
+After using the `ngrams()` function to identify all of the nGrams in a piece, they can be counted and sorted by their frequency in the piece overall using some [general pandas functions](/tutorial/21_Pandas_Basics.md):  
 
 ```python
 mel = piece.melodic(kind = "c", compound = False)
@@ -451,7 +451,7 @@ melNgrams.stack().value_counts().to_frame()
 
 ## Finding Corpus Ngrams
 
-See the [Corpus Tutorial](tutorials/21_Corpus_Tools.md) for various `corpus_tools` methods involving melodic, harmonic, contrapuntal and sonority ngrams in several pieces at once!
+See the [Corpus Tutorial](/tutorial/19_Corpus_Tools.md) for various `corpus_tools` methods involving melodic, harmonic, contrapuntal and sonority ngrams in several pieces at once!
 
 
 ## Visualizing nGrams (and Comparing nGrams across a Corpus)
@@ -596,7 +596,7 @@ for movement in mass_movements:
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
   * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
   * [03_Durations](/tutorial/03_Durations.md)
-  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [04_Time_Signatures_Beat_Strength](/tutorial/04_Time_Signatures_Beat_Strength.md)
   * [05_Detail_Index](/tutorial/05_Detail_Index.md)
   * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
   * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
@@ -605,14 +605,14 @@ for movement in mass_movements:
   * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
   * [11_Cadences](/tutorial/11_Cadences.md)
   * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
-  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
-  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
-  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
-  * [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)
+  * [13_Voice_Ranges_Melodic_Species](/tutorial/13_Voice_Ranges_Melodic_Species.md)
+  * [14_Melodic_Interval_Families](/tutorial/14_Melodic_Interval_Families.md)
+  * [15_Musical_Examples_Verovio](/tutorial/15_Musical_Examples_Verovio.md)
+  * [16_Model_Finder](/tutorial/16_Model_Finder.md)
+  * [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md)
+  * [18_Network_Graphs](/tutorial/18_Network_Graphs.md)
+  * [19_Corpus_Tools](/tutorial/19_Corpus_Tools.md)
+  * [20_Python_Basics](/tutorial/20_Python_Basics.md)
+  * [21_Pandas_Basics](/tutorial/21_Pandas_Basics.md)
+  * [22_Music21_MEI](/tutorial/22_Music21_MEI.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

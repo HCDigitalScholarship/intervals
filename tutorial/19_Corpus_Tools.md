@@ -25,7 +25,7 @@
 
 ## Introduction
 
-These tools analyze a whole corpus of pieces at once. They extract notes, calculate durations, generate intervals, create n-grams, find cadences and presentation types, and measure voice ranges and melodic species (`voice_ranges` and `melodic_species`, for comparing modal types; see [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)) across every piece in the corpus, and they return a single DataFrame with `Composer`, `Title`, and `Date` columns so that you can compare pieces.
+These tools analyze a whole corpus of pieces at once. They extract notes, calculate durations, generate intervals, create n-grams, find cadences and presentation types, and measure voice ranges and melodic species (`voice_ranges` and `melodic_species`, for comparing modal types; see [13_Voice_Ranges_Melodic_Species](/tutorial/13_Voice_Ranges_Melodic_Species.md)) across every piece in the corpus, and they return a single DataFrame with `Composer`, `Title`, and `Date` columns so that you can compare pieces.
 
 Each tool is a **method of the `CorpusBase` object**. You call it directly on your corpus (for example `corpus.notes()`).
 
@@ -115,7 +115,7 @@ Returns:
 
 Typical use: `corpus.note_weights(include_rests=True, key_sig=False, include_final=False)`
 
-Calculates pitch-class weights by duration in a corpus. Notes are grouped by pitch class and weighted by their total duration, which gives a scaled proportion for each pitch class in each piece. Runs `piece.note_weights()` on each piece. Pitch classes are ordered chromatically and use music21 spelling (for example, `B-` for B-flat). Pass the result to `radar_note_plot()` to chart it (see [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)).
+Calculates pitch-class weights by duration in a corpus. Notes are grouped by pitch class and weighted by their total duration, which gives a scaled proportion for each pitch class in each piece. Runs `piece.note_weights()` on each piece. Pitch classes are ordered chromatically and use music21 spelling (for example, `B-` for B-flat). Pass the result to `radar_note_plot()` to chart it (see [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md)).
 
 Parameters:
 - `include_rests` (bool): Whether to include rests in the pitch-class counts (default: True)
@@ -289,7 +289,7 @@ Returns:
 
 Typical use: `voice_ranges_df = corpus.voice_ranges(top_n=7, final=None, voices=None)`
 
-Finds the range of each voice in every piece in the corpus, as used to distinguish modal types: the lowest and highest of each voice's `top_n` most prominent pitches (those that take up the most time). Runs `piece.voice_ranges()` on each piece. Pass the result to `voice_range_chart()` to chart it. See [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md).
+Finds the range of each voice in every piece in the corpus, as used to distinguish modal types: the lowest and highest of each voice's `top_n` most prominent pitches (those that take up the most time). Runs `piece.voice_ranges()` on each piece. Pass the result to `voice_range_chart()` to chart it. See [13_Voice_Ranges_Melodic_Species](/tutorial/13_Voice_Ranges_Melodic_Species.md).
 
 Parameters:
 - `top_n` (int): How many of each voice's most prominent pitches to consider (default: 7)
@@ -303,7 +303,7 @@ Returns:
 
 Typical use: `species_df = corpus.melodic_species(limit_to_entries=True, final=None, voices=None)`
 
-Finds the melodic fourths and fifths in every piece in the corpus and labels the octave species each helps to articulate (for example, a leap from D up to G points to GDG). Runs `piece.melodic_species()` on each piece. Pass the result to `plot_species()` to chart it, or, with the corpus cadences, to `plot_species_cadences()`. See [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md).
+Finds the melodic fourths and fifths in every piece in the corpus and labels the octave species each helps to articulate (for example, a leap from D up to G points to GDG). Runs `piece.melodic_species()` on each piece. Pass the result to `plot_species()` to chart it, or, with the corpus cadences, to `plot_species_cadences()`. See [13_Voice_Ranges_Melodic_Species](/tutorial/13_Voice_Ranges_Melodic_Species.md).
 
 Parameters:
 - `limit_to_entries` (bool): Keep only leaps that begin an entry (at the start, or after a rest or fermata); if False, every leap (default: True)
@@ -340,7 +340,7 @@ Older notebooks may call these tools as functions from the `corpus_tools` module
   * [01_Introduction_and_Corpus](/tutorial/01_Introduction_and_Corpus.md)
   * [02_Notes_Rests](/tutorial/02_Notes_Rests.md)
   * [03_Durations](/tutorial/03_Durations.md)
-  * [04_TimeSignatures_Beat_Strength](/tutorial/04_TimeSignatures_Beat_Strength.md)
+  * [04_Time_Signatures_Beat_Strength](/tutorial/04_Time_Signatures_Beat_Strength.md)
   * [05_Detail_Index](/tutorial/05_Detail_Index.md)
   * [06_Melodic_Intervals](/tutorial/06_Melodic_Intervals.md)
   * [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md)
@@ -349,14 +349,14 @@ Older notebooks may call these tools as functions from the `corpus_tools` module
   * [10_Lyrics_Homorhythm](/tutorial/10_Lyrics_Homorhythm.md)
   * [11_Cadences](/tutorial/11_Cadences.md)
   * [12_Presentation_Types](/tutorial/12_Presentation_Types.md)
-  * [13_Musical_Examples_Verovio](/tutorial/13_Musical_Examples_Verovio.md)
-  * [14_Model_Finder](/tutorial/14_Model_Finder.md)
-  * [15_Network_Graphs](/tutorial/15_Network_Graphs.md)
-  * [16_Python_Basics](/tutorial/16_Python_Basics.md)
-  * [17_Pandas_Basics](/tutorial/17_Pandas_Basics.md)
-  * [18_Visualizations_Summary](/tutorial/18_Visualizations_Summary.md)
-  * [19_Music21_Basics_MEI](/tutorial/19_Music21_Basics_MEI.md)
-  * [20_Melodic_Interval_Families](/tutorial/20_Melodic_Interval_Families.md)
-  * [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md)
-  * [22_Voice_Ranges_Melodic_Species](/tutorial/22_Voice_Ranges_Melodic_Species.md)
+  * [13_Voice_Ranges_Melodic_Species](/tutorial/13_Voice_Ranges_Melodic_Species.md)
+  * [14_Melodic_Interval_Families](/tutorial/14_Melodic_Interval_Families.md)
+  * [15_Musical_Examples_Verovio](/tutorial/15_Musical_Examples_Verovio.md)
+  * [16_Model_Finder](/tutorial/16_Model_Finder.md)
+  * [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md)
+  * [18_Network_Graphs](/tutorial/18_Network_Graphs.md)
+  * [19_Corpus_Tools](/tutorial/19_Corpus_Tools.md)
+  * [20_Python_Basics](/tutorial/20_Python_Basics.md)
+  * [21_Pandas_Basics](/tutorial/21_Pandas_Basics.md)
+  * [22_Music21_MEI](/tutorial/22_Music21_MEI.md)
   * [99_Local_Installation](/tutorial/99_Local_Installation.md)

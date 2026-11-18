@@ -35,6 +35,12 @@ from .sorting_lists import (
     extract_letter,
     tuple_to_list,
     tuple_to_string,
+    _MASS_MOVEMENTS,
+    _RANGE_REFERENCE_BY_FINAL,
+    species_four_five_dict,
+    species_octave_dict,
+    species_intervals_list,
+    species_octave_order,
 )
 main_objs_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -279,8 +285,7 @@ class ImportedPiece:
         '''
         Return the passed df with the part names in the columns replaced with numbers
         where 1 is the highest staff. Works with single parts and multi-part column names.
-        The df's column names are changed in place, so make a copy before calling this method
-        if you want to keep the original.'''
+        Returns a renamed copy; the original df is left unchanged, so use the return value.'''
         _dict = self._getPartNumberDict()
         cols = ['_'.join(_dict.get(part, part) for part in col.split('_')) for col in df.columns]
         res = df.copy()
@@ -546,7 +551,7 @@ class ImportedPiece:
             self.analyses['Final'] = final
         return self.analyses['Final']
 
-    def voiceRanges(self, top_n=7, number_parts=True, include_final=True):
+    def voice_ranges(self, top_n=7, number_parts=True, include_final=True):
         """
         Return the range of each voice as used to distinguish modal types:
         the lowest and highest of the `top_n` pitches that take up the most
@@ -576,11 +581,11 @@ class ImportedPiece:
         Returns
         -------
         pandas.DataFrame
-            One row per voice: Voice, Final (optional), LowestNote,
-            HighestNote, Range (e.g. 'D3 to D4'). Pass this (or the output of
-            CorpusBase.mode_ranges) to `visualizations.voice_range_chart`.
+            One row per voice: Composer, Title, Voice, Final (optional),
+            LowestNote, HighestNote, Range (e.g. 'D3 to D4'). Pass this (or the output of
+            CorpusBase.voice_ranges) to `visualizations.voice_range_chart`.
         """
-        memo_key = ('voiceRanges', top_n, number_parts, include_final)
+        memo_key = ('voice_ranges', top_n, number_parts, include_final)
         if memo_key in self.analyses:
             return self.analyses[memo_key].copy()
 
@@ -614,8 +619,151 @@ class ImportedPiece:
         result = pd.DataFrame(rows, columns=['Voice', 'LowestNote', 'HighestNote', 'Range'])
         if include_final:
             result.insert(1, 'Final', extract_letter(self.final()))
+        result.insert(0, 'Composer', self.metadata['composer'])
+        result.insert(1, 'Title', self.metadata['title'])
         self.analyses[memo_key] = result
         return result.copy()
+
+    # the mel species method.  the various lists are imported from sorting_lists.py
+
+    def melodic_species(self, limit_to_entries=True, 
+                    species_intervals=species_intervals_list, 
+                    four_five_dict = species_four_five_dict, 
+                    octave_dict = species_octave_dict):
+        
+        '''This function finds and classifies melodic leaps according to the octave
+        they serve to articulate.  It first finds directed diatonic melodic intervals, 
+        recording both the starting note and the interval that leads away from it (for example C_5). 
+        These intervals are in turn mapped onto the octave species they help to articulate 
+        (for example C_5 and G_4 would help to articulate the CGC octave type.)
+
+        Parameters
+        ----------
+        limit_to_entries : bool, default True
+            If True, only intervals that begin a melodic entry are kept: those at
+            the start of the piece, after a rest, or after a fermata (via
+            `self.entries()`).  This focuses the results on the opening gestures
+            of phrases, where modal and tonal identity is most clearly stated.
+            If False, every qualifying interval in every voice is kept.
+
+        species_intervals : list of str, default species_intervals_list
+            The directed diatonic melodic intervals to keep, written as returned by
+            `piece.melodic(kind='d')` (for example '5', '-5', '4', '-4', '8', '-8').
+            Ascending intervals are positive and descending intervals are negative.
+            All other intervals are discarded.
+
+        four_five_dict : dict, default species_four_five_dict
+            Maps each combined note-and-interval label (for example 'C_5' or 'G_-4')
+            to the fourth or fifth species it outlines.  Fills the 'Species' column.
+            This dict is defined in the sorting_lists.py file but a custom dict could be passed here.
+
+        octave_dict : dict, default species_octave_dict
+            Maps each fourth or fifth species (the values of `four_five_dict`) to
+            the octave species it helps articulate (for example 'CGC').  Fills the
+            'Octave' column.  This dict is defined in the sorting_lists.py file
+            but a custom dict could be passed here.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A long-format table with one row per qualifying interval and these columns:
+            'Composer', 'Title' : piece metadata
+            'Measure'           : measure number
+            'Beat'              : beat within the measure
+            'Progress'          : position in the piece, from 0 to 1
+            'System'            : the key signature at the start of the first staff,
+                                using music21's `.sharps` convention (0 = none,
+                                -1 = one flat, 1 = one sharp, etc.)
+            'Final'             : the pitch class of the lowest sounding note at the
+                                end of the piece (music21 spelling, e.g. 'G' or 'B-')
+            'Voice'             : voice number as a string (1 = highest staff)
+            'Interval'          : the combined starting note and interval (for example 'C_5'
+                                or 'B-_4'), with pitches in music21 spelling
+            'Species'           : the fourth or fifth species from `four_five_dict`
+                                (NaN if the label is not in the dict)
+            'Octave'            : the octave species from `octave_dict`
+                                (NaN if the species is not in the dict)
+
+
+        Examples
+        --------
+        >>> piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')
+        >>> species_df = piece.melodic_species() # this accepts defaults
+        >>> species_df['Octave'].value_counts()
+
+        >>> piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')
+        >>> species_df = piece.melodic_species(limit_to_entries=True, 
+                    species_intervals=species_intervals_list, 
+                    four_five_dict = species_four_five_dict, 
+                    octave_dict = species_octave_dict) # these are defaults, but could be customized
+        >>> species_df['Octave'].value_counts()
+
+        Notes
+        -----
+        Pitch names are stripped of octave numbers (via `extract_letter`)
+        before being combined with the interval.  So C4 and C5 both appear as 'C',
+        which means the classification depends on pitch class, not register.
+        Accidentals are kept, so B-4 appears as 'B-' and is classified separately
+        from B.
+
+        Pitches in the 'Final' and 'Interval' columns use music21 spelling
+        ('B-', 'E-', 'F#'), while the 'Octave' labels from the default
+        `octave_dict` use 'b' for flats (for example 'BbFBb', 'EbBbEb').
+        '''
+
+        # get notes and melodic intervals
+        notes = self.notes()
+
+        # strip octave digits but keep accidentals (B-4 -> B-); helper is in sorting_lists.py
+        notes = notes.map(extract_letter)
+        notes_numb = self.numberParts(df=notes)
+        mel = self.melodic(kind='d', end=False)
+        mel_numb = self.numberParts(df=mel)
+
+        # entry limit logic
+        if limit_to_entries:
+            mel_numb = self.entries(mel_numb)
+
+        # keep only the intervals in species_intervals; everything else becomes NaN.
+        # (Masking in place keeps the full shape, so the NaNs can mask the notes below.)
+        filtered_mel = mel_numb.where(mel_numb.isin(species_intervals))
+
+        # keep only the notes that start a qualifying interval
+        # (reindex in case the notes and intervals have different offsets)
+        filtered_nr = notes_numb.reindex(filtered_mel.index).where(filtered_mel.notna())
+
+        # force column names to string
+        filtered_nr.columns = filtered_nr.columns.astype(str)
+        filtered_mel.columns = filtered_mel.columns.astype(str)
+
+        # combine note and interval into labels like 'C_5'; non-qualifying cells stay NaN
+        result_df = filtered_nr + '_' + filtered_mel
+
+        # add detail index and metadata.  Also add final and system
+        result_df_numbered = self.detailIndex(result_df, measure=True, beat=True, offset=False, progress=True)
+        result_df_numbered['Composer'] = self.metadata['composer']
+        result_df_numbered['Title'] = self.metadata['title']
+        result_df_numbered['Final'] = extract_letter(self.final())
+        result_df_numbered['System'] = self.keySignatures().iloc[0,0]
+        result_df_numbered = result_df_numbered.reset_index()
+
+        # melt the columns so we have 'voice and interval' as main data
+        id_cols = ['Composer', 'Title', 'Measure', 'Beat', 'Progress', 'System', 'Final']
+        species_df = pd.melt(
+            result_df_numbered,
+            id_vars=id_cols,
+            var_name='Voice',
+            value_name='Interval',
+            value_vars=[col for col in result_df_numbered.columns if col not in id_cols]
+        )
+
+        # drop time points where nothing qualified
+        species_df = species_df.dropna(subset=['Interval'])
+
+        species_df['Species'] = species_df['Interval'].map(four_five_dict)
+        species_df['Octave'] = species_df['Species'].map(octave_dict)
+        return species_df.reset_index(drop=True)
+
 
     def highLine(self):
         '''
@@ -4465,10 +4613,10 @@ class CorpusBase:
             corpus_note_durs = corpus_note_durs.groupby(group_cols, as_index=False, dropna=False)['Durs'].sum()
         return corpus_note_durs
 
-    def mode_ranges(self, top_n=7, final=None, voices=None):
+    def voice_ranges(self, top_n=7, final=None, voices=None):
         """
         Return voice ranges for every piece in the corpus, as used to
-        distinguish modal types. See `ImportedPiece.modeRanges` for how the
+        distinguish modal types. See `ImportedPiece.voice_ranges` for how the
         ranges are found.
 
         Composer and title metadata are added from the source files.
@@ -4491,7 +4639,7 @@ class CorpusBase:
             HighestNote, Range. Pass this to `visualizations.voice_range_chart`
             to plot it.
         """
-        list_of_dfs = self.batch(ImportedPiece.modeRanges,
+        list_of_dfs = self.batch(ImportedPiece.voice_ranges,
                                  kwargs={'top_n': top_n}, metadata=True)
         result = pd.concat(list_of_dfs, ignore_index=True)
         if final is not None:
@@ -4501,6 +4649,72 @@ class CorpusBase:
             voices = [voices] if isinstance(voices, (str, int)) else voices
             result = result[result['Voice'].isin([str(v) for v in voices])]
         cols = ['Composer', 'Title', 'Date', 'Voice', 'Final', 'LowestNote', 'HighestNote', 'Range']
+        return result[cols].reset_index(drop=True)
+
+    def melodic_species(self, limit_to_entries=True,
+                        species_intervals=species_intervals_list,
+                        four_five_dict=species_four_five_dict,
+                        octave_dict=species_octave_dict,
+                        final=None, voices=None):
+        """
+        Return melodic species (fourth/fifth species and the octave species
+        they articulate) for every piece in the corpus. See
+        `ImportedPiece.melodic_species` for how the intervals are found and
+        classified.
+
+        Composer, title, and date metadata are added from the source files.
+
+        Parameters
+        ----------
+        limit_to_entries : bool, optional (default True)
+            If True, keep only intervals that begin a melodic entry (start of
+            piece, after a rest, or after a fermata).
+        species_intervals : list of str, optional (default species_intervals_list)
+            Directed diatonic melodic intervals to keep (e.g. '5', '-5', '4', '-4').
+        four_five_dict : dict, optional (default species_four_five_dict)
+            Maps note-and-interval labels (e.g. 'C_5') to fourth/fifth species.
+        octave_dict : dict, optional (default species_octave_dict)
+            Maps fourth/fifth species to octave species (e.g. 'CGC').
+        final : str or list of str, optional
+            Keep only pieces with this final (pitch class, e.g. 'G' or
+            ['D', 'G']). Use music21 spelling for accidentals: 'B-' for
+            B-flat, not 'Bb'. Default: all pieces.
+        voices : str, int, or list, optional
+            Keep only these voices by staff number (1 = highest), e.g. 2 or
+            ['1', '2']. Default: all voices.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Columns: Composer, Title, Date, Measure, Beat, Progress, Voice,
+            System, Final, Interval, Species, Octave. 'Final' and 'Interval'
+            use music21 spelling ('B-'), while the default 'Octave' labels
+            use 'b' for flats ('BbFBb').
+
+        Examples
+        --------
+        >>> corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei',
+        ...                      'https://crimproject.org/mei/CRIM_Model_0009.mei'])
+        >>> species_df = corpus.melodic_species()
+        >>> species_df.groupby('Title')['Octave'].value_counts()
+        """
+        kwargs = {'limit_to_entries': limit_to_entries,
+                  'species_intervals': species_intervals,
+                  'four_five_dict': four_five_dict,
+                  'octave_dict': octave_dict}
+        # results are already in long format with a 'Voice' column (voices are
+        # numbered inside the piece method), so skip batch's part numbering
+        list_of_dfs = self.batch(ImportedPiece.melodic_species, kwargs=kwargs,
+                                 metadata=True, number_parts=False)
+        result = pd.concat(list_of_dfs, ignore_index=True)
+        if final is not None:
+            finals = [final] if isinstance(final, str) else list(final)
+            result = result[result['Final'].isin(finals)]
+        if voices is not None:
+            voices = [voices] if isinstance(voices, (str, int)) else voices
+            result = result[result['Voice'].isin([str(v) for v in voices])]
+        cols = ['Composer', 'Title', 'Date', 'Measure', 'Beat', 'Progress', 'Voice',
+                'System', 'Final', 'Interval', 'Species', 'Octave']
         return result[cols].reset_index(drop=True)
 
     def note_weights(self, 
@@ -5302,16 +5516,19 @@ class CorpusBase:
         list_args = {key: val for key, val in kwargs.items() if key in dfs}
         if verbose:
             print('\nRunning {} analysis on {} pieces:'.format(func.__name__, len(self.scores)))
-        if number_parts and func.__name__ in ('cadences', 'presentationTypes', 'lowLine', 'highLine', 'final', 'modeRanges'):
+        # these methods either have no part-name columns or number their own voices
+        if number_parts and func.__name__ in ('cadences', 'presentationTypes', 'lowLine', 'highLine',
+                                              'final', 'voice_ranges', 'melodic_species'):
             number_parts = False
         for i, score in enumerate(self.scores):
             if verbose:
                 print('\t{}: {}'.format(i + 1, score.metadata['title']))
             largs = {key: val[i] for key, val in list_args.items()}
             df = func(score, **_kwargs, **largs)
-            if number_parts:
-                score.numberParts(df)
             if isinstance(df, pd.DataFrame):
+                # numberParts returns a renamed copy; otherwise copy explicitly, so
+                # adding metadata below never alters the piece's cached results
+                df = score.numberParts(df) if number_parts else df.copy()
                 if metadata:
                     df[['Composer', 'Title', 'Date']] = score.metadata['composer'], score.metadata['title'], score.metadata['date']
             post.append(df)
@@ -5608,7 +5825,7 @@ class CorpusBase:
         Set sns plot size for cadence progress tool.
         """
         if '_plot_default' not in self.analyses:
-            sns.theme(rc={'figure.figsize':(15,9)})
+            sns.set_theme(rc={'figure.figsize':(15,9)})
             self.analyses['_plot_default'] = True
 
     def compareCadenceProgressPlots(self, 

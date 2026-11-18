@@ -2,8 +2,8 @@
 
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Voice Ranges in One Piece: `piece.modeRanges()`](#voice-ranges-in-one-piece-piecemoderanges)
-3. [Voice Ranges in a Corpus: `corpus.mode_ranges()`](#voice-ranges-in-a-corpus-corpusmode_ranges)
+2. [Voice Ranges in One Piece: `piece.voice_ranges()`](#voice-ranges-in-one-piece-piecevoice_ranges)
+3. [Voice Ranges in a Corpus: `corpus.voice_ranges()`](#voice-ranges-in-a-corpus-corpusvoice_ranges)
 4. [Charting Voice Ranges: `voice_range_chart()`](#charting-voice-ranges-voice_range_chart)
 5. [Ordering the Pieces in the Chart](#ordering-the-pieces-in-the-chart)
 6. [How the Ranges Are Found](#how-the-ranges-are-found)
@@ -31,16 +31,17 @@ import pandas as pd
 
 ```python
 piece = importScore('https://crimproject.org/mei/CRIM_Mass_0014_3.mei')
-piece.modeRanges()
+piece.voice_ranges()
 ```
 
-| Voice | Final | LowestNote | HighestNote | Range |
-|---|---|---|---|---|
-| 1 | G | F4 | D5 | F4 to D5 |
-| 2 | G | A3 | G4 | A3 to G4 |
-| 3 | G | G3 | F4 | G3 to F4 |
-| 4 | G | C3 | B-3 | C3 to B-3 |
+| Composer | Title | Voice | Final | LowestNote | HighestNote | Range |
+|---|---|---|---|---|---|---|
+| Antoine de Févin | Missa Mente tota: Credo | 1 | G | F4 | D5 | F4 to D5 |
+| Antoine de Févin | Missa Mente tota: Credo | 2 | G | A3 | G4 | A3 to G4 |
+| Antoine de Févin | Missa Mente tota: Credo | 3 | G | G3 | F4 | G3 to F4 |
+| Antoine de Févin | Missa Mente tota: Credo | 4 | G | C3 | B-3 | C3 to B-3 |
 
+* **Composer** and **Title**: from the piece's metadata.
 * **Voice**: the staff position of the voice, where 1 is the highest staff. Numbers rather than names make results comparable across pieces with different voice names.
 * **Final**: the final of the piece as a pitch class (see `piece.final()`).
 * **LowestNote** and **HighestNote**: the lowest and highest of the voice's most prominent pitches.
@@ -53,20 +54,20 @@ Parameters:
 * **include_final** (default True): if False, the **Final** column is left out.
 
 ```python
-piece.modeRanges(top_n=7)
-piece.modeRanges(number_parts=False)
+piece.voice_ranges(top_n=7)
+piece.voice_ranges(number_parts=False)
 ```
 
 ## Voice Ranges in a Corpus: `corpus.voice_ranges()`
 
-`corpus.voice_ranges()` runs `piece.voice_ranges()` on every piece in the corpus and combines the results, adding **Composer**, **Title** and **Date** columns. (See [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md) for building a corpus.)
+`corpus.voice_ranges()` runs `piece.voice_ranges()` on every piece in the corpus and combines the results, adding a **Date** column alongside **Composer** and **Title**. (See [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md) for building a corpus.)
 
 ```python
 corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0009.mei',
                      'https://crimproject.org/mei/CRIM_Model_0001.mei',
                      'https://crimproject.org/mei/CRIM_Mass_0014_3.mei'])
-ranges = corpus.mode_ranges()
-ranges
+voice_ranges_df = corpus.voice_ranges()
+voice_ranges_df
 ```
 
 Parameters:
@@ -77,17 +78,17 @@ Parameters:
 
 ```python
 # only the pieces on G
-corpus.mode_ranges(final='G')
+corpus.voice_ranges(final='G')
 
 # only the second voice from the top in each piece
-corpus.mode_ranges(voices=2)
+corpus.voice_ranges(voices=2)
 ```
 
 The result is an ordinary DataFrame, so you can group, filter or sort it as usual. For example, to compare the second voice across pieces with the same final:
 
 ```python
-ranges = corpus.mode_ranges(final='G', voices=2)
-ranges[['Title', 'Range']]
+voice_ranges_df = corpus.voice_ranges(final='G', voices=2)
+voice_ranges_df[['Title', 'Range']]
 ```
 
 ## Charting Voice Ranges: `voice_range_chart()`
@@ -95,8 +96,8 @@ ranges[['Title', 'Range']]
 Pass the output of `piece.voice_ranges()` or `corpus.voice_ranges()` to `voice_range_chart()`. Each voice is a horizontal bar running from its lowest to its highest prominent pitch. When all the pieces in the chart share one final, dotted lines mark the reference pitches for that final.
 
 ```python
-ranges = corpus.mode_ranges()
-fig = voice_range_chart(ranges, final='G')
+voice_ranges_df = corpus.voice_ranges()
+fig = voice_range_chart(voice_ranges_df, final='G')
 fig.show()
 ```
 
@@ -105,7 +106,7 @@ The function returns a Plotly figure, so you can display it with `.show()`, save
 It works the same way for a single piece:
 
 ```python
-voice_range_chart(piece.modeRanges()).show()
+voice_range_chart(piece.voice_ranges()).show()
 ```
 
 Parameters:
@@ -131,18 +132,18 @@ The default suits a CRIM corpus of models and the Masses based on them. For piec
 
 ```python
 # from the lowest-pitched to the highest-pitched pieces, judged by voice 2
-voice_range_chart(ranges, piece_order='range')
+voice_range_chart(voice_ranges_df, piece_order='range')
 
 # judged by the lowest voice instead (voice 4 in four-voice pieces)
-voice_range_chart(ranges, piece_order='range', sort_voice='4')
+voice_range_chart(voice_ranges_df, piece_order='range', sort_voice='4')
 
 # sort the DataFrame yourself, e.g. by composer, then keep that order
-voice_range_chart(ranges.sort_values(['Composer', 'Title']), piece_order='given')
+voice_range_chart(voice_ranges_df.sort_values(['Composer', 'Title']), piece_order='given')
 
 # an order of your own
-voice_range_chart(ranges, piece_order=['Veni speciosam',
-                                       'Je suis déshéritée',
-                                       'Missa Mente tota: Credo'])
+voice_range_chart(voice_ranges_df, piece_order=['Veni speciosam',
+                                                'Je suis déshéritée',
+                                                'Missa Mente tota: Credo'])
 ```
 
 With a list, any titles you leave out are added at the end, and any titles that don't match the data (for example because of a typo) are reported in a printed message. To leave pieces out of the chart, filter the DataFrame before passing it in.

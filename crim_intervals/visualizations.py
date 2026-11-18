@@ -21,6 +21,37 @@ from plotly.subplots import make_subplots
 from music21 import pitch as m21_pitch
 from .sorting_lists import _MASS_MOVEMENTS, _RANGE_REFERENCE_BY_FINAL
 
+# Shared 20-color qualitative palette for all categorical plots (voices,
+# patterns, species, etc.).  The first 12 are Paul Tol's qualitative palette
+# (https://personal.sron.nl/~pault/), so ngram charts keep their existing
+# colors.  The last 8 were chosen to be clearly distinct from the Tol set
+# and readable on a white background (min. CIELAB distance ~24 to any other
+# color here).
+contrasting_colors = [
+    # Paul Tol 12
+    '#4477AA',  # blue
+    '#CC6677',  # rose
+    '#228833',  # green
+    '#DDCC77',  # sand
+    '#AA3377',  # purple
+    '#66CCEE',  # cyan
+    '#EE6633',  # orange
+    '#BBBBBB',  # grey
+    '#117733',  # forest
+    '#332288',  # indigo
+    '#882255',  # wine
+    '#44AA99',  # teal
+    # 8 additions
+    '#C1272D',  # red
+    '#F2B701',  # gold
+    '#8C510A',  # brown
+    '#8DB600',  # lime
+    '#E7298A',  # magenta
+    '#B39DDB',  # lavender
+    '#555555',  # charcoal
+    '#6B6B00',  # olive
+]
+
 class NgramColorManager:
     """
     Generates visually distinct color palettes for ngram/pattern charts.
@@ -29,22 +60,9 @@ class NgramColorManager:
     colors, then extends with golden-ratio HSV sampling for any additional
     colors needed.
     """
-    # Paul Tol's qualitative palette — 12 colors varying hue and saturation
-    # for maximum human distinguishability. See https://personal.sron.nl/~pault/
-    CURATED_12 = [
-        '#4477AA',  # blue
-        '#CC6677',  # rose
-        '#228833',  # green
-        '#DDCC77',  # sand
-        '#AA3377',  # purple
-        '#66CCEE',  # cyan
-        '#EE6633',  # orange
-        '#BBBBBB',  # grey
-        '#117733',  # forest
-        '#332288',  # indigo
-        '#882255',  # wine
-        '#44AA99',  # teal
-    ]
+    # Paul Tol's qualitative palette: the first 12 entries of the shared
+    # `contrasting_colors` palette above.
+    CURATED_12 = contrasting_colors[:12]
 
     def generate_distinct_colors(self, n):
         """Return n distinct colors.
@@ -976,16 +994,16 @@ def cadence_progress(cadences, chart_title="Radar Plot of Cadence Tones"):
     return fig
 
 
-def voice_range_chart(mode_ranges, final=None, piece_order='mass', sort_voice='2', title=None):
+def voice_range_chart(voice_ranges_df, final=None, piece_order='mass', sort_voice='2', title=None):
     """
-    Plot voice ranges (from `piece.modeRanges()` or `corpus.mode_ranges()`)
+    Plot voice ranges (from `piece.voice_ranges()` or `corpus.voice_ranges()`)
     as horizontal bars, one row per piece and voice, with dotted reference
     lines at the modally significant pitches for the final.
 
     Parameters
     ----------
-    mode_ranges : pandas.DataFrame
-        Output of ImportedPiece.modeRanges or CorpusBase.mode_ranges.
+    voice_ranges_df : pandas.DataFrame
+        Output of ImportedPiece.voice_ranges or CorpusBase.voice_ranges.
     final : str, optional
         Plot only pieces with this final. If omitted and the data contain a
         single final, that final's reference lines are drawn; if they contain
@@ -1000,7 +1018,7 @@ def voice_range_chart(mode_ranges, final=None, piece_order='mass', sort_voice='2
         * 'range': by `sort_voice`'s lowest note only, with no model/Mass
           grouping. Useful for pieces not related as model and Mass.
         * 'alpha': alphabetically by title.
-        * 'given': the order in which titles first appear in `mode_ranges`,
+        * 'given': the order in which titles first appear in `voice_ranges_df`,
           so you can sort the DataFrame yourself (e.g. by date or composer).
         * a list of titles: exactly that order. Titles not in the list are
           added at the end, in 'given' order, with a printed note.
@@ -1018,19 +1036,20 @@ def voice_range_chart(mode_ranges, final=None, piece_order='mass', sort_voice='2
     Examples
     --------
     ```python
-    ranges = corpus.mode_ranges(top_n=7)
-    fig = voice_range_chart(ranges, final='G')
+    voice_ranges_df = corpus.voice_ranges(top_n=7)
+    fig = voice_range_chart(voice_ranges_df, final='G')
     fig.show()
 
     # unrelated pieces, ordered by date (sort the DataFrame first)
-    ranges = ranges.merge(dates_df, on='Title').sort_values('Date')
-    voice_range_chart(ranges, piece_order='given').show()
+    # note you will need dates_df produced separately!
+    voice_ranges_df = voice_ranges_df.merge(dates_df, on='Title').sort_values('Date')
+    voice_range_chart(voice_ranges_df, piece_order='given').show()
 
     # a custom order
-    voice_range_chart(ranges, piece_order=['Veni speciosam', 'Je suis déshéritée'])
+    voice_range_chart(voice_ranges_df, piece_order=['Veni speciosam', 'Je suis déshéritée'])
     ```
     """
-    df = mode_ranges.copy()
+    df = voice_ranges_df.copy()
     if 'Title' not in df.columns:
         df['Title'] = ''
     df['Title'] = df['Title'].astype(str)
@@ -1086,9 +1105,9 @@ def voice_range_chart(mode_ranges, final=None, piece_order='mass', sort_voice='2
             labels.append(f'{t}  [V{v}]'.strip())
 
     voices = sorted(df['Voice'].unique(), key=voice_key)
-    palette = px.colors.qualitative.Plotly
+    palette = contrasting_colors
     fig = px.bar(df, x='Span', y='Title_Voice', base='Low_ps', orientation='h',
-                 color='Voice', opacity=0.6,
+                 color='Voice', opacity=0.75,
                  color_discrete_map={v: palette[i % len(palette)] for i, v in enumerate(voices)},
                  category_orders={'Title_Voice': labels, 'Voice': voices},
                  hover_data={'Title': True, 'Voice': True, 'Range': True,

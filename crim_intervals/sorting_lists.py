@@ -24,7 +24,8 @@ pitch_class_order_no_rests = [item for item in pitch_class_order if item != 'Res
 
 pitch_class_order_with_rests = pitch_class_order.copy()
 
-# custom interval order
+# custom interval order for mel and har charts
+
 interval_order_quality = ["-P8", "-M7", "-m7", "-M6", "-m6", "-P5", "-P4", "-M3", 
                           "-m3", "-M2", "-m2", "P1", "m2", "M2", "m3", "M3",
                           "P4", "P5", "m6", "M6", "m7", "M7", "P8"]
@@ -44,6 +45,36 @@ _RANGE_REFERENCE_BY_FINAL = {
     'C': ['C3', 'G3', 'C4', 'G4', 'C5', 'G5'],
 }
 
+# dictionaries to map tone+intervals strings to relevant pair of tones
+# used by Species functions
+
+species_four_five_dict = {
+    'C_5':'C/G', 'C_-5':'C/F', 'C_4':'C/F', 'C_-4':'C/G',
+    'D_5':'D/A', 'D_-5':'D/G', 'D_4':'D/G', 'D_-4':'D/A',
+    'E_5':'E/B', 'E_-5':'E/A', 'E_4':'E/A', 'E_-4':'E/B',
+    'F_5':'F/C', 'F_-5':'F/B-', 'F_4':'F/B-', 'F_-4':'F/C',
+    'G_5':'G/D', 'G_-5':'G/C', 'G_4':'G/C', 'G_-4':'G/D',
+    'A_5':'A/E', 'A_-5':'A/D', 'A_4':'A/D', 'A_-4':'A/E',
+    'B_5':'B/F#', 'B_-5':'B/E', 'B_4':'B/E', 'B_-4':'B/F#',
+    'B-_5':'B-/F', 'B-_-5':'B-/E-', 'B-_4':'B-/E-', 'B-_-4':'B-/F',
+}
+
+# dictionary to map leaps to relevant octave types
+species_octave_dict = {
+    'C/G':'CGC', 'C/F':'FCF', 'D/A':'DAD', 'D/G':'GDG',
+    'E/B':'EBE', 'E/A':'AEA', 'F/C':'FCF', 'F/B-':'BbFBb',
+    'G/D':'GDG', 'G/C':'CGC', 'A/E':'AEA', 'A/D':'DAD',
+    'B/F#':'BF#B', 'B/E':'EBE', 'B-/F':'BbFBb', 'B-/E-':'EbBbEb'
+}
+
+# intervals to catch as species
+species_intervals_list = ['5', '-5', '4', '-4']
+
+
+# octave order for species PLOT
+species_octave_order = ['EbBbEb', 'BbFBb', 'FCF', 'CGC', 'GDG', 'DAD', 'AEA', 'EBE', 'BF#B']
+
+
 # REST tokens as seen in CRIM Intervals output
 REST_TOKENS = {'r', 'rest', 'Rest', '-', ''}
 
@@ -55,7 +86,7 @@ def standardize_note(note):
         return str(note).replace('-', 'b')
     return str(note)
 
-
+# this is used by final() and note_durs()
 def extract_letter(value, include_rests=True):
     """Extract pitch class from a note string.
 
@@ -71,7 +102,7 @@ def extract_letter(value, include_rests=True):
     # Strip octave digit(s) from end to get pitch class
     return s.rstrip('0123456789')
 
-
+#
 def tuple_to_list(value, separator=None, cast=None):
     """Convert tuple-like values to a Python list.
 

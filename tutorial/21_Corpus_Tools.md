@@ -18,13 +18,13 @@
    - [sonority_ngrams](#sonority_ngrams)
    - [cadences](#cadences)
    - [presentation_types](#presentation_types)
-   - [mode_ranges](#mode_ranges)
+   - [voice_ranges](#voice_ranges)
 5. [Legacy `corpus_tools` Functions](#legacy-corpus_tools-functions)
 6. [Sections in this guide](#sections-in-this-guide)
 
 ## Introduction
 
-These tools analyze a whole corpus of pieces at once. They extract notes, calculate durations, generate intervals, create n-grams, find cadences and presentation types, and measure voice ranges (`mode_ranges`, for comparing modal types; see [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md)) across every piece in the corpus, and they return a single DataFrame with `Composer`, `Title`, and `Date` columns so that you can compare pieces.
+These tools analyze a whole corpus of pieces at once. They extract notes, calculate durations, generate intervals, create n-grams, find cadences and presentation types, and measure voice ranges (`voice_ranges`, for comparing modal types; see [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md)) across every piece in the corpus, and they return a single DataFrame with `Composer`, `Title`, and `Date` columns so that you can compare pieces.
 
 Each tool is a **method of the `CorpusBase` object**. You call it directly on your corpus (for example `corpus.notes()`).
 
@@ -284,11 +284,11 @@ Parameters:
 Returns:
 - `pd.DataFrame`: DataFrame containing presentation types
 
-### mode_ranges
+### voice_ranges
 
-Typical use: `corpus.mode_ranges(top_n=7, final=None, voices=None)`
+Typical use: `voice_ranges_df = corpus.voice_ranges(top_n=7, final=None, voices=None)`
 
-Finds the range of each voice in every piece in the corpus, as used to distinguish modal types: the lowest and highest of each voice's `top_n` most prominent pitches (those that take up the most time). Runs `piece.modeRanges()` on each piece. Pass the result to `voice_range_chart()` to chart it. See [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md).
+Finds the range of each voice in every piece in the corpus, as used to distinguish modal types: the lowest and highest of each voice's `top_n` most prominent pitches (those that take up the most time). Runs `piece.voice_ranges()` on each piece. Pass the result to `voice_range_chart()` to chart it. See [22_Voice_Ranges_Modes](/tutorial/22_Voice_Ranges_Modes.md).
 
 Parameters:
 - `top_n` (int): How many of each voice's most prominent pitches to consider (default: 7)

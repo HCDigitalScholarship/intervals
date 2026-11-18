@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "crim_intervals"
-version = "2.0.77"
+version = "2.0.84"
 description = "CRIM intervals package"
 readme = "README.md"
 authors = ["Richard Freedman <rfreedma@haverford.edu>"]
@@ -23,7 +23,7 @@ matplotlib = "^3.9.2"
 more-itertools = "8.7.0"
 music21 = "8.3.0"
 numpy = ">=1.20.2,<2.0.0"
-pandas = ">=2.2.0"
+pandas = ">=2.2.0,<3"
 statsmodels = "0.14.1"
 plotly = "5.19.0"
 plotly-express = "0.4.1"

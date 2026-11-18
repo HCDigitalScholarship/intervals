@@ -21,9 +21,9 @@ jobs:
 
       # Install the package itself, so the tests run against the same dependency
       # versions a user gets from `pip install crim_intervals` (the ranges in
-      # pyproject.toml), rather than the frozen pins in requirements.txt.
-      # pip picks the newest versions each Python allows, so 3.10 tests
-      # pandas 2 and 3.11+ test pandas 3.
+      # pyproject.toml), rather than the frozen pins in requirements.txt (which
+      # is kept only as a known-good snapshot; no workflow job uses it).
+      # pyproject.toml caps pandas below 3, so every Python version tests pandas 2.
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -98,7 +98,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install .     # same dependency versions as a user install (see the build job)
           pip install mkdocs==1.6.1 mkdocs-material==9.7.7 mkdocstrings==1.0.6 mkdocstrings-python==2.0.5 "pymdown-extensions<12"
 
       - name: Deploy docs to GitHub Pages

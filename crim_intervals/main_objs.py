@@ -546,7 +546,7 @@ class ImportedPiece:
             self.analyses['Final'] = final
         return self.analyses['Final']
 
-    def modeRanges(self, top_n=7, number_parts=True, include_final=True):
+    def voiceRanges(self, top_n=7, number_parts=True, include_final=True):
         """
         Return the range of each voice as used to distinguish modal types:
         the lowest and highest of the `top_n` pitches that take up the most
@@ -556,6 +556,8 @@ class ImportedPiece:
         absolute lowest and highest notes) keeps brief excursions from
         distorting the range. Pitches are ordered by sounding pitch (music21
         pitch space), so e.g. B-3 is below B3.
+
+        Composer and title information are added from the source file.
 
         Parameters
         ----------
@@ -578,7 +580,7 @@ class ImportedPiece:
             HighestNote, Range (e.g. 'D3 to D4'). Pass this (or the output of
             CorpusBase.mode_ranges) to `visualizations.voice_range_chart`.
         """
-        memo_key = ('ModeRanges', top_n, number_parts, include_final)
+        memo_key = ('voiceRanges', top_n, number_parts, include_final)
         if memo_key in self.analyses:
             return self.analyses[memo_key].copy()
 
@@ -4468,6 +4470,8 @@ class CorpusBase:
         Return voice ranges for every piece in the corpus, as used to
         distinguish modal types. See `ImportedPiece.modeRanges` for how the
         ranges are found.
+
+        Composer and title metadata are added from the source files.
 
         Parameters
         ----------

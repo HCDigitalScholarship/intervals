@@ -13,8 +13,8 @@
 
 The range of each voice, considered together with the final, is one of the main ways to distinguish modal types (for example, authentic and plagal ranges on the same final). CRIM Intervals provides:
 
-* `piece.modeRanges()`: the range of each voice in one piece
-* `corpus.mode_ranges()`: the same for every piece in a corpus, in one table
+* `piece.voice_ranges()`: the range of each voice in one piece
+* `corpus.voice_ranges()`: the same for every piece in a corpus, in one table
 * `voice_range_chart()`: a chart of those ranges, one bar per voice, with reference lines for the final
 
 Rather than reporting the absolute lowest and highest notes of each voice (which a single brief excursion can distort), these methods find the **most prominent pitches** in each voice (those that take up the most time) and report the lowest and highest of them.
@@ -27,7 +27,7 @@ from crim_intervals import *
 import pandas as pd
 ```
 
-## Voice Ranges in One Piece: `piece.modeRanges()`
+## Voice Ranges in One Piece: `piece.voice_ranges()`
 
 ```python
 piece = importScore('https://crimproject.org/mei/CRIM_Mass_0014_3.mei')
@@ -57,9 +57,9 @@ piece.modeRanges(top_n=7)
 piece.modeRanges(number_parts=False)
 ```
 
-## Voice Ranges in a Corpus: `corpus.mode_ranges()`
+## Voice Ranges in a Corpus: `corpus.voice_ranges()`
 
-`corpus.mode_ranges()` runs `piece.modeRanges()` on every piece in the corpus and combines the results, adding **Composer**, **Title** and **Date** columns. (See [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md) for building a corpus.)
+`corpus.voice_ranges()` runs `piece.voice_ranges()` on every piece in the corpus and combines the results, adding **Composer**, **Title** and **Date** columns. (See [21_Corpus_Tools](/tutorial/21_Corpus_Tools.md) for building a corpus.)
 
 ```python
 corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0009.mei',
@@ -71,7 +71,7 @@ ranges
 
 Parameters:
 
-* **top_n** (default 7): as for `piece.modeRanges()`.
+* **top_n** (default 7): as for `piece.voice_ranges()`.
 * **final** (optional): keep only pieces with this final, e.g. `final='G'`, or several finals as a list, e.g. `final=['D', 'G']`.
 * **voices** (optional): keep only these voices, by staff number, e.g. `voices=2` or `voices=[1, 4]`.
 
@@ -92,7 +92,7 @@ ranges[['Title', 'Range']]
 
 ## Charting Voice Ranges: `voice_range_chart()`
 
-Pass the output of `piece.modeRanges()` or `corpus.mode_ranges()` to `voice_range_chart()`. Each voice is a horizontal bar running from its lowest to its highest prominent pitch. When all the pieces in the chart share one final, dotted lines mark the reference pitches for that final.
+Pass the output of `piece.voice_ranges()` or `corpus.voice_ranges()` to `voice_range_chart()`. Each voice is a horizontal bar running from its lowest to its highest prominent pitch. When all the pieces in the chart share one final, dotted lines mark the reference pitches for that final.
 
 ```python
 ranges = corpus.mode_ranges()
@@ -152,7 +152,7 @@ With a list, any titles you leave out are added at the end, and any titles that 
 
 ## How the Ranges Are Found
 
-For each voice, `modeRanges()`:
+For each voice, `voice_ranges()`:
 
 1. Adds up the total time (in quarter notes) spent on each pitch, keeping octaves distinct (so G3 and G4 are different pitches).
 2. Divides each total by the voice's whole duration, **including rests**, to get that pitch's share of the voice.

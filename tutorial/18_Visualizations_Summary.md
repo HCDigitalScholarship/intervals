@@ -481,17 +481,17 @@ See [11_Cadences](tutorial/11_Cadences.md) to learn more.
 
 Voice range charts show the range of each voice as a horizontal bar, one row per voice, for one piece or a whole corpus. They are a quick way to compare modal types: pieces with the same final but different voice ranges (for example, authentic and plagal) stand out clearly. When all the pieces in the chart share one final, dotted reference lines mark the significant pitches for that final.
 
-Each range runs from the lowest to the highest of the voice's most prominent pitches (those that take up the most time), so a single brief excursion doesn't distort it. First find the ranges with `piece.modeRanges()` or `corpus.mode_ranges()`, then pass them to `voice_range_chart()`:
+Each range runs from the lowest to the highest of the voice's most prominent pitches (those that take up the most time), so a single brief excursion doesn't distort it. First find the ranges with `piece.voice_ranges()` or `corpus.voice_ranges()`, then pass them to `voice_range_chart()`:
 
 ```python
 # one piece
 piece = importScore('https://crimproject.org/mei/CRIM_Mass_0005_1.mei')
-voice_range_chart(piece.modeRanges()).show()
+voice_range_chart(piece.voice_ranges()).show()
 
 # a corpus, limited to the pieces on G
 corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei',
                      'https://crimproject.org/mei/CRIM_Mass_0005_3.mei'])
-ranges = corpus.mode_ranges()
+ranges = corpus.voice_ranges()
 fig = voice_range_chart(ranges, final='C')
 fig.show()
 fig.write_html('voice_ranges.html')   # optional: save the interactive chart

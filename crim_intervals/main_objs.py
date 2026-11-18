@@ -364,8 +364,10 @@ class ImportedPiece:
         ends.dropna(inplace=True)
         lenStarts = len(starts)
         colDurs = ends.index[-lenStarts:] - starts.index
-        starts[:] = colDurs
-        return starts
+        # return a new float Series rather than writing the durations into
+        # `starts`: under pandas 3 `starts` keeps the notes' strict 'str'
+        # dtype, which refuses numbers
+        return pd.Series(np.asarray(colDurs, dtype='float64'), index=starts.index)
 
     def durations(self, df=None, n=1, mask_df=None):
         '''

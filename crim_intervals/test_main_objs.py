@@ -364,9 +364,10 @@ def test_rest_to_rest_ngrams_and_durations():
 
     durs = model.durations(n=-1)
     assert durs.notna().any().any()
-    assert (durs.stack() > 0).all()
+    # .dropna(): pandas 3's stack() keeps empty cells, which pandas 2 dropped
+    assert (durs.stack().dropna() > 0).all()
 
     # every melodic ngram gets a positive duration
     mel_durs = model.durations(df=mel, n=-1, mask_df=mel_ngrams)
     assert (mel_ngrams.notna() == mel_durs.reindex_like(mel_ngrams).notna()).all().all()
-    assert (mel_durs.stack() > 0).all()
+    assert (mel_durs.stack().dropna() > 0).all()

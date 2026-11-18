@@ -19,6 +19,10 @@ def test_classifyCadences():
     corpus = CorpusBase(TEST_FILES_CC)
     cvfs = corpus.batch(ImportedPiece.cvfs, metadata=False, kwargs={'offsets': 'last'})
     cads = corpus.batch(ImportedPiece.cadences, metadata=False)
+    # piece.cadences() starts with Composer/Title/Date columns from the source
+    # file. They are not part of the cadence classification this test checks
+    # (and are not in the stored ground truth), so leave them out.
+    cads = [cad.drop(columns=['Composer', 'Title', 'Date'], errors='ignore') for cad in cads]
     analysisNow = []
     for i, cad in enumerate(cads):
         cad['URL'] = TEST_FILES_CC[i]
@@ -49,10 +53,13 @@ def test_classifyCadences():
     an = analysisNow.copy()
     gt = groundTruth.copy()
     print('Comparing current cadential analysis and ground truth...')
-    isEqual = analysisNow.infer_objects(copy=False).fillna('-').equals(groundTruth.infer_objects(copy=False).fillna('-'))
+    # Compare values as objects: under pandas 3 the ground truth's text columns
+    # load as the 'str' dtype while the fresh analysis may hold 'object'
+    # columns, and DataFrame.equals would treat identical values as different.
+    isEqual = (analysisNow.infer_objects(copy=False).fillna('-').astype(object)
+               .equals(groundTruth.infer_objects(copy=False).fillna('-').astype(object)))
     # Try to give feedback if the test fails
     if not isEqual:
-        comp = pd.concat((an[['index', 'Measure', 'Beat']], gt[['index', 'Measure', 'Beat']]), axis=1, sort=True)
         firstCVFCol = groundTruth.columns.get_loc('0')
         ancvf = analysisNow.iloc[:, firstCVFCol:].copy().infer_objects(copy=False).fillna('.')
         gtcvf = groundTruth.iloc[:, firstCVFCol:].copy().infer_objects(copy=False).fillna('.')
@@ -65,7 +72,8 @@ def test_classifyCadences():
         except:
             pass
         for col in analysisNow.columns:
-            colsEqual = analysisNow[col].equals(groundTruth[col])
+            colsEqual = (analysisNow[col].fillna('-').astype(object)
+                         .equals(groundTruth[col].fillna('-').astype(object)))
             if not colsEqual:
                 print('\n*********\nThere is a discrepancy in the {} column.\n*********\n'.format(col))
 

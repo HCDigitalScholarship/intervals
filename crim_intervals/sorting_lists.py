@@ -75,6 +75,64 @@ species_intervals_list = ['5', '-5', '4', '-4']
 species_octave_order = ['EbBbEb', 'BbFBb', 'FCF', 'CGC', 'GDG', 'DAD', 'AEA', 'EBE', 'BF#B']
 
 
+# cadence tone orders for visualizations.cadence_radar (music21 spelling).
+# Tones found in the data but missing from the chosen list are added at the end.
+cadence_tone_orders = {
+    'Diatonic':  ['C', 'D', 'E-', 'E', 'F', 'F#', 'G', 'A', 'B-', 'B', 'C#', 'G#', 'A-', 'D-'],
+    'Fifths':    ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'A-', 'E-', 'B-', 'F'],
+    'Thirds':    ['C', 'E', 'G', 'B-', 'D', 'F', 'A', 'C#', 'E-', 'B', 'F#'],
+    'Chromatic': ['C', 'C#', 'D-', 'D', 'E-', 'E', 'F', 'F#', 'G-', 'G', 'G#', 'A-', 'A', 'B-', 'B'],
+}
+
+# pitch-class orders for visualizations.radar_note_plot (music21 spelling).
+# Pitch classes found in the data but missing from the chosen list are added at the end.
+note_pitch_class_orders = {
+    'Chromatic': ['C', 'C#', 'D-', 'D', 'D#', 'E-', 'E', 'F-', 'E#', 'F', 'F#', 'G-', 'F##',
+                  'G', 'G#', 'A-', 'A', 'A#', 'B-', 'B', 'B#'],
+    'Fifths':    ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#', 'F##',
+                  'D-', 'A-', 'E-', 'B-', 'F', 'G-', 'F-'],
+    'Diatonic':  ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'B-', 'E-', 'A-', 'D-', 'C#', 'F#', 'G#',
+                  'D#', 'A#', 'G-', 'F-', 'E#', 'F##', 'B#'],
+}
+
+# cadence tones from bottom to top on the y axis of cadence_progress and
+# plot_species_cadences (a circle of fifths, flats at the bottom)
+cadence_progress_tone_order = ['E-', 'B-', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'F#']
+
+# cadence types in legend order, and their colors: evaded types are lighter
+# and abandoned types lighter still than the corresponding realized type
+cadence_type_order = ['Authentic', 'Evaded Authentic', 'Abandoned Authentic',
+    'Clausula Vera', 'Evaded Clausula Vera', 'Abandoned Clausula Vera',
+    'Phrygian Clausula Vera', 'Evaded Phrygian Clausula Vera', 'Abandoned Phrygian Clausula Vera',
+    'Double Leading Tone', 'Evaded Double Leading Tone', 'Abandoned Double Leading Tone',
+    'Altizans Only', 'Evaded Altizans Only', 'Phrygian Altizans',
+    'Phrygian', 'Evaded Phrygian', 'Abandoned Phrygian',
+    'Reinterpreted', 'Evaded Reinterpreted', 'Quince', 'Evaded Quince', 'Leaping Contratenor']
+
+cadence_type_colors = {'Authentic': '#FF0000',
+    'Clausula Vera': '#0000FF',
+    'Double Leading Tone': '#00FF00',
+    'Altizans Only': '#800080',
+    'Phrygian': '#00FF00',
+    'Reinterpreted': '#00FFFF',
+    'Quince': '#4B0082',
+    'Leaping Contratenor': '#000000',
+    'Phrygian Clausula Vera': '#FF00FF',
+    'Evaded Authentic': '#FF6666',
+    'Evaded Clausula Vera': '#6666FF',
+    'Evaded Double Leading Tone': '#66FF66',
+    'Evaded Altizans Only': '#CC99CC',
+    'Evaded Phrygian': '#66FF66',
+    'Evaded Reinterpreted': '#99FFFF',
+    'Evaded Quince': '#9966CC',
+    'Evaded Phrygian Clausula Vera': '#FF66FF',
+    'Abandoned Clausula Vera': '#CCCCFF',
+    'Abandoned Double Leading Tone': '#CCFFCC',
+    'Abandoned Phrygian': '#FFE5CC',
+    'Abandoned Authentic': '#FFCCCC',
+    'Abandoned Phrygian Clausula Vera': '#FFCCFF'}
+
+
 # REST tokens as seen in CRIM Intervals output
 REST_TOKENS = {'r', 'rest', 'Rest', '-', ''}
 

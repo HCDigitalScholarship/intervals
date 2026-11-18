@@ -19,7 +19,10 @@ import matplotlib as mplt # OY addition 6/12/24
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from music21 import pitch as m21_pitch
-from .sorting_lists import _MASS_MOVEMENTS, _RANGE_REFERENCE_BY_FINAL
+from .sorting_lists import (_MASS_MOVEMENTS, _RANGE_REFERENCE_BY_FINAL,
+                            cadence_tone_orders, cadence_progress_tone_order,
+                            cadence_type_order, cadence_type_colors,
+                            species_octave_order, note_pitch_class_orders)
 
 # Shared 20-color qualitative palette for all categorical plots (voices,
 # patterns, species, etc.).  The first 12 are Paul Tol's qualitative palette
@@ -791,206 +794,368 @@ def _manipulate_processed_network_df(df, interval_column, search_pattern_starts_
 
 # new cadence visualization functions
 
-
-# cadence radar
-def cadence_radar(cadences, groupby_column='Title', chart_title="Radar Plot of Cadence Tones"):
-    """
-    Create a radar plot showing distribution of cadence tones.
-    The optional chart_title parameter allows for a custom title.
-
-    Cadences df must contain 'Composer', 'Title' and 'Tone' columns.  Groupby colum
-
-    Parameters:
-    -----------
-    cadences : pd.DataFrame
-        DataFrame containing cadence data
-
-    groupby_column : str
-        Column name to group by (default is 'Title'); could also be 'Composer'
-    chart_title : str
-        Title for the chart (default is "Radar Plot of Cadence Tones")  
+def _ordered_with_extras(order, values):
+    """Return `order` plus any values not in it (sorted, at the end), so a
+    custom order never silently drops data."""
+    present = [v for v in pd.unique(pd.Series(values).dropna())]
+    extras = sorted(str(v) for v in present if v not in order)
+    return list(order) + extras
 
 
+def _voice_sort_key(v):
+    v = str(v)
+    return (0, int(v), v) if v.isdigit() else (1, 0, v)
 
-    Returns:
-    --------
-    fig : go.Figure
-        Plotly Figure object representing the radar plot
 
-    Notes:
-    ------
-    This function creates a radar plot to visualize the relative distribution of cadence tones across different titles in the corpus.
-    It uses Plotly Express to generate the plot and applies various customizations such as color mapping, legend positioning, and layout adjustments.
-    The plot displays the percentage of occurrence for each tone within each title, allowing for easy comparison between titles and tones.
-    """
-    # Define constants at function scope
-    tone_order = {'C': 0, 'D': 1, 'E-': 2, 'E': 3, 'F': 4,
-        'G': 5, 'A': 6, 'B-': 7
-    }
+def _single_piece_label(df):
+    """'Composer: Title' when df holds one piece, else None."""
+    if 'Title' not in df.columns or df['Title'].nunique() != 1:
+        return None
+    title = df['Title'].iloc[0]
+    if 'Composer' in df.columns and pd.notna(df['Composer'].iloc[0]):
+        return f"{df['Composer'].iloc[0]}: {title}"
+    return str(title)
 
-    
-    # Vectorized approach using groupby operations
-    grouped = cadences.groupby([groupby_column, 'Tone']).size().reset_index(name='count')
-    
-    # Calculate percentages efficiently
-    title_sums = grouped.groupby(groupby_column)['count'].sum()
-    grouped['Percentage'] = (grouped['count'] / grouped[groupby_column].map(title_sums)) * 100
-    
-    # Create radar plot
-    fig = px.line_polar(
-        grouped[grouped['count'] > 0],
-        r='Percentage',
-        theta='Tone',
-        line_close=True,
-        color=groupby_column,
-        markers=True,
-        category_orders={'Tone': sorted(tone_order.keys(), key=lambda x: tone_order[x])}
-    )
-    
-    # Apply optimizations
-    fig.update_traces(fill='toself', line=dict(width=2))
-    
-    # Update layout with bottom legend
-    fig.update_layout(
-        width=800,
-        height=600,
-        legend=dict(
-            orientation="h",  # Horizontal layout for better space usage
-            yanchor="bottom",
-            y=-0.4,           # Position below plot
-            xanchor="center",
-            x=0.5,            # Center horizontally
-            xref="container", # Scale with container
-            yref="container", # Scale with container
-            title=dict(
-                text=groupby_column,
-                side="top",
-                font_size=12
-            ),
-            itemsizing='constant',
-            itemwidth=30,
-            bordercolor="black",
-            borderwidth=1,
-            bgcolor="rgba(255,255,255,0.8)"
-        ),
-        title=dict(text=chart_title, x=0.5),
-        polar=dict(
-            radialaxis=dict(visible=True, title='Percentage')
-        ),
-        margin=dict(b=120)  # Bottom margin for legend
-    )
-    
+
+def _category_yaxis(fig, categories, **kwargs):
+    """Fix a categorical y axis to show every category (bottom to top in the
+    given order). Without an explicit range, Plotly sizes shared facet axes
+    from the first panel only and clips categories found in other pieces."""
+    kwargs.setdefault('title', None)
+    fig.update_yaxes(categoryorder='array', categoryarray=categories,
+                     range=[-0.5, len(categories) - 0.5], **kwargs)
+
+
+def _facet_by_title(fig, n_titles, row_height):
+    """Tidy a figure faceted with facet_row='Title': show each piece's title
+    (without 'Title=') above its row, left-aligned, and size the figure."""
+    centers = {round((ax.domain[0] + ax.domain[1]) / 2, 3): ax.domain[1] for ax in fig.select_yaxes()}
+    for a in fig.layout.annotations:
+        if isinstance(a.text, str) and a.text.startswith('Title='):
+            top = centers.get(round(a.y, 3), a.y)
+            a.update(text='<b>' + a.text.split('=', 1)[1] + '</b>', textangle=0,
+                     x=0, xanchor='left', y=top, yanchor='bottom', font_size=13)
+    fig.update_layout(height=max(450, row_height * n_titles + 150))
     return fig
 
 
+# cadence radar
+def cadence_radar(cadences, groupby_column='Title', tone_ordering='Diatonic',
+                  limit_to_active=True, chart_title=None):
+    """
+    Radar plot of the relative distribution of cadence tones: for each group
+    (piece, composer, ...), the percentage of its cadences on each tone.
+
+    Works with `piece.cadences()` or `corpus.cadences()`.
+
+    Parameters
+    ----------
+    cadences : pandas.DataFrame
+        Output of ImportedPiece.cadences or CorpusBase.cadences. Needs a
+        'Tone' column and the `groupby_column`.
+    groupby_column : str, optional (default 'Title')
+        One polygon per value of this column, e.g. 'Title' or 'Composer'.
+    tone_ordering : str or list, optional (default 'Diatonic')
+        Order of tones around the circle: 'Diatonic', 'Fifths', 'Thirds',
+        'Chromatic' (see `sorting_lists.cadence_tone_orders`), or your own list
+        (music21 spelling, e.g. 'B-'). Tones in the data but not in the order
+        are added at the end.
+    limit_to_active : bool, optional (default True)
+        If True, show only tones that occur in the data. If False, show every
+        tone in the ordering.
+    chart_title : str, optional
+        A default naming the piece (for a single piece) is used if omitted.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Examples
+    --------
+    >>> cadence_radar(piece.cadences()).show()
+    >>> cadence_radar(corpus.cadences(), groupby_column='Composer', tone_ordering='Fifths')
+    """
+    if groupby_column not in cadences.columns:
+        raise ValueError(f"cadences has no '{groupby_column}' column; "
+                         f"choose one of {list(cadences.columns)}")
+    order = cadence_tone_orders[tone_ordering] if isinstance(tone_ordering, str) else list(tone_ordering)
+    cads = cadences.dropna(subset=['Tone'])
+    if cads.empty:
+        raise ValueError('No cadences with a Tone to plot.')
+
+    grouped = cads.groupby([groupby_column, 'Tone']).size().rename('count')
+    tones = _ordered_with_extras(order, cads['Tone'])
+    if limit_to_active:
+        tones = [t for t in tones if t in set(cads['Tone'])]
+    groups = list(dict.fromkeys(cads[groupby_column]))
+    # fill missing (group, tone) pairs with 0 so each polygon is complete
+    full = pd.MultiIndex.from_product([groups, tones], names=[groupby_column, 'Tone'])
+    grouped = grouped.reindex(full, fill_value=0).reset_index()
+    totals = grouped.groupby(groupby_column)['count'].transform('sum')
+    grouped['Percentage'] = (grouped['count'] / totals * 100).round(1)
+
+    if chart_title is None:
+        label = _single_piece_label(cadences)
+        chart_title = f'Cadence Tones in {label}' if label else 'Cadence Tones'
+        if isinstance(tone_ordering, str):
+            chart_title += f' ({tone_ordering} order)'
+
+    fig = px.line_polar(grouped, r='Percentage', theta='Tone', line_close=True,
+                        color=groupby_column, markers=True,
+                        hover_data={'count': True},
+                        color_discrete_sequence=contrasting_colors,
+                        category_orders={'Tone': tones, groupby_column: groups})
+    fig.update_traces(fill='toself', line=dict(width=2))
+    fig.update_layout(
+        width=800, height=650,
+        legend=dict(orientation='h', yanchor='top', y=-0.1, xanchor='center', x=0.5,
+                    title=dict(text=groupby_column, side='top', font_size=12),
+                    bordercolor='black', borderwidth=1, bgcolor='rgba(255,255,255,0.8)'),
+        title=dict(text=chart_title, x=0.5),
+        polar=dict(radialaxis=dict(visible=True, ticksuffix='%')),
+        margin=dict(b=150),
+        showlegend=len(groups) > 1)
+    return fig
+
 
 # cadence progress viz
-def cadence_progress(cadences, chart_title="Radar Plot of Cadence Tones"):
+def cadence_progress(cadences, chart_title=None):
     """
-    Create a scatter plot showing progress of cadences in a composition.
-    Cadence df must contain 'Composer', 'Title', 'Progress', 'Tone', and 'CadType' columns.
+    Scatter plot of cadences across the course of a piece: Progress (0 = start,
+    1 = end) on the x axis, cadence tone on the y axis, colored by cadence type.
 
-    Parameters:
-    -----------
-    cadences : pd.DataFrame
-        DataFrame containing cadence data
-    chart_title : str
-        Title for the chart (default is "Radar Plot of Cadence Tones")
+    Works with `piece.cadences()` or `corpus.cadences()`. For a corpus each
+    piece gets its own row, since Progress is measured within each piece.
 
-    Returns:
+    Parameters
+    ----------
+    cadences : pandas.DataFrame
+        Output of ImportedPiece.cadences or CorpusBase.cadences. Needs
+        'Progress', 'Tone' and 'CadType' columns ('Title' for several pieces).
+    chart_title : str, optional
+        A default naming the piece (for a single piece) is used if omitted.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Examples
     --------
-    fig : go.Figure
-        Plotly Figure object representing the scatter plot
-
-    Notes:
-    ------
-    This function generates a scatter plot to visualize the progression of cadences in a specific composition.
-    It categorizes cadences based on their type and assigns distinct colors to each cadence type.
-    The plot displays the cadence progression along the x-axis and the tone along the y-axis, allowing for easy identification of cadence changes throughout the composition.
-    Custom color mappings are used to differentiate between original and modified cadence types.
-    The plot includes a horizontal legend for easy identification of cadence types.
+    >>> cadence_progress(piece.cadences()).show()
+    >>> cadence_progress(corpus.cadences()).show()   # one row per piece
     """
-    # Define custom ordering for CadTypes
-    custom_order = ['Authentic', 'Evaded Authentic', 
-        'Clausula Vera', 'Evaded Clausula Vera', 'Abandoned Clausula Vera', 'Phrygian Clausula Vera',
-        'Double Leading Tone', 'Evaded Double Leading Tone', 'Abandoned Double Leading Tone',
-        'Altizans Only', 'Phrygian Altizans', 'Evaded Altizans Only',
-        'Phrygian', 'Reinterpreted', 'Quince', 'Leaping Contratenor']
+    df = cadences.dropna(subset=['Tone']).copy()   # never alter the caller's data
+    if df.empty:
+        raise ValueError('No cadences with a Tone to plot.')
+    tones = _ordered_with_extras(cadence_progress_tone_order, df['Tone'])
+    tones = [t for t in tones if t in set(df['Tone'])]
+    cad_types = _ordered_with_extras(cadence_type_order, df['CadType'])
+    cad_types = [c for c in cad_types if c in set(df['CadType'])]
+    n_titles = df['Title'].nunique() if 'Title' in df.columns else 1
 
-    # order for y axis tones:
-    custom_tone_order = ['E-', 'B-', 'F', 'C', 'G', 'D', 'A', 'E', 'B']  
+    hover = {c: True for c in ['Composer', 'Title', 'Measure', 'Beat'] if c in df.columns}
+    fig = px.scatter(df, x='Progress', y='Tone', color='CadType',
+                     facet_row='Title' if n_titles > 1 else None,
+                     facet_row_spacing=0.25 / n_titles if n_titles > 1 else None,
+                     hover_data=hover,
+                     color_discrete_map=cadence_type_colors,
+                     category_orders={'Tone': tones, 'CadType': cad_types,
+                                      'Title': list(dict.fromkeys(df['Title'])) if n_titles > 1 else []})
+    fig.update_traces(marker=dict(size=18 if n_titles > 1 else 25, opacity=0.85,
+                                  line=dict(width=1, color='white')))
+    # categories run bottom-to-top in the order given (flats at the bottom)
+    _category_yaxis(fig, tones, title='Tone')
+    fig.update_xaxes(range=[-0.02, 1.02])
 
-    # color map for cadences--the evaded types are less saturated than corresponding regular types
-    color_mapping = {'Authentic': '#FF0000',
-     'Clausula Vera': '#0000FF',
-     'Double Leading Tone': '#00FF00',
-     'Altizans Only': '#800080',
-     'Phrygian': '#00FF00',
-     'Reinterpreted': '#00FFFF',
-     'Quince': '#4B0082',
-     'Leaping Contratenor': '#000000',
-     'Phrygian Clausula Vera': '#FF00FF',
-     'Evaded Authentic': '#FF6666',
-     'Evaded Clausula Vera': '#6666FF',
-     'Evaded Double Leading Tone': '#66FF66',
-     'Evaded Altizans Only': '#CC99CC',
-     'Evaded Phrygian': '#66FF66',
-     'Evaded Reinterpreted': '#99FFFF',
-     'Evaded Quince': '#9966CC',
-     'Evaded Phrygian Clausula Vera': '#FF66FF',
-     'Abandoned Clausula Vera': '#CCCCFF',
-     'Abandoned Double Leading Tone': '#CCFFCC',
-     'Abandoned Phrygian': '#FFE5CC',
-     'Abandoned Authentic': '#FFCCCC',
-     'Abandoned Phrygian Clausula Vera': '#FFCCFF'}
-    
-    composer = cadences['Composer'].iloc[0]
-    title = cadences['Title'].iloc[0]
+    if chart_title is None:
+        label = _single_piece_label(df)
+        chart_title = f'Progress of Cadences in {label}' if label else 'Progress of Cadences'
+    fig.update_layout(title=chart_title, width=900, height=500,
+                      legend=dict(title_text='Cadence Type', orientation='v'))
+    if n_titles > 1:
+        fig.update_yaxes(title='')
+        _facet_by_title(fig, n_titles, row_height=220)
+    return fig
 
-    # Ensure the Tone column is categorical with correct ordering
-    cadences['Tone'] = pd.Categorical(
-        cadences['Tone'],
-        categories=custom_tone_order,  # specify tone order for y axis
-        ordered=True
-    )
-    
-    # Create figure with explicit category ordering
-    fig = px.scatter(
-        cadences,
-        x='Progress',
-        y='Tone',
-        color='CadType',
-        color_discrete_map=color_mapping, # use color mapping from above
-        category_orders={'Tone': custom_tone_order}
-    )
-    
-    # Configure Y-axis to show E- at bottom
+
+def cadence_bar_chart(cadences, by='CadType', percent=True, groupby_column='Title',
+                      tone_ordering='Diatonic', chart_title=None):
+    """
+    Grouped bar chart of cadence types or cadence tones, one bar per group
+    (piece, composer, ...) in each category.
+
+    Works with `piece.cadences()` or `corpus.cadences()`.
+
+    Parameters
+    ----------
+    cadences : pandas.DataFrame
+        Output of ImportedPiece.cadences or CorpusBase.cadences.
+    by : str, optional (default 'CadType')
+        'CadType' for cadence types or 'Tone' for cadence tones. Evaded and
+        abandoned cadences have no Tone, so they are counted for 'CadType' but
+        left out (with a printed note) for 'Tone'.
+    percent : bool, optional (default True)
+        True: each bar is a percentage of its group's cadences, so pieces of
+        different lengths can be compared. False: raw counts.
+    groupby_column : str, optional (default 'Title')
+        One bar color per value of this column, e.g. 'Title' or 'Composer'.
+    tone_ordering : str or list, optional (default 'Diatonic')
+        Order of tones on the x axis when by='Tone' (as in `cadence_radar`).
+    chart_title : str, optional
+        A default naming the piece (for a single piece) is used if omitted.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Examples
+    --------
+    >>> cadence_bar_chart(corpus.cadences()).show()
+    >>> cadence_bar_chart(corpus.cadences(), by='Tone', groupby_column='Composer')
+    """
+    if by not in ('CadType', 'Tone'):
+        raise ValueError("by must be 'CadType' or 'Tone'.")
+    if groupby_column not in cadences.columns:
+        raise ValueError(f"cadences has no '{groupby_column}' column; "
+                         f"choose one of {list(cadences.columns)}")
+    cads = cadences.dropna(subset=['CadType'])
+    if by == 'Tone':
+        missing = cads['Tone'].isna().sum()
+        if missing:
+            print(f'Note: {missing} cadence(s) without a Tone (evaded/abandoned) are not shown.')
+        cads = cads.dropna(subset=['Tone'])
+        order = cadence_tone_orders[tone_ordering] if isinstance(tone_ordering, str) else list(tone_ordering)
+    else:
+        order = cadence_type_order
+    if cads.empty:
+        raise ValueError('No cadences to plot.')
+
+    categories = [c for c in _ordered_with_extras(order, cads[by]) if c in set(cads[by])]
+    groups = list(dict.fromkeys(cads[groupby_column]))
+    counts = cads.groupby([groupby_column, by]).size().rename('Count')
+    full = pd.MultiIndex.from_product([groups, categories], names=[groupby_column, by])
+    counts = counts.reindex(full, fill_value=0).reset_index()
+    counts['Percentage'] = (counts['Count'] / counts.groupby(groupby_column)['Count'].transform('sum') * 100).round(1)
+    y = 'Percentage' if percent else 'Count'
+
+    single = len(groups) == 1
+    label = _single_piece_label(cadences) if groupby_column == 'Title' else None
+    if single and by == 'CadType':
+        # one piece: color each bar by cadence type, as in cadence_progress
+        fig = px.bar(counts, x=by, y=y, color=by, hover_data=['Count', 'Percentage'],
+                     color_discrete_map=cadence_type_colors,
+                     category_orders={by: categories})
+    else:
+        fig = px.bar(counts, x=by, y=y, color=groupby_column, barmode='group',
+                     hover_data=['Count', 'Percentage'],
+                     color_discrete_sequence=contrasting_colors,
+                     category_orders={by: categories, groupby_column: groups})
+
+    what = 'Cadence Types' if by == 'CadType' else 'Cadence Tones'
+    if chart_title is None:
+        chart_title = what + (f' in {label}' if label and single else f' by {groupby_column}')
+        chart_title += ' (percent)' if percent else ' (count)'
+    fig.update_layout(title=chart_title, width=1000, height=550,
+                      xaxis_title='Cadence Type' if by == 'CadType' else 'Tone',
+                      yaxis_title='Percent of cadences' if percent else 'Number of cadences',
+                      legend_title=groupby_column, showlegend=not single, bargap=0.2)
+    if percent:
+        fig.update_yaxes(ticksuffix='%')
+    fig.update_xaxes(tickangle=-30 if by == 'CadType' else 0)
+    return fig
+
+
+def radar_note_plot(weighted_notes_df, pitch_class_order='Fifths', exclude_rests=True,
+                    limit_to_active=True, color_grouping='title', chart_title=None):
+    """
+    Radar plot of how much of each piece's time is spent on each pitch class
+    (duration-weighted), one polygon per piece (or per composer, final, ...).
+
+    Works with `piece.note_weights()` or `corpus.note_weights()`.
+
+    Parameters
+    ----------
+    weighted_notes_df : pandas.DataFrame
+        Output of ImportedPiece.note_weights or CorpusBase.note_weights
+        (columns 'pitch_class', 'count', 'scaled', 'composer', 'title', ...).
+    pitch_class_order : str or list, optional (default 'Fifths')
+        Order of pitch classes around the circle: 'Fifths', 'Diatonic',
+        'Chromatic' (see `sorting_lists.note_pitch_class_orders`), or your own
+        list (music21 spelling, e.g. 'B-'). Pitch classes in the data but not
+        in the order are added at the end.
+    exclude_rests : bool, optional (default True)
+        Leave out 'Rest' and show each pitch class as a share of sounding time.
+    limit_to_active : bool, optional (default True)
+        If True, show only pitch classes that occur in the data. If False, show
+        every pitch class in the ordering.
+    color_grouping : str, optional (default 'title')
+        One polygon per value of this column, e.g. 'title', 'composer' or
+        'final'. Durations are summed within each group.
+    chart_title : str, optional
+        A default naming the piece (for a single piece) is used if omitted.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Examples
+    --------
+    >>> radar_note_plot(piece.note_weights()).show()
+    >>> radar_note_plot(corpus.note_weights(include_final=True), color_grouping='final')
+    """
+    df = weighted_notes_df.copy()
+    df['pitch_class'] = df['pitch_class'].astype(str)
+    if color_grouping not in df.columns:
+        # accept 'Title' for 'title', etc. (note_weights uses lower-case names)
+        matches = [c for c in df.columns if c.lower() == color_grouping.lower()]
+        if not matches:
+            raise ValueError(f"No '{color_grouping}' column; choose one of {list(df.columns)}")
+        color_grouping = matches[0]
+    if exclude_rests:
+        df = df[df['pitch_class'] != 'Rest']
+    df = df[df['count'] > 0]
+    if df.empty:
+        raise ValueError('No notes to plot.')
+
+    order = (note_pitch_class_orders[pitch_class_order] if isinstance(pitch_class_order, str)
+             else list(pitch_class_order))
+    if not exclude_rests:
+        order = order + ['Rest']
+    pcs = _ordered_with_extras(order, df['pitch_class'])
+    if limit_to_active:
+        pcs = [p for p in pcs if p in set(df['pitch_class'])]
+    groups = list(dict.fromkeys(df[color_grouping]))
+
+    # sum durations per group and pitch class, fill gaps with 0 so every
+    # polygon is complete, then take percentages within each group
+    grouped = df.groupby([color_grouping, 'pitch_class'])['count'].sum()
+    full = pd.MultiIndex.from_product([groups, pcs], names=[color_grouping, 'pitch_class'])
+    grouped = grouped.reindex(full, fill_value=0).reset_index()
+    totals = grouped.groupby(color_grouping)['count'].transform('sum')
+    grouped['Percentage'] = (grouped['count'] / totals * 100).round(1)
+
+    if chart_title is None:
+        label = _single_piece_label(df.rename(columns={'title': 'Title', 'composer': 'Composer'}))
+        chart_title = f'Weighted Pitch Classes in {label}' if label else 'Weighted Pitch Classes'
+        if isinstance(pitch_class_order, str):
+            chart_title += f' ({pitch_class_order} order)'
+
+    fig = px.line_polar(grouped, r='Percentage', theta='pitch_class', line_close=True,
+                        color=color_grouping, markers=True,
+                        hover_data={'count': ':.1f'},
+                        labels={'pitch_class': 'Pitch class', 'count': 'Duration (quarter notes)'},
+                        color_discrete_sequence=contrasting_colors,
+                        category_orders={'pitch_class': pcs, color_grouping: groups})
+    fig.update_traces(fill='toself', line=dict(width=2), opacity=0.8)
     fig.update_layout(
-        yaxis=dict(
-            categoryorder='array',
-            categoryarray=custom_tone_order,  # specify tone order for y axis
-            autorange=True,
-            fixedrange=True,
-            scaleanchor='y',
-            scaleratio=1,
-            showgrid=True,
-            showticklabels=True
-        ),
-        yaxis_range=[None, None]  # Allow Plotly to determine range
-    )
-    
-    # Update marker properties
-    fig.update_traces(marker=dict(size=25))
-    
-    # Customize layout
-    fig.update_layout(
-        title=f'Progress of Cadences in {composer}: {title}',
-        legend=dict(
-            title_text="Cadence Type",
-        orientation="v"
-        )
-    )
-    
+        width=800, height=650,
+        legend=dict(orientation='h', yanchor='top', y=-0.1, xanchor='center', x=0.5,
+                    title=dict(text=color_grouping.capitalize(), side='top', font_size=12),
+                    bordercolor='black', borderwidth=1, bgcolor='rgba(255,255,255,0.8)'),
+        title=dict(text=chart_title, x=0.5),
+        polar=dict(radialaxis=dict(visible=True, ticksuffix='%')),
+        margin=dict(b=150),
+        showlegend=len(groups) > 1)
     return fig
 
 
@@ -1137,4 +1302,189 @@ def voice_range_chart(voice_ranges_df, final=None, piece_order='mass', sort_voic
                    categoryorder='array', categoryarray=labels),
         height=max(400, 28 * len(labels) + 180), width=1000,
         bargap=0.3, margin=dict(l=250, r=100, t=100, b=50))
+    return fig
+
+
+# melodic species visualizations
+
+def _species_plot_df(species_df):
+    """Drop (and report) intervals with no Octave species."""
+    unmapped = species_df['Octave'].isna()
+    if unmapped.any():
+        print(f"Note: {unmapped.sum()} interval(s) have no Octave species and are not plotted:")
+        print(species_df.loc[unmapped, 'Interval'].value_counts().to_string())
+    df = species_df[~unmapped].copy()
+    if df.empty:
+        raise ValueError('No melodic species to plot.')
+    df['Voice'] = df['Voice'].astype(str)
+    return df
+
+
+def plot_species(species_df, octave_order=species_octave_order, show_voice_detail=True,
+                 progress_bins=5, chart_title=None):
+    """
+    Plot the octave species articulated by melodic leaps across the course of
+    a piece (Progress 0 = start, 1 = end).
+
+    Works with `piece.melodic_species()` or `corpus.melodic_species()`. For a
+    corpus each piece gets its own row, since Progress is measured within each
+    piece.
+
+    Parameters
+    ----------
+    species_df : pandas.DataFrame
+        Output of ImportedPiece.melodic_species or CorpusBase.melodic_species.
+    octave_order : list of str, optional (default sorting_lists.species_octave_order)
+        Bottom-to-top order of octave species on the y axis. Octaves found in
+        the data but not in the list are added at the end.
+    show_voice_detail : bool, optional (default True)
+        True: one dot per interval, colored by voice. False: the piece is cut
+        into `progress_bins` equal sections and each dot's size shows how many
+        intervals articulate that octave in that section.
+    progress_bins : int, optional (default 5)
+        Number of sections when `show_voice_detail=False`.
+    chart_title : str, optional
+        A default naming the piece (for a single piece) is used if omitted.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Examples
+    --------
+    >>> plot_species(piece.melodic_species()).show()
+    >>> plot_species(corpus.melodic_species(), show_voice_detail=False).show()
+    """
+    df = _species_plot_df(species_df)
+    octaves = [o for o in _ordered_with_extras(octave_order, df['Octave']) if o in set(df['Octave'])]
+    n_titles = df['Title'].nunique() if 'Title' in df.columns else 1
+    titles = list(dict.fromkeys(df['Title'])) if n_titles > 1 else []
+    facet = dict(facet_row='Title' if n_titles > 1 else None,
+                 facet_row_spacing=0.25 / n_titles if n_titles > 1 else None)
+
+    if show_voice_detail:
+        voices = sorted(df['Voice'].unique(), key=_voice_sort_key)
+        hover = [c for c in ['Composer', 'Title', 'Measure', 'Beat', 'Interval', 'Species'] if c in df.columns]
+        fig = px.scatter(df, x='Progress', y='Octave', color='Voice', hover_data=hover,
+                         color_discrete_sequence=contrasting_colors,
+                         category_orders={'Octave': octaves, 'Voice': voices, 'Title': titles},
+                         **facet)
+        fig.update_traces(marker=dict(size=12, opacity=0.8))
+        fig.update_xaxes(range=[-0.02, 1.02])
+        legend_title = 'Voice'
+    else:
+        df['Section'] = pd.cut(df['Progress'], bins=progress_bins, include_lowest=True)
+        sections = [str(c) for c in df['Section'].cat.categories]
+        keys = (['Title'] if n_titles > 1 else []) + ['Section', 'Octave']
+        counts = (df.groupby(keys, observed=True)
+                    .agg(Count=('Interval', 'size'),
+                         Intervals=('Interval', lambda s: ', '.join(sorted(s.unique()))),
+                         Measures=('Measure', lambda s: ', '.join(str(int(m)) if float(m).is_integer() else str(m)
+                                                                   for m in sorted(s.unique()))))
+                    .reset_index())
+        counts['Section'] = counts['Section'].astype(str)   # Plotly can't plot Interval objects
+        fig = px.scatter(counts, x='Section', y='Octave', size='Count', size_max=40,
+                         hover_data=['Count', 'Intervals', 'Measures'],
+                         color_discrete_sequence=contrasting_colors,
+                         category_orders={'Octave': octaves, 'Section': sections, 'Title': titles},
+                         **facet)
+        fig.update_xaxes(categoryorder='array', categoryarray=sections, title_text=None)
+        fig.update_layout(xaxis_title='Section of piece (Progress)')   # bottom row only
+        legend_title = None
+
+    _category_yaxis(fig, octaves, title='Octave')
+    if chart_title is None:
+        label = _single_piece_label(df)
+        chart_title = f'Melodic Species in {label}' if label else 'Melodic Species'
+    fig.update_layout(title=chart_title, width=900, height=500, legend_title=legend_title)
+    if n_titles > 1:
+        fig.update_yaxes(title='')
+        _facet_by_title(fig, n_titles, row_height=260)
+    return fig
+
+
+def plot_species_cadences(species_df, cadences_df, title=None, octave_order=species_octave_order,
+                          chart_title=None):
+    """
+    Two-panel chart for one piece: melodic species (top, colored by voice) and
+    cadences (bottom, colored by cadence type) on a shared Progress axis, to
+    compare where octave species and cadence tones fall in the piece.
+
+    Parameters
+    ----------
+    species_df : pandas.DataFrame
+        Output of `piece.melodic_species()` or `corpus.melodic_species()`.
+    cadences_df : pandas.DataFrame
+        Output of `piece.cadences()` or `corpus.cadences()`.
+    title : str, optional
+        Which piece to plot, when the DataFrames hold several (corpus results).
+        Not needed for a single piece.
+    octave_order : list of str, optional (default sorting_lists.species_octave_order)
+        Bottom-to-top order of octave species in the top panel.
+    chart_title : str, optional
+        A default naming the piece is used if omitted.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Examples
+    --------
+    >>> plot_species_cadences(piece.melodic_species(), piece.cadences()).show()
+
+    >>> species, cads = corpus.melodic_species(), corpus.cadences()
+    >>> for t in species['Title'].unique():
+    ...     plot_species_cadences(species, cads, title=t).show()
+    """
+    def _select(df, name):
+        if title is not None:
+            df = df[df['Title'] == title]
+            if df.empty:
+                raise ValueError(f"No {name} for title {title!r}.")
+        elif 'Title' in df.columns and df['Title'].nunique() > 1:
+            raise ValueError(f"{name} holds {df['Title'].nunique()} pieces; pass title= one of: "
+                             + ', '.join(map(repr, df['Title'].unique())))
+        return df
+
+    sp = _species_plot_df(_select(species_df, 'species_df'))
+    cads = _select(cadences_df, 'cadences_df').dropna(subset=['Tone'])
+
+    octaves = [o for o in _ordered_with_extras(octave_order, sp['Octave']) if o in set(sp['Octave'])]
+    tones = [t for t in _ordered_with_extras(cadence_progress_tone_order, cads['Tone']) if t in set(cads['Tone'])]
+    voices = sorted(sp['Voice'].unique(), key=_voice_sort_key)
+    cad_types = [c for c in _ordered_with_extras(cadence_type_order, cads['CadType']) if c in set(cads['CadType'])]
+
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1,
+                        subplot_titles=('Melodic species by voice', 'Cadences by type'))
+    sp_hover = [c for c in ['Measure', 'Beat', 'Interval', 'Species'] if c in sp.columns]
+    fig_sp = px.scatter(sp, x='Progress', y='Octave', color='Voice', hover_data=sp_hover,
+                        color_discrete_sequence=contrasting_colors,
+                        category_orders={'Octave': octaves, 'Voice': voices})
+    for trace in fig_sp.data:
+        trace.update(legendgroup='voices', legendgrouptitle_text='Voice',
+                     marker=dict(size=11, opacity=0.8))
+        fig.add_trace(trace, row=1, col=1)
+
+    cad_hover = [c for c in ['Measure', 'Beat', 'CadType'] if c in cads.columns]
+    fig_cad = px.scatter(cads, x='Progress', y='Tone', color='CadType', hover_data=cad_hover,
+                         color_discrete_map=cadence_type_colors,
+                         category_orders={'Tone': tones, 'CadType': cad_types})
+    for trace in fig_cad.data:
+        trace.update(legendgroup='cadences', legendgrouptitle_text='Cadence Type',
+                     marker=dict(size=14, symbol='diamond', opacity=0.85,
+                                 line=dict(width=1, color='white')))
+        fig.add_trace(trace, row=2, col=1)
+
+    _category_yaxis(fig, octaves, title='Octave', row=1, col=1)
+    _category_yaxis(fig, tones, title='Tone', row=2, col=1)
+    fig.update_xaxes(range=[-0.02, 1.02])
+    fig.update_xaxes(title_text='Progress', row=2, col=1)
+
+    if chart_title is None:
+        label = _single_piece_label(sp) or _single_piece_label(cads)
+        chart_title = f'Melodic Species and Cadences in {label}' if label else 'Melodic Species and Cadences'
+    fig.update_layout(title=chart_title, height=700, width=950,
+                      legend=dict(x=1.02, y=1.0, xanchor='left', yanchor='top',
+                                  groupclick='toggleitem'),
+                      margin=dict(r=220))
     return fig

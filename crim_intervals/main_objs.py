@@ -624,6 +624,65 @@ class ImportedPiece:
         self.analyses[memo_key] = result
         return result.copy()
 
+    def note_weights(self, include_rests=True, key_sig=False, include_final=False):
+        """
+        Weight each pitch class by its total duration in the piece: how much of
+        the piece's time (summed across all voices) is spent on C, D, E-, ...
+
+        Parameters
+        ----------
+        include_rests : bool, optional (default True)
+            Whether to count rests as a pitch class (labeled 'Rest'), or drop
+            them and scale proportions over sounding notes only.
+        key_sig : bool, optional (default False)
+            If True, add a 'key_sig' column with the piece's prevailing key
+            signature (music21 .sharps convention: 0 = none, -1 = one flat).
+        include_final : bool, optional (default False)
+            If True, add a 'final' column with the piece's final (pitch class).
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per pitch class, in pitch-class order, with columns
+            'pitch_class' (music21 spelling, e.g. 'B-'), 'count' (summed
+            duration in quarter notes), 'scaled' (proportion of the total,
+            0 to 1), 'composer', 'title' (and 'final'/'key_sig' if requested).
+            Pass this to `visualizations.radar_note_plot`.
+
+        Examples
+        --------
+        >>> weights = piece.note_weights(include_rests=False)
+        >>> radar_note_plot(weights)
+        """
+        memo_key = ('NoteWeights', include_rests, key_sig, include_final)
+        if memo_key in self.analyses:
+            return self.analyses[memo_key].copy()
+        pc_order = pitch_class_order_with_rests if include_rests else pitch_class_order_no_rests
+        nr = self.notes()
+        # align each note with its own duration by (offset, voice)
+        pairs = pd.concat([nr.stack(), self.durations(df=nr).stack()], axis=1,
+                          keys=['note', 'dur']).dropna()
+        pairs['pitch_class'] = pairs['note'].map(lambda v: extract_letter(v, include_rests=include_rests))
+        pairs = pairs.dropna(subset=['pitch_class'])
+        weights = (pairs.groupby('pitch_class')['dur'].sum().astype(float)
+                        .reset_index().rename(columns={'dur': 'count'}))
+        total = weights['count'].sum()
+        weights['scaled'] = (weights['count'] / total).round(4) if total else 0.0
+        # pitch-class order, with any unexpected spellings kept at the end
+        rank = {pc: i for i, pc in enumerate(pc_order)}
+        weights = (weights.assign(_r=weights['pitch_class'].map(lambda p: rank.get(p, len(rank))))
+                          .sort_values(['_r', 'pitch_class']).drop(columns='_r')
+                          .reset_index(drop=True))
+        weights['composer'] = self.metadata['composer']
+        weights['title'] = self.metadata['title']
+        if include_final:
+            weights['final'] = extract_letter(self.final())
+        if key_sig:
+            ks = self.keySignatures().iloc[:, 0].dropna()
+            weights['key_sig'] = ks.iloc[0] if len(ks) else None
+        self.analyses[memo_key] = weights
+        return weights.copy()
+
     # the mel species method.  the various lists are imported from sorting_lists.py
 
     def melodic_species(self, limit_to_entries=True, 
@@ -2909,7 +2968,8 @@ class ImportedPiece:
         Returns
         -------
         pandas.DataFrame
-            A DataFrame where each row represents a cadence. The columns provide details
+            A DataFrame where each row represents a cadence. The first three columns
+            are Composer, Title and Date (from the source file). The others provide details
             about the cadence, including the CVFs, melodic intervals, measure, beat,
             time signature, sounding pitch, progress, lowest pitch, and relative pitches
             (plus key signature and/or final, if requested).
@@ -2924,13 +2984,23 @@ class ImportedPiece:
         # part of the cache key -- otherwise a cached call without them would be
         # silently reused for a later call requesting them, and vice versa.
         memo_key = ('Cadences', key_sig, include_final)
-        if memo_key in self.analyses:
-            labels = self.analyses[memo_key]
+
+        def _finish(labels):
+            # works on a copy so the cached result is never altered
+            labels = labels.copy()
             if not keep_keys:
                 labels = labels.drop(['Pattern', 'Key'], axis=1)
             if not voice_detail:
                 labels = labels.drop(['PartMap'], axis=1)
+            # add piece metadata, as voice_ranges and melodic_species do, so the
+            # result can go straight to visualizations.cadence_radar etc.
+            labels.insert(0, 'Composer', self.metadata['composer'])
+            labels.insert(1, 'Title', self.metadata['title'])
+            labels.insert(2, 'Date', self.metadata['date'])
             return labels
+
+        if memo_key in self.analyses:
+            return _finish(self.analyses[memo_key])
 
         cvfs = self.cvfs(offsets='last')
         mel = self.melodic('c', True, True)
@@ -3015,11 +3085,7 @@ class ImportedPiece:
         if len(labels.index):
             labels.iat[-1, -1] = self.score.highestTime - labels.index[-1]
         self.analyses[memo_key] = labels
-        if not keep_keys:
-            labels = labels.drop(['Pattern', 'Key'], axis=1)
-        if not voice_detail:
-            labels = labels.drop(['PartMap'], axis=1)
-        return labels
+        return _finish(labels)
 
     # cadence RADAR plots:
 
@@ -4737,10 +4803,9 @@ class CorpusBase:
             convention), repeated on every row for that piece. Defaults to
             False to keep existing output unchanged.
         include_final : bool, optional (default False)
-            If True, add a 'final' column giving each piece's final tone (from
-            ImportedPiece.final()), repeated on every row for that piece. Useful
-            for corpus studies that group or filter results by mode/final.
-            Defaults to False to keep existing output unchanged.
+            If True, add a 'final' column giving each piece's final as a pitch
+            class (e.g. 'G', matching voice_ranges and melodic_species), repeated
+            on every row for that piece. Useful for grouping or filtering by final.
 
         Returns
         -------
@@ -4749,74 +4814,13 @@ class CorpusBase:
             'scaled' (proportion of the piece's total), 'composer', 'title'
             (and 'final'/'key_sig' if requested).
         """
-        pc_order = pitch_class_order_with_rests if include_rests else pitch_class_order_no_rests
-
-        func = ImportedPiece.notes
-        func2 = ImportedPiece.durations
-        list_of_note_dfs = self.batch(func=func, metadata=True)
-        list_of_dur_dfs = self.batch(func=func2, metadata=False)
-        finals = self.batch(func=ImportedPiece.final, metadata=False) if include_final else None
-        key_sigs = [self._prevailing_key_sig(score) for score in self.scores] if key_sig else None
-
-        weighted_note_dfs = []
-        weighted_notes = pd.DataFrame()
-
-        for idx, (a, b) in enumerate(zip(list_of_note_dfs, list_of_dur_dfs)):
-            metadata = a.iloc[1][['Composer', 'Title']].tolist()
-            a = a.drop(columns=['Composer', 'Title', 'Date'])
-
-            melted_notes = a.melt()
-            melted_durs = b.melt()
-
-            note_dur = pd.merge(melted_notes, melted_durs, left_index=True, right_index=True)
-            note_dur = note_dur.dropna()
-
-            note_dur['value_x_clean'] = note_dur['value_x'].apply(
-                lambda v: extract_letter(v, include_rests=include_rests)
-            )
-
-            # Drop only rows where extract_letter returned None
-            # (unrecognized tokens, or rests when include_rests=False)
-            note_dur = note_dur[note_dur['value_x_clean'].notna()]
-
-            note_dur_sums = (
-                note_dur.groupby('value_x_clean')['value_y']
-                        .sum()
-                        .reset_index()
-                        .rename(columns={'value_x_clean': 'pitch_class', 'value_y': 'count'})
-            )
-
-            total_dur = note_dur_sums['count'].sum()
-            note_dur_sums['scaled'] = (note_dur_sums['count'] / total_dur).round(4)
-
-            note_dur_sums['pitch_class'] = pd.Categorical(
-                note_dur_sums['pitch_class'], categories=pc_order, ordered=True
-            )
-            weighted_notes = (note_dur_sums
-                              .sort_values('pitch_class')
-                              .dropna(subset=['pitch_class'])
-                              .copy())
-
-            weighted_notes['composer'] = metadata[0]
-            weighted_notes['title'] = metadata[1]
-            if include_final:
-                weighted_notes['final'] = finals[idx]
-            if key_sig:
-                weighted_notes['key_sig'] = key_sigs[idx]
-            weighted_note_dfs.append(weighted_notes)
-            weighted_notes = pd.concat(weighted_note_dfs, ignore_index=True)
-            weighted_notes = weighted_notes.rename(columns={'index': 'pitch_class'})
-            weighted_notes['pitch_class'] = pd.Categorical(weighted_notes['pitch_class'], categories=pitch_class_order_with_rests, ordered=True)
-
-            # Sort the DataFrame
-            weighted_notes_sorted = weighted_notes.sort_values('pitch_class')
-            weighted_notes_sorted['pitch_class'] = weighted_notes_sorted['pitch_class'].astype(str)
-
-            # Reset the index and correct flat names
-            weighted_notes_sorted = weighted_notes_sorted.reset_index(drop=True)
-            weighted_notes_sorted['pitch_class'] = weighted_notes_sorted['pitch_class'].map(standardize_note)
-
-        return weighted_notes
+        list_of_dfs = self.batch(func=ImportedPiece.note_weights,
+                                 kwargs={'include_rests': include_rests, 'key_sig': key_sig,
+                                         'include_final': include_final},
+                                 metadata=False)
+        if not list_of_dfs:
+            return pd.DataFrame(columns=['pitch_class', 'count', 'scaled', 'composer', 'title'])
+        return pd.concat(list_of_dfs, ignore_index=True)
 
     def mel(self, 
             kind_choice='d', 
@@ -5518,7 +5522,8 @@ class CorpusBase:
             print('\nRunning {} analysis on {} pieces:'.format(func.__name__, len(self.scores)))
         # these methods either have no part-name columns or number their own voices
         if number_parts and func.__name__ in ('cadences', 'presentationTypes', 'lowLine', 'highLine',
-                                              'final', 'voice_ranges', 'melodic_species'):
+                                              'final', 'voice_ranges', 'melodic_species',
+                                              'note_weights'):
             number_parts = False
         for i, score in enumerate(self.scores):
             if verbose:

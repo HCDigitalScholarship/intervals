@@ -1691,9 +1691,15 @@ def plot_species(species_df, octave_order=species_octave_order, show_voice_detai
 def plot_species_cadences(species_df, cadences_df, title=None, octave_order=species_octave_order,
                           chart_title=None):
     """
-    Two-panel chart for one piece: melodic species (top, colored by voice) and
-    cadences (bottom, colored by cadence type) on a shared Progress axis, to
-    compare where octave species and cadence tones fall in the piece.
+    Melodic species (colored by voice) and cadences (colored by cadence type)
+    on a shared Progress axis, to compare where octave species and cadence
+    tones fall in a piece.
+
+    Each piece gets two stacked panels: species above, cadences below. With
+    corpus results (several Titles) every piece is stacked in one tall
+    figure, two rows per piece, unless `title` names just one of them. For a
+    large corpus the figure gets long: pass `title=`, or filter the
+    DataFrames first, to plot fewer pieces.
 
     Parameters
     ----------
@@ -1702,12 +1708,12 @@ def plot_species_cadences(species_df, cadences_df, title=None, octave_order=spec
     cadences_df : pandas.DataFrame
         Output of `piece.cadences()` or `corpus.cadences()`.
     title : str, optional
-        Which piece to plot, when the DataFrames hold several (corpus results).
-        Not needed for a single piece.
+        Plot only this piece, when the DataFrames hold several (corpus
+        results). If omitted, every piece in `species_df` is plotted.
     octave_order : list of str, optional (default sorting_lists.species_octave_order)
-        Bottom-to-top order of octave species in the top panel.
+        Bottom-to-top order of octave species in the species panels.
     chart_title : str, optional
-        A default naming the piece is used if omitted.
+        A default naming the piece (or 'Corpus') is used if omitted.
 
     Returns
     -------
@@ -1718,60 +1724,96 @@ def plot_species_cadences(species_df, cadences_df, title=None, octave_order=spec
     >>> plot_species_cadences(piece.melodic_species(), piece.cadences()).show()
 
     >>> species, cads = corpus.melodic_species(), corpus.cadences()
-    >>> for t in species['Title'].unique():
-    ...     plot_species_cadences(species, cads, title=t).show()
+    >>> plot_species_cadences(species, cads).show()          # every piece, stacked
+    >>> plot_species_cadences(species, cads, title=species['Title'].iloc[0]).show()
     """
-    def _select(df, name):
-        if title is not None:
-            df = df[df['Title'] == title]
-            if df.empty:
-                raise ValueError(f"No {name} for title {title!r}.")
-        elif 'Title' in df.columns and df['Title'].nunique() > 1:
-            raise ValueError(f"{name} holds {df['Title'].nunique()} pieces; pass title= one of: "
-                             + ', '.join(map(repr, df['Title'].unique())))
-        return df
+    has_titles = 'Title' in species_df.columns and 'Title' in cadences_df.columns
+    sp_all, cads_all = species_df, cadences_df
+    if title is not None:
+        if not has_titles:
+            raise ValueError("title= needs a 'Title' column in both DataFrames.")
+        sp_all = species_df[species_df['Title'] == title]
+        cads_all = cadences_df[cadences_df['Title'] == title]
+        if sp_all.empty:
+            raise ValueError(f"No species_df rows for title {title!r}.")
 
-    sp = _species_plot_df(_select(species_df, 'species_df'))
-    cads = _select(cadences_df, 'cadences_df').dropna(subset=['Tone'])
+    sp = _species_plot_df(sp_all)
+    cads = cads_all.dropna(subset=['Tone'])
 
+    # one (species, cadences) pair of rows per piece, in order of appearance
+    if has_titles and sp['Title'].nunique() > 1:
+        pieces = list(sp['Title'].dropna().unique())
+        missing = set(cads['Title'].dropna()) - set(pieces)
+        if missing:
+            print('Titles with cadences but no species (not plotted): '
+                  + ', '.join(map(repr, sorted(missing))))
+        cads = cads[cads['Title'].isin(pieces)]
+        parts = [(t, sp[sp['Title'] == t], cads[cads['Title'] == t]) for t in pieces]
+    else:
+        parts = [(None, sp, cads)]
+    n = len(parts)
+
+    # shared categories and colors, so every piece reads the same way
     octaves = [o for o in _ordered_with_extras(octave_order, sp['Octave']) if o in set(sp['Octave'])]
     tones = [t for t in _ordered_with_extras(cadence_progress_tone_order, cads['Tone']) if t in set(cads['Tone'])]
     voices = sorted(sp['Voice'].unique(), key=_voice_sort_key)
+    voice_colors = {v: contrasting_colors[i % len(contrasting_colors)] for i, v in enumerate(voices)}
     cad_types = [c for c in _ordered_with_extras(cadence_type_order, cads['CadType']) if c in set(cads['CadType'])]
 
-    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1,
-                        subplot_titles=('Melodic species by voice', 'Cadences by type'))
+    if n == 1:
+        subplot_titles = ('Melodic species by voice', 'Cadences by type')
+    else:
+        subplot_titles = []
+        for t, sp_one, _ in parts:
+            label = _single_piece_label(sp_one) or str(t)
+            subplot_titles += [f'{label}: melodic species', f'{label}: cadences']
+    fig = make_subplots(rows=2 * n, cols=1, vertical_spacing=min(0.1, 0.25 / n),
+                        subplot_titles=subplot_titles)
+
     sp_hover = [c for c in ['Measure', 'Beat', 'Interval', 'Species'] if c in sp.columns]
-    fig_sp = px.scatter(sp, x='Progress', y='Octave', color='Voice', hover_data=sp_hover,
-                        color_discrete_sequence=contrasting_colors,
-                        category_orders={'Octave': octaves, 'Voice': voices})
-    for trace in fig_sp.data:
-        trace.update(legendgroup='voices', legendgrouptitle_text='Voice',
-                     marker=dict(size=11, opacity=0.8))
-        fig.add_trace(trace, row=1, col=1)
-
     cad_hover = [c for c in ['Measure', 'Beat', 'CadType'] if c in cads.columns]
-    fig_cad = px.scatter(cads, x='Progress', y='Tone', color='CadType', hover_data=cad_hover,
-                         color_discrete_map=cadence_type_colors,
-                         category_orders={'Tone': tones, 'CadType': cad_types})
-    for trace in fig_cad.data:
-        trace.update(legendgroup='cadences', legendgrouptitle_text='Cadence Type',
-                     marker=dict(size=14, symbol='diamond', opacity=0.85,
-                                 line=dict(width=1, color='white')))
-        fig.add_trace(trace, row=2, col=1)
+    shown = set()
 
-    _category_yaxis(fig, octaves, title='Octave', row=1, col=1)
-    _category_yaxis(fig, tones, title='Tone', row=2, col=1)
-    fig.update_xaxes(range=[-0.02, 1.02])
-    fig.update_xaxes(title_text='Progress', row=2, col=1)
+    def _add(traces, row, kind, order, header, rank_base):
+        # one legend entry per voice / cadence type (toggling it in every
+        # piece), ranked so voices list first, then cadence types
+        for trace in traces:
+            key = (kind, trace.name)
+            pos = order.index(trace.name) if trace.name in order else len(order)
+            trace.update(legendgroup=f'{kind}:{trace.name}', showlegend=key not in shown,
+                         legendrank=rank_base + pos)
+            if key not in shown and pos == 0:
+                trace.update(legendgrouptitle_text=header)
+            shown.add(key)
+            fig.add_trace(trace, row=row, col=1)
+
+    for i, (_, sp_one, cads_one) in enumerate(parts):
+        sp_row, cad_row = 2 * i + 1, 2 * i + 2
+        fig_sp = px.scatter(sp_one, x='Progress', y='Octave', color='Voice', hover_data=sp_hover,
+                            color_discrete_map=voice_colors,
+                            category_orders={'Octave': octaves, 'Voice': voices})
+        fig_sp.update_traces(marker=dict(size=11, opacity=0.8))
+        _add(fig_sp.data, sp_row, 'voice', voices, 'Voice', 1)
+        if not cads_one.empty:
+            fig_cad = px.scatter(cads_one, x='Progress', y='Tone', color='CadType', hover_data=cad_hover,
+                                 color_discrete_map=cadence_type_colors,
+                                 category_orders={'Tone': tones, 'CadType': cad_types})
+            fig_cad.update_traces(marker=dict(size=14, symbol='diamond', opacity=0.85,
+                                              line=dict(width=1, color='white')))
+            _add(fig_cad.data, cad_row, 'cadence', cad_types, 'Cadence Type', 1000)
+        _category_yaxis(fig, octaves, title='Octave', row=sp_row, col=1)
+        _category_yaxis(fig, tones, title='Tone', row=cad_row, col=1)
+        fig.update_xaxes(title_text='Progress', row=cad_row, col=1)
+    fig.update_xaxes(range=[-0.02, 1.02], matches='x')   # zoom all panels together
+    fig.layout.xaxis.matches = None
 
     if chart_title is None:
-        label = _single_piece_label(sp) or _single_piece_label(cads)
+        label = _piece_label(sp) or _piece_label(cads)
         chart_title = f'Melodic Species and Cadences in {label}' if label else 'Melodic Species and Cadences'
     chart_title = _settings_title(chart_title, _data_settings(species_df) + [
-        f'{len(sp)} leaps', f'{len(cads)} cadences'])
-    fig.update_layout(title=chart_title, height=700, width=950,
+        f'{len(sp)} leaps', f'{len(cads)} cadences', _n_pieces(sp)])
+    fig.update_layout(title=chart_title, height=700 if n == 1 else 150 + 560 * n, width=950,
                       legend=dict(x=1.02, y=1.0, xanchor='left', yanchor='top',
-                                  groupclick='toggleitem'),
+                                  groupclick='togglegroup', tracegroupgap=0),
                       margin=dict(r=220))
     return fig

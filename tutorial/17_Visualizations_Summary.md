@@ -76,7 +76,7 @@ viz.cadence_radar(corpus.cadences())     # a corpus: one polygon per piece
 | `viz.radar_note_plot` | `piece.note_weights()` / `corpus.note_weights()` | Share of time spent on each pitch class |
 | `viz.voice_range_chart` | `piece.voice_ranges()` / `corpus.voice_ranges()` | Range of each voice |
 | `viz.plot_species` | `piece.melodic_species()` / `corpus.melodic_species()` | Octave species articulated by melodic leaps |
-| `viz.plot_species_cadences` | `melodic_species()` **and** `cadences()` | Species and cadences on one timeline (one piece at a time) |
+| `viz.plot_species_cadences` | `melodic_species()` **and** `cadences()` | Species and cadences on one timeline (a pair of panels per piece) |
 | `viz.sonority_ngram_progress` | `piece.sonority_ngrams()` / `corpus.sonority_ngrams()` | Where each sonority n-gram occurs and recurs |
 
 Each chart's title names the piece (or says "Corpus"), and a smaller line beneath it lists the **settings** behind the chart: first those used to make the data (for example `all leaps` for `melodic_species(limit_to_entries=False)`, or `melodic: diatonic, directed, compound · n = 4` for n-grams), then the chart's own options (tone order, count filters, number of pieces, and so on). The data settings come from a note that CRIM Intervals attaches to each result; see [Which Settings Made This Result?](/tutorial/01_Introduction_and_Corpus.md#which-settings-made-this-result-get_settings) in the introduction. If you pass your own `chart_title`, the settings line is still added beneath it.
@@ -642,13 +642,25 @@ viz.plot_species_cadences(piece.melodic_species(limit_to_entries=False), piece.c
 
 ![Melodic species and cadences in one piece](images/vis_species_cadences.png)
 
-This chart shows one piece at a time. With corpus results, name the piece with `title=`, or loop over the titles:
+With corpus results, every piece is stacked in one tall figure: two panels per piece (species above, cadences below), each labeled with the piece's name. All the panels share the same voice and cadence colors, the same Octave and Tone order, and a single legend, and zooming on Progress in one panel zooms them all:
 
 ```python
 species = corpus.melodic_species(limit_to_entries=False)
 cadences = corpus.cadences()
-for title in species['Title'].unique():
-    viz.plot_species_cadences(species, cadences, title=title).show()
+viz.plot_species_cadences(species, cadences)
+```
+
+The figure grows by about 560 pixels per piece, so with a large corpus it gets long. To plot just one piece from the corpus, name it with `title=`:
+
+```python
+viz.plot_species_cadences(species, cadences, title=species['Title'].iloc[0])
+```
+
+Or filter both DataFrames to a few pieces first:
+
+```python
+kyries = species['Title'].str.contains('Kyrie')
+viz.plot_species_cadences(species[kyries], cadences[cadences['Title'].str.contains('Kyrie')])
 ```
 
 

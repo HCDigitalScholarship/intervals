@@ -315,13 +315,18 @@ viz.plot_species_cadences(piece.melodic_species(limit_to_entries=False), piece.c
 
 In this Credo, the G and D cadences sit alongside the many GDG and DAD leaps, while the stretch of cadences on B-flat (around the middle of the piece) coincides with more BbFBb leaps.
 
-The chart shows one piece at a time. With corpus results, name the piece with `title=`, or loop over the titles:
+With corpus results, every piece is stacked in one tall figure: two panels per piece (species above, cadences below), each labeled with the piece's name. All the panels share the same voice and cadence colors, the same Octave and Tone order, and a single legend, so you can compare pieces as you scroll down:
 
 ```python
 species_df = corpus.melodic_species(limit_to_entries=False)
 cadences = corpus.cadences()
-for title in species_df['Title'].unique():
-    viz.plot_species_cadences(species_df, cadences, title=title).show()
+viz.plot_species_cadences(species_df, cadences)
+```
+
+The figure grows by about 560 pixels per piece, so with a large corpus it gets long. To plot just one piece from the corpus, name it with `title=`:
+
+```python
+viz.plot_species_cadences(species_df, cadences, title=species_df['Title'].iloc[0])
 ```
 
 See [11_Cadences](/tutorial/11_Cadences.md) for more about cadences.

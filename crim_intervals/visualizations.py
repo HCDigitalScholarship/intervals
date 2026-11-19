@@ -978,6 +978,118 @@ def cadence_progress(cadences, chart_title=None):
     return fig
 
 
+# sonority ngram progress viz
+def sonority_ngram_progress(son_ngrams, min_count=1, max_count=None, top_n=None,
+                            patterns=None, order='first', facet=False, chart_title=None):
+    """
+    Scatter plot of sonority n-grams across the course of a piece: Progress
+    (0 = start, 1 = end) on the x axis, each n-gram pattern (Low_Sonority) on
+    the y axis, colored by piece. Each pattern has its own row, so a pattern
+    that recurs shows up as several dots on one horizontal line.
+
+    Works with the output of `corpus.sonority_ngrams()` for one piece
+    (`CorpusBase([path])`) or many.
+
+    Parameters
+    ----------
+    son_ngrams : pandas.DataFrame
+        Output of CorpusBase.sonority_ngrams (with include_progress=True, the
+        default). Needs 'Progress' and 'Low_Sonority' columns.
+    min_count, max_count : int, optional
+        Keep only patterns whose total count (across all pieces given) is in
+        this range. max_count=None means no upper limit.
+    top_n : int, optional
+        After the count filter, keep only the N most frequent patterns.
+    patterns : list of str, optional
+        Keep only these Low_Sonority patterns (applied before the count filter).
+    order : {'first', 'count', 'alpha'}, optional (default 'first')
+        How the patterns (rows) are stacked on the y axis, bottom to top:
+        'first' - order of first appearance (piece order, then Progress). New
+                  material climbs diagonally; a return to an earlier pattern
+                  falls back to that pattern's lower row.
+        'count' - least to most frequent, so the most frequent patterns are at
+                  the top; ties are in order of first appearance.
+        'alpha' - alphabetical.
+    facet : bool, optional (default False)
+        If True and there are several pieces, give each piece its own row
+        instead of overlaying them.
+    chart_title : str, optional
+        A default naming the piece (for a single piece) is used if omitted.
+
+    Returns
+    -------
+    plotly.graph_objects.Figure
+
+    Examples
+    --------
+    >>> son = corpus.sonority_ngrams(ngram_length=4)
+    >>> sonority_ngram_progress(son, min_count=3).show()
+    >>> sonority_ngram_progress(son, top_n=20, order='count').show()
+    >>> sonority_ngram_progress(son, min_count=2, facet=True).show()
+    """
+    missing = [c for c in ['Progress', 'Low_Sonority'] if c not in son_ngrams.columns]
+    if missing:
+        raise ValueError(f"son_ngrams is missing {missing}; use the output of "
+                         "corpus.sonority_ngrams(include_progress=True)")
+    if order not in ('first', 'count', 'alpha'):
+        raise ValueError("order must be 'first', 'count' or 'alpha'")
+    df = son_ngrams.dropna(subset=['Low_Sonority']).copy()   # never alter the caller's data
+    df = df[df['Low_Sonority'].astype(str) != '']
+    if patterns is not None:
+        df = df[df['Low_Sonority'].isin(list(patterns))]
+
+    totals = df['Low_Sonority'].value_counts()
+    keep = totals[totals >= min_count]
+    if max_count is not None:
+        keep = keep[keep <= max_count]
+    if top_n is not None:
+        keep = keep.head(top_n)
+    if keep.empty:
+        raise ValueError('No sonority n-grams match these filters '
+                         f'(pattern counts range from {totals.min() if len(totals) else 0} '
+                         f'to {totals.max() if len(totals) else 0}).')
+    df = df[df['Low_Sonority'].isin(keep.index)]
+    df['Count'] = df['Low_Sonority'].map(keep)
+
+    # y-axis categories run bottom-to-top in this order
+    first_seen = list(dict.fromkeys(df['Low_Sonority']))
+    if order == 'first':
+        pattern_order = first_seen
+    elif order == 'alpha':
+        pattern_order = sorted(first_seen, key=str)
+    else:
+        rank = {p: i for i, p in enumerate(first_seen)}
+        pattern_order = sorted(first_seen, key=lambda p: (keep[p], rank[p]))
+
+    has_title = 'Title' in df.columns
+    titles = list(dict.fromkeys(df['Title'])) if has_title else []
+    n_titles = len(titles) if has_title else 1
+    do_facet = facet and n_titles > 1
+
+    hover = {c: True for c in ['Composer', 'Title', 'Measure', 'Beat', 'Count'] if c in df.columns}
+    fig = px.scatter(df, x='Progress', y='Low_Sonority',
+                     color='Title' if has_title else None,
+                     facet_row='Title' if do_facet else None,
+                     facet_row_spacing=0.25 / n_titles if do_facet else None,
+                     hover_data=hover,
+                     color_discrete_sequence=contrasting_colors,
+                     category_orders={'Low_Sonority': pattern_order, 'Title': titles})
+    fig.update_traces(marker=dict(size=12, opacity=0.8, line=dict(width=1, color='white')))
+    _category_yaxis(fig, pattern_order, title='Sonority N-gram' if not do_facet else '')
+    fig.update_xaxes(range=[-0.02, 1.02])
+
+    if chart_title is None:
+        label = _single_piece_label(df)
+        chart_title = f'Sonority N-grams in {label}' if label else 'Sonority N-grams'
+    row_height = max(250, 22 * len(pattern_order) + 100)
+    fig.update_layout(title=chart_title, width=1200, height=row_height + 150,
+                      legend=dict(title_text='Title'),
+                      showlegend=has_title and n_titles > 1)
+    if do_facet:
+        _facet_by_title(fig, n_titles, row_height=row_height)
+    return fig
+
+
 def cadence_bar_chart(cadences, by='CadType', percent=True, groupby_column='Title',
                       tone_ordering='Diatonic', chart_title=None):
     """

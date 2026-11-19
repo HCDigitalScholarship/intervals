@@ -5261,10 +5261,9 @@ class CorpusBase:
         list_combined_dfs = []
         for pair in paired_dfs:
             sonorities_with_bass = pd.merge(pair[0], pair[1], left_index=True, right_index=True, how='left')
+            sonorities_with_bass['Low Line'] = sonorities_with_bass['Low Line'].fillna('Held')
+            sonorities_with_bass['Low_Sonority'] = sonorities_with_bass['Low Line'] + "_" + sonorities_with_bass['Sonority']
             list_combined_dfs.append(sonorities_with_bass)
-            for df in list_combined_dfs:
-                df['Low Line'].fillna('Held', inplace=True)
-                df['Low_Sonority'] = df['Low Line'] + "_" + df['Sonority']
 
         func3 = ImportedPiece.ngrams
         list_of_son_bass_ngrams_dfs = self.batch(func=func3,

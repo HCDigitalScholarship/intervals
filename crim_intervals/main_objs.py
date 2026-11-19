@@ -2986,6 +2986,7 @@ class ImportedPiece:
         res.iloc[:] = 'Close'
         return pd.DataFrame(res)
 
+    @_records_settings('cadences', ('keep_keys', 'voice_detail', 'key_sig', 'include_final'), inherit=())
     def cadences(self, keep_keys=False, voice_detail=False, key_sig=False, include_final=False):
         """
         Analyzes the realized, evaded, and abandoned cadences in the score and returns
@@ -3955,6 +3956,9 @@ class ImportedPiece:
             parallel_voice = None
         return parallel_voice
 
+    @_records_settings('presentationTypes',
+                       ('kind', 'end', 'melodic_ngram_length', 'limit_to_entries', 'body_flex',
+                        'head_flex', 'include_hidden_types', 'combine_unisons'), inherit=())
     def presentationTypes(self, kind='d', end=False, melodic_ngram_length=4, limit_to_entries=True,
                           body_flex=0, head_flex=1, include_hidden_types=False,
                           combine_unisons=False):

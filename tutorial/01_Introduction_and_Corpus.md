@@ -309,6 +309,23 @@ get_settings(ngrams)
 
 There is one entry for each step that produced the result, here `melodic()` and then `ngrams()`, each with the parameters it used (including the defaults you didn't change). Each step passes the earlier settings on, so the note grows as you chain methods together: `detailIndex()` keeps it, and the corpus methods (such as `corpus.melodic_ngrams()` or `corpus.sonority_ngrams()`) keep it too, when every piece was analyzed with the same settings.
 
+Results that build on several steps internally, such as presentation types and cadences, record the settings you passed to them (again including the defaults):
+
+```python
+pt = piece.presentationTypes(limit_to_entries=True, head_flex=1, body_flex=0,
+                             include_hidden_types=False, combine_unisons=True,
+                             melodic_ngram_length=4)
+get_settings(pt)
+```
+
+```
+{'presentationTypes': {'kind': 'd', 'end': False, 'melodic_ngram_length': 4,
+                       'limit_to_entries': True, 'body_flex': 0, 'head_flex': 1,
+                       'include_hidden_types': False, 'combine_unisons': True}}
+```
+
+`get_settings(piece.cadences())` works the same way, and both `corpus.presentation_types()` and `corpus.cadences()` keep the settings too.
+
 The **charts** read this note: the line under each chart's title lists the settings that produced it (for example `melodic: diatonic, directed, compound · n = 4`), followed by the chart's own options. See [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md#ready-made-chart-functions).
 
 Good to know:

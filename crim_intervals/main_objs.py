@@ -3866,14 +3866,14 @@ class ImportedPiece:
         ng_durs = self.durations(df=entries)
         points = pd.DataFrame(columns=['Composer',
                     'Title',
+                    'Presentation_Type',
                     'First_Offset',
                     'Measures_Beats',
                     'Melodic_Entry_Intervals',
                     'Offsets',
                     'Soggetti',
                     'Time_Entry_Intervals',
-                    'Voices',
-                    'Presentation_Type'])
+                    'Voices'])
         points2 = pd.DataFrame()
         # defines column order in final df
         # others are at the end for the overlapping entries

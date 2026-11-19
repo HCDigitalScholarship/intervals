@@ -109,28 +109,33 @@ cadence_type_order = ['Authentic', 'Evaded Authentic', 'Abandoned Authentic',
     'Phrygian', 'Evaded Phrygian', 'Abandoned Phrygian',
     'Reinterpreted', 'Evaded Reinterpreted', 'Quince', 'Evaded Quince', 'Leaping Contratenor']
 
-cadence_type_colors = {'Authentic': '#FF0000',
-    'Clausula Vera': '#0000FF',
-    'Double Leading Tone': '#00FF00',
-    'Altizans Only': '#800080',
-    'Phrygian': '#00FF00',
-    'Reinterpreted': '#00FFFF',
-    'Quince': '#4B0082',
-    'Leaping Contratenor': '#000000',
-    'Phrygian Clausula Vera': '#FF00FF',
-    'Evaded Authentic': '#FF6666',
-    'Evaded Clausula Vera': '#6666FF',
-    'Evaded Double Leading Tone': '#66FF66',
-    'Evaded Altizans Only': '#CC99CC',
-    'Evaded Phrygian': '#66FF66',
-    'Evaded Reinterpreted': '#99FFFF',
-    'Evaded Quince': '#9966CC',
-    'Evaded Phrygian Clausula Vera': '#FF66FF',
-    'Abandoned Clausula Vera': '#CCCCFF',
-    'Abandoned Double Leading Tone': '#CCFFCC',
-    'Abandoned Phrygian': '#FFE5CC',
-    'Abandoned Authentic': '#FFCCCC',
-    'Abandoned Phrygian Clausula Vera': '#FFCCFF'}
+# One color per cadence family, from the same Paul Tol palette as
+# visualizations.contrasting_colors, so cadence charts match the others.
+_cadence_family_colors = {
+    'Authentic': '#4477AA',               # blue
+    'Clausula Vera': '#CC6677',           # rose
+    'Phrygian Clausula Vera': '#AA3377',  # purple
+    'Double Leading Tone': '#228833',     # green
+    'Altizans Only': '#EE6633',           # orange
+    'Phrygian Altizans': '#DDAA33',       # ochre (a deeper Tol sand, readable on white)
+    'Phrygian': '#332288',                # indigo
+    'Reinterpreted': '#44AA99',           # teal
+    'Quince': '#8C510A',                  # brown
+    'Leaping Contratenor': '#555555',     # charcoal
+}
+
+
+def _tint(hex_color, amount):
+    """Mix a '#RRGGBB' color with white; amount 0 = unchanged, 1 = white."""
+    rgb = [int(hex_color[i:i + 2], 16) for i in (1, 3, 5)]
+    return '#' + ''.join(f'{round(c + (255 - c) * amount):02X}' for c in rgb)
+
+
+cadence_type_colors = {}
+for _family, _color in _cadence_family_colors.items():
+    cadence_type_colors[_family] = _color
+    cadence_type_colors['Evaded ' + _family] = _tint(_color, 0.4)
+    cadence_type_colors['Abandoned ' + _family] = _tint(_color, 0.65)
 
 
 # REST tokens as seen in CRIM Intervals output

@@ -21,11 +21,12 @@ Read the [API documentation for CRIM Intervals on Github](https://hcdigitalschol
 12. [Piece Metadata and Batch Methods: The `metadata` Parameter](#piece-metadata-and-batch-methods--the-metadata-parameter)
 13. [Tracking Batch Processing Errors: The `verbose` Parameter](#tracking-batch-processing-errors--the-verbose-parameter)
 14. [Voice Part Names vs Staff Position in Batch Processing: The `number_parts` Parameter](#voice-part-names-vs-staff-position-in-batch-processing--the-number_parts-parameter)
-15. [Exporting CRIM Intervals Results](#exporting-crim-intervals-results)
-16. [Export to CSV](#export-to-csv)
-17. [Export to Excel](#export-to-excel)
-18. [Help and Documentation](#help-and-documentation)
-19. [Sections in this guide](#sections-in-this-guide)
+15. [Which Settings Made This Result? `get_settings()`](#which-settings-made-this-result-get_settings)
+16. [Exporting CRIM Intervals Results](#exporting-crim-intervals-results)
+17. [Export to CSV](#export-to-csv)
+18. [Export to Excel](#export-to-excel)
+19. [Help and Documentation](#help-and-documentation)
+20. [Sections in this guide](#sections-in-this-guide)
 
 ## File Types Compatible with CRIM Intervals
 
@@ -285,6 +286,39 @@ To keep the **original part names** in the columns, set `number_parts` parameter
 ```python
 list_of_dfs_with_original_part_names = corpus.batch(ImportedPiece.melodic, number_parts = False)
 ```
+
+
+## Which Settings Made This Result? `get_settings()`
+
+A DataFrame of melodic n-grams looks much the same whether the intervals were diatonic or chromatic, or the n-grams 4 or 5 long. So CRIM Intervals keeps a note of the settings, attached to the DataFrame itself. This note is not a column and does not appear when you display the results; you see it with `get_settings()`:
+
+```python
+from crim_intervals import *
+
+piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')
+mel = piece.melodic(kind='d', end=False)
+ngrams = piece.ngrams(df=mel, n=4)
+
+get_settings(ngrams)
+```
+
+```
+{'melodic': {'kind': 'd', 'directed': True, 'compound': True, 'unit': 0, 'end': False},
+ 'ngrams': {'n': 4, 'exclude': ['Rest'], 'interval_settings': ('d', True, True), 'offsets': 'first'}}
+```
+
+There is one entry for each step that produced the result, here `melodic()` and then `ngrams()`, each with the parameters it used (including the defaults you didn't change). Each step passes the earlier settings on, so the note grows as you chain methods together: `detailIndex()` keeps it, and the corpus methods (such as `corpus.melodic_ngrams()` or `corpus.sonority_ngrams()`) keep it too, when every piece was analyzed with the same settings.
+
+The **charts** read this note: the line under each chart's title lists the settings that produced it (for example `melodic: diatonic, directed, compound · n = 4`), followed by the chart's own options. See [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md#ready-made-chart-functions).
+
+Good to know:
+
+* **Filtering keeps it.** Selecting rows (`ngrams[ngrams['Title'] == 'Ave Maria']`), `.copy()`, `reset_index()` and the like all keep the settings.
+* **Saving drops it.** CSV and Excel files store only the table, so a DataFrame read back from a file has no settings (charts made from it simply list fewer of them). If you need a record, save it alongside, for instance in the file name or a note.
+* **New tables start fresh.** A table you build from the results (with `groupby(...).size()`, for example) is a new DataFrame, without the note.
+* **Combining different settings drops it.** If you combine results made with *different* settings (say, `n=4` for one piece and `n=5` for another) with `pd.concat`, the combined DataFrame has no settings, since no single description fits it.
+
+The note is stored in the DataFrame's `attrs`, a dictionary pandas provides for this kind of information: `ngrams.attrs` shows it in its raw form, under the key `'crim_settings'`.
 
 
 ## Exporting CRIM Intervals Results

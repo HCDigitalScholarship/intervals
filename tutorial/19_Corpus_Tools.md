@@ -235,11 +235,11 @@ Returns:
 
 Typical use: `corpus.sonority_ngrams(ngram_length=4, metadata_choice=True, include_offset=False, include_progress=True, compound=True, sort=False, minimum_beat_strength=0.0, key_sig=False, include_final=False)`
 
-Generates sonority n-grams in a corpus. Each item pairs the sonority (all tones sounding at a moment) with the melodic interval of the lowest voice. You can leave out sonorities on weak beats with `minimum_beat_strength`. These n-grams are useful for finding repeated blocks of sonorities within and among pieces, whatever voices they are heard in.
+Generates sonority n-grams in a corpus. Each item pairs the sonority (all tones sounding at a moment) with the melodic interval of the lowest voice. You can leave out sonorities on weak beats with `minimum_beat_strength`. These n-grams are useful for finding repeated blocks of sonorities within and among pieces, whatever voices they are heard in. The same method works on a single piece (`piece.sonority_ngrams(...)`), and `viz.sonority_ngram_progress()` charts the result (see [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md#sonority-n-grams-with-the-bass-line)).
 
 Parameters:
 - `ngram_length` (int): Length of n-grams to generate (default: 4)
-- `metadata_choice` (bool): Whether to include `Composer`, `Title`, and `Date` (default: True)
+- `metadata_choice` (bool): Whether to include `Composer`, `Title`, and `Date` (default: True). For a corpus these columns are always included, since they tell the pieces apart.
 - `include_offset` (bool): Whether to include the offset as well as the measure and beat (default: False)
 - `include_progress` (bool): Whether to include the `Progress` column, which runs from 0 to 1 through the piece (default: True)
 - `compound` (bool): Whether to allow compound intervals (default: True)

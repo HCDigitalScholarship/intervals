@@ -361,7 +361,29 @@ def ngrams_color_helper(new_processed_ngrams_df: pd.DataFrame) -> pd.DataFrame:
     """
     return color_manager.assign_colors_to_dataframe(new_processed_ngrams_df)
 
-def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False, title=None, style='color'):
+def _ngram_chart_settings(ngrams_df, selected_patterns=None, voices=None, extra=()):
+    """Settings phrases for an n-gram chart: how the n-grams were made
+    (recorded on ngrams_df), then the chart's own filters."""
+    parts = _data_settings(ngrams_df)
+    if selected_patterns:
+        k = len(selected_patterns)
+        parts.append(f"{k} selected pattern{'s' if k > 1 else ''}")
+    if voices:
+        parts.append('voices: ' + ', '.join(map(str, voices)))
+    return parts + [p for p in extra if p]
+
+
+def _altair_title(title, parts):
+    """Altair title with the settings as a subtitle (None if neither)."""
+    parts = [p for p in parts if p]
+    if title is None and not parts:
+        return None
+    return alt.TitleParams(text=title or 'N-grams', subtitle=' · '.join(parts) if parts else alt.Undefined,
+                           anchor='start')
+
+
+def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False, title=None, style='color',
+                            settings=()):
     """
     Plot a heatmap for crim-intervals getNgram's processed output. Pass
     style='greyscale' for a hatch-patterned, grey-shaded Plotly chart instead
@@ -416,8 +438,8 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
             )
         else:
             chart = heatmap
-        if title is not None:
-            chart.update_layout(title=title)
+        if title is not None or settings:
+            chart.update_layout(title=_settings_title(title or 'N-grams', settings))
         return chart
 
     if includeCount:
@@ -427,9 +449,10 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
     else:
         chart = heatmap
 
-    # Apply title if provided
-    if title is not None:
-        chart = chart.properties(title=title)
+    # title, with the settings as a subtitle
+    alt_title = _altair_title(title, settings)
+    if alt_title is not None:
+        chart = chart.properties(title=alt_title)
 
     return chart
 
@@ -439,21 +462,30 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     Plot a heatmap for crim-intervals getNgram's output. Pass style='greyscale'
     for a hatch-patterned, grey-shaded Plotly chart instead of the default
     color-coded Altair chart (see create_heatmap).
+
+    The settings used to make the n-grams (recorded on `ngrams_df` by
+    melodic/harmonic/ngrams, see `get_settings`) and the patterns and voices
+    selected here are shown below the title.
     """
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
                                           selected_pattern=selected_patterns, voices=voices)
     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width,
-                                 heatmap_height=heatmap_height, includeCount=includeCount, title=title, style=style)
+                                 heatmap_height=heatmap_height, includeCount=includeCount, title=title, style=style,
+                                 settings=_ngram_chart_settings(ngrams_df, selected_patterns, voices))
 
 def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], chart_width=800,
-                        chart_height=300):
+                        chart_height=300, title=None):
     """
-    Plot a bar chart for crim-intervals getNgram's output.
+    Plot a bar chart for crim-intervals getNgram's output. The settings used
+    to make the n-grams, and the patterns and voices selected, are shown below
+    the title.
     """
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
                                           selected_pattern=selected_patterns,
                                           voices=voices)
-    return _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=chart_width, chart_height=chart_height)
+    chart = _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=chart_width, chart_height=chart_height)
+    alt_title = _altair_title(title, _ngram_chart_settings(ngrams_df, selected_patterns, voices))
+    return chart.properties(title=alt_title) if alt_title is not None else chart
 
 def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300):
     """
@@ -639,9 +671,11 @@ def _close_match(ngrams_df, key_pattern):
 
 
 def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selected_patterns=[], voices=[],
-                             heatmap_width=800, heatmap_height=300):
+                             heatmap_width=800, heatmap_height=300, title=None):
     """
     Plot how closely the other vectors match a selected vector.
+    The settings used to make the n-grams and the key pattern are shown below
+    the title.
     Uses the Levenshtein distance.
     :param ngrams_df: crim-intervals getNgram's output
     :param key_pattern: a pattern the users selected to compare other patterns with (tuple of floats)
@@ -677,8 +711,11 @@ def plot_close_match_heatmap(ngrams_df, key_pattern, ngrams_duration=None, selec
             voices = None
     y = alt.Y("voice", sort=voices)
 
-    return create_heatmap('start', 'end', y, 'score', score_ngrams, heatmap_width, heatmap_height,
-                          alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
+    chart = create_heatmap('start', 'end', y, 'score', score_ngrams, heatmap_width, heatmap_height,
+                           alt.datum.score > selector.cutoff, selector, tooltip=['start', 'end', 'pattern', 'score'])
+    settings = _ngram_chart_settings(ngrams_df, selected_patterns, voices,
+                                     extra=['compared with ' + ', '.join(str(x) for x in key_pattern)])
+    return chart.properties(title=_altair_title(title or 'Close Matches', settings))
 
 
 def generate_ngrams_and_duration(piece, df, n=3, exclude=['Rest'],
@@ -817,6 +854,80 @@ def _single_piece_label(df):
     return str(title)
 
 
+def _piece_label(df, title_col='Title', composer_col='Composer'):
+    """'Composer: Title' for one piece, 'Corpus' for several, None if unknown."""
+    if title_col not in df.columns:
+        return None
+    if df[title_col].nunique() > 1:
+        return 'Corpus'
+    return _single_piece_label(df.rename(columns={title_col: 'Title', composer_col: 'Composer'}))
+
+
+def _n_pieces(df, title_col='Title'):
+    n = df[title_col].nunique() if title_col in df.columns else 1
+    return f'{n} pieces' if n > 1 else None
+
+
+_KIND_LABELS = {'q': 'with quality', 'd': 'diatonic', 'c': 'chromatic', 's': 'chromatic',
+                'z': 'zero-based'}
+
+
+def _interval_label(s):
+    kind = str(s.get('kind', 'q'))[:1].lower()
+    compound = s.get('compound', True)
+    return ', '.join([_KIND_LABELS.get(kind, kind),
+                      'directed' if s.get('directed', True) else 'undirected',
+                      'simple' if compound in (False, 'simple') else 'compound'])
+
+
+def _data_settings(df):
+    """
+    Describe the analysis settings recorded on a CRIM Intervals result
+    (see main_objs.get_settings) as short phrases for a chart's settings line.
+    """
+    s = getattr(df, 'attrs', {}).get('crim_settings', {})
+    parts = []
+    notes = s.get('notes', {})
+    if notes.get('combineUnisons'):
+        parts.append('unisons combined')
+    if 'melodic' in s:
+        m = s['melodic']
+        parts.append('melodic: ' + _interval_label(m) + (f", unit {m['unit']}" if m.get('unit') else ''))
+    if 'harmonic' in s:
+        h = s['harmonic']
+        parts.append('harmonic: ' + _interval_label(h) + (', against lowest voice' if h.get('againstLow') else ''))
+    if 'sonorities' in s:
+        so = s['sonorities']
+        parts.append('sonorities: ' + ('simple' if so.get('compound') in (False, 'simple') else 'compound')
+                     + (', sorted' if so.get('sort') else ', unsorted'))
+    if 'ngrams' in s:
+        n = s['ngrams'].get('n')
+        parts.append('longest n-grams' if n == -1 else f'n = {n}')
+    if 'entries' in s:
+        e = s['entries']
+        if e.get('n') is not None and 'ngrams' not in s:
+            parts.append(f"n = {e['n']}")
+        parts.append('thematic entries' if e.get('thematic') else 'entries only')
+    if 'sonority_ngrams' in s:
+        g = s['sonority_ngrams']
+        parts += [f"n = {g['ngram_length']}", f"min. beat strength = {g['minimum_beat_strength']}",
+                  'compound' if g['compound'] else 'simple', 'sorted' if g['sort'] else 'unsorted']
+    if 'melodic_species' in s:
+        parts.append('entries only' if s['melodic_species'].get('limit_to_entries') else 'all leaps')
+    if 'voice_ranges' in s:
+        v = s['voice_ranges']
+        parts.append(f"range of top {v.get('top_n')} pitches")
+        if v.get('final') is not None:
+            parts.append(f"final: {v['final']}")
+    return parts
+
+
+def _settings_title(title, parts):
+    """Plotly title with a second, smaller line listing the settings."""
+    parts = [p for p in parts if p]
+    return f"{title}<br><sup>{' · '.join(parts)}</sup>" if parts else title
+
+
 def _category_yaxis(fig, categories, **kwargs):
     """Fix a categorical y axis to show every category (bottom to top in the
     given order). Without an explicit range, Plotly sizes shared facet axes
@@ -835,7 +946,8 @@ def _facet_by_title(fig, n_titles, row_height):
             top = centers.get(round(a.y, 3), a.y)
             a.update(text='<b>' + a.text.split('=', 1)[1] + '</b>', textangle=0,
                      x=0, xanchor='left', y=top, yanchor='bottom', font_size=13)
-    fig.update_layout(height=max(450, row_height * n_titles + 150))
+    # extra top margin: room for a settings line above the first panel title
+    fig.update_layout(height=max(450, row_height * n_titles + 150), margin=dict(t=130))
     return fig
 
 
@@ -895,10 +1007,14 @@ def cadence_radar(cadences, groupby_column='Title', tone_ordering='Diatonic',
     grouped['Percentage'] = (grouped['count'] / totals * 100).round(1)
 
     if chart_title is None:
-        label = _single_piece_label(cadences)
+        label = _piece_label(cadences)
         chart_title = f'Cadence Tones in {label}' if label else 'Cadence Tones'
-        if isinstance(tone_ordering, str):
-            chart_title += f' ({tone_ordering} order)'
+    chart_title = _settings_title(chart_title, [
+        f'{len(cads)} cadences',
+        f'tone order: {tone_ordering}' if isinstance(tone_ordering, str) else 'custom tone order',
+        'all tones' if not limit_to_active else None,
+        f'grouped by {groupby_column}' if groupby_column != 'Title' else None,
+        _n_pieces(cadences)])
 
     fig = px.line_polar(grouped, r='Percentage', theta='Tone', line_close=True,
                         color=groupby_column, markers=True,
@@ -913,7 +1029,7 @@ def cadence_radar(cadences, groupby_column='Title', tone_ordering='Diatonic',
                     bordercolor='black', borderwidth=1, bgcolor='rgba(255,255,255,0.8)'),
         title=dict(text=chart_title, x=0.5),
         polar=dict(radialaxis=dict(visible=True, ticksuffix='%')),
-        margin=dict(b=150),
+        margin=dict(b=150, t=130),
         showlegend=len(groups) > 1)
     return fig
 
@@ -968,8 +1084,9 @@ def cadence_progress(cadences, chart_title=None):
     fig.update_xaxes(range=[-0.02, 1.02])
 
     if chart_title is None:
-        label = _single_piece_label(df)
+        label = _piece_label(df)
         chart_title = f'Progress of Cadences in {label}' if label else 'Progress of Cadences'
+    chart_title = _settings_title(chart_title, [f'{len(df)} cadences', _n_pieces(df)])
     fig.update_layout(title=chart_title, width=900, height=500,
                       legend=dict(title_text='Cadence Type', orientation='v'))
     if n_titles > 1:
@@ -980,7 +1097,8 @@ def cadence_progress(cadences, chart_title=None):
 
 # sonority ngram progress viz
 def sonority_ngram_progress(son_ngrams, min_count=1, max_count=None, top_n=None,
-                            patterns=None, order='first', facet=False, chart_title=None):
+                            patterns=None, order='first', facet=False, height=None,
+                            show_labels=None, chart_title=None):
     """
     Scatter plot of sonority n-grams across the course of a piece: Progress
     (0 = start, 1 = end) on the x axis, each n-gram pattern (Low_Sonority) on
@@ -1013,6 +1131,13 @@ def sonority_ngram_progress(son_ngrams, min_count=1, max_count=None, top_n=None,
     facet : bool, optional (default False)
         If True and there are several pieces, give each piece its own row
         instead of overlaying them.
+    height : int, optional
+        Figure height in pixels. Defaults to 600 (or 300 per piece with
+        facet=True), however many patterns there are, so the overall flow
+        stays visible; markers shrink to fit.
+    show_labels : bool, optional
+        Show the n-gram labels on the y axis. By default they are shown only
+        for 40 patterns or fewer; hover over a point to see its n-gram.
     chart_title : str, optional
         A default naming the piece (for a single piece) is used if omitted.
 
@@ -1074,19 +1199,42 @@ def sonority_ngram_progress(son_ngrams, min_count=1, max_count=None, top_n=None,
                      hover_data=hover,
                      color_discrete_sequence=contrasting_colors,
                      category_orders={'Low_Sonority': pattern_order, 'Title': titles})
-    fig.update_traces(marker=dict(size=12, opacity=0.8, line=dict(width=1, color='white')))
-    _category_yaxis(fig, pattern_order, title='Sonority N-gram' if not do_facet else '')
+    # compact: fixed height, so markers shrink as rows multiply
+    n_patterns = len(pattern_order)
+    row_height = 300 if do_facet else (height or 600) - 150
+    marker_size = max(4, min(12, row_height / max(n_patterns, 1) * 1.5))
+    show_labels = n_patterns <= 40 if show_labels is None else show_labels
+    fig.update_traces(marker=dict(size=marker_size, opacity=0.8, line=dict(width=0.5, color='white')))
+    _category_yaxis(fig, pattern_order, title='Sonority N-gram' if not do_facet else '',
+                    showticklabels=show_labels, showgrid=show_labels)
     fig.update_xaxes(range=[-0.02, 1.02])
 
+    # piece vs corpus is judged from the input, not what survives the filters
+    n_input = son_ngrams['Title'].nunique() if 'Title' in son_ngrams.columns else 1
     if chart_title is None:
-        label = _single_piece_label(df)
-        chart_title = f'Sonority N-grams in {label}' if label else 'Sonority N-grams'
-    row_height = max(250, 22 * len(pattern_order) + 100)
-    fig.update_layout(title=chart_title, width=1200, height=row_height + 150,
+        label = _single_piece_label(son_ngrams)
+        chart_title = f'Sonority N-grams in {label}' if label else 'Sonority N-grams in Corpus'
+    # second title line: the settings that produced this plot
+    settings = _data_settings(son_ngrams)
+    if not settings:   # settings lost (e.g. read from CSV): infer n from 'LowInterval_Sonority' events
+        settings = [f"n = {len(str(pattern_order[0]).split('_')) // 2}"]
+    count_txt = f'count {min_count}–{max_count}' if max_count is not None else f'count ≥ {min_count}'
+    settings.append(count_txt)
+    if top_n is not None:
+        settings.append(f'top {top_n}')
+    if patterns is not None:
+        settings.append(f'{len(list(patterns))} selected patterns')
+    settings.append(f'order: {order}')
+    if n_input > 1:
+        settings.append(f'{n_input} pieces')
+    chart_title = _settings_title(chart_title, settings)
+    fig.update_layout(title=chart_title, width=1200, height=height or 600,
                       legend=dict(title_text='Title'),
-                      showlegend=has_title and n_titles > 1)
+                      showlegend=has_title and n_input > 1)
     if do_facet:
         _facet_by_title(fig, n_titles, row_height=row_height)
+        if height:
+            fig.update_layout(height=height)
     return fig
 
 
@@ -1166,7 +1314,12 @@ def cadence_bar_chart(cadences, by='CadType', percent=True, groupby_column='Titl
     what = 'Cadence Types' if by == 'CadType' else 'Cadence Tones'
     if chart_title is None:
         chart_title = what + (f' in {label}' if label and single else f' by {groupby_column}')
-        chart_title += ' (percent)' if percent else ' (count)'
+    chart_title = _settings_title(chart_title, [
+        'percent of each group\'s cadences' if percent else 'number of cadences',
+        f'{len(cads)} cadences',
+        (f'tone order: {tone_ordering}' if isinstance(tone_ordering, str) else 'custom tone order')
+        if by == 'Tone' else None,
+        _n_pieces(cadences)])
     fig.update_layout(title=chart_title, width=1000, height=550,
                       xaxis_title='Cadence Type' if by == 'CadType' else 'Tone',
                       yaxis_title='Percent of cadences' if percent else 'Number of cadences',
@@ -1247,10 +1400,15 @@ def radar_note_plot(weighted_notes_df, pitch_class_order='Fifths', exclude_rests
     grouped['Percentage'] = (grouped['count'] / totals * 100).round(1)
 
     if chart_title is None:
-        label = _single_piece_label(df.rename(columns={'title': 'Title', 'composer': 'Composer'}))
+        label = _piece_label(df, title_col='title', composer_col='composer')
         chart_title = f'Weighted Pitch Classes in {label}' if label else 'Weighted Pitch Classes'
-        if isinstance(pitch_class_order, str):
-            chart_title += f' ({pitch_class_order} order)'
+    chart_title = _settings_title(chart_title, [
+        (f'pitch-class order: {pitch_class_order}' if isinstance(pitch_class_order, str)
+         else 'custom pitch-class order'),
+        'rests excluded' if exclude_rests else 'rests included',
+        'all pitch classes' if not limit_to_active else None,
+        f'grouped by {color_grouping}' if color_grouping.lower() != 'title' else None,
+        _n_pieces(df, title_col='title')])
 
     fig = px.line_polar(grouped, r='Percentage', theta='pitch_class', line_close=True,
                         color=color_grouping, markers=True,
@@ -1266,7 +1424,7 @@ def radar_note_plot(weighted_notes_df, pitch_class_order='Fifths', exclude_rests
                     bordercolor='black', borderwidth=1, bgcolor='rgba(255,255,255,0.8)'),
         title=dict(text=chart_title, x=0.5),
         polar=dict(radialaxis=dict(visible=True, ticksuffix='%')),
-        margin=dict(b=150),
+        margin=dict(b=150, t=130),
         showlegend=len(groups) > 1)
     return fig
 
@@ -1403,6 +1561,13 @@ def voice_range_chart(voice_ranges_df, final=None, piece_order='mass', sort_voic
     if title is None:
         title = (f'Voice Ranges in Pieces with Final {the_final}' if the_final
                  else 'Voice Ranges (several finals; filter by final for reference lines)')
+    settings = [p for p in _data_settings(voice_ranges_df) if not p.startswith('final:')]
+    title = _settings_title(title, settings + [
+        f'final: {final}' if final is not None else None,
+        {'mass': 'models, then Mass movements', 'range': 'pieces by range', 'alpha': 'pieces alphabetical',
+         'given': 'pieces as given'}.get(piece_order, f'piece order: {piece_order}')
+        if isinstance(piece_order, str) else 'custom piece order',
+        _n_pieces(df)])
     fig.update_layout(
         title=title,
         xaxis=dict(title='Note Range', tickmode='array', tickvals=ticks,
@@ -1510,8 +1675,12 @@ def plot_species(species_df, octave_order=species_octave_order, show_voice_detai
 
     _category_yaxis(fig, octaves, title='Octave')
     if chart_title is None:
-        label = _single_piece_label(df)
+        label = _piece_label(df)
         chart_title = f'Melodic Species in {label}' if label else 'Melodic Species'
+    chart_title = _settings_title(chart_title, _data_settings(species_df) + [
+        'by voice' if show_voice_detail else f'{progress_bins} sections',
+        f'{len(df)} leaps',
+        _n_pieces(df)])
     fig.update_layout(title=chart_title, width=900, height=500, legend_title=legend_title)
     if n_titles > 1:
         fig.update_yaxes(title='')
@@ -1599,6 +1768,8 @@ def plot_species_cadences(species_df, cadences_df, title=None, octave_order=spec
     if chart_title is None:
         label = _single_piece_label(sp) or _single_piece_label(cads)
         chart_title = f'Melodic Species and Cadences in {label}' if label else 'Melodic Species and Cadences'
+    chart_title = _settings_title(chart_title, _data_settings(species_df) + [
+        f'{len(sp)} leaps', f'{len(cads)} cadences'])
     fig.update_layout(title=chart_title, height=700, width=950,
                       legend=dict(x=1.02, y=1.0, xanchor='left', yanchor='top',
                                   groupclick='toggleitem'),

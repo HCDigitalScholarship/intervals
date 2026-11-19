@@ -458,6 +458,8 @@ See the [Corpus Tutorial](/tutorial/19_Corpus_Tools.md) for various `corpus_tool
 
 The CRIM Intervals visualization library makes it possible to display nGrams as a dynamic chart, with each nGram displayed from the start (left) to end (right) of the piece, voice-by-voice.  Identical nGrams receive the same color.
 
+Beneath the chart's title, a subtitle lists the settings used to make the n-grams, which CRIM Intervals records as you go (see [Which Settings Made This Result?](/tutorial/01_Introduction_and_Corpus.md#which-settings-made-this-result-get_settings)), followed by any patterns or voices you selected. For the example below it reads: `unisons combined · melodic: diatonic, directed, simple · n = 4 · thematic entries · 10 selected patterns`. Pass `title='...'` to name the chart yourself; the settings still appear beneath it.
+
 ### Heat Map of Ngrams in One Piece
 
 The CRIM Intervals visualization library makes it possible to display ngrams as a dynamic chart, with each nGram displayed from the start (left) to end (right) of the piece, voice-by-voice.  Identical nGrams receive the same color.

@@ -22,6 +22,8 @@ import plotly.express as px
 from glob import glob
 from IPython.display import display, SVG, HTML
 import json
+import functools
+import inspect
 import urllib.parse
 from fractions import Fraction
 from .sorting_lists import (
@@ -160,6 +162,57 @@ def _getCadenceTable():
     if 'CadenceTable' not in pathDict:
         pathDict['CadenceTable'] = pd.read_csv(main_objs_dir + '/data/cadences/cadenceLabels.csv', index_col=0)
     return pathDict['CadenceTable']
+
+
+# Analysis settings travel with results in `df.attrs[SETTINGS_KEY]`: a dict of
+# {method name: {parameter: value}}, e.g.
+#     {'melodic': {'kind': 'd', 'directed': True, 'compound': True},
+#      'ngrams': {'n': 4}}
+# pandas keeps attrs through filtering, copy, reset_index and through concat
+# of results made with the same settings, so a chart can report how its data
+# was made. They are not saved by to_csv/to_excel.
+SETTINGS_KEY = 'crim_settings'
+
+
+def get_settings(df):
+    """Return the analysis settings recorded on a CRIM Intervals result
+    ({method name: {parameter: value}}), or {} if there are none."""
+    return dict(getattr(df, 'attrs', {}).get(SETTINGS_KEY, {}))
+
+
+def _records_settings(name=None, params=(), inherit=('df',)):
+    """
+    Decorator for analysis methods: record `params` (as passed, or their
+    defaults) under `name` in the attrs of the DataFrame the method returns,
+    after any settings already recorded on the DataFrames passed in the
+    `inherit` arguments (e.g. the melodic intervals passed to ngrams). With
+    name=None the method records nothing of its own and only passes the
+    inherited settings on (e.g. detailIndex).
+    """
+    def decorator(func):
+        sig = inspect.signature(func)
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            res = func(*args, **kwargs)
+            if not isinstance(res, pd.DataFrame):
+                return res
+            try:
+                bound = sig.bind(*args, **kwargs)
+                bound.apply_defaults()
+                settings = {}
+                for arg in inherit:
+                    settings.update(get_settings(bound.arguments.get(arg)))
+                settings.update(get_settings(res))
+                if name is not None:
+                    settings[name] = {p: bound.arguments[p] for p in params}
+                if settings:
+                    res.attrs = {**res.attrs, SETTINGS_KEY: settings}
+            except Exception:
+                pass   # recording settings must never break an analysis
+            return res
+        return wrapper
+    return decorator
 
 
 class ImportedPiece:
@@ -479,6 +532,7 @@ class ImportedPiece:
         col = col.dropna()
         return col[(col == 'Rest') | (col != col.shift(1))]
 
+    @_records_settings('notes', ('combineRests', 'combineUnisons'), inherit=())
     def notes(self, combineRests=True, combineUnisons=False):
         '''
         Return a table of the notes and rests in the piece. Rests are
@@ -553,6 +607,7 @@ class ImportedPiece:
             self.analyses['Final'] = final
         return self.analyses['Final']
 
+    @_records_settings('voice_ranges', ('top_n',), inherit=())
     def voice_ranges(self, top_n=7, number_parts=True, include_final=True):
         """
         Return the range of each voice as used to distinguish modal types:
@@ -626,6 +681,7 @@ class ImportedPiece:
         self.analyses[memo_key] = result
         return result.copy()
 
+    @_records_settings('note_weights', ('include_rests',), inherit=())
     def note_weights(self, include_rests=True, key_sig=False, include_final=False):
         """
         Weight each pitch class by its total duration in the piece: how much of
@@ -687,7 +743,8 @@ class ImportedPiece:
 
     # the mel species method.  the various lists are imported from sorting_lists.py
 
-    def melodic_species(self, limit_to_entries=True, 
+    @_records_settings('melodic_species', ('limit_to_entries',), inherit=())
+    def melodic_species(self, limit_to_entries=True,
                     species_intervals=species_intervals_list, 
                     four_five_dict = species_four_five_dict, 
                     octave_dict = species_octave_dict):
@@ -1276,6 +1333,7 @@ class ImportedPiece:
             self.analyses['BeatIndex'] = ser
         return self.analyses['BeatIndex']
 
+    @_records_settings()
     def detailIndex(self, df, measure=True, beat=True, offset=False, t_sig=False,
         key_sig=False, sounding=False, progress=False, lowest=False, highest=False, _all=False):
         '''
@@ -1804,6 +1862,7 @@ class ImportedPiece:
           dist.index = uni
           return dist
 
+    @_records_settings('melodic', ('kind', 'directed', 'compound', 'unit', 'end'))
     def melodic(self, kind='q', directed=True, compound=True, unit=0, end=True, df=None):
         '''
         Return melodic intervals for all voice pairs. Each melodic interval
@@ -2084,6 +2143,7 @@ class ImportedPiece:
     #         self.analyses[key] = ret
     #     return self.analyses[key]
     # update har to correct caching. etc
+    @_records_settings('harmonic', ('kind', 'directed', 'compound', 'againstLow'))
     def harmonic(self, kind='q', directed=True, compound=True, againstLow=False, df=None):
         '''
         Return harmonic intervals for all voice pairs.
@@ -2213,6 +2273,96 @@ class ImportedPiece:
         
         return '/'.join(map(str, sorted_intervals))
 
+    @_records_settings('sonority_ngrams', ('ngram_length', 'minimum_beat_strength', 'compound', 'sort'),
+                       inherit=())
+    def sonority_ngrams(self,
+                        ngram_length=4,
+                        metadata_choice=True,
+                        include_offset=False,
+                        include_progress=True,
+                        compound=True,
+                        sort=False,
+                        minimum_beat_strength=0.0,
+                        key_sig=False,
+                        include_final=False):
+        """
+        Generate sonority n-grams (plus bassline) in this piece.
+        These are complex n-grams that combine the sonority (chord) formed by
+        all tones sounding at each moment with the melodic interval formed by
+        the low line (bass) of each sonority, joined as 'Low_Sonority'.
+
+        Sonorities on weak beats (beat strength at or below
+        `minimum_beat_strength`) can be filtered out.
+
+        CorpusBase.sonority_ngrams runs this on every piece in a corpus.
+
+        Parameters
+        ----------
+        ngram_length : int (default 4)
+            Number of Low_Sonority events in each n-gram.
+        metadata_choice : bool (default True)
+            Whether to add Composer/Title/Date columns.
+        include_offset : bool
+            Whether detailIndex should also include each row's raw offset.
+        include_progress : bool (default True)
+            Whether detailIndex should include the 0-1 progress-through-piece column.
+        compound, sort
+            Passed through to ImportedPiece.sonorities.
+        minimum_beat_strength : float (default 0.0)
+            Keep only sonorities on beats stronger than this.
+        key_sig : bool, optional (default False)
+            If True, add the prevailing system key signature to the row index
+            via detailIndex, alongside Measure/Beat.
+        include_final : bool, optional (default False)
+            If True, add a 'Final' column giving the piece's final tone.
+
+        Returns
+        -------
+        pd.DataFrame
+            One row per n-gram, with Measure, Beat (and Offset, Progress) as
+            columns. The settings used are stored in
+            `df.attrs['sonority_ngram_settings']`.
+
+        Examples
+        --------
+        >>> piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')
+        >>> son = piece.sonority_ngrams(ngram_length=4)
+        """
+        bs = self.beatStrengths()
+        strong_beat_positions = bs[(bs > minimum_beat_strength).any(axis=1)].index
+
+        son = self.sonorities(sort=sort, compound=compound)
+        son = son[son['Sonority'] != '']
+        son = son[son.index.isin(strong_beat_positions)]
+
+        low = self.lowLine()
+        low = pd.DataFrame(low[low.index.isin(strong_beat_positions)])
+        low_mel = self.melodic(end=False, df=low)
+
+        combined = pd.merge(son, low_mel, left_index=True, right_index=True, how='left')
+        combined['Low Line'] = combined['Low Line'].fillna('Held')
+        combined['Low_Sonority'] = combined['Low Line'] + "_" + combined['Sonority']
+
+        res = self.ngrams(df=combined, n=ngram_length)
+        res = self.detailIndex(res, offset=include_offset, progress=include_progress, key_sig=key_sig)
+        res = self.numberParts(res)
+        if len(res) > 0:
+            res['Low_Sonority'] = res['Low_Sonority'].apply(
+                lambda x: tuple_to_string(x, separator='_') if isinstance(x, tuple) else x)
+        if include_final:
+            res['Final'] = self.final()
+        if metadata_choice:
+            res[['Composer', 'Title', 'Date']] = (self.metadata['composer'], self.metadata['title'],
+                                                  self.metadata['date'])
+            cols_to_move = ['Composer', 'Title', 'Date']
+            res = res[cols_to_move + [c for c in res.columns if c not in cols_to_move]]
+        res = res.reset_index()
+        # the sonorities/ngrams settings picked up along the way are covered
+        # by this method's own settings (recorded by the decorator)
+        res.attrs = {}
+        return res
+
+    @_records_settings('sonorities', ('kind', 'directed', 'compound', 'sort'), inherit=())
     def sonorities(self, kind='d', directed=True, compound='simple', sort=True):
         """
         Return a dataframe of sonorities that are similar to a continuo part but not reduced.
@@ -2316,6 +2466,7 @@ class ImportedPiece:
             chains = chains.apply(tuple, axis=1)
         return chains
 
+    @_records_settings('ngrams', ('n', 'exclude', 'interval_settings', 'offsets'), inherit=('df', 'other'))
     def ngrams(self, df=None, n=3, how='columnwise', other=None, held='Held',
                   exclude=['Rest'], interval_settings=('d', True, True), unit=0,
                   offsets='first', show_both=False):
@@ -2513,7 +2664,11 @@ class ImportedPiece:
             cols.append(col)
         # in case piece has no harmony and cols stays empty
         if cols:
-            return pd.concat(cols, axis=1, sort=True)
+            ret = pd.concat(cols, axis=1, sort=True)
+            # modules: pass on the harmonic and melodic settings used (the
+            # decorator adds this method's own)
+            ret.attrs = {SETTINGS_KEY: {**get_settings(other), **get_settings(df)}}
+            return ret
         else:
             return pd.DataFrame()
 
@@ -3450,6 +3605,7 @@ class ImportedPiece:
             self.analyses[key] = nr.apply(self._entryHelper, args=(fermatas,))
         return self.analyses[key]
 
+    @_records_settings('entries', ('n', 'thematic', 'anywhere'))
     def entries(self, df=None, n=None, thematic=False, anywhere=False, fermatas=True, exclude=[]):
         """
         Return a filtered copy of the passed df that only keeps the events in
@@ -4681,6 +4837,7 @@ class CorpusBase:
             corpus_note_durs = corpus_note_durs.groupby(group_cols, as_index=False, dropna=False)['Durs'].sum()
         return corpus_note_durs
 
+    @_records_settings('voice_ranges', ('top_n', 'final', 'voices'), inherit=())
     def voice_ranges(self, top_n=7, final=None, voices=None):
         """
         Return voice ranges for every piece in the corpus, as used to
@@ -5214,84 +5371,16 @@ class CorpusBase:
         -------
         pd.DataFrame
         """
-        func0 = ImportedPiece.beatStrengths
-        list_of_beat_strength_dfs = self.batch(func0, metadata=False)
-
-        func1 = ImportedPiece.sonorities
-        list_of_sonority_dfs = self.batch(func=func1,
-                                           kwargs={'sort': sort, 'compound': compound},
-                                           metadata=False)
-        list_filtered_sonorities = []
-        for df in list_of_sonority_dfs:
-            df = df[df['Sonority'] != '']
-            list_filtered_sonorities.append(df)
-
-        paired_sonority_bs_dfs = zip(list_filtered_sonorities, list_of_beat_strength_dfs)
-
-        # filtering for beat strength
-        list_filtered_sonority_dfs = []
-        for pair in paired_sonority_bs_dfs:
-            son = pair[0]
-            bs = pair[1]
-            strong_beat_positions = bs[(bs > minimum_beat_strength).any(axis=1)].index
-            filtered_sonorities = son[son.index.isin(strong_beat_positions)]
-            list_filtered_sonority_dfs.append(filtered_sonorities)
-
-        func2 = ImportedPiece.lowLine
-        list_of_lowLine_dfs = self.batch(func=func2, metadata=False)
-        paired_lowline_bs_dfs = zip(list_of_lowLine_dfs, list_of_beat_strength_dfs)
-
-        list_of_fitered_lowLine_dfs = []
-        for pair in paired_lowline_bs_dfs:
-            low = pair[0]
-            bs = pair[1]
-            strong_beat_positions = bs[(bs > minimum_beat_strength).any(axis=1)].index
-            filtered_lowline = low[low.index.isin(strong_beat_positions)]
-            lowline_df = pd.DataFrame(filtered_lowline)
-            list_of_fitered_lowLine_dfs.append(lowline_df)
-
-        # now melodic ints based on lowline
-        func2a = ImportedPiece.melodic
-        list_low_melodic_dfs = self.batch(func=func2a,
-                                           kwargs={'end': False, 'df': list_of_fitered_lowLine_dfs},
-                                           metadata=False)
-
-        # create df with both filtered sonorities and lowline
-        paired_dfs = zip(list_filtered_sonority_dfs, list_low_melodic_dfs)
-        list_combined_dfs = []
-        for pair in paired_dfs:
-            sonorities_with_bass = pd.merge(pair[0], pair[1], left_index=True, right_index=True, how='left')
-            sonorities_with_bass['Low Line'] = sonorities_with_bass['Low Line'].fillna('Held')
-            sonorities_with_bass['Low_Sonority'] = sonorities_with_bass['Low Line'] + "_" + sonorities_with_bass['Sonority']
-            list_combined_dfs.append(sonorities_with_bass)
-
-        func3 = ImportedPiece.ngrams
-        list_of_son_bass_ngrams_dfs = self.batch(func=func3,
-                                                  kwargs={'n': ngram_length, 'df': list_combined_dfs},
-                                                  metadata=False)
-        func4 = ImportedPiece.detailIndex
-        list_of_detail_index_dfs = self.batch(func=func4,
-                                               kwargs={'offset': include_offset,
-                                                       'df': list_of_son_bass_ngrams_dfs,
-                                                       'progress': include_progress,
-                                                       'key_sig': key_sig},
-                                               metadata=True)
-        func5 = ImportedPiece.numberParts
-        list_of_numberParts_dfs = self.batch(func=func5,
-                                              kwargs={'df': list_of_detail_index_dfs},
-                                              metadata=metadata_choice)
-        for df in list_of_numberParts_dfs:
-            if len(df) > 0:
-                df['Low_Sonority'] = df['Low_Sonority'].apply(lambda x: tuple_to_string(x, separator='_') if isinstance(x, tuple) else x)
-        if include_final:
-            finals = self.batch(func=ImportedPiece.final, metadata=False)
-            list_of_numberParts_dfs = [df.assign(Final=final) for df, final in zip(list_of_numberParts_dfs, finals)]
-
-        corpus_son_bass_ngrams = pd.concat(list_of_numberParts_dfs)
-
-        cols_to_move = ['Composer', 'Title', 'Date']
-        corpus_son_bass_ngrams = corpus_son_bass_ngrams[cols_to_move + [col for col in corpus_son_bass_ngrams.columns if col not in cols_to_move]]
-        corpus_son_bass_ngrams = corpus_son_bass_ngrams.reset_index()
+        # Composer/Title/Date are always included, since they are what tell
+        # the pieces apart; metadata_choice is kept for backward compatibility.
+        kwargs = {'ngram_length': ngram_length, 'metadata_choice': True,
+                  'include_offset': include_offset, 'include_progress': include_progress,
+                  'compound': compound, 'sort': sort,
+                  'minimum_beat_strength': minimum_beat_strength,
+                  'key_sig': key_sig, 'include_final': include_final}
+        list_of_dfs = self.batch(func=ImportedPiece.sonority_ngrams, kwargs=kwargs,
+                                 metadata=False, number_parts=False)
+        corpus_son_bass_ngrams = pd.concat(list_of_dfs, ignore_index=True)
         return corpus_son_bass_ngrams
 
     def cadences(self,

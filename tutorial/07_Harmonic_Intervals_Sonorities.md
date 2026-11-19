@@ -6,10 +6,11 @@
 3. [The `sonorities` Function in Brief](#the-sonorities-function-in-brief)
 4. [Ngrams of Sonorities](#ngrams-of-sonorities)
 5. [More About Measures, Beats, and Offsets: The `detailIndex()` Function](#more-about-measures-beats-and-offsets-the-detailindex-function)
-6. [Harmonic Intervals in a Corpus](#harmonic-intervals-in-a-corpus)
-7. [Charts with Harmonic Intervals](#charts-with-harmonic-intervals)
-8. [Harmonic Intervals in a Corpus](#harmonic-intervals-in-a-corpus-1)
-9. [Sections in this guide](#sections-in-this-guide)
+6. [Sonority N-grams with the Bass Line](#sonority-n-grams-with-the-bass-line)
+7. [Harmonic Intervals in a Corpus](#harmonic-intervals-in-a-corpus)
+8. [Charts with Harmonic Intervals](#charts-with-harmonic-intervals)
+9. [Harmonic Intervals in a Corpus](#harmonic-intervals-in-a-corpus-1)
+10. [Sections in this guide](#sections-in-this-guide)
 
 We have just seen how the `melodic()` function allows us to examine the points in the score where the pitch changes in a single voice, resulting in a melodic intervals. We are also able to examine harmonic intervals, which is the difference in pitch between two voices who sound a note simultaneously. 
 
@@ -218,6 +219,61 @@ har_DI = piece.detailIndex(har)
 ``` 
 
 For more information about the `detailIndex` function, consult [the function's documentation](/tutorial/05_Detail_Index.md).  
+
+
+## Sonority N-grams with the Bass Line
+
+The ngrams of sonorities shown above say nothing about how the bass moves from one sonority to the next. `sonority_ngrams()` adds that: each event pairs the **melodic interval of the lowest voice** (or `Held` if the bass does not move) with the **sonority** above it, joined with `_`. A four-event n-gram looks like this:
+
+```
+-M2_10/1_Held_9/1_Held_8/1_M2_10/1
+```
+
+That is: the bass falls a major second to a 10/1 sonority, holds while the upper voice moves to 9 and then 8, then the bass rises a major second to 10/1 again. Because these n-grams don't depend on which voice sings what, they are very good at finding **block repetitions**, within a piece or across pieces (a model and the Mass based on it, for example).
+
+The same method works on one piece or a whole corpus, with the same parameters:
+
+```python
+# one piece
+piece = importScore('https://crimproject.org/mei/CRIM_Model_0008.mei')
+son = piece.sonority_ngrams(ngram_length=4)
+
+# a corpus
+corpus = CorpusBase(['https://crimproject.org/mei/CRIM_Model_0008.mei',
+                     'https://crimproject.org/mei/CRIM_Mass_0005_1.mei',
+                     'https://crimproject.org/mei/CRIM_Mass_0005_2.mei'])
+son = corpus.sonority_ngrams(ngram_length=4)
+```
+
+The result has one row per n-gram, with `Measure`, `Beat` and `Progress` (0 at the start of the piece, 1 at the end), `Composer`, `Title` and `Date`, and the n-gram itself in the `Low_Sonority` column. (The `Sonority` and `Low Line` columns hold the two halves separately, as tuples.)
+
+Parameters:
+
+* `ngram_length` (default 4): the number of events in each n-gram.
+* `minimum_beat_strength` (default 0.0): leave out sonorities on weak beats. For example, `0.5` keeps only sonorities on beats stronger than 0.5 (see [04_Time_Signatures_Beat_Strength](/tutorial/04_Time_Signatures_Beat_Strength.md)), which hides passing motion and makes block repetitions easier to spot.
+* `compound` (default True) and `sort` (default False): passed to `sonorities()`, as described above. Note that the defaults differ from those of `sonorities()` itself.
+* `include_offset`, `include_progress`, `key_sig`: add the offset, progress, or key signature to the position columns (see [05_Detail_Index](/tutorial/05_Detail_Index.md)).
+* `include_final`: add a `Final` column with each piece's final tone.
+
+To count the patterns, use `value_counts()` on the n-gram column. With a corpus, `groupby` shows how often each one is heard in each piece:
+
+```python
+son['Low_Sonority'].value_counts()
+son.groupby(['Title', 'Low_Sonority']).size()
+```
+
+### Charting Sonority N-grams
+
+`viz.sonority_ngram_progress()` shows where each n-gram pattern occurs: one row per pattern, with each occurrence placed by its progress through the piece. New material climbs diagonally, while recurring patterns appear as dots on the same horizontal line. Use `min_count=2` to see only the patterns that recur; with a corpus, these are the patterns **shared** among the pieces:
+
+```python
+import crim_intervals.visualizations as viz
+viz.sonority_ngram_progress(son, min_count=2)
+```
+
+![Sonority n-grams shared in a corpus](images/vis_sonority_ngrams_corpus.png)
+
+The second line of the title records the settings used. See [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md#sonority-n-gram-progress-plots) for the other options and more examples.
 
 
 ## Harmonic Intervals in a Corpus

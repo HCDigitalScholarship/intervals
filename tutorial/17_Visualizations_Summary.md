@@ -18,8 +18,9 @@
 15. [Pitch Class Radar Plots](#pitch-class-radar-plots)
 16. [Voice Range Charts](#voice-range-charts)
 17. [Melodic Species Plots](#melodic-species-plots)
-18. [Networks](#networks)
-19. [Sections in this guide](#sections-in-this-guide)
+18. [Sonority N-gram Progress Plots](#sonority-n-gram-progress-plots)
+19. [Networks](#networks)
+20. [Sections in this guide](#sections-in-this-guide)
 
 There are three different resources for creating various kinds of charts, plots, and networks with CRIM Intervals.  Unless otherwise noted, all the necessary libraries are already imported when you `import crim_intervals` and `from crim_intervals import *`.  We show the import statements below just to remind you!
 
@@ -36,6 +37,7 @@ The charts and plots produced with **Plotly** (and described below) include:
 * **Pitch Class Radar Plots** (how much of each piece is spent on each pitch class)
 * **Voice Range Charts** (horizontal bars that show the range of each voice in one or more pieces, for comparing modal types)
 * **Melodic Species Plots** (the octave species articulated by melodic leaps, alone or together with cadences)
+* **Sonority N-gram Progress Plots** (where each sequence of sonorities, with its bass motion, occurs and recurs across one or more pieces)
 
 ## CRIM Plots with Altair
 
@@ -75,8 +77,11 @@ viz.cadence_radar(corpus.cadences())     # a corpus: one polygon per piece
 | `viz.voice_range_chart` | `piece.voice_ranges()` / `corpus.voice_ranges()` | Range of each voice |
 | `viz.plot_species` | `piece.melodic_species()` / `corpus.melodic_species()` | Octave species articulated by melodic leaps |
 | `viz.plot_species_cadences` | `melodic_species()` **and** `cadences()` | Species and cadences on one timeline (one piece at a time) |
+| `viz.sonority_ngram_progress` | `piece.sonority_ngrams()` / `corpus.sonority_ngrams()` | Where each sonority n-gram occurs and recurs |
 
-All of them share the same colors (a piece has the same color in every chart) and return a Plotly figure:
+Each chart's title names the piece (or says "Corpus"), and a smaller line beneath it lists the **settings** behind the chart: first those used to make the data (for example `all leaps` for `melodic_species(limit_to_entries=False)`, or `melodic: diatonic, directed, compound · n = 4` for n-grams), then the chart's own options (tone order, count filters, number of pieces, and so on). The data settings come from a note that CRIM Intervals attaches to each result; see [Which Settings Made This Result?](/tutorial/01_Introduction_and_Corpus.md#which-settings-made-this-result-get_settings) in the introduction. If you pass your own `chart_title`, the settings line is still added beneath it.
+
+All of them share the same colors (a piece has the same color in every chart, and each cadence type has the same color in every cadence chart) and return a Plotly figure:
 
 * In a notebook, a figure on the last line of a cell displays by itself; otherwise call `fig.show()`.
 * Save it with `fig.write_html('chart.html')` (interactive) or `fig.write_image('chart.png', scale=2)` (needs the `kaleido` package: `pip install kaleido==0.2.1`).
@@ -310,6 +315,8 @@ See the tutorials for [Melodic](/tutorial/06_Melodic_Intervals.md) and [Harmonic
 The CRIM Intervals visualization library makes it possible to display ngrams as a dynamic chart, with each nGram displayed from the start (left) to end (right) of the piece, voice-by-voice.  Identical nGrams receive the same color.
 
 Note that these are built-in functions, and work with the Altair library.  Find the documentation via [CRIM Interval Visualization](https://github.com/HCDigitalScholarship/intervals/blob/main/crim_intervals/visualizations.py) module.
+
+As with the other charts, a subtitle lists the settings used to make the n-grams, followed by any patterns or voices you selected. For the example below it reads: `unisons combined · melodic: diatonic, directed, simple · n = 4 · thematic entries · 10 selected patterns`.
 
 Here is a map for just one piece:
 
@@ -643,6 +650,56 @@ cadences = corpus.cadences()
 for title in species['Title'].unique():
     viz.plot_species_cadences(species, cadences, title=title).show()
 ```
+
+
+## Sonority N-gram Progress Plots
+
+Sonority n-grams are short sequences of sonorities (the intervals above the lowest voice at each moment), each paired with the melodic motion of the bass, for example `-M2_10/1_Held_9/1_Held_8/1_M2_10/1`. Because they ignore which voice sings what, they are good at finding **block repetitions**: passages that return, within a piece or across pieces, even when the voices are redistributed. `piece.sonority_ngrams()` and `corpus.sonority_ngrams()` find them (see [07_Harmonic_Intervals_Sonorities](/tutorial/07_Harmonic_Intervals_Sonorities.md#sonority-n-grams-with-the-bass-line)), and `sonority_ngram_progress()` shows where each one falls.
+
+Each n-gram pattern has its own row, and each dot is one occurrence, placed by how far through the piece it falls (`Progress`, from 0 at the start to 1 at the end). By default the rows are stacked in the order the patterns first appear, so the plot reads like this:
+
+* **A diagonal climb** is new material: each n-gram is heard for the first time, so it gets a new row above the ones before.
+* **A dot that falls back below the climb** is a return: a pattern heard earlier, landing on its original row.
+* **Several dots on one horizontal line** are a pattern that recurs.
+
+```python
+# one piece
+son = piece.sonority_ngrams(ngram_length=4)
+viz.sonority_ngram_progress(son)
+```
+
+![Sonority n-grams in one piece](images/vis_sonority_ngrams_piece.png)
+
+Most four-sonority n-grams occur only once, so a piece on its own is mostly one long climb; the returns are the few dots below it. To see only the recurring patterns, use `min_count=2`. With a corpus this shows the patterns that are **shared** among the pieces, colored by piece (here a model and two movements of the Mass based on it):
+
+```python
+# a corpus: only patterns heard at least twice
+son = corpus.sonority_ngrams(ngram_length=4)
+viz.sonority_ngram_progress(son, min_count=2)
+```
+
+![Sonority n-grams shared in a corpus](images/vis_sonority_ngrams_corpus.png)
+
+With `facet=True`, each piece gets its own panel, which makes it easier to compare where the same patterns fall in each one:
+
+```python
+viz.sonority_ngram_progress(son, min_count=2, facet=True)
+```
+
+![Sonority n-grams shared in a corpus, one panel per piece](images/vis_sonority_ngrams_corpus_facet.png)
+
+The title names the piece (or says "Corpus"), and the line beneath it repeats the settings that produced the chart: the n-gram length and other `sonority_ngrams()` settings, then the filters and order chosen for the plot.
+
+Options:
+
+* `min_count`, `max_count`: keep only patterns whose total count (across all the pieces given) is in this range.
+* `top_n=20`: keep only the 20 most frequent patterns.
+* `patterns=[...]`: plot only the patterns you list.
+* `order`: how the rows are stacked: `'first'` (default, order of first appearance), `'count'` (most frequent at the top), or `'alpha'`.
+* `facet=True`: one panel per piece.
+* `height=`: the figure height in pixels (600 by default, or 300 per piece with `facet=True`). The chart keeps this height however many patterns there are, so the overall flow stays visible; with more than 40 patterns the n-gram labels are hidden (`show_labels=True` brings them back).
+
+Hover over a dot to see the n-gram, the piece, its measure and beat, and how many times the pattern occurs.
 
 
 ## Networks

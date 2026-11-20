@@ -373,8 +373,9 @@ display(viz.plot_ngrams_heatmap(mod_entry_ngrams, mod_mel_ngrams_duration,
 
 Now for a corpus consisting of a 'model' (the first piece in the list) and any set of other pieces (normally the movements of a Mass). Note that the code below shows only the 'entry' ngrams shared by each pair of pieces. Here we show just the first pair:
 
-![Alt text](images/visualization_1.png)
+
 ![Alt text](images/visualization_2.png)
+
 
 <Details>
 

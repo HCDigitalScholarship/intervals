@@ -316,6 +316,8 @@ corpus_har_ints
 
 As we explain the [Visualizations_Summary](/tutorial/17_Visualizations_Summary.md), the **Plotly** library provides some powerful tools for displaying tabular data in various charts and plots.
 
+In these charts the intervals run from the largest negative interval (where the voices cross), through the unison, to the largest positive one, including compound intervals such as tenths and twelfths.  The order comes from `sort_interval_values()` in `crim_intervals/sorting_lists.py`, which works for diatonic or quality intervals, simple or compound.  The colors are the shared CRIM palette, `viz.contrasting_colors`.  Both can be replaced with your own: pass any list of intervals as the order (to show only a subset, for example), or any list of colors.
+
 ### For a Single Piece
 
 #### Voice Pairs as Separate "facets":
@@ -331,7 +333,9 @@ As we explain the [Visualizations_Summary](/tutorial/17_Visualizations_Summary.m
 <Summary>Code to Use</Summary>
 
 ```python
-import re
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_interval_values
 
 # import the piece
 url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
@@ -367,42 +371,27 @@ if exclude_rests:
     har_long = har_long[har_long['Interval'] != 'Rest']
 
 # order intervals: largest negative (voice crossing) ... unison ... largest positive
-# works for both diatonic ('-2', '8') and quality ('-m3', 'P5', 'M10') labels
-def interval_sort_key(label):
-    m = re.match(r'(-?)([A-Za-z]*)(\d+)', label)
-    if not m:                       # 'Rest' or anything unexpected goes at the end
-        return (float('inf'), 0)
-    sign, quality, size = m.groups()
-    q_rank = {'d': 0, 'm': 1, 'P': 2, 'M': 3, 'A': 4}.get(quality[:1], 2)
-    size = int(size)
-    return (-size, -q_rank) if sign else (size, q_rank)
-
-interval_order = sorted(har_long['Interval'].unique(), key=interval_sort_key)
+# (sort_interval_values from sorting_lists.py works for diatonic or quality, simple or compound)
+interval_order = sort_interval_values(har_long['Interval'], include_rests=True)
 
 # count intervals per voice pair
 har_counts = (har_long.groupby(['Interval', 'Voice_Pair'])
                       .size()
                       .reset_index(name='Count'))
 
-
-# colors: one per voice pair
-custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
-color_dict = {vp: custom_palette[i % len(custom_palette)] for i, vp in enumerate(voice_pairs)}
-
-# each pair as a 'facet' with its own small chart
+# each pair as a 'facet' with its own small chart, in the standard CRIM colors
 fig_facet = px.bar(har_counts,
              x='Interval',
              y='Count',
              color='Voice_Pair',
              facet_col='Voice_Pair',
-             facet_col_wrap=3,    
+             facet_col_wrap=3,
              category_orders={'Interval': interval_order, 'Voice_Pair': voice_pairs},
-             color_discrete_map=color_dict,
+             color_discrete_sequence=viz.contrasting_colors,
              height=600,
              width=1000,
              title=chart_title)
 fig_facet.show()
-
 ```
 
 </Details>
@@ -425,41 +414,62 @@ Here we stack the pairs single stacked bar chart, with each voice pair as a sepa
 <Summary>Code to Use</Summary>
 
 ```python
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_interval_values
+
+# import the piece
 url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
 piece = importScore(url)
 
 # give the chart a meaningful title based on your piece:
-md = piece.metadata  
+md = piece.metadata
 chart_title = "Distribution of Harmonic Intervals in " + md['composer'] + ", " + md['title']
 
-# custom interval order
-int_order = ["-P8", "-M7", "-m7", "-M6", "-m6", "-P5", "-P4", "-M3", 
-                          "-m3", "-M2", "-m2", "P1", "m2", "M2", "m3", "M3",
-                          "P4", "P5", "m6", "M6", "m7", "M7", "P8"]
+# set parameters for harmonic interval extraction
+kind_choice = 'q'        # 'd' for diatonic, 'q' for quality
+compound_choice = True   # True for compound intervals, False for simple intervals
+directed_choice = True   # True for directed intervals, False for undirected intervals
+exclude_rests = True     # True to exclude rests, False to include rests
+
 # get the harmonic intervals
-har = piece.harmonic().fillna("-")  
-har = har.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
-har.rename(columns={'index': 'interval'}, inplace=True)  
-har['interval'] = pd.Categorical(har["interval"], categories=int_order)  
-har = har.sort_values(by="interval").dropna().copy()  
-voices = har.columns.to_list()[1:]  # Exclude 'interval' column
-# Create a custom color palette
-custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
-color_dict = {voice: custom_palette[i % len(custom_palette)] for i, voice in enumerate(voices)}
-# Melt the DataFrame to long format suitable for px.bar
-melted_har = har.melt(id_vars='interval', var_name='voice', value_name='count')
+har = piece.harmonic(kind=kind_choice, compound=compound_choice, directed=directed_choice)
+har = piece.numberParts(har)  # add part numbers to the column names
+voice_pairs = har.columns.to_list()
 
+# melt: the offset (index) stays fixed, every voice-pair column becomes rows
+har_long = (har.rename_axis('Offset')
+               .reset_index()
+               .melt(id_vars='Offset',
+                     value_vars=voice_pairs,
+                     var_name='Voice_Pair',
+                     value_name='Interval'))
 
-# Create the stacked bar chart
-fig = px.bar(melted_har, 
-             x='interval', 
-             y='count', 
-             color='voice', 
-             barmode='stack',
+# drop empty cells (and rests, if requested)
+har_long = har_long.dropna(subset=['Interval'])
+har_long['Interval'] = har_long['Interval'].astype(str)
+if exclude_rests:
+    har_long = har_long[har_long['Interval'] != 'Rest']
+
+# order intervals: largest negative (voice crossing) ... unison ... largest positive
+# (sort_interval_values from sorting_lists.py works for diatonic or quality, simple or compound)
+interval_order = sort_interval_values(har_long['Interval'], include_rests=True)
+
+# count intervals per voice pair
+har_counts = (har_long.groupby(['Interval', 'Voice_Pair'])
+                      .size()
+                      .reset_index(name='Count'))
+
+# all voice pairs stacked in a single chart, in the standard CRIM colors
+fig = px.bar(har_counts,
+             x='Interval',
+             y='Count',
+             color='Voice_Pair',
+             category_orders={'Interval': interval_order, 'Voice_Pair': voice_pairs},
+             color_discrete_sequence=viz.contrasting_colors,
              height=700,
              width=1200,
-            title=chart_title)
-
+             title=chart_title)
 fig.show()
 ```
 
@@ -483,28 +493,31 @@ Here is a chart for an entire corpus:
 <Summary>Code to Use</Summary>
 
 ```python
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_interval_values
+
 remote_file_list  = ['https://crimproject.org/mei/CRIM_Model_0001.mei',
        'https://crimproject.org/mei/CRIM_Mass_0002_1.mei']
 corpus = CorpusBase(remote_file_list)
 
-# set parameters for melodic interval extraction
+# set parameters for harmonic interval extraction
 kind_choice = 'd'        # 'd' for diatonic, 'q' for quality
 compound_choice = True   # True for compound intervals, False for simple intervals
 directed_choice = True   # True for directed intervals, False for undirected intervals
 exclude_rests = True     # True to exclude rests, False to include rests
 
 # the corpus function
-corpus_har_ints = corpus.har(kind_choice='d', compound_choice=True, directed_choice=True, key_sig=False, include_final=False)
+corpus_har_ints = corpus.har(kind_choice=kind_choice, compound_choice=compound_choice, directed_choice=directed_choice, key_sig=False, include_final=False)
 
-
-# melt: metadata/position columns stay fixed, every voice column becomes rows
+# melt: metadata/position columns stay fixed, every voice-pair column becomes rows
 id_cols = ['Composer', 'Title', 'Date', 'Measure', 'Beat', 'Progress']
 voice_pair_cols = [c for c in corpus_har_ints.columns if c not in id_cols]
 
 har_long = corpus_har_ints.melt(id_vars=id_cols,
-                                    value_vars=voice_pair_cols,
-                                    var_name='Voice',
-                                    value_name='Interval')
+                                value_vars=voice_pair_cols,
+                                var_name='Voice_Pair',
+                                value_name='Interval')
 
 # drop empty cells (and rests, if requested)
 har_long = har_long.dropna(subset=['Interval'])
@@ -512,33 +525,23 @@ if exclude_rests:
     har_long = har_long[har_long['Interval'] != 'Rest']
 har_long['Interval'] = har_long['Interval'].astype(str)
 
-# order intervals: largest descending ... unison ... largest ascending
-# works for both diatonic ('-2', '3') and quality ('-m3', 'P5', 'M9') labels
-import re
-def interval_sort_key(label):
-    if label == 'Rest':
-        return (float('inf'), 0)
-    descending = label.startswith('-')
-    quality, size = re.match(r'([A-Za-z]*)(\d+)', label.lstrip('-')).groups()
-    q_rank = {'d': 0, 'm': 1, 'P': 2, 'M': 3, 'A': 4}.get(quality[:1], 2)
-    size = int(size)
-    return (-size, -q_rank) if descending else (size, q_rank)
+# order intervals: largest negative (voice crossing) ... unison ... largest positive
+interval_order = sort_interval_values(har_long['Interval'], include_rests=True)
 
-interval_order = sorted(har_long['Interval'].unique(), key=interval_sort_key)
-
-# count intervals per voice
-har_counts = (har_long.groupby(['Interval', 'Voice'])
+# count intervals per voice pair
+har_counts = (har_long.groupby(['Interval', 'Voice_Pair'])
                       .size()
                       .reset_index(name='Count'))
 
 # chart
 chart_title = "Distribution of Harmonic Intervals in Corpus"
-fig = px.bar(har_counts, 
-             x='Interval', 
-             y='Count', 
-             color='Voice',
+fig = px.bar(har_counts,
+             x='Interval',
+             y='Count',
+             color='Voice_Pair',
              title=chart_title,
-             category_orders={'Interval': interval_order, 'Voice Pair': voice_cols})
+             category_orders={'Interval': interval_order, 'Voice_Pair': voice_pair_cols},
+             color_discrete_sequence=viz.contrasting_colors)
 fig.update_layout(xaxis_title="Interval",
                   yaxis_title="Count",
                   legend_title='Voice Pairs',

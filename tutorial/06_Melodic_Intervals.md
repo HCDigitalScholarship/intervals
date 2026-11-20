@@ -265,6 +265,8 @@ corpus_mel = corpus.mel(kind_choice='d', compound_choice=True, directed_choice=T
 
 As we explain the [Visualizations_Summary](/tutorial/17_Visualizations_Summary.md), the **Plotly** library provides some powerful tools for displaying tabular data in various charts and plots.
 
+In these charts the intervals run from the largest descending interval, through the unison, to the largest ascending one.  The order comes from `sort_interval_values()` in `crim_intervals/sorting_lists.py`, which works for diatonic or quality intervals, simple or compound.  The colors are the shared CRIM palette, `viz.contrasting_colors`, so each voice looks the same here as in the other charts.  Both can be replaced with your own: pass any list of intervals as the order (to show only a subset, for example), or any list of colors.
+
 ### For a Single Piece
 
 First with the voices as separate charts:
@@ -278,6 +280,10 @@ First with the voices as separate charts:
 <Summary>Code to Use</Summary>
 
 ```python
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_interval_values
+
 # import the piece
 url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
 piece = importScore(url)
@@ -312,27 +318,13 @@ if exclude_rests:
 mel_long['Interval'] = mel_long['Interval'].astype(str)
 
 # order intervals: largest descending ... unison ... largest ascending
-# works for both diatonic ('-2', '3') and quality ('-m3', 'P5', 'M9') labels
-import re
-def interval_sort_key(label):
-    if label == 'Rest':
-        return (float('inf'), 0)
-    descending = label.startswith('-')
-    quality, size = re.match(r'([A-Za-z]*)(\d+)', label.lstrip('-')).groups()
-    q_rank = {'d': 0, 'm': 1, 'P': 2, 'M': 3, 'A': 4}.get(quality[:1], 2)
-    size = int(size)
-    return (-size, -q_rank) if descending else (size, q_rank)
-
-interval_order = sorted(mel_long['Interval'].unique(), key=interval_sort_key)
+# (sort_interval_values from sorting_lists.py works for diatonic or quality, simple or compound)
+interval_order = sort_interval_values(mel_long['Interval'], include_rests=True)
 
 # count intervals per voice
 mel_counts = (mel_long.groupby(['Interval', 'Voice'])
                       .size()
                       .reset_index(name='Count'))
-
-# colors: one per voice
-custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
-color_dict = {voice: custom_palette[i % len(custom_palette)] for i, voice in enumerate(voices)}
 
 # chart with each voice as a facet, intervals on the x-axis, counts on the y-axis
 fig = px.bar(mel_counts,
@@ -341,26 +333,23 @@ fig = px.bar(mel_counts,
              color='Voice',
              facet_col='Voice',
              category_orders={'Interval': interval_order, 'Voice': voices},
-             color_discrete_map=color_dict,
+             color_discrete_sequence=viz.contrasting_colors,
              height=700,
              width=1000,
              title=chart_title)
 fig.show()
 
 # or, if you prefer a single stacked bar chart with all voices combined:
-
-# all voices combined on a single chart
 fig = px.bar(mel_counts,
              x='Interval',
              y='Count',
              color='Voice',
              category_orders={'Interval': interval_order, 'Voice': voices},
-             color_discrete_map=color_dict,
+             color_discrete_sequence=viz.contrasting_colors,
              height=700,
              width=1000,
              title=chart_title)
 fig.show()
-
 ```
 
 </Details>
@@ -380,6 +369,10 @@ Or a combined chart with all voices stacked:
 <Summary>Code to Use</Summary>
 
 ```python
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_interval_values
+
 # import the piece
 url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
 piece = importScore(url)
@@ -414,29 +407,13 @@ if exclude_rests:
 mel_long['Interval'] = mel_long['Interval'].astype(str)
 
 # order intervals: largest descending ... unison ... largest ascending
-# works for both diatonic ('-2', '3') and quality ('-m3', 'P5', 'M9') labels
-import re
-def interval_sort_key(label):
-    if label == 'Rest':
-        return (float('inf'), 0)
-    descending = label.startswith('-')
-    quality, size = re.match(r'([A-Za-z]*)(\d+)', label.lstrip('-')).groups()
-    q_rank = {'d': 0, 'm': 1, 'P': 2, 'M': 3, 'A': 4}.get(quality[:1], 2)
-    size = int(size)
-    return (-size, -q_rank) if descending else (size, q_rank)
-
-interval_order = sorted(mel_long['Interval'].unique(), key=interval_sort_key)
+# (sort_interval_values from sorting_lists.py works for diatonic or quality, simple or compound)
+interval_order = sort_interval_values(mel_long['Interval'], include_rests=True)
 
 # count intervals per voice
 mel_counts = (mel_long.groupby(['Interval', 'Voice'])
                       .size()
                       .reset_index(name='Count'))
-
-# colors: one per voice
-custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
-color_dict = {voice: custom_palette[i % len(custom_palette)] for i, voice in enumerate(voices)}
-
-
 
 # all voices combined on a single chart
 fig = px.bar(mel_counts,
@@ -444,12 +421,11 @@ fig = px.bar(mel_counts,
              y='Count',
              color='Voice',
              category_orders={'Interval': interval_order, 'Voice': voices},
-             color_discrete_map=color_dict,
+             color_discrete_sequence=viz.contrasting_colors,
              height=700,
              width=1000,
              title=chart_title)
 fig.show()
-
 ```
 
 </Details>
@@ -474,6 +450,9 @@ Here is how to do it:
 <Summary>Code to Use</Summary>
 
 ```python
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_interval_values
 
 remote_file_list  = ['https://crimproject.org/mei/CRIM_Model_0001.mei',
        'https://crimproject.org/mei/CRIM_Mass_0002_1.mei']
@@ -486,8 +465,7 @@ directed_choice = True   # True for directed intervals, False for undirected int
 exclude_rests = True     # True to exclude rests, False to include rests
 
 # the corpus function
-corpus_melodic_ints = corpus.mel(kind_choice='d', compound_choice=True, directed_choice=True, key_sig=False, include_final=False)
-
+corpus_melodic_ints = corpus.mel(kind_choice=kind_choice, compound_choice=compound_choice, directed_choice=directed_choice, key_sig=False, include_final=False)
 
 # melt: metadata/position columns stay fixed, every voice column becomes rows
 id_cols = ['Composer', 'Title', 'Date', 'Measure', 'Beat', 'Progress']
@@ -505,18 +483,7 @@ if exclude_rests:
 mel_long['Interval'] = mel_long['Interval'].astype(str)
 
 # order intervals: largest descending ... unison ... largest ascending
-# works for both diatonic ('-2', '3') and quality ('-m3', 'P5', 'M9') labels
-import re
-def interval_sort_key(label):
-    if label == 'Rest':
-        return (float('inf'), 0)
-    descending = label.startswith('-')
-    quality, size = re.match(r'([A-Za-z]*)(\d+)', label.lstrip('-')).groups()
-    q_rank = {'d': 0, 'm': 1, 'P': 2, 'M': 3, 'A': 4}.get(quality[:1], 2)
-    size = int(size)
-    return (-size, -q_rank) if descending else (size, q_rank)
-
-interval_order = sorted(mel_long['Interval'].unique(), key=interval_sort_key)
+interval_order = sort_interval_values(mel_long['Interval'], include_rests=True)
 
 # count intervals per voice
 mel_counts = (mel_long.groupby(['Interval', 'Voice'])
@@ -525,12 +492,13 @@ mel_counts = (mel_long.groupby(['Interval', 'Voice'])
 
 # chart
 chart_title = "Distribution of Melodic Intervals in Corpus"
-fig = px.bar(mel_counts, 
-              x='Interval', 
-              y='Count', 
-              color='Voice',
-              title=chart_title,
-              category_orders={'Interval': interval_order, 'Voice': voice_cols})
+fig = px.bar(mel_counts,
+             x='Interval',
+             y='Count',
+             color='Voice',
+             title=chart_title,
+             category_orders={'Interval': interval_order, 'Voice': voice_cols},
+             color_discrete_sequence=viz.contrasting_colors)
 fig.update_layout(xaxis_title="Interval",
                   yaxis_title="Count",
                   legend_title='Voices',

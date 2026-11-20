@@ -1,5 +1,7 @@
 # variable orders.  These include the full chromatic range of possibilities
 
+import re
+import numpy as np
 import pandas as pd
 
 # pitch order for sorting, including all chromatic alterations and octaves 2-6, but no double shartps or flats
@@ -243,8 +245,8 @@ def sort_pitch_values(values, order=None, include_rests=True):
     """
     if values is None:
         return []
-    if isinstance(values, pd.Series):
-        values = values.tolist()
+    if isinstance(values, (pd.Series, pd.Index, np.ndarray)):
+        values = list(values)
     elif isinstance(values, str):
         values = [values]
     elif not isinstance(values, (list, tuple, set)):
@@ -271,3 +273,67 @@ def sort_pitch_values(values, order=None, include_rests=True):
         return (1, len(order_lookup), text)
 
     return [value for value in sorted(values, key=_sort_key) if not pd.isna(value)]
+
+
+_INTERVAL_QUALITY_RANK = {'d': 0, 'm': 1, 'P': 2, 'M': 3, 'A': 4}
+
+
+def interval_sort_key(label):
+    """
+    Sort key for interval labels, from the largest descending interval through
+    the unison to the largest ascending one (e.g. '-P8', ..., '-m2', 'P1',
+    'm2', ..., 'M10').
+
+    Works for diatonic ('-2', '3') and quality ('-m3', 'P5', 'd5', 'A4')
+    labels, simple or compound.  Within one size, smaller qualities come first
+    when ascending (m3 before M3) and last when descending (-M3 before -m3),
+    matching `interval_order_quality`.  Rests and unrecognized labels sort
+    after all intervals.
+    """
+    match = re.fullmatch(r'(-?)([A-Za-z]*)(\d+)', str(label).strip())
+    if not match:
+        return (1, 0, 0, str(label))
+    sign, quality, size = match.groups()
+    size = int(size)
+    rank = _INTERVAL_QUALITY_RANK.get(quality[:1], 2)
+    if sign:
+        return (0, -size, -rank, '')
+    return (0, size, rank, '')
+
+
+def sort_interval_values(values, include_rests=False):
+    """
+    Return the distinct interval labels in `values`, ordered with
+    `interval_sort_key` (largest descending ... unison ... largest ascending).
+
+    Parameters
+    ----------
+    values : list, tuple, set, pandas.Series, or scalar
+        Interval labels, e.g. from `piece.melodic()` or `piece.harmonic()`.
+    include_rests : bool, optional (default False)
+        Keep 'Rest' (placed after all intervals) or drop it.
+
+    Returns
+    -------
+    list
+        Unique labels in sorted order, with NaNs and empty placeholders
+        ('' or '-', as left by `fillna('-')`) dropped.
+    """
+    if values is None:
+        return []
+    if isinstance(values, (pd.Series, pd.Index, np.ndarray)):
+        values = list(values)
+    elif isinstance(values, str) or not isinstance(values, (list, tuple, set)):
+        values = [values]
+    unique = []
+    for value in values:
+        if pd.isna(value):
+            continue
+        text = str(value).strip()
+        if text in {'', '-'}:      # fillna placeholders, not intervals
+            continue
+        if text.lower() in {'r', 'rest'} and not include_rests:
+            continue
+        if text not in unique:
+            unique.append(text)
+    return sorted(unique, key=interval_sort_key)

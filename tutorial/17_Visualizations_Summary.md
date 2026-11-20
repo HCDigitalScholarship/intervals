@@ -132,7 +132,9 @@ Bar charts are used to display categorical data. They consist of vertical or hor
 
 ## Bar Graphs of Notes in Each Voice
 
-Here we the counts of each pitch (including octave) in each voice of a given piece.  Note that we can declare a custom 'order' for the pitches, so it's possible to present these as you like.  Here we have sorted them from lowest to highest.  You could also display only a subset of pitches.
+Here we show the counts of each pitch (including octave) in each voice of a given piece, sorted from lowest to highest.
+
+The order comes from `crim_intervals/sorting_lists.py`, which holds the standard orders used throughout CRIM Intervals (`pitch_order`, `recta_order`, pitch-class orders, and `sort_pitch_values()` / `sort_interval_values()` to put any set of pitches or intervals in order).  The colors are the shared CRIM palette, `viz.contrasting_colors`.  Both can be replaced with your own: pass any list of pitches as the order (to show only a subset, for example), or any list of colors.
 
 ![alt text](images/nr_chart_voices.png)
 
@@ -143,45 +145,45 @@ Here we the counts of each pitch (including octave) in each voice of a given pie
 <Summary>Code to Produce this Chart</Summary>
 
 ```python
-# assuming all the usual CRIM Intervals imports already done .  . 
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_pitch_values
+
 url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
 piece = importScore(url)
 
 # give the chart a meaningful title based on your piece:
-md = piece.metadata  
+md = piece.metadata
 chart_title = "Distribution of Notes in " + md['composer'] + ", " + md['title']
 
-# set the custom order for pitches
-pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
-               'C3', 'C#3', 'D3', 'E-3','E3', 'F3', 'F#3', 'G3', 'G#3','A3', 'B-3','B3',
-               'C4', 'C#4','D4', 'E-4', 'E4', 'F4', 'F#4','G4', 'A4', 'B-4', 'B4',
-               'C5', 'C#5','D5', 'E-5','E5', 'F5', 'F#5', 'G5', 'A5', 'B-5', 'B5']
+exclude_rests = True     # True to exclude rests, False to include rests
 
-# get the notes and create the dataframe for the chart
-nr = piece.notes().fillna('-')  
-nr = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
-nr.rename(columns={'index': 'pitch'}, inplace=True)  
-nr['pitch'] = pd.Categorical(nr["pitch"], categories=pitch_order)  
-nr = nr.sort_values(by="pitch").dropna().copy()  
-voices = nr.columns.to_list()[1:]  # Exclude 'pitch' column
-# melt the dataframe to long format suitable for px.bar
-melted_nr = nr.melt(id_vars='pitch', var_name='voice', value_name='count')
-# create a custom color palette
-custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
-color_dict = {voice: custom_palette[i % len(custom_palette)] for i, voice in enumerate(voices)}
-# Plot using Plotly Express with stacked bars
-fig = px.bar(melted_nr, 
-             x='pitch', 
-             y='count', 
-             color='voice', 
-             facet_col='voice', 
-             category_orders={'pitch': pitch_order}, 
-             color_discrete_map=color_dict, barmode='stack',
+# get the notes
+nr = piece.notes()
+voices = nr.columns.to_list()
+
+# melt: every voice column becomes rows of (Voice, Pitch)
+nr_long = nr.melt(value_vars=voices, var_name='Voice', value_name='Pitch').dropna(subset=['Pitch'])
+if exclude_rests:
+    nr_long = nr_long[nr_long['Pitch'] != 'Rest']
+
+# count the pitches in each voice
+nr_counts = nr_long.groupby(['Pitch', 'Voice']).size().reset_index(name='Count')
+
+# order the pitches from low to high (uses pitch_order from sorting_lists.py)
+pitch_list = sort_pitch_values(nr_counts['Pitch'].unique())
+
+# each voice as a 'facet' with its own small chart, in the standard CRIM colors
+fig = px.bar(nr_counts,
+             x='Pitch',
+             y='Count',
+             color='Voice',
+             facet_col='Voice',
+             category_orders={'Pitch': pitch_list, 'Voice': voices},
+             color_discrete_sequence=viz.contrasting_colors,
              height=700,
              width=1000,
              title=chart_title)
-
-fig.update_layout(showlegend=True)
 fig.show()
 ``` 
 </Details>
@@ -198,35 +200,44 @@ fig.show()
 <Summary>Code to Produce this Chart</Summary>
 
 ```python
-import plotly.express as px
-# set order of tones
-pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
-               'C3', 'C#3', 'D3', 'E-3','E3', 'F3', 'F#3', 'G3', 'G#3','A3', 'B-3','B3',
-               'C4', 'C#4','D4', 'E-4', 'E4', 'F4', 'F#4','G4', 'A4', 'B-4', 'B4',
-               'C5', 'C#5','D5', 'E-5','E5', 'F5', 'F#5', 'G5', 'A5', 'B-5', 'B5']
-nr = piece.notes().fillna('-')  
-nr = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()  
-nr.rename(columns={'index': 'pitch'}, inplace=True)  
-nr['pitch'] = pd.Categorical(nr["pitch"], categories=pitch_order)  
-nr = nr.sort_values(by="pitch").dropna().copy()  
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_pitch_values
 
-voices = nr.columns.to_list()[1:]  # Exclude 'pitch' column
+url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
+piece = importScore(url)
 
-# Melt the dataframe to long format suitable for px.bar
-melted_nr = nr.melt(id_vars='pitch', var_name='voice', value_name='count')
+# give the chart a meaningful title based on your piece:
+md = piece.metadata
+chart_title = "Distribution of Notes in " + md['composer'] + ", " + md['title']
 
-# Create a custom color palette
-custom_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24 + px.colors.qualitative.Light24
-color_dict = {voice: custom_palette[i % len(custom_palette)] for i, voice in enumerate(voices)}
+exclude_rests = True     # True to exclude rests, False to include rests
 
-# Create the stacked bar chart
-fig = px.bar(nr_melted, 
-             x='pitch', 
-             y='count', 
-             color='voice', 
-             barmode='stack',
-            title="Chart of Melodic Intervals")
+# get the notes
+nr = piece.notes()
+voices = nr.columns.to_list()
 
+# melt: every voice column becomes rows of (Voice, Pitch)
+nr_long = nr.melt(value_vars=voices, var_name='Voice', value_name='Pitch').dropna(subset=['Pitch'])
+if exclude_rests:
+    nr_long = nr_long[nr_long['Pitch'] != 'Rest']
+
+# count the pitches in each voice
+nr_counts = nr_long.groupby(['Pitch', 'Voice']).size().reset_index(name='Count')
+
+# order the pitches from low to high (uses pitch_order from sorting_lists.py)
+pitch_list = sort_pitch_values(nr_counts['Pitch'].unique())
+
+# all voices stacked in a single chart, in the standard CRIM colors
+fig = px.bar(nr_counts,
+             x='Pitch',
+             y='Count',
+             color='Voice',
+             category_orders={'Pitch': pitch_list, 'Voice': voices},
+             color_discrete_sequence=viz.contrasting_colors,
+             height=700,
+             width=1000,
+             title=chart_title)
 fig.show()
 ```
 
@@ -247,54 +258,48 @@ with the `corpus.batch` methods, it is also possible to do same kind of thing fo
 <Summary>Code to Run</Summary>
 
 ```python
-# notes in a corpus
-def corpus_notes(corpus, combine_unisons_choice, combine_rests_choice):
-    func = ImportedPiece.notes  # <- NB there are no parentheses here
-    list_of_dfs = corpus.batch(func = func, 
-                                kwargs = {'combineUnisons': combine_unisons_choice, 'combineRests': combine_rests_choice}, 
-                                metadata=False)
-    func1 = ImportedPiece.numberParts
-    list_of_dfs = corpus.batch(func = func1,
-                               kwargs = {'df' : list_of_dfs},
-                               metadata=True)
-    
-    
-    nr = pd.concat(list_of_dfs)
-    cols_to_move = ['Composer', 'Title', 'Date']
-    nr = nr[cols_to_move + [col for col in nr.columns if col not in cols_to_move]]
-    return nr
-
-# settings
-combine_unisons_choice = False
-combine_rests_choice = False
-kind_choice = 'd'
-directed = True
-compound = True
-exclude_rests = True
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_pitch_values
 
 # load corpus
 file_list = ['https://crimproject.org/mei/CRIM_Model_0001.mei', 'https://crimproject.org/mei/CRIM_Model_0008.mei']
 corpus = CorpusBase(file_list)
 
-# run function and create chart
-nr = corpus_notes(corpus, combine_unisons_choice, combine_rests_choice)
-nr_no_mdata = nr.drop(['Composer', 'Title', "Date"], axis=1)
+exclude_rests = True     # True to exclude rests, False to include rests
 
-nr_counts = pd.DataFrame(nr_no_mdata.apply(pd.Series.value_counts))
+# pass that corpus to the given method, along with optional arguments
+corpus_notes_df = corpus.notes(combine_unisons_choice=True, combine_rests_choice=False, key_sig=False, include_final=False)
 
-if exclude_rests == True:
-    nr_counts = nr_counts.drop('Rest', axis=0)
-                                                               
-voices = nr_counts.columns.to_list() 
+# melt: metadata columns stay fixed, every voice column becomes rows
+id_cols = ['Composer', 'Title', 'Date']
+voice_cols = [c for c in corpus_notes_df.columns if c not in id_cols]
+nr_long = corpus_notes_df.melt(id_vars=id_cols,
+                               value_vars=voice_cols,
+                               var_name='Voice',
+                               value_name='Pitch').dropna(subset=['Pitch'])
+if exclude_rests:
+    nr_long = nr_long[nr_long['Pitch'] != 'Rest']
+
+# count the pitches in each voice
+nr_counts = nr_long.groupby(['Pitch', 'Voice']).size().reset_index(name='Count')
+
+# order the pitches from low to high (uses pitch_order from sorting_lists.py)
+pitch_list = sort_pitch_values(nr_counts['Pitch'].unique())
 
 chart_title = "Distribution of Notes in Corpus"
-fig = px.bar(nr_counts, x=nr_counts.index, y=list(nr_counts.columns),
-                    title=chart_title)
-fig.update_layout(xaxis_title="Note", 
-                    yaxis_title="Count",
-                    legend_title='Voices',
-                       height=700,
-                       width=1000)
+fig = px.bar(nr_counts,
+             x='Pitch',
+             y='Count',
+             color='Voice',
+             category_orders={'Pitch': pitch_list, 'Voice': voice_cols},
+             color_discrete_sequence=viz.contrasting_colors,
+             title=chart_title)
+fig.update_layout(xaxis_title="Note",
+                  yaxis_title="Count",
+                  legend_title='Voices',
+                  height=700,
+                  width=1000)
 fig.show()
 ```
 

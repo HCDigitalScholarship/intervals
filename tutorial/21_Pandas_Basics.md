@@ -149,31 +149,26 @@ Or sorted by the *counts in a particular voice* (here the NA's are filled with 0
 
 But it is also possible to *declare a sort order for the pitches* , then organize the entire data frame in that sequence. This will show the voice ranges of each part.
 
-First, create a list of the pitches in order (from low to high, in this case). Note that music21 (and thus CRIM Intervals) represents B-flat as `B-`. C-sharp is `C#`.
+The order is a list of the pitches in sequence.  CRIM Intervals provides standard lists in `crim_intervals/sorting_lists.py`; here we use `pitch_order`, which runs from low to high ('Rest' first, then C2 up to C6).  Note that music21 (and thus CRIM Intervals) represents B-flat as `B-`. C-sharp is `C#`.  Any list of pitches of your own would work the same way.
+
+Create a dataframe corresponding to our piece, and sort it by pitches, as shown:
 
 ```python
-pitch_order = ['E-2', 'E2', 'F2', 'F#2', 'G2', 'A2', 'B-2', 'B2', 
-               'C3', 'C#3', 'D3', 'E-3','E3', 'F3', 'F#3', 'G3', 'G#3','A3', 'B-3','B3',
-               'C4', 'C#4','D4', 'E-4', 'E4', 'F4', 'F#4','G4', 'A4', 'B-4', 'B4',
-               'C5', 'C#5','D5', 'E-5','E5', 'F5', 'F#5', 'G5', 'A5', 'B-5', 'B5']
-```
+from crim_intervals.sorting_lists import pitch_order
 
-Then, create a dataframe corresponding to our piece, and sort it by pitches, as shown:
-
-```python
 #find notes, fill NA's
-df = piece.notes().fillna('-') 
+nr = piece.notes().fillna('-')
 
 #count the values, fill NA's and make a copy for safety
-df = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy() 
+df = nr.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()
 
 #rename the index as 'pitch'
-df.rename(columns = {'index':'pitch'}, inplace = True) 
+df.rename(columns = {'index':'pitch'}, inplace = True)
 
-#assign the order from pitch_order above
-df['pitch'] = pd.Categorial(df["pitch"], categories = pitch_order)
+#assign the order from pitch_order (anything not in the list, like '-', becomes NA)
+df['pitch'] = pd.Categorical(df["pitch"], categories = pitch_order)
 
-#sort values, drop NA's, and copy 
+#sort values, drop NA's, and copy
 df = df.sort_values(by = "pitch").dropna().copy()
 
 #display results as df
@@ -198,33 +193,31 @@ And so on, as above. Remember that it is also possible to specify various parame
 
 #### Sorting Melodic Intervals  
 
-Similar to the note order created above, first define an order of intervals as follows:  
+The same approach works for intervals.  `sorting_lists.py` provides `interval_order_quality` (simple quality intervals from -P8 to P8), and `sort_interval_values()`, which puts any set of intervals in order (largest descending, through the unison, to largest ascending), whether diatonic or quality, simple or compound.  Here we let it build the order from the intervals found in the piece, then sort the counts with it:
 
 ```python
-int_order = ["P1", "m2", "M2", "m3", "M3", "P4", "P5", "m6", "M6", "m7", "M7", "P8", "-m2", "-M2", "-m3", "-M3", "-P4", "-P5", "-m6", "-M6", "-m7", "-M7", "-P8"] 
-``` 
+from crim_intervals.sorting_lists import sort_interval_values
 
-This `int_order` can now be used to sort the intervals from smallest to largest, ascending to descending:
-
-
-```python
 #df of melodic intervals, NA's filled
-mel = piece.melodic().fillna("-") 
+mel = piece.melodic().fillna("-")
+
+#the intervals found in the piece, from largest descending to largest ascending
+int_order = sort_interval_values(mel.stack())
 
 #counting the intervals, NA's filled as 0, and copy the df to avoid problems
 mel = mel.apply(pd.Series.value_counts).fillna(0).astype(int).reset_index().copy()
 
-#rename the index as 'interval' 
-mel.rename(columns = {'index':'interval'}, inplace = True) 
+#rename the index as 'interval'
+mel.rename(columns = {'index':'interval'}, inplace = True)
 
-#map each interval to the order specified in the "int_order" list above
+#map each interval to the order in the "int_order" list above
 mel['interval'] = pd.Categorical(mel["interval"], categories = int_order)
 
 #sort the results, remove NA's, and make a copy to avoid problems
 mel = mel.sort_values(by = "interval").dropna().copy()
 
 #reset the index and display
-mel.reset_index() 
+mel.reset_index()
 ```
 
 

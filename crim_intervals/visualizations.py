@@ -141,8 +141,10 @@ class ColorManager:
         df['color'] = df['pattern'].apply(self.get_color_for_pattern)
         return df
 
-# Initialize global color manager
+# Initialize global color manager (the alias is for functions whose
+# `color_manager` argument hides the module-level name)
 color_manager = ColorManager()
+_shared_color_manager = color_manager
 
 class PatternStyleManager:
     """
@@ -174,18 +176,25 @@ class PatternStyleManager:
 # Initialize global pattern style manager
 pattern_style_manager = PatternStyleManager()
 
-def _hatch_marker(color, shape):
+def _hatch_marker(color, shape, opacity=None, line_width=1):
     """
     Build a high-contrast Plotly marker spec for a greyscale hatch segment:
     a black hatch drawn larger and denser than Plotly's defaults so the
     shape reads clearly even in small bars, plus a solid outline to keep
-    adjacent segments visually separated.
+    adjacent segments visually separated. `opacity` and `line_width` may be
+    lists (one value per bar).
     """
-    return dict(
+    marker = dict(
         color=color,
         pattern=dict(shape=shape, size=10, solidity=0.55, fgcolor='black', fgopacity=1),
-        line=dict(color='black', width=1)
+        line=dict(color='black', width=line_width)
     )
+    if opacity is not None:
+        marker['opacity'] = opacity
+    return marker
+
+# opacity of n-gram bars that are not entries, when an entry_mask is given
+NON_ENTRY_OPACITY = 0.35
 
 def create_bar_chart(variable, count, color, data, condition, *selectors):
     """
@@ -206,29 +215,46 @@ def create_bar_chart(variable, count, color, data, condition, *selectors):
     )
     return observer_chart
 
-def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip, style='color'):
+def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selector_condition, *selectors, tooltip, style='color',
+                   style_manager=None):
     """
     Create a heatmap. By default (style='color') this is an interactive Altair
     chart that distinguishes segments by color. Pass style='greyscale' to get a
     Plotly chart that instead distinguishes segments using grey shades combined
     with hatch fills, for print or colorblind-safe use. The greyscale style does
     not support the Altair cross-filtering selection behavior.
+
+    If `data` has an 'entry' column (see process_ngrams_df's entry_mask),
+    entries are drawn solid with an outline and other bars are faded.
     """
     if style == 'greyscale':
-        return _create_greyscale_heatmap(x, x2, y, data, heat_map_width, heat_map_height, tooltip)
+        return _create_greyscale_heatmap(x, x2, y, data, heat_map_width, heat_map_height, tooltip,
+                                         style_manager=style_manager)
 
     color_scale = alt.Scale(
         domain=data['pattern'].unique(),
         range=data['color'].unique()
     )
 
-    heatmap = alt.Chart(data).mark_bar().encode(
+    if 'entry' in data.columns:
+        data = data.assign(opacity=data['entry'].map({True: 1.0, False: NON_ENTRY_OPACITY}))
+        mark = alt.Chart(data).mark_bar(stroke='black')
+        extra = dict(
+            opacity=alt.condition(selector_condition, alt.Opacity('opacity:Q', scale=None, legend=None), alt.value(0.1)),
+            strokeWidth=alt.condition('datum.entry', alt.value(1.5), alt.value(0)),
+        )
+    else:
+        mark = alt.Chart(data).mark_bar()
+        extra = dict(opacity=alt.condition(selector_condition, alt.value(1), alt.value(0.2)))
+
+    heatmap = mark.encode(
         x=x,
         x2=x2,
         y=y,
-        color=alt.Color('pattern:N', scale=color_scale, legend=alt.Legend(title='Pattern')),
-        opacity=alt.condition(selector_condition, alt.value(1), alt.value(0.2)),
-        tooltip=tooltip
+        # symbolOpacity keeps legend swatches solid when bars are faded
+        color=alt.Color('pattern:N', scale=color_scale, legend=alt.Legend(title='Pattern', symbolOpacity=1)),
+        tooltip=tooltip,
+        **extra
     ).properties(
         width=heat_map_width,
         height=heat_map_height
@@ -237,13 +263,16 @@ def create_heatmap(x, x2, y, color, data, heat_map_width, heat_map_height, selec
     )
     return heatmap
 
-def _create_greyscale_heatmap(x_field, x2_field, y_field, data, heat_map_width, heat_map_height, tooltip):
+def _create_greyscale_heatmap(x_field, x2_field, y_field, data, heat_map_width, heat_map_height, tooltip,
+                              style_manager=None):
     """
     Build a greyscale, hatch-patterned heatmap with Plotly. Each unique value
     in the 'pattern' column gets a distinct grey shade + hatch shape
     combination (from PatternStyleManager) so segments stay distinguishable
-    without relying on color.
+    without relying on color. If `data` has an 'entry' column, entries get a
+    heavier outline and other bars are faded.
     """
+    style_manager = style_manager or pattern_style_manager
     y_col = y_field.shorthand if hasattr(y_field, 'shorthand') else y_field
     voice_order = list(pd.unique(data[y_col]))
     hover_cols = [col for col in tooltip if col in data.columns]
@@ -251,14 +280,20 @@ def _create_greyscale_heatmap(x_field, x2_field, y_field, data, heat_map_width, 
     fig = go.Figure()
     for pattern in pd.unique(data['pattern']):
         subset = data[data['pattern'] == pattern]
-        pattern_style = pattern_style_manager.get_style_for_pattern(pattern)
+        pattern_style = style_manager.get_style_for_pattern(pattern)
+        if 'entry' in subset.columns:
+            marker = _hatch_marker(pattern_style['color'], pattern_style['shape'],
+                                   opacity=[1.0 if e else NON_ENTRY_OPACITY for e in subset['entry']],
+                                   line_width=[2 if e else 0.5 for e in subset['entry']])
+        else:
+            marker = _hatch_marker(pattern_style['color'], pattern_style['shape'])
         fig.add_trace(go.Bar(
             base=subset[x_field],
             x=subset[x2_field] - subset[x_field],
             y=subset[y_col],
             orientation='h',
             name=str(pattern),
-            marker=_hatch_marker(pattern_style['color'], pattern_style['shape']),
+            marker=marker,
             customdata=subset[hover_cols].values if hover_cols else None,
             hovertemplate=(
                 "<br>".join(f"{col}: %{{customdata[{i}]}}" for i, col in enumerate(hover_cols))
@@ -281,15 +316,16 @@ def _create_greyscale_heatmap(x_field, x2_field, y_field, data, heat_map_width, 
                      showgrid=True, gridcolor='#e6e6e6', zeroline=False)
     return fig
 
-def _create_greyscale_barchart(data):
+def _create_greyscale_barchart(data, style_manager=None):
     """
     Grey/hatch-patterned bar chart of pattern counts, styled to match
     _create_greyscale_heatmap's pattern styling so the two stay consistent
     when shown together.
     """
+    style_manager = style_manager or pattern_style_manager
     counts = data['pattern'].value_counts()
     patterns = list(counts.index)
-    styles = [pattern_style_manager.get_style_for_pattern(p) for p in patterns]
+    styles = [style_manager.get_style_for_pattern(p) for p in patterns]
 
     fig = go.Figure(go.Bar(
         x=patterns,
@@ -321,7 +357,7 @@ def _process_ngrams_df_helper(ngrams_df, main_col):
     ngrams_df["start"] = ngrams_df["start"].astype(float)
     return ngrams_df
 
-def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, voices=None):
+def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, voices=None, entry_mask=None):
     """
     This method combines ngrams from all voices in different columns
     into one column and calculates the starts and end points of the
@@ -331,8 +367,17 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
     position), so `ngrams_duration` may cover more cells than `ngrams_df`.
     N-grams with no matching duration get no end point and are left out of
     the heatmap, with a warning.
+
+    If `entry_mask` (a DataFrame with the same offsets and voices, e.g. the
+    result of `entries(..., anywhere=False)`) is given, an 'entry' column is
+    added: True where `entry_mask` has a value at that offset and voice.
     """
     ngrams_df = _process_ngrams_df_helper(ngrams_df, 'pattern')
+    if entry_mask is not None:
+        flags = _process_ngrams_df_helper(entry_mask, 'flag').dropna(subset=['flag'])
+        flags = flags[flags['flag'] != '']   # entries(...).fillna('') leaves '' cells
+        keys = pd.MultiIndex.from_frame(flags[['start', 'voice']])
+        ngrams_df['entry'] = pd.MultiIndex.from_frame(ngrams_df[['start', 'voice']]).isin(keys)
     if ngrams_duration is not None:
         durations = _process_ngrams_df_helper(ngrams_duration, 'duration')
         durations = durations.dropna(subset=['duration']).drop_duplicates(['start', 'voice'])
@@ -367,12 +412,19 @@ def generate_distinct_colors(n):
         colors.append(color)
     return colors
 
-def ngrams_color_helper(new_processed_ngrams_df: pd.DataFrame) -> pd.DataFrame:
+def ngrams_color_helper(new_processed_ngrams_df: pd.DataFrame, manager=None) -> pd.DataFrame:
     """
     Add a Series to the dataframe that assigns a unique hex color to each unique pattern
-    using the global color manager to ensure consistency across plots.
+    using `manager` (a ColorManager), or the module's shared color_manager if None,
+    to ensure consistency across plots.
     """
-    return color_manager.assign_colors_to_dataframe(new_processed_ngrams_df)
+    return (manager or _shared_color_manager).assign_colors_to_dataframe(new_processed_ngrams_df)
+
+def _pattern_str(pattern):
+    """The string form of a pattern used for chart labels and color lookups."""
+    if isinstance(pattern, (list, tuple)):
+        return ", ".join(str(item) for item in pattern)
+    return str(pattern)
 
 def _ngram_chart_settings(ngrams_df, selected_patterns=None, voices=None, extra=()):
     """Settings phrases for an n-gram chart: how the n-grams were made
@@ -396,7 +448,7 @@ def _altair_title(title, parts):
 
 
 def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_height=300, includeCount=False, title=None, style='color',
-                            settings=()):
+                            settings=(), color_manager=None, style_manager=None):
     """
     Plot a heatmap for crim-intervals getNgram's processed output. Pass
     style='greyscale' for a hatch-patterned, grey-shaded Plotly chart instead
@@ -408,16 +460,14 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
 
     # make a copy of the processed n_grams and turn them into Strings
     new_processed_ngrams_df = processed_ngrams_df.copy()
-    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
-        lambda cell: ", ".join(str(item) for item in cell),
-        na_action='ignore'
-    )
+    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(_pattern_str, na_action='ignore')
 
     # Use the color manager to assign consistent colors
-    new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df)
+    new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df, color_manager)
 
+    tooltip = ['start', 'end', 'pattern'] + (['entry'] if 'entry' in new_processed_ngrams_df.columns else [])
     heatmap = create_heatmap('start', 'end', y, 'pattern', new_processed_ngrams_df, heatmap_width, heatmap_height,
-                            selector, selector, tooltip=['start', 'end', 'pattern'], style=style)
+                            selector, selector, tooltip=tooltip, style=style, style_manager=style_manager)
 
     if style == 'greyscale':
         if includeCount:
@@ -428,7 +478,7 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
             bar_chart_height = 300
             heatmap_panel_height = max(heatmap_height, 400)
             total_height = bar_chart_height + heatmap_panel_height
-            patterns_bar = _create_greyscale_barchart(new_processed_ngrams_df)
+            patterns_bar = _create_greyscale_barchart(new_processed_ngrams_df, style_manager=style_manager)
             chart = make_subplots(
                 rows=2, cols=1,
                 row_heights=[bar_chart_height / total_height, heatmap_panel_height / total_height],
@@ -469,8 +519,28 @@ def _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=800, heatmap_heig
 
     return chart
 
+ENTRIES_OPTIONS = ('mark', 'only', 'all')
+
+def _apply_entries_option(ngrams_df, entry_mask, entries):
+    """
+    Resolve plot_ngrams_heatmap's `entries` option into the n-grams to plot
+    and the entry mask to mark them with. For 'only', the entries themselves
+    are plotted (so the chart's subtitle describes them).
+    """
+    if entries not in ENTRIES_OPTIONS:
+        raise ValueError(f"entries must be one of {ENTRIES_OPTIONS}, not {entries!r}")
+    if entries == 'only':
+        if entry_mask is None:
+            raise ValueError("entries='only' needs an entry_mask, e.g. "
+                             "piece.entries(df=mel, n=n, thematic=True, anywhere=False)")
+        return entry_mask, None
+    if entries == 'all':
+        return ngrams_df, None
+    return ngrams_df, entry_mask
+
 def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[],
-                       heatmap_width=800, heatmap_height=300, includeCount=False, title=None, style='color'):
+                       heatmap_width=800, heatmap_height=300, includeCount=False, title=None, style='color',
+                       entry_mask=None, entries='mark', color_manager=None, style_manager=None):
     """
     Plot a heatmap for crim-intervals getNgram's output. Pass style='greyscale'
     for a hatch-patterned, grey-shaded Plotly chart instead of the default
@@ -484,78 +554,177 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     `piece.durations(df=mel, n=n, mask_df=ngrams_df)`, using the same `df`
     and `n` as the n-grams. Durations are matched by offset and voice; any
     n-gram without one is left out, with a warning.
+
+    `entry_mask` (optional) marks which bars are real entries, which matters
+    when `ngrams_df` comes from `entries(..., anywhere=True)` or `ngrams()`:
+    those include occurrences that don't follow a rest. Pass the same call
+    with `anywhere=False`, e.g.
+
+        ent = piece.entries(df=mel, n=4, thematic=True, anywhere=True)
+        real = piece.entries(df=mel, n=4, thematic=True, anywhere=False)
+        dur = piece.durations(df=mel, n=4, mask_df=ent)
+        viz.plot_ngrams_heatmap(ent, dur, entry_mask=real)
+
+    `entries` sets how `entry_mask` is used:
+
+    - 'mark' (default): show every bar; entries are drawn solid with an
+      outline and the other bars are faded.
+    - 'only': show only the entries (the cells of `entry_mask`).
+    - 'all': show every bar solid, with no marking (as if no `entry_mask`).
+
+    `color_manager` (a `ColorManager`) and `style_manager` (a
+    `PatternStyleManager`, for style='greyscale') set the pattern colors.
+    By default the module's shared managers are used, so a pattern keeps its
+    color across charts. Pass your own to keep charts independent, or to give
+    a group of charts the same colors (see `plot_paired_ngram_heatmaps`).
     """
+    ngrams_df, entry_mask = _apply_entries_option(ngrams_df, entry_mask, entries)
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
-                                          selected_pattern=selected_patterns, voices=voices)
+                                          selected_pattern=selected_patterns, voices=voices,
+                                          entry_mask=entry_mask)
+    extra = ['faded bars are not entries'] if entry_mask is not None else ()
     return _plot_ngrams_df_heatmap(processed_ngrams_df, heatmap_width=heatmap_width,
                                  heatmap_height=heatmap_height, includeCount=includeCount, title=title, style=style,
-                                 settings=_ngram_chart_settings(ngrams_df, selected_patterns, voices))
+                                 settings=_ngram_chart_settings(ngrams_df, selected_patterns, voices, extra=extra),
+                                 color_manager=color_manager, style_manager=style_manager)
 
 def plot_ngrams_barchart(ngrams_df, ngrams_duration=None, selected_patterns=[], voices=[], chart_width=800,
-                        chart_height=300, title=None):
+                        chart_height=300, title=None, color_manager=None):
     """
     Plot a bar chart for crim-intervals getNgram's output. The settings used
     to make the n-grams, and the patterns and voices selected, are shown below
-    the title.
+    the title. See `plot_ngrams_heatmap` for `color_manager`.
     """
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
                                           selected_pattern=selected_patterns,
                                           voices=voices)
-    chart = _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=chart_width, chart_height=chart_height)
+    chart = _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=chart_width, chart_height=chart_height,
+                                     color_manager=color_manager)
     alt_title = _altair_title(title, _ngram_chart_settings(ngrams_df, selected_patterns, voices))
     return chart.properties(title=alt_title) if alt_title is not None else chart
 
-def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300):
+def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300, color_manager=None):
     """
     Plot a bar chart for crim-intervals getNgram's processed output.
     """
     processed_ngrams_df = processed_ngrams_df.dropna(how='any')
     selector = alt.selection_point(fields=['pattern'])
-    
+
     # make a copy of the processed n_grams and turn them into Strings
     new_processed_ngrams_df = processed_ngrams_df.copy()
-    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
-        lambda cell: ", ".join(str(item) for item in cell),
-        na_action='ignore'
-    )
-    
+    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(_pattern_str, na_action='ignore')
+
     # Add color assignment for consistency
-    new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df)
-    
+    new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df, color_manager)
+
     variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
     return create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
 
 
 # Helper function for your analysis code
-def pre_register_patterns(shared_entries):
-    """Pre-register patterns with the color manager to ensure consistency"""
+def pre_register_patterns(shared_entries, color_manager=None):
+    """Pre-register patterns with a ColorManager (the module's shared one if
+    None) so that they get the same colors in every chart."""
+    manager = color_manager or _shared_color_manager
     for pattern in shared_entries:
-        if isinstance(pattern, (list, tuple)):
-            pattern_str = ", ".join(str(item) for item in pattern)
-        else:
-            pattern_str = str(pattern)
-        color_manager.get_color_for_pattern(pattern_str)
-# 2025 version
-# FIXED: Updated bar chart function to include color consistency
-def _plot_ngrams_df_barchart(processed_ngrams_df, chart_width=800, chart_height=300):
+        manager.get_color_for_pattern(_pattern_str(pattern))
+
+
+def _distinct_patterns(ngrams_df):
+    """The patterns in an n-gram DataFrame, in order of first occurrence."""
+    stacked = ngrams_df.stack().dropna()
+    return [p for p in stacked.unique() if not (isinstance(p, str) and p == '')]
+
+
+def plot_paired_ngram_heatmaps(ngrams, durations=None, entry_masks=None, model=None, selected_patterns=None,
+                               voices=[], heatmap_width=800, heatmap_height=300, includeCount=False,
+                               style='color', entries='mark'):
     """
-    Plot a bar chart for crim-intervals getNgram's processed output.
+    Heat maps of the n-grams a model shares with each of its derivatives (for
+    example the movements of a Mass): one pair of charts per derivative.
+
+    Each pair shows only the patterns the model and that derivative have in
+    common. A pattern has the same color (or, with style='greyscale', the
+    same grey and hatch) in every chart. The charts get their own color
+    managers, so the module's shared `color_manager` is not changed.
+
+    :param ngrams: dict {name: n-gram DataFrame}, e.g. from `ngrams()` or
+        `entries()`. The first entry is the model unless `model` names another.
+    :param durations: optional dict {name: durations DataFrame}, made with
+        `piece.durations(df=mel, n=n, mask_df=ngrams[name])`.
+    :param entry_masks: optional dict {name: DataFrame} marking real entries
+        (see `plot_ngrams_heatmap`'s `entry_mask`).
+    :param entries: 'mark' (default) fades the bars that aren't entries,
+        'only' shows only the entries (and finds the shared patterns among
+        the entries alone), 'all' shows every bar solid. 'mark' and 'only'
+        need `entry_masks`.
+    :param model: the key of the model in `ngrams` (default: the first key).
+    :param selected_patterns: optional list of patterns; if given, only shared
+        patterns in this list are shown.
+    :param voices, heatmap_width, heatmap_height, includeCount, style: as for
+        `plot_ngrams_heatmap`.
+    :return: a list of (derivative name, model chart, derivative chart).
+        A derivative that shares no patterns with the model is left out, with
+        a warning.
+
+    Example
+    -------
+    ```python
+    ngrams, durs = {}, {}
+    for piece in [model, mass_1, mass_2]:
+        mel = piece.melodic(df=piece.notes(combineUnisons=True), kind='d', compound=False, end=False)
+        ngrams[piece.file_name] = piece.entries(df=mel, n=4, thematic=True, anywhere=True)
+        durs[piece.file_name] = piece.durations(df=mel, n=4, mask_df=ngrams[piece.file_name])
+    for name, model_chart, mass_chart in viz.plot_paired_ngram_heatmaps(ngrams, durs):
+        display(model_chart, mass_chart)
+    ```
     """
-    processed_ngrams_df = processed_ngrams_df.dropna(how='any')
-    selector = alt.selection_point(fields=['pattern'])
-    
-    # make a copy of the processed n_grams and turn them into Strings
-    new_processed_ngrams_df = processed_ngrams_df.copy()
-    new_processed_ngrams_df['pattern'] = processed_ngrams_df['pattern'].map(
-        lambda cell: ", ".join(str(item) for item in cell), 
-        na_action='ignore'
-    )
-    
-    # FIXED: Add color assignment for consistency
-    new_processed_ngrams_df = ngrams_color_helper(new_processed_ngrams_df)
-    
-    variable = alt.X('pattern', axis=alt.Axis(labelAngle=-45))
-    return create_bar_chart(variable, 'count(pattern)', 'pattern', new_processed_ngrams_df, selector, selector)
+    if not ngrams:
+        return []
+    if entries not in ENTRIES_OPTIONS:
+        raise ValueError(f"entries must be one of {ENTRIES_OPTIONS}, not {entries!r}")
+    names = list(ngrams)
+    model = names[0] if model is None else model
+    durations = durations or {}
+    entry_masks = entry_masks or {}
+    if entries == 'only':
+        missing = [name for name in names if entry_masks.get(name) is None]
+        if missing:
+            raise ValueError(f"entries='only' needs entry_masks for every piece; missing: {missing}")
+        # plot the entries themselves, so shared patterns come from entries alone
+        ngrams, entry_masks = {name: entry_masks[name] for name in names}, {}
+    elif entries == 'all':
+        entry_masks = {}
+
+    model_patterns = _distinct_patterns(ngrams[model])
+    if selected_patterns is not None:
+        keep = {_pattern_str(p) for p in selected_patterns}
+        model_patterns = [p for p in model_patterns if _pattern_str(p) in keep]
+
+    # one set of colors and styles for every chart, in the model's order
+    colors, styles = ColorManager(), PatternStyleManager()
+    pre_register_patterns(model_patterns, colors)
+    for p in model_patterns:
+        styles.get_style_for_pattern(_pattern_str(p))
+
+    pairs = []
+    for name in names:
+        if name == model:
+            continue
+        in_derivative = set(_distinct_patterns(ngrams[name]))
+        shared = [p for p in model_patterns if p in in_derivative]
+        if not shared:
+            warnings.warn(f"{name} shares no patterns with {model}; no charts made for it.")
+            continue
+        common = dict(selected_patterns=shared, voices=voices, heatmap_width=heatmap_width,
+                      heatmap_height=heatmap_height, includeCount=includeCount, style=style,
+                      color_manager=colors, style_manager=styles)
+        model_chart = plot_ngrams_heatmap(ngrams[model], durations.get(model), entry_mask=entry_masks.get(model),
+                                          title=f"{model} (patterns shared with {name})", **common)
+        derivative_chart = plot_ngrams_heatmap(ngrams[name], durations.get(name), entry_mask=entry_masks.get(name),
+                                               title=f"{name} (patterns shared with {model})", **common)
+        pairs.append((name, model_chart, derivative_chart))
+    return pairs
 
 # unchanged
 def _from_ema_to_offsets(df, ema_column):
@@ -945,10 +1114,21 @@ def _data_settings(df):
     return parts
 
 
-def _settings_title(title, parts):
+def _settings_title(title, parts, max_chars=110):
     """Plotly title with a second, smaller line listing the settings."""
     parts = [p for p in parts if p]
-    return f"{title}<br><sup>{' · '.join(parts)}</sup>" if parts else title
+    if not parts:
+        return title
+    # Plotly titles don't wrap, so break long settings lines between phrases
+    lines, line = [], ''
+    for p in parts:
+        if line and len(line) + len(p) + 3 > max_chars:
+            lines.append(line)
+            line = p
+        else:
+            line = f"{line} · {p}" if line else p
+    lines.append(line)
+    return f"{title}<br>" + '<br>'.join(f"<sup>{l}</sup>" for l in lines)
 
 
 def _category_yaxis(fig, categories, **kwargs):

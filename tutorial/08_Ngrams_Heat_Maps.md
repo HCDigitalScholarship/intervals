@@ -518,7 +518,7 @@ display(viz.plot_ngrams_heatmap(mod_entry_ngrams, mod_mel_ngrams_duration,
 
 Now for a corpus consisting of a 'model' (the first piece in the list) and any set of other pieces (normally the movements of a Mass). Note that the code below shows only the 'entry' ngrams shared by each pair of pieces. Here we show just the first pair:
 
-![Alt text](images/visualization_1.png)
+
 ![Alt text](images/visualization_2.png)
 
 <Details>
@@ -591,6 +591,71 @@ for movement in mass_movements:
 ```
 
 </Details>
+
+<br>
+
+#### The Same Charts with `plot_paired_ngram_heatmaps()`
+
+`viz.plot_paired_ngram_heatmaps()` does the work of the loop above. Give it a dictionary of n-gram DataFrames, one per piece, with the model first. It returns one pair of charts for each other piece, showing only the patterns that piece shares with the model. A pattern has the same color in every chart. A piece that shares no patterns with the model is skipped, with a warning.
+
+Note that `anywhere=True` returns *every* occurrence of an entry pattern, including ones that don't follow a rest. To tell the real entries apart, also pass `entry_masks`: the same `entries()` call with `anywhere=False`. Then choose what to show with `entries`:
+
+- `entries='mark'` (the default): every occurrence is shown. Real entries (after a rest or fermata) are drawn solid with an outline, and the other bars are faded.
+- `entries='only'`: only the real entries are shown, and the shared patterns are found among the real entries alone.
+- `entries='all'`: every occurrence is shown solid, with no marking.
+
+`plot_ngrams_heatmap()` takes the same two arguments for a single piece, as `entry_mask` and `entries`.
+
+<Details>
+
+<Summary>Code to Use</Summary>
+
+```python
+ngrams, durations, real_entries = {}, {}, {}
+for movement in piece_list:   # the model first
+    piece = importScore(prefix + movement)
+    nr = piece.notes(combineUnisons=combineUnisons)
+    mel = piece.melodic(df=nr, kind=kind, compound=compound, unit=0, end=False)
+    name = piece.file_name
+    ngrams[name] = piece.entries(df=mel, n=ngram_length, thematic=True, anywhere=True)
+    durations[name] = piece.durations(df=mel, n=ngram_length, mask_df=ngrams[name])
+    real_entries[name] = piece.entries(df=mel, n=ngram_length, thematic=True, anywhere=False)
+
+for name, model_chart, movement_chart in viz.plot_paired_ngram_heatmaps(ngrams, durations, entry_masks=real_entries,
+                                                                        entries='mark'):   # or 'only', or 'all'
+    display(model_chart)
+    display(movement_chart)
+```
+
+Add `style='greyscale'` for charts that use grey shades and hatching instead of color.
+
+For a single piece:
+
+```python
+viz.plot_ngrams_heatmap(ngrams[name], durations[name], entry_mask=real_entries[name], entries='only')
+```
+
+</Details>
+
+<br>
+
+Here is the first pair (the Model 0019 and the Kyrie of Mass 0019, n = 4) with each option.
+
+`entries='mark'`: every occurrence, with the real entries solid and outlined:
+
+![Paired heat maps, entries='mark'](images/paired_heatmap_mark.png)
+
+`entries='only'`: the real entries alone:
+
+![Paired heat maps, entries='only'](images/paired_heatmap_only.png)
+
+`entries='all'`: every occurrence, all solid:
+
+![Paired heat maps, entries='all'](images/paired_heatmap_all.png)
+
+`entries='mark'` with `style='greyscale'` (and `heatmap_height=420`, to leave room for the legend):
+
+![Paired heat maps, entries='mark', greyscale](images/paired_heatmap_greyscale.png)
 
 <br>
 -----

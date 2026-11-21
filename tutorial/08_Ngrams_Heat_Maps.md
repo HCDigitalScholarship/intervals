@@ -292,6 +292,8 @@ but occur only once in the piece.
 instances of entry melodies, whether they come from rests or not.
 - If `fermatas` is set to True (default), any melody starting immediately
 after a fermata will also be counted as an entry.
+- `exclude` (default `['Rest']`, the same as `ngrams()`) leaves out n-grams that contain
+a rest. It only matters when you pass `n` to `entries()`. Pass `exclude=[]` to keep them.
 
 Thus compare *moving window of melodic ngrams*:
 
@@ -309,7 +311,7 @@ With results *limited to entries*:
 ```python
 mel = piece.melodic(kind = 'd', end = False)
 mel_ngrams = piece.ngrams(df = mel, n = 4, offsets = 'first')
-entries = piece.entries(df = mel_ngrams, thematic=False, anywhere=False, fermatas=True, exclude=[]).fillna('')
+entries = piece.entries(df = mel_ngrams, thematic=False, anywhere=False, fermatas=True).fillna('')
 entries
 ```
 

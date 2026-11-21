@@ -5,6 +5,7 @@ This script contains the method
 import altair as alt
 import pandas as pd
 import re
+import warnings
 import textdistance
 import numpy as np 
 from crim_intervals import ImportedPiece
@@ -325,11 +326,23 @@ def process_ngrams_df(ngrams_df, ngrams_duration=None, selected_pattern=None, vo
     This method combines ngrams from all voices in different columns
     into one column and calculates the starts and end points of the
     patterns.
+
+    Durations are matched to n-grams by offset and voice (not by row
+    position), so `ngrams_duration` may cover more cells than `ngrams_df`.
+    N-grams with no matching duration get no end point and are left out of
+    the heatmap, with a warning.
     """
     ngrams_df = _process_ngrams_df_helper(ngrams_df, 'pattern')
     if ngrams_duration is not None:
-        ngrams_duration = _process_ngrams_df_helper(ngrams_duration, 'duration')
-        ngrams_df['end'] = ngrams_df['start'] + ngrams_duration['duration']
+        durations = _process_ngrams_df_helper(ngrams_duration, 'duration')
+        durations = durations.dropna(subset=['duration']).drop_duplicates(['start', 'voice'])
+        ngrams_df = ngrams_df.merge(durations, on=['start', 'voice'], how='left')
+        ngrams_df['end'] = ngrams_df['start'] + ngrams_df.pop('duration').astype(float)
+        unmatched = ngrams_df['pattern'].notna() & ngrams_df['end'].isna()
+        if unmatched.any():
+            warnings.warn(f"{unmatched.sum()} n-gram(s) have no matching duration in ngrams_duration "
+                          "(same offset and voice) and will not be plotted. Make the durations with "
+                          "piece.durations(df=..., n=..., mask_df=ngrams_df).")
     else:
         # make end=start+1 just to display offsets
         ngrams_df['end'] = ngrams_df['start'] + 1
@@ -466,6 +479,11 @@ def plot_ngrams_heatmap(ngrams_df, ngrams_duration=None, selected_patterns=[], v
     The settings used to make the n-grams (recorded on `ngrams_df` by
     melodic/harmonic/ngrams, see `get_settings`) and the patterns and voices
     selected here are shown below the title.
+
+    `ngrams_duration` (optional) gives each bar its length. Make it with
+    `piece.durations(df=mel, n=n, mask_df=ngrams_df)`, using the same `df`
+    and `n` as the n-grams. Durations are matched by offset and voice; any
+    n-gram without one is left out, with a warning.
     """
     processed_ngrams_df = process_ngrams_df(ngrams_df, ngrams_duration=ngrams_duration,
                                           selected_pattern=selected_patterns, voices=voices)
@@ -907,7 +925,12 @@ def _data_settings(df):
         e = s['entries']
         if e.get('n') is not None and 'ngrams' not in s:
             parts.append(f"n = {e['n']}")
-        parts.append('thematic entries' if e.get('thematic') else 'entries only')
+        if e.get('anywhere'):
+            # anywhere=True returns every occurrence of an entry pattern,
+            # not just the ones that follow a rest or fermata
+            parts.append(('thematic ' if e.get('thematic') else '') + 'entry patterns, all occurrences')
+        else:
+            parts.append('thematic entries' if e.get('thematic') else 'entries only')
     if 'sonority_ngrams' in s:
         g = s['sonority_ngrams']
         parts += [f"n = {g['ngram_length']}", f"min. beat strength = {g['minimum_beat_strength']}",

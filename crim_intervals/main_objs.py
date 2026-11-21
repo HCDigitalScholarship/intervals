@@ -3607,7 +3607,7 @@ class ImportedPiece:
         return self.analyses[key]
 
     @_records_settings('entries', ('n', 'thematic', 'anywhere'))
-    def entries(self, df=None, n=None, thematic=False, anywhere=False, fermatas=True, exclude=[]):
+    def entries(self, df=None, n=None, thematic=False, anywhere=False, fermatas=True, exclude=['Rest']):
         """
         Return a filtered copy of the passed df that only keeps the events in
         that df if they either start a piece or come after a silence. If the df
@@ -3633,6 +3633,10 @@ class ImportedPiece:
         instances of entry melodies, whether they come from rests or not.
         If `fermatas` is set to `True` (default), any melody starting immediately
         after a fermata will also be counted as an entry.
+        `exclude` is passed to `ngrams()` when `n` is given. It defaults to
+        `['Rest']` (the same as `ngrams()`), so entry n-grams never contain a
+        rest. Pass `exclude=[]` to keep n-grams that contain rests. It has no
+        effect when `n` is None.
         """
         if df is None:
             nr = self.notes(combineUnisons=True)

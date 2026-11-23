@@ -13,11 +13,11 @@ To work with the latest code and tutorials on your own computer, see [99_Local_I
 
 ## About CRIM Intervals
 
-Based on [**Python**](https://www.python.org/) and [**Pandas**](https://pandas.pydata.org/), and Mike Cuthbert's excellent **music21** (https://web.mit.edu/music21/), **CRIM Intervals** is a pattern finding engine for musical scores, with an emphasis on the kinds of melodic, harmonic, and contrapuntal patterns found in Renaissance polyphony. It has been developed as a primary data analysis tool for **Citations:  The Renaissance Imitation Mass** (http://crimproject.org and https://sites.google.com/haverford.edu/crim-project/home), directed by Professor Richard Freedman (Haverford College, USA), in partnership with dozens of researchers and students around the world. Contact rfreedma at haverford.edu to learn more about the project, and how you can take part.
+Based on [**Python**](https://www.python.org/) and [**Pandas**](https://pandas.pydata.org/), and Mike Cuthbert's excellent **music21** (https://web.mit.edu/music21/), **CRIM Intervals** is a pattern finding engine for musical scores, with an emphasis on the kinds of melodic, harmonic, and contrapuntal patterns found in Renaissance polyphony. It has been developed as a primary data analysis tool for **Citations:  The Renaissance Imitation Mass** (http://crimproject.org), directed by Professor Richard Freedman (Haverford College, USA), in partnership with dozens of researchers and students around the world. Contact rfreedma at haverford.edu to learn more about the project, and how you can take part.
 
 **File Formats**: CRIM Intervals will analyze scores encoded in several widely-used formats:  MEI, MusicXML, and MIDI.  Results will vary according to the editorial practices used in the underlying transcriptions and editions.  
 
-**The CRIM Intervals Web Application**:  Get started quickly with the [CRIM Intervals Streamlit Application](https://crimintervals.streamlit.app/), which requires no coding skills.  You can work with the CRIM Corpus, or import your own pieces, producing analytic tables, visualizations, and other results that you can download for use in publications and teaching.  The web app is free and requires no special account or software installation.  Tutorials are available on the site itself, with pointers back to the code and tutorials here on CRIM Intervals itself.
+**The CRIM Intervals Web Application**:  Get started quickly with the [CRIM Intervals Streamlit Application](https://intervals-streamlit.crimproject.org/), which requires no coding skills.  You can work with the CRIM Corpus, or import your own pieces, producing analytic tables, visualizations, and other results that you can download for use in publications and teaching.  The web app is free and requires no special account or software installation.  Tutorials are available on the site itself, with pointers back to the code and tutorials here on CRIM Intervals itself.
 
 **Learn How Others are Using CRIM Intervals** via [CRIM Essays and Experiments](https://crimproject.org/about/essays_experiments/), which assembles recent work by over two-dozen scholars and students from around the world. Find out what is possible, what others are thinking about, and how you might use their work to advance your teaching and research.
 
@@ -25,7 +25,7 @@ Based on [**Python**](https://www.python.org/) and [**Pandas**](https://pandas.p
 
 This repository contains the CRIM Intervals library itself, along with tutorials that explain the various methods, and Jupyter Notebooks that make them easy to use for your research and teaching.  There are various ways to get started:
 
-- The [CRIM Intervals Streamlit Application](https://crimintervals.streamlit.app/), which requires no coding skills.  You can work with the CRIM Corpus, or import your own pieces, producing analytic tables, visualizations, and other results that you can download for use in publications and teaching.
+- The [CRIM Intervals Streamlit Application](https://intervals-streamlit.crimproject.org/), which requires no coding skills.  You can work with the CRIM Corpus, or import your own pieces, producing analytic tables, visualizations, and other results that you can download for use in publications and teaching.
 
 - Install and run CRIM Intervals (along with the Notebooks) locally with **Anaconda Navigator, VS-Code, and Jupyter**.  See Richard Freedman's [Encoding Music course page](https://github.com/RichardFreedman/Encoding_Music/blob/main/01_Tutorials/02_Anaconda_VS_Code_Jupyter.md) to learn how.
 

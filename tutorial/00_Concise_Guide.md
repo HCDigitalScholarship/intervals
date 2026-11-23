@@ -4,7 +4,7 @@
 
 - **Results are tables.** Most methods return a pandas DataFrame with one column per voice. You can filter it, chain it into another method, export it, chart it, or show it as score excerpts.
 - **Options are documented in each method.** For example, `print(piece.melodic.__doc__)`. The numbered tutorials (column **T** below) explain every method in detail, with examples.
-- **No code needed?** The [CRIM Intervals web app](https://crimintervals.streamlit.app/) runs the main analyses in a browser.
+- **No code needed?** The [CRIM Intervals web app](https://intervals-streamlit.crimproject.org/) runs the main analyses in a browser.
 
 ```python
 # pip install crim_intervals

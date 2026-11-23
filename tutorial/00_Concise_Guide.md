@@ -3,7 +3,7 @@
 **CRIM Intervals** is a Python library for finding melodic, harmonic and contrapuntal patterns in encoded scores, with an emphasis on Renaissance polyphony. It is built on [music21](https://web.mit.edu/music21/) and [pandas](https://pandas.pydata.org/), and was developed for [Citations: The Renaissance Imitation Mass (CRIM)](https://crimproject.org).
 
 - **Results are tables.** Most methods return a pandas DataFrame with one column per voice. You can filter it, chain it into another method, export it, chart it, or show it as score excerpts.
-- **Options are documented in each method.** For example, `print(piece.melodic.__doc__)`. The numbered tutorials (column **T** below) explain every method in detail, with examples.
+- **Options are documented in each method.** For example, `print(piece.melodic.__doc__)`. The **Tutorial** column in each table below gives the number of the tutorial that explains that method in detail, with examples (for example, 08 is `08_Ngrams_Heat_Maps`).
 - **No code needed?** The [CRIM Intervals web app](https://intervals-streamlit.crimproject.org/) runs the main analyses in a browser.
 
 ```python
@@ -18,7 +18,7 @@ piece.ngrams(df=mel, n=4)                            # chain: 4-interval melodic
 
 ## 1. Loading Pieces and Working with a Corpus
 
-| Capability | How | T |
+| Capability | How | Tutorial |
 |---|---|---|
 | Import a piece: MEI, MusicXML or MIDI, from a URL or a local file | `importScore(path)` | 01 |
 | Import every score in a folder | `importScore(folder, recurse=True)` | 01 |
@@ -31,7 +31,7 @@ piece.ngrams(df=mel, n=4)                            # chain: 4-interval melodic
 
 ## 2. Notes, Rhythm, Meter and Text
 
-| Capability | How | T |
+| Capability | How | Tutorial |
 |---|---|---|
 | Notes and rests in each voice, with options to combine repeated notes or rests | `piece.notes(combineUnisons=, combineRests=)` | 02 |
 | Durations (quarter note = 1.0), including the length of each n-gram | `piece.durations(df=, n=, mask_df=)` | 03 |
@@ -43,7 +43,7 @@ piece.ngrams(df=mel, n=4)                            # chain: 4-interval melodic
 
 ## 3. Intervals and Sonorities
 
-| Capability | How | T |
+| Capability | How | Tutorial |
 |---|---|---|
 | Melodic intervals: diatonic or chromatic, with or without quality, directed or not, simple or compound, sampled at a regular time unit | `piece.melodic(kind=, directed=, compound=, unit=, end=)` | 06 |
 | Harmonic intervals between every pair of voices, or against the lowest voice | `piece.harmonic(kind=, directed=, compound=, againstLow=)` | 07 |
@@ -52,7 +52,7 @@ piece.ngrams(df=mel, n=4)                            # chain: 4-interval melodic
 
 ## 4. N-grams and Higher-Level Patterns
 
-| Capability | How | T |
+| Capability | How | Tutorial |
 |---|---|---|
 | N-grams of any feature (melodic or harmonic intervals, durations, lyrics) or a combination | `piece.ngrams(df=, n=, other=, offsets=)` | 08 |
 | Contrapuntal modules: vertical intervals combined with the lower voice's motion, the default kind of n-gram | `piece.ngrams()` | 09 |
@@ -68,7 +68,7 @@ piece.ngrams(df=mel, n=4)                            # chain: 4-interval melodic
 
 Charts from the ready-made functions show their **settings** beneath the title, and a piece, pattern or cadence type keeps the same color in every chart.
 
-| Chart | How | T |
+| Chart | How | Tutorial |
 |---|---|---|
 | Bar charts and histograms of notes and intervals | Plotly, with the results of `notes()`, `melodic()` and `harmonic()` | 02, 06, 07 |
 | N-gram heat map: where each pattern occurs in each voice. Real entries can be marked, with a greyscale option for print | `viz.plot_ngrams_heatmap(ngrams, durations, entry_mask=, entries=)` | 08, 17 |
@@ -85,7 +85,7 @@ Each ready-made chart function works with the result of either a single piece or
 
 ## 6. Score Excerpts
 
-| Capability | How | T |
+| Capability | How | Tutorial |
 |---|---|---|
 | Show any passage in modern notation (Verovio) | `piece.verovioPrintExample(...)` | 15 |
 | Show every cadence, presentation type or homorhythmic passage found | `verovioCadences()`, `verovioPtypes()`, `verovioHomorhythm()` | 15 |

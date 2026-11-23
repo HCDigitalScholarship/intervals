@@ -115,6 +115,7 @@ All CRIM intervals tools are available via a **Creative Commons** license (Attri
 
 ## Sections in this guide
 
+  * [00_Concise_Guide](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/00_Concise_Guide.md): a two-page summary of what CRIM Intervals can do
   * [01_Introduction_and_Corpus](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/01_Introduction_and_Corpus.md)
   * [02_Notes_Rests](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/02_Notes_Rests.md)
   * [03_Durations](https://github.com/HCDigitalScholarship/intervals/blob/main/tutorial/03_Durations.md)

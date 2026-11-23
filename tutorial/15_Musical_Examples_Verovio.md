@@ -5,7 +5,7 @@
 2. [`piece.verovioCadences()`](#pieceveroviocadences)
 3. [`piece.verovioHomorhythm()`](#pieceveroviohomorhythm)
 4. [`piece.verovioPtypes()`](#pieceverovioptypes)
-5. [Print with Analytic Highlights: `linkExample()`](#print-with-analytic-highlights--linkexample)
+5. [Print with Analytic Highlights: `linkExamples()`](#print-with-analytic-highlights--linkexamples)
 6. [Sections in this guide](#sections-in-this-guide)
 
 Thanks to Laurent Pugin's powerful suite of [Verovio](https://www.verovio.org/index.xhtml) engraving library, it is also possible to render musical examples from MEI and MusicXML files.  
@@ -13,7 +13,7 @@ Thanks to Laurent Pugin's powerful suite of [Verovio](https://www.verovio.org/in
 Here we present TWO approaches to creating musical examples in your notebook:
 
 * with various **`verovioPrint . . .()`** works with ONE piece at a time (for specific measure ranges, cadences, presntation types and homorhythym outputs); these produce LONG sequences of all the results
-* with various **`linkExample()`** can work with ONE piece or a corpus, producing table(s) with embedded links that you can view selectively, or even download as linked sheets.
+* with various **`linkExamples()`** can work with ONE piece or a corpus, producing table(s) with embedded links that you can view selectively, or even download as linked sheets.
 
 **NB:**  For BOTH methods you must load your MEI files from a URL (and not locally)
 
@@ -213,20 +213,20 @@ piece.verovioPtypes(p_types)
 
 ![alt text](images/linkex8.png)
 
-## Print with Analytic Highlights:  `linkExample()`
+## Print with Analytic Highlights:  `linkExamples()`
 
-Finally it is now also possible to print examples with analytic highlights corresponding to the notes identified by various CRIM Intervals methods.  This is accomplished with the `piece.linkExample()` function, which takes in a dataframe of results produced with any of the following:
+Finally it is now also possible to print examples with analytic highlights corresponding to the notes identified by various CRIM Intervals methods.  This is accomplished with the `piece.linkExamples()` function, which takes in a dataframe of results produced with any of the following:
 
 - **ngrams** (these could be melodic, harmonic, lyrics, durations, or modular ngrams)
 - **cadences**
 - **homorhythm**
 - **presentation types**
 
-The `linkExample` works by calculating the 'address' of each pattern, in this case formulated according to the Raffaele Viglianti's [Enhancing Music Addressability](https://music-encoding.org/projects/ema.html) API, which reduces any complex of selected notes to a string representing measures/staves/beats that can be used to return a valid segment of any MEI score corresponding to the passage in question.
+The `linkExamples` works by calculating the 'address' of each pattern, in this case formulated according to the Raffaele Viglianti's [Enhancing Music Addressability](https://music-encoding.org/projects/ema.html) API, which reduces any complex of selected notes to a string representing measures/staves/beats that can be used to return a valid segment of any MEI score corresponding to the passage in question.
 
 These score selections can then be rendered by Verovio with highlights and relevant metadata, thanks to a [JS REACT](https://github.com/eleon024/ema_react_app/tree/main) application created by Haverford College student Edgar Leon. 
 
-Note that `linkExample()` will **only work with MEI files** and will **only work with files stored in a remote repository** such as **github**. For example:
+Note that `linkExamples()` will **only work with MEI files** and will **only work with files stored in a remote repository** such as **github**. For example:
 
 ```python
 prefix = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_4.0/'
@@ -248,20 +248,20 @@ And a single rendered example (with highlights) looks like this:
 ![alt text](images/link_cad_2.png)
 
 
-### How to use `linkExample()`
+### How to use `linkExamples()`
 
 In practice we combined these tools with Juypyter Notebook:
 
 - Return your chosen pattern in a dataframe
 - Filter it as needed (to narrow the results, for instance)
-- Pass the results to `piece.linkExample(df=my_data_frame)`
+- Pass the results to `piece.linkExamples(df=my_data_frame)`
 - View the dataframe with and click on individual cells (they are 'links') to view the score with highlights and basic metadata about the composer, piece, and musical type.
 
 
 Given a dataframe of EMA addresses, return a dataframe of clickable links to the EMA React app. The `piece_url` parameter is the URL of the piece on the EMA React app. If you don't pass a `piece_url`, the method will try to construct one based on the piece's metadata. The resulting dataframe will have the same data results, but instead of plain text they will be links to highlighted examples of each result.
 
 
-### `linkExample()` with Cadences
+### `linkExamples()` with Cadences
 
 ```python
 url = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
@@ -291,7 +291,7 @@ piece.linkExamples(df=cd, piece_url=url)
 
 The method can also be used with other CRIM Intervals functions.
 
-### `linkExample()` with Melodic nGrams:
+### `linkExamples()` with Melodic nGrams:
 
 Note that you must use `offsets='both'` with the ngram function!
 
@@ -314,7 +314,7 @@ And view an individual example:
 ![alt text](<images/linkedex 11.png>)
 
 
-### `linkExample()` with Presentation Types
+### `linkExamples()` with Presentation Types
 
 Remember that the `presentationTypes` function has many parameters to set:
 
@@ -323,7 +323,7 @@ prefix = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim
 piece_id = 'CRIM_Model_0008.mei'
 url = prefix + piece_id
 piece = importScore(url)
-# note that you must ALSO pass the combine_unisons status to both the presentationTypes method AND the linkExample method!
+# note that you must ALSO pass the combine_unisons status to both the presentationTypes method AND the linkExamples method!
 combine_unisons = False
 pt = piece.presentationTypes(limit_to_entries = True,
                         head_flex=1,
@@ -333,7 +333,7 @@ pt = piece.presentationTypes(limit_to_entries = True,
                         melodic_ngram_length = 4)
 ```
 
-Then pass (or perhaps first filter) these results to the `linkExample` function:
+Then pass (or perhaps first filter) these results to the `linkExamples` function:
 
 Here we filter for Imitative Duos only:
 
@@ -341,7 +341,7 @@ Here we filter for Imitative Duos only:
 ids = pt[pt['Presentation_Type'] == "ID"]
 ```
 
-And then pass these ID's to the `linkExample` function:
+And then pass these ID's to the `linkExamples` function:
 
 
 
@@ -357,7 +357,7 @@ A single result:
 
 ![alt text](images/linkedex14.png)
 
-### `linkExample()` with Homorhythm
+### `linkExamples()` with Homorhythm
 
 ```python
 prefix = 'https://raw.githubusercontent.com/CRIM-Project/CRIM-online/master/crim/static/mei/MEI_4.0/'

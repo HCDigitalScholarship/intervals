@@ -264,16 +264,25 @@ son.groupby(['Title', 'Low_Sonority']).size()
 
 ### Charting Sonority N-grams
 
-`viz.sonority_ngram_progress()` shows where each n-gram pattern occurs: one row per pattern, with each occurrence placed by its progress through the piece. New material climbs diagonally, while recurring patterns appear as dots on the same horizontal line. Use `min_count=2` to see only the patterns that recur; with a corpus, these are the patterns **shared** among the pieces:
+`viz.sonority_ngram_progress()` shows where each n-gram pattern occurs: one row per pattern, with each occurrence placed by its progress through the piece. New material climbs diagonally, while recurring patterns appear as dots on the same horizontal line. The second line of the plot title records the settings used. 
+
 
 ```python
-import crim_intervals.visualizations as viz
-viz.sonority_ngram_progress(son, min_count=2)
+file_list = ['https://crimproject.org/mei/CRIM_Model_0019.mei', 
+             'https://crimproject.org/mei/CRIM_Mass_0019_1.mei',
+             'https://crimproject.org/mei/CRIM_Mass_0019_2.mei'
+             ]
+corpus = CorpusBase(file_list)
+son_cor = corpus.sonority_ngrams(ngram_length=3)
+viz.sonority_ngram_progress(son_cor)
 ```
 
-![Sonority n-grams shared in a corpus](images/vis_sonority_ngrams_corpus.png)
+![Sonority n-grams shared in a corpus](images/son_cor_plot.png)
 
-The second line of the title records the settings used. See [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md#sonority-n-gram-progress-plots) for the other options and more examples.
+
+Note that you could also use `viz.sonority_ngram_progress(son_cor, min_count=2)` to see only the patterns that recur; with a corpus, these are the patterns **shared** among the pieces.
+
+See [17_Visualizations_Summary](/tutorial/17_Visualizations_Summary.md#sonority-n-gram-progress-plots) for the other options and more examples.
 
 
 ## Harmonic Intervals in a Corpus

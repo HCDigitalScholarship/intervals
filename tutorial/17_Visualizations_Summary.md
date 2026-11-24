@@ -310,7 +310,162 @@ fig.show()
 
 ## Bar Charts with Melodic and Harmonic Intervals
 
-See the tutorials for [Melodic](/tutorial/06_Melodic_Intervals.md) and [Harmonic](/tutorial/07_Harmonic_Intervals_Sonorities.md) for ways to create charts like this for one or more pieces using those methods.
+The two charts below are typical of what you can do with **Plotly** and the results of `melodic()` and `harmonic()`. In both, the intervals run from the largest descending (or voice-crossing) interval, through the unison, to the largest ascending one. That order comes from `sort_interval_values()` in `crim_intervals/sorting_lists.py`. The colors are the shared CRIM palette, `viz.contrasting_colors`.
+
+Many variations are possible, for a single piece and for a whole corpus: separate or stacked charts, diatonic or quality intervals, simple or compound, and your own interval subsets or colors. See the tutorials on [Melodic Intervals](/tutorial/06_Melodic_Intervals.md#charts-with-melodic-intervals) and [Harmonic Intervals](/tutorial/07_Harmonic_Intervals_Sonorities.md#charts-with-harmonic-intervals) for the complete explanation and the other examples.
+
+### Melodic Intervals: Voices as Separate Charts
+
+<br>
+
+![alt text](images/bar_mel_voices.png)
+
+<br>
+
+<Details>
+
+<Summary>Code to Use</Summary>
+
+```python
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_interval_values
+
+# import the piece
+url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
+piece = importScore(url)
+
+# give the chart a meaningful title based on your piece:
+md = piece.metadata
+chart_title = "Distribution of Melodic Intervals in " + md['composer'] + ", " + md['title']
+
+# set parameters for melodic interval extraction
+kind_choice = 'q'        # 'd' for diatonic, 'q' for quality
+compound_choice = True   # True for compound intervals, False for simple intervals
+directed_choice = True   # True for directed intervals, False for undirected intervals
+exclude_rests = True     # True to exclude rests, False to include rests
+
+# get the melodic intervals
+mel = piece.melodic(kind=kind_choice, compound=compound_choice, directed=directed_choice)
+mel = piece.numberParts(mel)  # add part numbers to the column names
+voices = mel.columns.to_list()
+
+# melt: the offset (index) stays fixed, every voice column becomes rows
+mel_long = (mel.rename_axis('Offset')
+               .reset_index()
+               .melt(id_vars='Offset',
+                     value_vars=voices,
+                     var_name='Voice',
+                     value_name='Interval'))
+
+# drop empty cells (and rests, if requested)
+mel_long = mel_long.dropna(subset=['Interval'])
+if exclude_rests:
+    mel_long = mel_long[mel_long['Interval'] != 'Rest']
+mel_long['Interval'] = mel_long['Interval'].astype(str)
+
+# order intervals: largest descending ... unison ... largest ascending
+# (sort_interval_values from sorting_lists.py works for diatonic or quality, simple or compound)
+interval_order = sort_interval_values(mel_long['Interval'], include_rests=True)
+
+# count intervals per voice
+mel_counts = (mel_long.groupby(['Interval', 'Voice'])
+                      .size()
+                      .reset_index(name='Count'))
+
+# chart with each voice as a facet, intervals on the x-axis, counts on the y-axis
+fig = px.bar(mel_counts,
+             x='Interval',
+             y='Count',
+             color='Voice',
+             facet_col='Voice',
+             category_orders={'Interval': interval_order, 'Voice': voices},
+             color_discrete_sequence=viz.contrasting_colors,
+             height=700,
+             width=1000,
+             title=chart_title)
+fig.show()
+```
+
+</Details>
+
+<br>
+
+### Harmonic Intervals: Voice Pairs Stacked in a Single Chart
+
+<br>
+
+![alt text](images/har_chart_combined.png)
+
+<br>
+
+<Details>
+
+<Summary>Code to Use</Summary>
+
+```python
+# assuming all the usual CRIM Intervals imports already done . . .
+import crim_intervals.visualizations as viz
+from crim_intervals.sorting_lists import sort_interval_values
+
+# import the piece
+url = 'https://crimproject.org/mei/CRIM_Model_0001.mei'
+piece = importScore(url)
+
+# give the chart a meaningful title based on your piece:
+md = piece.metadata
+chart_title = "Distribution of Harmonic Intervals in " + md['composer'] + ", " + md['title']
+
+# set parameters for harmonic interval extraction
+kind_choice = 'q'        # 'd' for diatonic, 'q' for quality
+compound_choice = True   # True for compound intervals, False for simple intervals
+directed_choice = True   # True for directed intervals, False for undirected intervals
+exclude_rests = True     # True to exclude rests, False to include rests
+
+# get the harmonic intervals
+har = piece.harmonic(kind=kind_choice, compound=compound_choice, directed=directed_choice)
+har = piece.numberParts(har)  # add part numbers to the column names
+voice_pairs = har.columns.to_list()
+
+# melt: the offset (index) stays fixed, every voice-pair column becomes rows
+har_long = (har.rename_axis('Offset')
+               .reset_index()
+               .melt(id_vars='Offset',
+                     value_vars=voice_pairs,
+                     var_name='Voice_Pair',
+                     value_name='Interval'))
+
+# drop empty cells (and rests, if requested)
+har_long = har_long.dropna(subset=['Interval'])
+har_long['Interval'] = har_long['Interval'].astype(str)
+if exclude_rests:
+    har_long = har_long[har_long['Interval'] != 'Rest']
+
+# order intervals: largest negative (voice crossing) ... unison ... largest positive
+# (sort_interval_values from sorting_lists.py works for diatonic or quality, simple or compound)
+interval_order = sort_interval_values(har_long['Interval'], include_rests=True)
+
+# count intervals per voice pair
+har_counts = (har_long.groupby(['Interval', 'Voice_Pair'])
+                      .size()
+                      .reset_index(name='Count'))
+
+# all voice pairs stacked in a single chart, in the standard CRIM colors
+fig = px.bar(har_counts,
+             x='Interval',
+             y='Count',
+             color='Voice_Pair',
+             category_orders={'Interval': interval_order, 'Voice_Pair': voice_pairs},
+             color_discrete_sequence=viz.contrasting_colors,
+             height=700,
+             width=1200,
+             title=chart_title)
+fig.show()
+```
+
+</Details>
+
+<br>
 
 
 ## NGram Heat Maps
@@ -691,16 +846,28 @@ viz.sonority_ngram_progress(son)
 Most four-sonority n-grams occur only once, so a piece on its own is mostly one long climb; the returns are the few dots below it. To see only the recurring patterns, use `min_count=2`. With a corpus this shows the patterns that are **shared** among the pieces, colored by piece (here a model and two movements of the Mass based on it):
 
 ```python
-# a corpus: only patterns heard at least twice
-son = corpus.sonority_ngrams(ngram_length=4)
-viz.sonority_ngram_progress(son, min_count=2)
+# a corpus
+file_list = ['https://crimproject.org/mei/CRIM_Model_0019.mei', 
+             'https://crimproject.org/mei/CRIM_Mass_0019_1.mei',
+             'https://crimproject.org/mei/CRIM_Mass_0019_2.mei'
+             ]
+corpus = CorpusBase(file_list)
+son_cor = corpus.sonority_ngrams(ngram_length=3)
+viz.sonority_ngram_progress(son)
 ```
 
-![Sonority n-grams shared in a corpus](images/vis_sonority_ngrams_corpus.png)
+![Sonority n-grams shared in a corpus](images/son_cor_plot.png)
 
-With `facet=True`, each piece gets its own panel, which makes it easier to compare where the same patterns fall in each one:
+With `facet=True`, each piece gets its own panel, which makes it easier to compare where the same patterns fall in each one. Here we also report only those ngrams that appear *at least twice in each piece*, thus focussing on repetition both *within* and *among* pieces.
 
 ```python
+file_list = ['https://crimproject.org/mei/CRIM_Model_0019.mei', 
+             'https://crimproject.org/mei/CRIM_Mass_0019_1.mei',
+             'https://crimproject.org/mei/CRIM_Mass_0019_2.mei'
+             ]
+corpus = CorpusBase(file_list)
+son_cor = corpus.sonority_ngrams(ngram_length=3)
+viz.sonority_ngram_progress(son)
 viz.sonority_ngram_progress(son, min_count=2, facet=True)
 ```
 

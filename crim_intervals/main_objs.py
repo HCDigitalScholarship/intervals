@@ -3188,7 +3188,7 @@ class ImportedPiece:
             return roles
         labels['PartMap'] = cvfs_numbered.apply(_cvf_role_map, axis=1)
 
-        detailed = self.detailIndex(labels, measure=True, beat=True, t_sig=True, key_sig=key_sig,
+        detailed = self.detailIndex(labels, measure=True, beat=True, offset=True, t_sig=True, key_sig=key_sig,
             sounding=True, progress=True, lowest=True)
         # NEW: check for Rest and remove that row in detailed and labels
         # temp reset of index for value check
@@ -3231,6 +3231,7 @@ class ImportedPiece:
             labels['KeySig'] = detailed.index.get_level_values('KeySig').values
         labels['Measure'] = detailed.index.get_level_values('Measure').values
         labels['Beat'] = detailed.index.get_level_values('Beat').values
+        labels['Offset'] = detailed.index.get_level_values('Offset').values
         labels['Sounding'] = detailed.index.get_level_values('Sounding').values
         labels['Progress'] = detailed.index.get_level_values('Progress').values
         if include_final:
@@ -5429,7 +5430,7 @@ class CorpusBase:
             cadences are reported by title via a printed message rather than
             raising an error.
         """
-        col_list = ['Composer', 'Title', 'Date', 'Measure', 'Beat']
+        col_list = ['Composer', 'Title', 'Date', 'Measure', 'Beat', 'Offset']
         if keep_keys:
             col_list += ['Pattern', 'Key']
         col_list += ['CadType', 'Tone', 'CVFs']

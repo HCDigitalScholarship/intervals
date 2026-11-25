@@ -41,15 +41,17 @@ def test_classifyCadences():
     analysisNow.drop(columns='URL', inplace=True)
     groundTruth.drop(columns='URL', inplace=True)
     analysisNow.rename(columns={'Last': 'index'}, inplace=True)
-    groundTruth = groundTruth.astype(analysisNow.dtypes.to_dict())
-    # TSig/Measure/Beat reflect the piece's notated meter/positions, not the
-    # cadence classification itself. This test's purpose is to validate
+    # TSig/Measure/Beat/Offset reflect the piece's notated meter/positions, not
+    # the cadence classification itself. This test's purpose is to validate
     # classification (CadType, CVFs, Tone, etc.), so these can legitimately
-    # drift (e.g. if the source MEI file is revised) without indicating a
-    # classification regression -- ignore them here.
-    ignored_cols = ['TSig', 'Measure', 'Beat']
-    analysisNow = analysisNow.drop(columns=ignored_cols)
-    groundTruth = groundTruth.drop(columns=ignored_cols)
+    # drift (e.g. if the source MEI file is revised, or new positional columns
+    # are added to cadences() output) without indicating a classification
+    # regression -- ignore them here. Drop them before aligning dtypes so a
+    # column missing from the stored ground truth doesn't break astype().
+    ignored_cols = ['TSig', 'Measure', 'Beat', 'Offset']
+    analysisNow = analysisNow.drop(columns=ignored_cols, errors='ignore')
+    groundTruth = groundTruth.drop(columns=ignored_cols, errors='ignore')
+    groundTruth = groundTruth.astype(analysisNow.dtypes.to_dict())
     an = analysisNow.copy()
     gt = groundTruth.copy()
     print('Comparing current cadential analysis and ground truth...')

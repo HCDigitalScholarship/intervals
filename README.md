@@ -1,6 +1,6 @@
 # CRIM Intervals:  Python Tools for the Analysis of Encoded Music Scores
 
-### Current Version: 2.0.95
+### Current Version: 2.0.96
 
 
 [CRIM Intervals on github](https://github.com/HCDigitalScholarship/intervals/tree/main)

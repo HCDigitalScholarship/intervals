@@ -4421,7 +4421,7 @@ class ImportedPiece:
         piece.verovioCadences(cadences_filtered, highlights=True)
         ```
         """
-        tk = self._verovioToolkit(page_width=1500)
+        tk = self._verovioToolkit()
         # adding option to import filtered df of cadences
         if df is None:
             cadences = self.cadences()

@@ -139,6 +139,9 @@ for _family, _color in _cadence_family_colors.items():
     cadence_type_colors['Evaded ' + _family] = _tint(_color, 0.4)
     cadence_type_colors['Abandoned ' + _family] = _tint(_color, 0.65)
 
+# default color for notes highlighted in the ImportedPiece.verovio* score excerpts
+HIGHLIGHT_COLOR = '#d62728'
+
 
 # REST tokens as seen in CRIM Intervals output
 REST_TOKENS = {'r', 'rest', 'Rest', '-', ''}

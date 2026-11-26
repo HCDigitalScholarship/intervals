@@ -4194,13 +4194,32 @@ class ImportedPiece:
                        })
         return tk
 
+    def _measureRange(self, start, stop):
+        """
+        Verovio measureRange for measures start-stop, clamped to the measures in
+        the score. If either end names a measure that doesn't exist (e.g. one
+        past the final bar), Verovio ignores the selection and renders the whole
+        piece, so each end is snapped inward to the nearest existing measure.
+        """
+        if 'measureNumbers' not in self.analyses:
+            # MEI <measure n="..">, MusicXML <measure number="..">
+            found = re.findall(r'<measure\b[^>]*?\s(?:n|number)="(\d+)"', self._getMEIString())
+            self.analyses['measureNumbers'] = sorted({int(n) for n in found})
+        nums = self.analyses['measureNumbers']
+        start, stop = max(1, int(start)), int(stop)
+        if not nums:
+            return f"{start}-{stop}"
+        lo = next((n for n in nums if n >= start), nums[-1])
+        hi = next((n for n in reversed(nums) if n <= stop), nums[0])
+        return f"{min(lo, hi)}-{max(lo, hi)}"
+
     def _verovioPages(self, tk, start, stop, highlight_ids=(), color=HIGHLIGHT_COLOR):
         """
         Render measures start-stop with the toolkit from _verovioToolkit and
         return (svg_pages, found), where `found` counts how many of
         `highlight_ids` appear in the rendering (0 for MusicXML sources).
         """
-        tk.select({'measureRange': f"{max(1, int(start))}-{int(stop)}"})
+        tk.select({'measureRange': self._measureRange(start, stop)})
         tk.redoLayout()
         pages = [tk.renderToSVG(p) for p in range(1, tk.getPageCount() + 1)]
         ids = list(dict.fromkeys(highlight_ids or ()))
@@ -4356,8 +4375,9 @@ class ImportedPiece:
         """
         This function is used to display the results of the Cadence
         classifier in the Notebook with Verovio (learn more at:  https://www.verovio.org/index.xhtml).  Each excerpt is
-        two measures long:  the measure of the final tone of the cadence
-        and the previous measure.
+        three measures long:  the measure of the final tone of the cadence
+        and the measures before and after it (only two for a cadence in the
+        final bar).
 
         The function also displays metadata about each excerpt, drawn from the
         cadence results dataframe:  piece ID, composer, title, measures, type of
@@ -4420,7 +4440,7 @@ class ImportedPiece:
             c_beat = row["Beat"]
             cvfs = row['CVFs']
             low = int(c_meas-1)
-            high = int(c_meas)
+            high = int(c_meas+1)   # clamped to the final bar in _verovioPages
             ids = []
             if highlights:
                 offset = row['Offset'] if 'Offset' in row.index else self._offsetAt(c_meas, c_beat)

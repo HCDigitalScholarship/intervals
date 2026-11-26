@@ -25,6 +25,7 @@ import json
 import functools
 import inspect
 import urllib.parse
+import uuid
 from fractions import Fraction
 from .sorting_lists import (
     pitch_class_order,
@@ -43,6 +44,7 @@ from .sorting_lists import (
     species_octave_dict,
     species_intervals_list,
     species_octave_order,
+    HIGHLIGHT_COLOR,
 )
 main_objs_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -4162,8 +4164,195 @@ class ImportedPiece:
                         self.analyses[memo_key] = points
                         return points
             
+    # ------------------------------------------------ Verovio rendering helpers
+    # Used by the verovio* print methods below. music21's MEI reader keeps each
+    # note's xml:id as note.id, and Verovio keeps those ids on the SVG elements it
+    # draws, so ids taken from the piece's music21 objects match the rendered
+    # score and can be coloured. This works for MEI files only: Verovio gives
+    # MusicXML notes ids of its own, so MusicXML excerpts render unhighlighted.
+
+    def _getMEIString(self):
+        """Return the text of the piece's score file (fetched once, then cached)."""
+        if 'MEIString' not in self.analyses:
+            if self.path.startswith('http'):
+                text = httpx.get(self.path).text
+            elif os.path.isfile(self.path):
+                with open(self.path, 'r') as f:
+                    text = f.read()
+            else:   # the path is the score itself (e.g. a file uploaded to the app)
+                text = self.path
+            self.analyses['MEIString'] = text
+        return self.analyses['MEIString']
+
+    def _verovioToolkit(self, page_width=3000, scale=30):
+        """Return a Verovio toolkit with the piece loaded and the print methods' layout."""
+        tk = verovio.toolkit()
+        tk.loadData(self._getMEIString())
+        tk.setScale(scale)
+        tk.setOptions({"adjustPageHeight": True,  # Automatic page height
+                       "pageWidth": page_width    # Width in pixels
+                       })
+        return tk
+
+    def _verovioPages(self, tk, start, stop, highlight_ids=(), color=HIGHLIGHT_COLOR):
+        """
+        Render measures start-stop with the toolkit from _verovioToolkit and
+        return (svg_pages, found), where `found` counts how many of
+        `highlight_ids` appear in the rendering (0 for MusicXML sources).
+        """
+        tk.select({'measureRange': f"{max(1, int(start))}-{int(stop)}"})
+        tk.redoLayout()
+        pages = [tk.renderToSVG(p) for p in range(1, tk.getPageCount() + 1)]
+        ids = list(dict.fromkeys(highlight_ids or ()))
+        found = sum(1 for i in ids if any(f'id="{i}"' in svg for svg in pages))
+        if found:
+            pages = [self._highlightSVG(svg, ids, color) for svg in pages]
+        return pages, found
+
+    @staticmethod
+    def _highlightSVG(svg, ids, color=HIGHLIGHT_COLOR):
+        """
+        Return the SVG with a <style> block that colours the elements with the
+        given ids. The rule is scoped to this SVG (by a unique attribute on its
+        <svg> tag) because a notebook applies an output's styles to the whole
+        page, and the same note ids appear in every excerpt of the piece.
+        """
+        m = re.search(r'<svg\b[^>]*>', svg) if ids else None
+        if m is None:
+            return svg
+        scope = uuid.uuid4().hex[:12]
+        root = f'svg[data-crim-highlight="{scope}"]'
+        sel = ', '.join(f'{root} [id="{i}"], {root} [id="{i}"] *' for i in ids)
+        # CDATA keeps the quotes intact when IPython's SVG() re-serializes the markup
+        css = (f'<style><![CDATA[{sel} {{ fill: {color} !important; '
+               f'color: {color} !important; }}]]></style>')
+        tag = m.group(0)[:-1] + f' data-crim-highlight="{scope}">'
+        return svg[:m.start()] + tag + css + svg[m.end():]
+
+    @staticmethod
+    def _reportHighlights(requested, found):
+        """Explain why nothing was coloured when highlights were asked for."""
+        if requested and not found:
+            print("Note: no notes could be highlighted. Highlights need an MEI source "
+                  "(Verovio assigns its own ids to MusicXML notes).")
+
+    def _voiceName(self, voice):
+        """Accept a part name ('Altus') or a staff number ('2', as numberParts gives)."""
+        names = self._getPartNames()
+        if voice in names:
+            return voice
+        by_number = {num: name for name, num in self._getPartNumberDict().items()}
+        return by_number.get(str(voice))
+
+    def _noteIdsAtOffset(self, offset, voices=None):
+        """
+        Return the xml:ids of the notes sounding (attacked or held) at `offset`.
+        `voices` are part names or staff numbers to include (default: every voice).
+        """
+        objs = self._getM21Objs()
+        if voices is None:
+            cols = list(objs.columns)
+        else:
+            cols = [v for v in (self._voiceName(x) for x in voices) if v in objs.columns]
+        ids = []
+        for col in cols:
+            s = objs[col].dropna()
+            s = s[s.index <= offset]
+            if s.empty:
+                continue
+            n, start = s.iloc[-1], s.index[-1]
+            if not getattr(n, 'isNote', False):
+                continue                  # a rest: nothing to colour
+            if start + n.quarterLength <= offset:
+                continue                  # the note ended before the offset
+            if isinstance(n.id, str):     # a real xml:id, not a music21 memory id
+                ids.append(n.id)
+        return ids
+
+    def _noteIdsInSpan(self, voice, offset, n_notes, combine_unisons=False, before=0):
+        """
+        Return (ids, (first_measure, last_measure)) for `n_notes` consecutive
+        notes in `voice`, or ([], None) if there are none.
+
+        The span starts at the first note at or after `offset`, moved back by
+        `before` notes (e.g. 1 for melodic intervals made with end=True, whose
+        offsets are those of each interval's second note). Notes are counted as
+        crim_intervals counts them (so an n-gram of n intervals spans n + 1
+        notes); with combine_unisons, repeated pitches count once but every MEI
+        note in them is returned, as are tied continuations.
+        """
+        voice = self._voiceName(voice)
+        if voice is None or n_notes < 1:
+            return [], None
+        events = self.notes(combineUnisons=combine_unisons)[voice].dropna()
+        sounding = events[events != 'Rest']
+        first = int(sounding.index.searchsorted(offset)) - int(before)
+        if first < 0 or first >= len(sounding):
+            return [], None
+        start = sounding.index[first]
+        last = sounding.index[min(first + n_notes, len(sounding)) - 1]
+        later = events.index[events.index > last]
+        end = later[0] if len(later) else self.score.highestTime
+        objs = self._getM21Objs()[voice].dropna()
+        span = [o for o in objs[(objs.index >= start) & (objs.index < end)]
+                if getattr(o, 'isNote', False)]
+        ids = [o.id for o in span if isinstance(o.id, str)]
+        measures = [o.measureNumber for o in span if o.measureNumber is not None]
+        return ids, ((min(measures), max(measures)) if measures else None)
+
+    @staticmethod
+    def _mergeSpans(spans):
+        """Combine [(ids, (m1, m2)), ...] into (all_ids, (first, last)) for one excerpt."""
+        ids = [i for span_ids, _ in spans for i in span_ids]
+        ranges = [r for _, r in spans if r]
+        if not ranges:
+            return ids, None
+        return ids, (min(r[0] for r in ranges), max(r[1] for r in ranges))
+
+    def _offsetAt(self, measure, beat):
+        """Offset of the first event at (measure, beat), for results indexed only by Measure/Beat."""
+        key = 'MeasureBeatOffsets'
+        if key not in self.analyses:
+            idx = self.detailIndex(self.notes(), measure=True, beat=True, offset=True).index
+            lookup = {}
+            for m, b, o in zip(idx.get_level_values('Measure'), idx.get_level_values('Beat'),
+                               idx.get_level_values('Offset')):
+                lookup.setdefault((float(m), round(float(b), 4)), o)
+            self.analyses[key] = lookup
+        return self.analyses[key].get((float(measure), round(float(beat), 4)))
+
+    def _measureAtOffset(self, offset):
+        """Number of the measure sounding at `offset` (in any voice), or None."""
+        objs = self._getM21Objs()
+        objs = objs[objs.index <= offset]
+        for col in objs.columns:
+            s = objs[col].dropna()
+            if len(s) and s.iloc[-1].measureNumber is not None:
+                return s.iloc[-1].measureNumber
+        return None
+
+    def _rowOffsets(self, df):
+        """
+        Return the offset of each row of a result: from an 'Offset' (or, for
+        ngrams(offsets='both'), 'First') index level, from Measure/Beat levels,
+        or from a plain offset index.
+        """
+        idx = df.index
+        names = list(idx.names)
+        if 'Offset' in names:
+            return list(idx.get_level_values('Offset'))
+        if 'First' in names:
+            return list(idx.get_level_values('First'))
+        if 'Measure' in names and 'Beat' in names:
+            return [self._offsetAt(m, b) for m, b in
+                    zip(idx.get_level_values('Measure'), idx.get_level_values('Beat'))]
+        if idx.nlevels == 1 and pd.api.types.is_numeric_dtype(idx):
+            return list(idx)
+        raise ValueError("Can't find offsets for these rows: the index needs an 'Offset' "
+                         "level, Measure and Beat levels, or plain offsets.")
+
     # new print methods with verovio
-    def verovioCadences(self, df=None):
+    def verovioCadences(self, df=None, highlights=False, highlight_color=HIGHLIGHT_COLOR):
         """
         This function is used to display the results of the Cadence
         classifier in the Notebook with Verovio (learn more at:  https://www.verovio.org/index.xhtml).  Each excerpt is
@@ -4174,6 +4363,18 @@ class ImportedPiece:
         cadence results dataframe:  piece ID, composer, title, measures, type of
         cadence, beat of the bar in which the final tone is heard, and evaded
         status.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame, optional
+            The (optionally filtered) result of `piece.cadences()`. None
+            (default) runs `piece.cadences()`.
+        highlights : bool, optional (default False)
+            If True, colour the arrival notes of each cadence: the notes
+            sounding at the cadence's Offset in the voices that take part in it
+            (its cadential voice functions). Requires an MEI source.
+        highlight_color : str, optional
+            CSS colour for the highlighted notes (default red, '#d62728').
 
         Examples
         --------
@@ -4193,48 +4394,48 @@ class ImportedPiece:
         cadences_filtered = cadences[cadences['Tone'] == 'G']
         piece.verovioCadences(cadences_filtered)
         ```
+
+        To show the arrival notes of each cadence in red:
+
+        ```python
+        piece.verovioCadences(cadences_filtered, highlights=True)
+        ```
         """
-        if self.path.startswith('Music_Files/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        elif self.path.startswith('/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        else:
-            response = httpx.get(self.path)
-            fetched_mei_string = response.text
-        tk = verovio.toolkit()
-        tk.loadData(fetched_mei_string)
-        tk.setScale(30)
-        tk.setOptions({"adjustPageHeight": True, # Automatic page height
-                       "pageWidth":  1500    # Width in pixels
-                       })
+        tk = self._verovioToolkit(page_width=1500)
         # adding option to import filtered df of cadences
         if df is None:
             cadences = self.cadences()
         else:
             cadences = df
-        for cad in cadences.index:
-            c_meas = cadences.loc[cad]["Measure"]
-            c_tone = cadences.loc[cad]["Tone"]
-            c_type = cadences.loc[cad]["CadType"]
-            c_beat = cadences.loc[cad]["Beat"]
-            cvfs = cadences.loc[cad]['CVFs']
+        part_maps = {}
+        if highlights and 'PartMap' not in cadences.columns:
+            # voice_detail adds the PartMap (CVF -> staff numbers); cadences() is memoized
+            full = self.cadences(voice_detail=True)
+            part_maps = dict(zip(full['Offset'], full['PartMap']))
+        found_any = 0
+        for cad, row in cadences.iterrows():
+            c_meas = row["Measure"]
+            c_tone = row["Tone"]
+            c_type = row["CadType"]
+            c_beat = row["Beat"]
+            cvfs = row['CVFs']
             low = int(c_meas-1)
             high = int(c_meas)
-            mr = str(low) + "-" + str(high)
-            mdict = {'measureRange': mr}
+            ids = []
+            if highlights:
+                offset = row['Offset'] if 'Offset' in row.index else self._offsetAt(c_meas, c_beat)
+                part_map = row['PartMap'] if 'PartMap' in row.index else part_maps.get(offset)
+                if offset is not None:
+                    voices = [num for nums in part_map.values() for num in nums] if part_map else None
+                    ids = self._noteIdsAtOffset(offset, voices)
 
-            # select verovio measures and redo layout
-            # tk.select(str(mdict))
-            tk.select(mdict)
-            tk.redoLayout()
+            # select verovio measures, redo layout and render
+            pages, found = self._verovioPages(tk, low, high, ids, highlight_color)
+            found_any += found
 
             # get the number of pages and display the music
             print("Results:")
-            count = tk.getPageCount()
-            for c in range(1, count + 1):
-                music = tk.renderToSVG(c)
+            for music in pages:
                 print("File Name: ", self.file_name)
                 print(self.metadata['composer'])
                 print(self.metadata['title'])
@@ -4244,9 +4445,10 @@ class ImportedPiece:
                 print("Cadence Type: ", c_type)
                 print("Cadential Voice Functions: ", cvfs)
                 display(HTML(music))
+        self._reportHighlights(highlights and len(cadences), found_any)
     # January 2023 addition to print score or excerpt
 
-    def verovioPrintExample(self, start, stop):
+    def verovioPrintExample(self, start, stop, highlight_ids=None, highlight_color=HIGHLIGHT_COLOR):
 
         """
         Pass a range of measures (as integers) to print the given range (learn more at:  https://www.verovio.org/index.xhtml).
@@ -4256,50 +4458,43 @@ class ImportedPiece:
         ```python
         piece.verovioPrintExample(1, -1)
         ```
+
+        Pass a list of MEI xml:ids as `highlight_ids` to colour those notes
+        (red by default; set `highlight_color` to change it). Each note's
+        xml:id is its music21 `.id`, so ids can be gathered from the piece's
+        notes, e.g. every note in the Tenor in measures 1-4:
+
+        ```python
+        objs = piece._getM21Objs()['Tenor'].dropna()
+        ids = [n.id for n in objs if n.isNote and n.measureNumber <= 4]
+        piece.verovioPrintExample(1, 4, highlight_ids=ids)
+        ```
         """
-        if self.path.startswith('Music_Files/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        elif self.path.startswith('/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        else:
-            response = httpx.get(self.path)
-            fetched_mei_string = response.text
-        tk = verovio.toolkit()
-        tk.loadData(fetched_mei_string)
-        tk.setScale(30)
-        tk.setOptions({"adjustPageHeight": True, # Automatic page height
-                       "pageWidth":  3000    # Width in pixels
-                       })
+        tk = self._verovioToolkit(page_width=3000)
 
         if stop == -1:
             meas = self.measures()
             stop = meas.iloc[-1].tolist()[0]
 
         mr = str(start) + "-" + str(stop)
-        mdict = {'measureRange': mr}
 
         if stop < start:
             print("Check the measure range, the stop measure must be equal to or greater than the start measure")
         else:# select verovio measures and redo layout
-            # tk.select(str(mdict))
-            tk.select(mdict)
-            tk.redoLayout()
+            pages, found = self._verovioPages(tk, start, stop, highlight_ids, highlight_color)
 
             # get the number of pages and display the music
             print("Score:")
-            count = tk.getPageCount()
-            for c in range(1, count + 1):
-                music = tk.renderToSVG(c)
+            for music in pages:
                 print("File Name: ", self.file_name)
                 print(self.metadata['composer'])
                 print(self.metadata['title'])
-                print("Measures: " + str(start) + "-" + str(stop))
+                print("Measures: " + mr)
                 display(HTML(music))
+            self._reportHighlights(bool(highlight_ids), found)
 
     # July 2022 Addition for printing presentation types with Verovio
-    def verovioPtypes(self, p_types=None):
+    def verovioPtypes(self, p_types=None, highlights=False, highlight_color=HIGHLIGHT_COLOR):
         """
         This function is used to display the results of the presentationTypes function
         in the Notebook with Verovio (learn more at:  https://www.verovio.org/index.xhtml).  Each excerpt begins with
@@ -4310,6 +4505,20 @@ class ImportedPiece:
         presentation type dataframe:  piece ID, composer, title, measure range,
         presentation type, voices in order of entry, number of entries, the soggetti
         , melodic entry intervals, time entry intervals.
+
+        Parameters
+        ----------
+        p_types : pandas.DataFrame, optional
+            The (optionally filtered) result of `piece.presentationTypes()`.
+            None (default) runs `piece.presentationTypes()`.
+        highlights : bool, optional (default False)
+            If True, colour the notes of every entry's soggetto. Notes are
+            counted with the `melodic_ngram_length` and `combine_unisons`
+            settings that `presentationTypes()` recorded on the result, and the
+            excerpt is extended if needed so the last entry is shown in full.
+            Requires an MEI source.
+        highlight_color : str, optional
+            CSS colour for the highlighted notes (default red, '#d62728').
 
         Examples
         --------
@@ -4330,37 +4539,34 @@ class ImportedPiece:
         ```python
         piece.verovioPtypes(p_types)
         ```
+
+        To show the notes of each entry in red:
+
+        ```python
+        piece.verovioPtypes(p_types, highlights=True)
+        ```
         """
-        if self.path.startswith('Music_Files/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        elif self.path.startswith('/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        else:
-            response = httpx.get(self.path)
-            fetched_mei_string = response.text
-        tk = verovio.toolkit()
-        tk.loadData(fetched_mei_string)
-        tk.setScale(30)
-        tk.setOptions({"adjustPageHeight": True, # Automatic page height
-                       "pageWidth":  3000    # Width in pixels
-                       })
+        tk = self._verovioToolkit(page_width=3000)
         print("Results:")
         # collect the metadata
         if p_types is None:
             p_types = self.presentationTypes()
-        for p_type in p_types.index:
-            this_p_type = p_types.loc[p_type]["Presentation_Type"]
-            p_voices = p_types.loc[p_type]["Voices"]
-            n_voices = p_types.loc[p_type]["Number_Entries"]
-            soggetti = p_types.loc[p_type]["Soggetti"]
-            mint = p_types.loc[p_type]["Melodic_Entry_Intervals"]
-            tint = p_types.loc[p_type]["Time_Entry_Intervals"]
-            flexed = p_types.loc[p_type]["Flexed_Entries"]
-            ml = p_types.loc[p_type]["Measures_Beats"]
-            parallel = p_types.loc[p_type]["Parallel_Voice"]
-            non_overlaps = p_types.loc[p_type]["Count_Non_Overlaps"]
+        # how the soggetti were counted, so each entry is highlighted note for note
+        pt_settings = get_settings(p_types).get('presentationTypes', {})
+        combine_unisons = pt_settings.get('combine_unisons', False)
+        before = 1 if pt_settings.get('end', False) else 0
+        found_any = 0
+        for p_type, row in p_types.iterrows():
+            this_p_type = row["Presentation_Type"]
+            p_voices = row["Voices"]
+            n_voices = row["Number_Entries"]
+            soggetti = row["Soggetti"]
+            mint = row["Melodic_Entry_Intervals"]
+            tint = row["Time_Entry_Intervals"]
+            flexed = row["Flexed_Entries"]
+            ml = row["Measures_Beats"]
+            parallel = row["Parallel_Voice"]
+            non_overlaps = row["Count_Non_Overlaps"]
 
             # build the measure range dictionary
             # Find the first and last items
@@ -4369,16 +4575,23 @@ class ImportedPiece:
 
             # Split each item at '/' and take the first part as integer
             first_part_first_item = int(float(first_item.split('/')[0]))
-            first_part_last_item = int(float(last_item.split('/')[0]))  
-           
-            mr = str(first_part_first_item) + "-" + str(first_part_last_item)
-            mdict = {'measureRange': mr}
+            first_part_last_item = int(float(last_item.split('/')[0]))
 
-            # select measures in verovio and redo the layout
-            tk.select(mdict)
-            tk.redoLayout()
-            # get the number of pages
-            count = tk.getPageCount()
+            ids = []
+            stop = first_part_last_item
+            if highlights:
+                n_ints = pt_settings.get('melodic_ngram_length') or len(soggetti[0])
+                spans = [self._noteIdsInSpan(voice, offset, n_ints + 1, combine_unisons, before)
+                         for offset, voice in zip(row["Offsets"], p_voices)]
+                ids, span_range = self._mergeSpans(spans)
+                if span_range:   # show the last entry's soggetto in full
+                    stop = max(stop, int(span_range[1]))
+
+            mr = str(first_part_first_item) + "-" + str(stop)
+
+            # select measures in verovio, redo the layout and render
+            pages, found = self._verovioPages(tk, first_part_first_item, stop, ids, highlight_color)
+            found_any += found
 
             # print caption
             print("File Name: ", self.file_name)
@@ -4395,13 +4608,14 @@ class ImportedPiece:
             print("Parallel Entries:", parallel)
             print("Number of Non-Overlapping Voices:", non_overlaps)
             # print the music
-            for c in range(1, count + 1):
-                music = tk.renderToSVG(c)
+            for music in pages:
                 # display(SVG(music))
                 display(HTML(music))
+        self._reportHighlights(highlights and len(p_types), found_any)
 
     # July 2022 Addition for printing hr types with Verovio
-    def verovioHomorhythm(self, df=None, ngram_length=4, full_hr=True):
+    def verovioHomorhythm(self, df=None, ngram_length=4, full_hr=True,
+                          highlights=False, highlight_color=HIGHLIGHT_COLOR):
         '''
         Prints HR passages for a given piece with Verovio (learn more at:  https://www.verovio.org/index.xhtml), based on imported piece and
         other parameters.
@@ -4421,6 +4635,12 @@ class ImportedPiece:
             voices_ share the same durational ngram and syllables; if False
             the method will find any passage where even _two voices_ share
             the same durational ngram and the same syllables.
+        highlights : bool, optional (default False)
+            If True, colour the notes of the homorhythmic voices in each
+            passage: for every row, `ngram_length` notes from the row's offset
+            in each of its `hr_voices`. Requires an MEI source.
+        highlight_color : str, optional
+            CSS colour for the highlighted notes (default red, '#d62728').
 
         Examples
         --------
@@ -4432,6 +4652,12 @@ class ImportedPiece:
 
         ```python
         piece.verovioHomorhythm(ngram_length=5, full_hr=False)
+        ```
+
+        To show the homorhythmic voices in red:
+
+        ```python
+        piece.verovioHomorhythm(highlights=True)
         ```
 
         It is also possible to run `piece.homorhythm()`, then filter the
@@ -4451,21 +4677,7 @@ class ImportedPiece:
         piece.verovioHomorhythm(hr_with_chosen_voices)
         ```
         '''
-        if self.path.startswith('Music_Files/'):
-            text_file = open(self.path, "r")
-            fetched_mei_string = text_file.read()
-        elif self.path.startswith('/'):
-                text_file = open(self.path, "r")
-                fetched_mei_string = text_file.read()
-        else:
-            response = httpx.get(self.path)
-            fetched_mei_string = response.text
-        tk = verovio.toolkit()
-        tk.loadData(fetched_mei_string)
-        tk.setScale(30)
-        tk.setOptions({"adjustPageHeight": True, # Automatic page height
-                       "pageWidth":  3000    # Width in pixels
-                       })
+        tk = self._verovioToolkit(page_width=3000)
 
         # Now get meas ranges and number of active voices
         if df is None:
@@ -4476,6 +4688,8 @@ class ImportedPiece:
         #Get the groupings of consecutive items
         short_list =sorted(list(set(hr_list)))
         li = [list(item) for item in consecutive_groups(short_list)]
+        row_offsets = self._rowOffsets(homorhythm) if highlights else []
+        found_any = 0
 
         # adjusts number of measures to display based on length of each span
         # of adjacent bars.
@@ -4483,12 +4697,11 @@ class ImportedPiece:
         for span in li:
             if ngram_length > 4:
                 if len(span) == 1:
-                    mr = str(int(span[0])) + "-" + str(int(span[0] + 3))
+                    low, high = int(span[0]), int(span[0] + 3)
                 else:
-                    mr = str(int(span[0])) + "-" + str(int(span[-1] + 1))
+                    low, high = int(span[0]), int(span[-1] + 1)
             else:
-                mr = str(int(span[0])) + "-" + str(int(span[-1] + 1))
-            mdict = {'measureRange': mr}
+                low, high = int(span[0]), int(span[-1] + 1)
             min_hr_count = 20
             max_hr_count = 0
 
@@ -4506,12 +4719,27 @@ class ImportedPiece:
                     if mi < min_hr_count:
                         min_hr_count = mi
 
+            ids = []
+            if highlights:
+                in_span = homorhythm.index.get_level_values('Measure').isin(span)
+                spans = []
+                for (_, row), offset, keep in zip(homorhythm.iterrows(), row_offsets, in_span):
+                    if not keep or offset is None:
+                        continue
+                    voices = row['hr_voices']
+                    if isinstance(voices, str):   # e.g. joined with ', ' for filtering
+                        voices = [v.strip() for v in voices.split(',') if v.strip()]
+                    n_notes = int(row['ngram_length']) if 'ngram_length' in row.index else ngram_length
+                    spans += [self._noteIdsInSpan(v, offset, n_notes) for v in voices]
+                ids, span_range = self._mergeSpans(spans)
+                if span_range:   # show the last passage in full
+                    high = max(high, int(span_range[1]))
+
             # select verovio measures and redo layout for each passage
-            tk.select(mdict)
-            tk.redoLayout()
+            pages, found = self._verovioPages(tk, low, high, ids, highlight_color)
+            found_any += found
             # get the number of pages and display the music for each passage
             print("Results:")
-            count = tk.getPageCount()
             print("File Name: ", self.file_name)
             print(self.metadata['composer'])
             print(self.metadata['title'])
@@ -4520,9 +4748,122 @@ class ImportedPiece:
             print("Minimum Number of HR Voices: ", min_hr_count)
             print("Maximum Number of HR Voices: ", max_hr_count)
 
-            for c in range(1, count + 1):
-                music = tk.renderToSVG(c)
+            for music in pages:
                 display(SVG(music))
+        self._reportHighlights(highlights and len(li), found_any)
+
+    def verovioNgrams(self, df, highlights=False, highlight_color=HIGHLIGHT_COLOR,
+                      combine_unisons=None, end=None):
+        '''
+        Display the passages behind a table of n-grams with Verovio (learn more
+        at:  https://www.verovio.org/index.xhtml): one excerpt per row of `df`,
+        covering the measures of every n-gram in that row, with a caption
+        listing each voice's n-gram.
+
+        Works with the results of `piece.ngrams()` on melodic intervals or
+        notes, and of `piece.entries()`, with columns for single voices (part
+        names, or staff numbers from `numberParts`). The index may be plain
+        offsets, the 'First'/'Last' index of `ngrams(offsets='both')`, or a
+        `detailIndex` with an Offset level or Measure and Beat levels.
+
+        Filter the table first: a full n-gram table has a row for nearly every
+        offset in the piece.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The (filtered) n-grams to show.
+        highlights : bool, optional (default False)
+            If True, colour the notes of each n-gram. Requires an MEI source.
+        highlight_color : str, optional
+            CSS colour for the highlighted notes (default red, '#d62728').
+        combine_unisons, end : bool, optional
+            How the notes were counted. By default these are read from the
+            settings that crim_intervals records on the result (the `notes()`
+            combineUnisons and `melodic()` end settings); pass them only if
+            those settings were lost, e.g. after reading the table from a CSV.
+
+        Examples
+        --------
+        Show where one soggetto occurs, with its notes in red:
+
+        ```python
+        mel = piece.melodic(kind='d', end=False)
+        ngrams = piece.ngrams(df=mel, n=4)
+        soggetto = ('2', '2', '-3', '2')
+        matches = ngrams[ngrams.isin([soggetto])].dropna(how='all')
+        piece.verovioNgrams(matches, highlights=True)
+        ```
+
+        Or show each entry (n-grams that follow a rest):
+
+        ```python
+        entries = piece.entries(n=4)
+        piece.verovioNgrams(entries.head(10), highlights=True)
+        ```
+        '''
+        settings = get_settings(df)
+        ng = settings.get('ngrams') or settings.get('entries') or {}
+        melodic_settings = settings.get('melodic')
+        if combine_unisons is None:
+            combine_unisons = settings.get('notes', {}).get('combineUnisons', False)
+        # n-grams of intervals span one more note than they have items; n-grams of
+        # notes span exactly as many. Without settings, assume melodic intervals.
+        is_melodic = melodic_settings is not None or 'notes' not in settings
+        if end is None:
+            end = melodic_settings.get('end', True) if melodic_settings else True
+        mode = 'first' if 'First' in df.index.names else settings.get('ngrams', {}).get('offsets', 'first')
+        n_setting = ng.get('n')
+
+        def _span_args(cell):
+            """(n_notes, before) for one n-gram cell."""
+            if isinstance(cell, (tuple, list)):
+                n = len(cell)
+            elif isinstance(n_setting, int) and n_setting > 0:
+                n = n_setting
+            else:
+                n = len(str(cell).split('_'))
+            if not is_melodic:
+                return n, (n - 1 if mode == 'last' else 0)
+            n_notes = n + 1
+            if mode == 'last':   # offset of the last interval: its second note, or its first
+                return n_notes, (n_notes - 1 if end else n_notes - 2)
+            return n_notes, (1 if end else 0)
+
+        if len(df) > 100:
+            print(f"Showing {len(df)} excerpts; filter the n-grams first to show fewer.")
+        tk = self._verovioToolkit(page_width=3000)
+        print("Results:")
+        found_any = 0
+        for offset, (_, row) in zip(self._rowOffsets(df), df.iterrows()):
+            cells = row.dropna()
+            cells = cells[[self._voiceName(c) is not None for c in cells.index]]
+            if offset is None or cells.empty:
+                continue
+            spans = []
+            for voice, cell in cells.items():
+                n_notes, before = _span_args(cell)
+                spans.append(self._noteIdsInSpan(voice, offset, n_notes, combine_unisons, before))
+            ids, span_range = self._mergeSpans(spans)
+            if span_range:
+                low, high = int(span_range[0]), int(span_range[1])
+            else:
+                low = self._measureAtOffset(offset) or 1
+                high = low + 1
+            pages, found = self._verovioPages(tk, low, high, ids if highlights else (), highlight_color)
+            found_any += found
+
+            print("File Name: ", self.file_name)
+            print(self.metadata['composer'])
+            print(self.metadata['title'])
+            print("Measures:", f"{low}-{high}")
+            print("Offset:", offset)
+            for voice, cell in cells.items():
+                shown = ', '.join(map(str, cell)) if isinstance(cell, (tuple, list)) else cell
+                print(f"{voice}: {shown}")
+            for music in pages:
+                display(HTML(music))
+        self._reportHighlights(highlights and len(df), found_any)
 
 
 # The following are NOT part of piece or other classes

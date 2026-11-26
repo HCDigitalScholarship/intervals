@@ -88,7 +88,7 @@ Each ready-made chart function works with the result of either a single piece or
 | Capability | How | Tutorial |
 |---|---|---|
 | Show any passage in modern notation (Verovio) | `piece.verovioPrintExample(...)` | 15 |
-| Show every cadence, presentation type or homorhythmic passage found | `verovioCadences()`, `verovioPtypes()`, `verovioHomorhythm()` | 15 |
+| Show every cadence, presentation type, homorhythmic passage or n-gram found (add `highlights=True` to color their notes red) | `verovioCadences()`, `verovioPtypes()`, `verovioHomorhythm()`, `verovioNgrams()` | 15 |
 | Turn a results table into clickable links to highlighted examples | `piece.linkExamples(df)` | 15 |
 
 ## Tutorials

@@ -5,8 +5,10 @@
 2. [`piece.verovioCadences()`](#pieceveroviocadences)
 3. [`piece.verovioHomorhythm()`](#pieceveroviohomorhythm)
 4. [`piece.verovioPtypes()`](#pieceverovioptypes)
-5. [Print with Analytic Highlights: `linkExamples()`](#print-with-analytic-highlights--linkexamples)
-6. [Sections in this guide](#sections-in-this-guide)
+5. [`piece.verovioNgrams()`](#pieceveroviongrams)
+6. [Highlighting Notes in Red: `highlights=True`](#highlighting-notes-in-red-highlightstrue)
+7. [Print with Analytic Highlights: `linkExamples()`](#print-with-analytic-highlights--linkexamples)
+8. [Sections in this guide](#sections-in-this-guide)
 
 Thanks to Laurent Pugin's powerful suite of [Verovio](https://www.verovio.org/index.xhtml) engraving library, it is also possible to render musical examples from MEI and MusicXML files.  
 
@@ -212,6 +214,61 @@ piece.verovioPtypes(p_types)
 ```
 
 ![alt text](images/linkex8.png)
+
+## `piece.verovioNgrams()`
+
+This function shows the passages behind a table of n-grams: one excerpt for each row of the table, covering the measures of every n-gram in that row, with a caption listing each voice's n-gram. It works with the results of `piece.ngrams()` (melodic intervals or notes) and of `piece.entries()`.
+
+A full n-gram table has a row for nearly every offset in the piece, so **filter it first**. For example, to find every statement of one soggetto:
+
+```python
+path = 'https://crimproject.org/mei/CRIM_Model_0008.mei'
+piece = importScore(path)
+mel = piece.melodic(kind='d', end=False)
+ngrams = piece.ngrams(df=mel, n=4)
+soggetto = ('4', '1', '2', '2')
+matches = ngrams[ngrams.isin([soggetto])].dropna(how='all')
+piece.verovioNgrams(matches)
+```
+
+Or to show the first ten entries (n-grams that follow a rest):
+
+```python
+entries = piece.entries(n=4)
+piece.verovioNgrams(entries.head(10))
+```
+
+## Highlighting Notes in Red: `highlights=True`
+
+`verovioCadences()`, `verovioPtypes()`, `verovioHomorhythm()` and `verovioNgrams()` can color the notes of each result in red. Add `highlights=True`:
+
+```python
+piece.verovioCadences(cads_filtered, highlights=True)   # arrival notes of each cadence
+piece.verovioPtypes(p_types, highlights=True)           # the soggetto in every entry
+piece.verovioHomorhythm(highlights=True)                # the homorhythmic voices
+piece.verovioNgrams(matches, highlights=True)           # the notes of each n-gram
+```
+
+What gets colored:
+
+- **Cadences:** the notes sounding at the moment of arrival, in the voices that take part in the cadence (its cadential voice functions).
+- **Presentation types:** every note of each entry's soggetto. When needed, the excerpt is extended so the last entry is shown in full.
+- **Homorhythm:** the notes of each voice in the homorhythmic passage.
+- **N-grams and entries:** the notes of each n-gram. An n-gram of 4 melodic intervals colors 5 notes.
+
+The notes are counted exactly as your analysis counted them. CRIM Intervals remembers settings such as `combine_unisons`, `end` and the n-gram length with each result, so you do not need to pass them again.
+
+Use `highlight_color` to choose another color, for example `highlight_color='blue'` or `highlight_color='#1f77b4'`.
+
+To color notes of your own choosing, pass their MEI `xml:id`s to `verovioPrintExample()`. Each note's xml:id is its music21 `.id`:
+
+```python
+objs = piece._getM21Objs()['Tenor'].dropna()
+ids = [n.id for n in objs if n.isNote and n.measureNumber <= 4]
+piece.verovioPrintExample(1, 4, highlight_ids=ids)
+```
+
+**NB:** highlights work with **MEI files only**. With MusicXML files the music is still shown, but without colored notes.
 
 ## Print with Analytic Highlights:  `linkExamples()`
 
